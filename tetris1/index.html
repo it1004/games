@@ -1,1 +1,777 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>네온 아케이드 테트리스</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Rajdhani', 'Orbitron', sans-serif;
+            background-color: #05050a;
+            touch-action: manipulation;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .neon-text {
+            text-shadow: 0 0 10px rgba(0, 240, 240, 0.8), 0 0 20px rgba(0, 240, 240, 0.4);
+        }
+        .neon-text-pink {
+            text-shadow: 0 0 10px rgba(240, 0, 240, 0.8), 0 0 20px rgba(240, 0, 240, 0.4);
+        }
+        .neon-border {
+            box-shadow: 0 0 12px rgba(0, 240, 240, 0.2), inset 0 0 12px rgba(0, 240, 240, 0.1);
+            border: 1px solid rgba(0, 240, 240, 0.3);
+        }
+        .neon-btn-cyan {
+            border: 2px solid #00f0f0;
+            box-shadow: 0 0 10px rgba(0, 240, 240, 0.3);
+            transition: all 0.2s ease;
+        }
+        .neon-btn-cyan:hover {
+            background-color: #00f0f0;
+            color: #000;
+            box-shadow: 0 0 20px rgba(0, 240, 240, 0.8);
+        }
+        .neon-btn-pink {
+            border: 2px solid #f000f0;
+            box-shadow: 0 0 10px rgba(240, 0, 240, 0.3);
+            transition: all 0.2s ease;
+        }
+        .neon-btn-pink:hover {
+            background-color: #f000f0;
+            color: #000;
+            box-shadow: 0 0 20px rgba(240, 0, 240, 0.8);
+        }
+        .touch-btn:active {
+            transform: scale(0.92);
+            background-color: rgba(255, 255, 255, 0.15);
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-between min-h-screen text-white overflow-hidden p-2">
 
+    <!-- 상단 헤더 -->
+    <header class="w-full max-w-sm flex justify-between items-center mb-2 px-1 z-10 shrink-0">
+        <h1 class="text-xl sm:text-2xl font-extrabold tracking-widest text-[#00f0f0] neon-text uppercase font-orbitron">
+            TETRIS
+        </h1>
+        <div class="flex gap-1.5">
+            <!-- 음소거 토글 -->
+            <button id="soundToggle" class="w-8 h-8 rounded-full flex items-center justify-center border border-zinc-700 bg-zinc-900/80 hover:border-[#00f0f0] transition-colors" title="음소거">
+                <i id="soundIcon" class="fas fa-volume-up text-zinc-300 text-sm"></i>
+            </button>
+            <!-- 재생 / 일시정지 -->
+            <button id="pauseToggle" class="w-8 h-8 rounded-full flex items-center justify-center border border-zinc-700 bg-zinc-900/80 hover:border-[#f000f0] transition-colors" title="일시정지">
+                <i id="pauseIcon" class="fas fa-pause text-zinc-300 text-sm"></i>
+            </button>
+            <!-- 다시하기 -->
+            <button id="headerRestartBtn" class="w-8 h-8 rounded-full flex items-center justify-center border border-zinc-700 bg-zinc-900/80 hover:border-amber-400 transition-colors" title="다시하기">
+                <i class="fas fa-arrow-rotate-left text-zinc-300 text-sm"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- 메인 레이아웃 구역 -->
+    <main class="w-full max-w-sm flex flex-col items-center justify-center flex-grow gap-2">
+        
+        <!-- 반응형 2분할 플레이 그리드 (좌측 비우고 게임창 극대화) -->
+        <div class="w-full grid grid-cols-12 gap-3 px-1">
+            
+            <!-- [좌측 & 중앙 통합 섹션]: 대폭 넓어진 메인 테트리스 보드 (12칸 중 8칸 차지) -->
+            <div class="col-span-8 flex justify-center">
+                <div class="relative bg-zinc-950 border border-zinc-800 rounded-lg p-1.5 neon-border w-full max-w-[240px] sm:max-w-[260px]">
+                    <canvas id="gameCanvas" class="bg-black/90 rounded shadow-2xl block w-full h-auto aspect-[1/2]" width="200" height="400"></canvas>
+                    
+                    <!-- 일시정지 오버레이 -->
+                    <div id="pauseOverlay" class="absolute inset-0 bg-black/85 backdrop-blur-[2px] rounded flex flex-col items-center justify-center gap-2 p-2 hidden z-20">
+                        <span class="text-lg font-bold font-orbitron tracking-wider text-[#00f0f0] neon-text">PAUSED</span>
+                        <p class="text-[9px] text-zinc-400 text-center">P 키나 재생 버튼으로 재개</p>
+                        <button id="resumeBtn" class="px-4 py-1.5 rounded bg-zinc-900 neon-btn-cyan text-[10px] font-bold tracking-wide">RESUME</button>
+                    </div>
+
+                    <!-- 게임 오버 오버레이 -->
+                    <div id="gameOverOverlay" class="absolute inset-0 bg-black/90 backdrop-blur-[2px] rounded flex flex-col items-center justify-center gap-3 p-2 hidden z-20">
+                        <span class="text-lg font-bold font-orbitron tracking-wider text-red-500 neon-text-pink">GAME OVER</span>
+                        <div class="text-center">
+                            <p class="text-zinc-400 text-[9px]">FINAL SCORE</p>
+                            <p id="finalScore" class="text-base sm:text-lg font-black text-white font-orbitron">0</p>
+                        </div>
+                        <button id="restartBtn" class="px-4 py-2 rounded bg-zinc-900 neon-btn-pink text-[10px] font-bold tracking-wide">PLAY AGAIN</button>
+                    </div>
+
+                    <!-- 게임 시작 대기 오버레이 -->
+                    <div id="startOverlay" class="absolute inset-0 bg-black/95 rounded flex flex-col items-center justify-center gap-3 p-2 z-20">
+                        <span class="text-base sm:text-lg font-bold font-orbitron text-center text-[#00f0f0] neon-text leading-snug">NEON ARCADE<br>TETRIS</span>
+                        <button id="startBtn" class="px-5 py-2.5 rounded bg-zinc-900 neon-btn-cyan text-xs font-bold tracking-wide">START GAME</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- [우측 통합 섹션]: NEXT 정보 및 모든 스탯(SCORE, LEVEL, LINES, HIGH) 통합 수용 (12칸 중 4칸 차지) -->
+            <div class="col-span-4 flex flex-col gap-2 justify-start items-center">
+                <!-- NEXT 패널 -->
+                <div class="w-full bg-zinc-950/90 border border-zinc-800 rounded-lg p-2 flex flex-col items-center neon-border">
+                    <span class="text-[10px] font-bold text-zinc-400 uppercase tracking-wider">NEXT</span>
+                    <canvas id="nextCanvas" width="60" height="60" class="mt-1 w-12 h-12 sm:w-16 sm:h-16 bg-black/40 rounded"></canvas>
+                </div>
+
+                <!-- 통합 실시간 스탯 패널 (우측) -->
+                <div class="w-full bg-zinc-950/90 border border-zinc-800 rounded-lg p-2 flex flex-col gap-2 text-center neon-border">
+                    <div>
+                        <span class="text-[9px] font-bold text-zinc-500 uppercase">SCORE</span>
+                        <p id="scoreDisplay" class="text-xs sm:text-sm font-bold text-[#00f0f0] font-orbitron">0</p>
+                    </div>
+                    <div class="border-t border-zinc-900 pt-1.5">
+                        <span class="text-[9px] font-bold text-zinc-500 uppercase">LEVEL</span>
+                        <p id="levelDisplay" class="text-xs sm:text-sm font-bold text-purple-400 font-orbitron">1</p>
+                    </div>
+                    <div class="border-t border-zinc-900 pt-1.5">
+                        <span class="text-[9px] font-bold text-zinc-500 uppercase">LINES</span>
+                        <p id="linesDisplay" class="text-xs sm:text-sm font-bold text-emerald-400 font-orbitron">0</p>
+                    </div>
+                    <div class="border-t border-zinc-900 pt-1.5">
+                        <span class="text-[9px] font-bold text-zinc-500 uppercase">HIGH</span>
+                        <p id="highScoreDisplay" class="text-xs sm:text-sm font-bold text-amber-400 font-orbitron">0</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 모바일 가상 패드 터치 컨트롤러 (HOLD 제거에 따른 터치 최적화) -->
+        <div id="touchController" class="w-full flex flex-col gap-2 px-1 max-w-sm mt-2 shrink-0">
+            <!-- 상단 조작 줄: 회전, 하드드롭 (2분할로 버튼 크기를 더욱 키워 그립감 향상) -->
+            <div class="grid grid-cols-2 gap-2">
+                <button id="ctrlRotate" class="touch-btn h-12 rounded-lg bg-zinc-900/80 border border-zinc-800 flex flex-col items-center justify-center text-[10px] text-zinc-300">
+                    <i class="fas fa-rotate-right mb-0.5 text-pink-500 text-sm"></i>
+                    <span>ROTATE (회전)</span>
+                </button>
+                <button id="ctrlHard" class="touch-btn h-12 rounded-lg bg-zinc-900/80 border border-zinc-800 flex flex-col items-center justify-center text-[10px] text-zinc-300">
+                    <i class="fas fa-angles-down mb-0.5 text-amber-500 text-sm"></i>
+                    <span>DROP (낙하)</span>
+                </button>
+            </div>
+            
+            <!-- 하단 조작 줄: 좌, 소프트 드롭, 우 -->
+            <div class="grid grid-cols-3 gap-2">
+                <button id="ctrlLeft" class="touch-btn h-12 rounded-lg bg-zinc-900/80 border border-zinc-800 flex items-center justify-center text-sm text-white">
+                    <i class="fas fa-chevron-left text-[#00f0f0] text-base"></i>
+                </button>
+                <button id="ctrlSoft" class="touch-btn h-12 rounded-lg bg-zinc-900/80 border border-zinc-800 flex items-center justify-center text-sm text-white">
+                    <i class="fas fa-chevron-down text-zinc-400 text-base"></i>
+                </button>
+                <button id="ctrlRight" class="touch-btn h-12 rounded-lg bg-zinc-900/80 border border-zinc-800 flex items-center justify-center text-sm text-white">
+                    <i class="fas fa-chevron-right text-[#00f0f0] text-base"></i>
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // --- Web Audio API 기반 오디오 매니저 ---
+        class SoundEffects {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            playMove() {
+                if (this.muted) return;
+                this.init();
+                this.playTone(150, 'triangle', 0.05, 0.05);
+            }
+
+            playRotate() {
+                if (this.muted) return;
+                this.init();
+                this.playTone(280, 'sine', 0.08, 0.06);
+            }
+
+            playClear(count) {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const notes = count === 4 ? [261.63, 329.63, 392.00, 523.25] : [329.63, 392.00, 523.25];
+                notes.forEach((freq, idx) => {
+                    this.playTone(freq, 'sawtooth', 0.15, 0.1, now + idx * 0.08);
+                });
+            }
+
+            playLevelUp() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                this.playTone(523.25, 'sine', 0.15, 0.15, now);
+                this.playTone(659.25, 'sine', 0.15, 0.15, now + 0.1);
+                this.playTone(783.99, 'sine', 0.15, 0.15, now + 0.2);
+                this.playTone(1046.50, 'sine', 0.3, 0.25, now + 0.3);
+            }
+
+            playGameOver() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                this.playTone(392.00, 'sawtooth', 0.2, 0.2, now);
+                this.playTone(349.23, 'sawtooth', 0.2, 0.2, now + 0.15);
+                this.playTone(311.13, 'sawtooth', 0.2, 0.2, now + 0.3);
+                this.playTone(246.94, 'sawtooth', 0.4, 0.3, now + 0.45);
+            }
+
+            playTone(freq, type, duration, volume, time = null) {
+                try {
+                    const t = time || this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, t);
+
+                    gain.gain.setValueAtTime(volume, t);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, t + duration);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.start(t);
+                    osc.stop(t + duration);
+                } catch (e) {
+                    console.error("오디오 에러:", e);
+                }
+            }
+        }
+
+        const sound = new SoundEffects();
+
+        // --- 게임 핵심 엔진 변수 선언 ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const nextCanvas = document.getElementById('nextCanvas');
+        const nextCtx = nextCanvas.getContext('2d');
+
+        const COLS = 10;
+        const ROWS = 20;
+        const BLOCK_SIZE = 20; // 렌더링 스케일링 기본 단위
+
+        let board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+        let score = 0;
+        let level = 1;
+        let lines = 0;
+        let highScore = parseInt(localStorage.getItem('tetris_high_score') || '0');
+        let gameOver = false;
+        let paused = false;
+        let gameStarted = false;
+        let dropCounter = 0;
+        let lastTime = 0;
+
+        const getDropInterval = (lvl) => Math.max(50, 1000 - (lvl - 1) * 90);
+
+        const SHAPES = {
+            'I': { matrix: [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]], color: '#00f0f0', shadow: 'rgba(0, 240, 240, 0.6)' },
+            'O': { matrix: [[1,1],[1,1]], color: '#f0f000', shadow: 'rgba(240, 240, 0, 0.6)' },
+            'T': { matrix: [[0,1,0],[1,1,1],[0,0,0]], color: '#a000f0', shadow: 'rgba(160, 0, 240, 0.6)' },
+            'S': { matrix: [[0,1,1],[1,1,0],[0,0,0]], color: '#00f000', shadow: 'rgba(0, 240, 0, 0.6)' },
+            'Z': { matrix: [[1,1,0],[0,1,1],[0,0,0]], color: '#f00000', shadow: 'rgba(240, 0, 0, 0.6)' },
+            'J': { matrix: [[1,0,0],[1,1,1],[0,0,0]], color: '#0000f0', shadow: 'rgba(0, 0, 240, 0.6)' },
+            'L': { matrix: [[0,0,1],[1,1,1],[0,0,0]], color: '#f0a000', shadow: 'rgba(240, 160, 0, 0.6)' }
+        };
+
+        const KEYS = Object.keys(SHAPES);
+
+        let currentPiece = null;
+        let nextPiece = null;
+        let particles = [];
+
+        // DOM 캐싱
+        const scoreDisplay = document.getElementById('scoreDisplay');
+        const levelDisplay = document.getElementById('levelDisplay');
+        const linesDisplay = document.getElementById('linesDisplay');
+        const highScoreDisplay = document.getElementById('highScoreDisplay');
+        highScoreDisplay.textContent = highScore;
+
+        const startOverlay = document.getElementById('startOverlay');
+        const pauseOverlay = document.getElementById('pauseOverlay');
+        const gameOverOverlay = document.getElementById('gameOverOverlay');
+        const startBtn = document.getElementById('startBtn');
+        const resumeBtn = document.getElementById('resumeBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const soundToggle = document.getElementById('soundToggle');
+        const soundIcon = document.getElementById('soundIcon');
+        const pauseToggle = document.getElementById('pauseToggle');
+        const pauseIcon = document.getElementById('pauseIcon');
+        const headerRestartBtn = document.getElementById('headerRestartBtn');
+
+        function createPiece(type) {
+            const data = SHAPES[type];
+            return {
+                matrix: JSON.parse(JSON.stringify(data.matrix)),
+                color: data.color,
+                shadow: data.shadow,
+                type: type,
+                x: Math.floor((COLS - data.matrix[0].length) / 2),
+                y: type === 'I' ? -1 : 0
+            };
+        }
+
+        let pieceBag = [];
+        function getNextFromBag() {
+            if (pieceBag.length === 0) {
+                pieceBag = [...KEYS];
+                for (let i = pieceBag.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [pieceBag[i], pieceBag[j]] = [pieceBag[j], pieceBag[i]];
+                }
+            }
+            return pieceBag.pop();
+        }
+
+        function spawnPiece() {
+            if (!nextPiece) {
+                nextPiece = createPiece(getNextFromBag());
+            }
+            currentPiece = nextPiece;
+            nextPiece = createPiece(getNextFromBag());
+
+            if (checkCollision(currentPiece, 0, 0)) {
+                gameOver = true;
+                sound.playGameOver();
+                document.getElementById('finalScore').textContent = score;
+                gameOverOverlay.classList.remove('hidden');
+                
+                if (score > highScore) {
+                    highScore = score;
+                    localStorage.setItem('tetris_high_score', highScore);
+                    highScoreDisplay.textContent = highScore;
+                }
+            }
+        }
+
+        function checkCollision(piece, offsetX, offsetY, customMatrix = null) {
+            const matrix = customMatrix || piece.matrix;
+            for (let r = 0; r < matrix.length; r++) {
+                for (let c = 0; c < matrix[r].length; c++) {
+                    if (matrix[r][c]) {
+                        const nextX = piece.x + c + offsetX;
+                        const nextY = piece.y + r + offsetY;
+
+                        if (nextX < 0 || nextX >= COLS || nextY >= ROWS) {
+                            return true;
+                        }
+
+                        if (nextY >= 0 && board[nextY][nextX]) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        function movePiece(dir) {
+            if (gameOver || paused || !gameStarted) return;
+            if (!checkCollision(currentPiece, dir, 0)) {
+                currentPiece.x += dir;
+                sound.playMove();
+            }
+        }
+
+        function rotatePiece() {
+            if (gameOver || paused || !gameStarted) return;
+            const matrix = currentPiece.matrix;
+            const N = matrix.length;
+            
+            const rotated = Array.from({ length: N }, () => Array(N).fill(0));
+            for (let r = 0; r < N; r++) {
+                for (let c = 0; c < N; c++) {
+                    rotated[c][N - 1 - r] = matrix[r][c];
+                }
+            }
+
+            const kicks = [0, -1, 1, -2, 2];
+            for (let dx of kicks) {
+                if (!checkCollision(currentPiece, dx, 0, rotated)) {
+                    currentPiece.matrix = rotated;
+                    currentPiece.x += dx;
+                    sound.playRotate();
+                    return;
+                }
+            }
+        }
+
+        function softDrop() {
+            if (gameOver || paused || !gameStarted) return;
+            if (!checkCollision(currentPiece, 0, 1)) {
+                currentPiece.y++;
+                score += 1;
+                scoreDisplay.textContent = score;
+                dropCounter = 0;
+            } else {
+                lockPiece();
+            }
+        }
+
+        function hardDrop() {
+            if (gameOver || paused || !gameStarted) return;
+            let count = 0;
+            while (!checkCollision(currentPiece, 0, 1)) {
+                currentPiece.y++;
+                count++;
+            }
+            score += count * 2;
+            scoreDisplay.textContent = score;
+            sound.playTone(180, 'sine', 0.1, 0.2);
+            lockPiece();
+        }
+
+        function lockPiece() {
+            const matrix = currentPiece.matrix;
+            for (let r = 0; r < matrix.length; r++) {
+                for (let c = 0; c < matrix[r].length; c++) {
+                    if (matrix[r][c]) {
+                        const boardY = currentPiece.y + r;
+                        const boardX = currentPiece.x + c;
+                        if (boardY >= 0) {
+                            board[boardY][boardX] = currentPiece.color;
+                        }
+                    }
+                }
+            }
+            clearLines();
+            spawnPiece();
+        }
+
+        function createLineParticles(row) {
+            const yPos = row * BLOCK_SIZE + (BLOCK_SIZE / 2);
+            for (let col = 0; col < COLS; col++) {
+                const xPos = col * BLOCK_SIZE + (BLOCK_SIZE / 2);
+                const color = board[row][col] || '#00f0f0';
+                for (let i = 0; i < 4; i++) {
+                    particles.push({
+                        x: xPos,
+                        y: yPos,
+                        vx: (Math.random() - 0.5) * 8,
+                        vy: (Math.random() - 0.5) * 8,
+                        size: Math.random() * 4 + 2,
+                        color: color,
+                        alpha: 1,
+                        decay: Math.random() * 0.05 + 0.02
+                    });
+                }
+            }
+        }
+
+        function clearLines() {
+            let cleared = 0;
+            for (let r = ROWS - 1; r >= 0; r--) {
+                if (board[r].every(val => val !== 0)) {
+                    createLineParticles(r);
+                    board.splice(r, 1);
+                    board.unshift(Array(COLS).fill(0));
+                    cleared++;
+                    r++; 
+                }
+            }
+
+            if (cleared > 0) {
+                lines += cleared;
+                const lineScores = [0, 100, 300, 500, 800];
+                score += lineScores[cleared] * level;
+
+                const newLevel = Math.floor(lines / 10) + 1;
+                if (newLevel > level) {
+                    level = newLevel;
+                    sound.playLevelUp();
+                } else {
+                    sound.playClear(cleared);
+                }
+
+                scoreDisplay.textContent = score;
+                levelDisplay.textContent = level;
+                linesDisplay.textContent = lines;
+            }
+        }
+
+        function getGhostY() {
+            let ghostY = currentPiece.y;
+            while (!checkCollision(currentPiece, 0, ghostY - currentPiece.y + 1)) {
+                ghostY++;
+            }
+            return ghostY;
+        }
+
+        function drawGrid() {
+            ctx.strokeStyle = '#121225';
+            ctx.lineWidth = 1;
+            for (let r = 0; r <= ROWS; r++) {
+                ctx.beginPath();
+                ctx.moveTo(0, r * BLOCK_SIZE);
+                ctx.lineTo(COLS * BLOCK_SIZE, r * BLOCK_SIZE);
+                ctx.stroke();
+            }
+            for (let c = 0; c <= COLS; c++) {
+                ctx.beginPath();
+                ctx.moveTo(c * BLOCK_SIZE, 0);
+                ctx.lineTo(c * BLOCK_SIZE, ROWS * BLOCK_SIZE);
+                ctx.stroke();
+            }
+        }
+
+        function drawBlock(cContext, x, y, color, shadow, size = BLOCK_SIZE, isGhost = false) {
+            cContext.save();
+            if (isGhost) {
+                cContext.strokeStyle = color;
+                cContext.lineWidth = 1;
+                cContext.strokeRect(x * size + 1.5, y * size + 1.5, size - 3, size - 3);
+                cContext.fillStyle = 'rgba(0, 0, 0, 0.4)';
+                cContext.fillRect(x * size + 1.5, y * size + 1.5, size - 3, size - 3);
+            } else {
+                cContext.shadowColor = shadow;
+                cContext.shadowBlur = 6;
+                cContext.fillStyle = color;
+                cContext.fillRect(x * size + 1, y * size + 1, size - 2, size - 2);
+
+                cContext.fillStyle = 'rgba(255,255,255,0.2)';
+                cContext.fillRect(x * size + 1, y * size + 1, size - 2, 2);
+                cContext.fillRect(x * size + 1, y * size + 1, 2, size - 2);
+            }
+            cContext.restore();
+        }
+
+        function drawBoard() {
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (board[r][c]) {
+                        drawBlock(ctx, c, r, board[r][c], 'rgba(0, 240, 240, 0.2)');
+                    }
+                }
+            }
+        }
+
+        function drawCurrentPiece() {
+            if (!currentPiece) return;
+            const matrix = currentPiece.matrix;
+
+            // 고스트 그리기
+            const ghostY = getGhostY();
+            for (let r = 0; r < matrix.length; r++) {
+                for (let c = 0; c < matrix[r].length; c++) {
+                    if (matrix[r][c]) {
+                        const drawY = ghostY + r;
+                        if (drawY >= 0) {
+                            drawBlock(ctx, currentPiece.x + c, drawY, currentPiece.color, currentPiece.shadow, BLOCK_SIZE, true);
+                        }
+                    }
+                }
+            }
+
+            // 실시간 피스 그리기
+            for (let r = 0; r < matrix.length; r++) {
+                for (let c = 0; c < matrix[r].length; c++) {
+                    if (matrix[r][c]) {
+                        const drawY = currentPiece.y + r;
+                        if (drawY >= 0) {
+                            drawBlock(ctx, currentPiece.x + c, drawY, currentPiece.color, currentPiece.shadow);
+                        }
+                    }
+                }
+            }
+        }
+
+        function drawSideCanvases() {
+            // NEXT 블록 그리기
+            nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
+            if (nextPiece) {
+                const matrix = nextPiece.matrix;
+                const size = 12; 
+                const offset = (nextCanvas.width - matrix[0].length * size) / 2;
+                const offsetY = (nextCanvas.height - matrix.length * size) / 2;
+                for (let r = 0; r < matrix.length; r++) {
+                    for (let c = 0; c < matrix[r].length; c++) {
+                        if (matrix[r][c]) {
+                            nextCtx.save();
+                            nextCtx.shadowColor = nextPiece.shadow;
+                            nextCtx.shadowBlur = 4;
+                            nextCtx.fillStyle = nextPiece.color;
+                            nextCtx.fillRect(offset + c * size + 1, offsetY + r * size + 1, size - 2, size - 2);
+                            nextCtx.restore();
+                        }
+                    }
+                }
+            }
+        }
+
+        function updateAndDrawParticles() {
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= p.decay;
+
+                if (p.alpha <= 0) {
+                    particles.splice(i, 1);
+                } else {
+                    ctx.save();
+                    ctx.globalAlpha = p.alpha;
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.restore();
+                }
+            }
+        }
+
+        function update(time = 0) {
+            const deltaTime = time - lastTime;
+            lastTime = time;
+
+            if (!paused && !gameOver && gameStarted) {
+                dropCounter += deltaTime;
+                if (dropCounter > getDropInterval(level)) {
+                    softDrop();
+                }
+            }
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawGrid();
+            drawBoard();
+            drawCurrentPiece();
+            drawSideCanvases();
+            updateAndDrawParticles();
+
+            requestAnimationFrame(update);
+        }
+
+        function startNewGame() {
+            board = Array.from({ length: ROWS }, () => Array(COLS).fill(0));
+            score = 0;
+            level = 1;
+            lines = 0;
+            gameOver = false;
+            paused = false;
+            gameStarted = true;
+            pieceBag = [];
+            particles = [];
+
+            scoreDisplay.textContent = '0';
+            levelDisplay.textContent = '1';
+            linesDisplay.textContent = '0';
+
+            spawnPiece();
+            
+            startOverlay.classList.add('hidden');
+            pauseOverlay.classList.add('hidden');
+            gameOverOverlay.classList.add('hidden');
+
+            pauseIcon.classList.remove('fa-play');
+            pauseIcon.classList.add('fa-pause');
+
+            lastTime = performance.now();
+        }
+
+        function togglePause() {
+            if (!gameStarted || gameOver) return;
+            paused = !paused;
+            if (paused) {
+                pauseOverlay.classList.remove('hidden');
+                pauseIcon.classList.remove('fa-pause');
+                pauseIcon.classList.add('fa-play');
+            } else {
+                pauseOverlay.classList.add('hidden');
+                pauseIcon.classList.remove('fa-play');
+                pauseIcon.classList.add('fa-pause');
+            }
+        }
+
+        // 키보드 조작 매핑
+        window.addEventListener('keydown', event => {
+            if (!gameStarted || gameOver) return;
+
+            switch (event.code) {
+                case 'ArrowLeft':
+                    movePiece(-1);
+                    event.preventDefault();
+                    break;
+                case 'ArrowRight':
+                    movePiece(1);
+                    event.preventDefault();
+                    break;
+                case 'ArrowDown':
+                    softDrop();
+                    event.preventDefault();
+                    break;
+                case 'ArrowUp':
+                    rotatePiece();
+                    event.preventDefault();
+                    break;
+                case 'Space':
+                    hardDrop();
+                    event.preventDefault();
+                    break;
+                case 'KeyP':
+                    togglePause();
+                    event.preventDefault();
+                    break;
+            }
+        });
+
+        // 소리 토글 버튼
+        soundToggle.addEventListener('click', () => {
+            sound.muted = !sound.muted;
+            if (sound.muted) {
+                soundIcon.classList.remove('fa-volume-up');
+                soundIcon.add('fa-volume-mute');
+                soundIcon.classList.add('text-red-500');
+            } else {
+                soundIcon.classList.remove('fa-volume-mute');
+                soundIcon.classList.remove('text-red-500');
+                soundIcon.classList.add('fa-volume-up');
+                sound.init(); 
+                sound.playMove();
+            }
+        });
+
+        // 이벤트 리스너 바인딩
+        pauseToggle.addEventListener('click', togglePause);
+        resumeBtn.addEventListener('click', togglePause);
+
+        headerRestartBtn.addEventListener('click', () => {
+            sound.init();
+            sound.playRotate(); 
+            startNewGame();
+        });
+
+        startBtn.addEventListener('click', () => {
+            sound.init();
+            startNewGame();
+        });
+        restartBtn.addEventListener('click', startNewGame);
+
+        // 모바일 터치 컨트롤러 이벤트 바인딩
+        document.getElementById('ctrlLeft').addEventListener('click', () => movePiece(-1));
+        document.getElementById('ctrlRight').addEventListener('click', () => movePiece(1));
+        document.getElementById('ctrlRotate').addEventListener('click', rotatePiece);
+        document.getElementById('ctrlSoft').addEventListener('click', softDrop);
+        document.getElementById('ctrlHard').addEventListener('click', hardDrop);
+
+        // 더블 터치 줌 기본동작 방지
+        document.addEventListener('dblclick', function(event) {
+            event.preventDefault();
+        }, { passive: false });
+
+        window.onload = function() {
+            requestAnimationFrame(update);
+        };
+    </script>
+</body>
+</html>
