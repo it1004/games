@@ -1,1 +1,1332 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>네온 버블 슈터 (Neon Bubble Shooter)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Noto+Sans+KR:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+            background-color: #0b0f19;
+        }
+        /* Custom Glowing and Shadows */
+        .neon-text-red {
+            text-shadow: 0 0 10px rgba(239, 68, 68, 0.8), 0 0 20px rgba(239, 68, 68, 0.4);
+        }
+        .neon-text-blue {
+            text-shadow: 0 0 10px rgba(59, 130, 246, 0.8), 0 0 20px rgba(59, 130, 246, 0.4);
+        }
+        .neon-box {
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.2), inset 0 0 15px rgba(59, 130, 246, 0.1);
+        }
+        .neon-btn:hover {
+            box-shadow: 0 0 20px rgba(168, 85, 247, 0.6);
+            transform: translateY(-2px);
+        }
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen flex items-center justify-center p-2 sm:p-4 overflow-x-hidden">
 
+    <div class="w-full max-w-5xl bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-800 shadow-2xl overflow-hidden neon-box flex flex-col lg:flex-row">
+        
+        <!-- Left Panel: Interactive Dashboard (Info, Stats, Difficulty) -->
+        <div class="w-full lg:w-80 p-6 flex flex-col justify-between border-b lg:border-b-0 lg:border-r border-slate-800 bg-slate-950/40">
+            <div>
+                <!-- Brand Title -->
+                <div class="text-center lg:text-left mb-6">
+                    <h1 class="text-3xl font-extrabold tracking-wider bg-gradient-to-r from-cyan-400 via-purple-500 to-pink-500 bg-clip-text text-transparent uppercase">
+                        NEON BUBBLE
+                    </h1>
+                    <p class="text-xs text-slate-400 mt-1 uppercase tracking-widest font-semibold">Space Shooter Arcade</p>
+                </div>
+
+                <!-- Live Score Dashboard -->
+                <div class="grid grid-cols-2 lg:grid-cols-1 gap-4 mb-6">
+                    <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 flex flex-col justify-center">
+                        <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">현재 점수</span>
+                        <span id="score-val" class="text-3xl font-bold text-cyan-400">0000</span>
+                    </div>
+                    <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 flex flex-col justify-center">
+                        <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold">최고 점수</span>
+                        <span id="high-score-val" class="text-3xl font-bold text-pink-500">0000</span>
+                    </div>
+                </div>
+
+                <!-- Game Stats / Next Bubble Preview -->
+                <div class="bg-slate-900/90 p-4 rounded-xl border border-slate-800 mb-6">
+                    <span class="text-xs text-slate-400 uppercase tracking-wider font-semibold block mb-3">다음 버블</span>
+                    <div class="flex items-center justify-between">
+                        <!-- Preview Circle Canvas -->
+                        <div class="flex items-center space-x-4">
+                            <canvas id="next-bubble-canvas" class="bg-slate-950 rounded-full border border-slate-800 shadow-inner" style="width: 60px; height: 60px;"></canvas>
+                            <div>
+                                <p id="next-bubble-color-text" class="text-sm font-semibold capitalize text-slate-300">-</p>
+                                <p class="text-xs text-slate-500">대기 중</p>
+                            </div>
+                        </div>
+                        <!-- Shot counter warning indicator -->
+                        <div class="text-right">
+                            <span class="text-[10px] text-slate-400 uppercase tracking-wider block">벽 하강까지</span>
+                            <div class="flex items-center justify-end space-x-1 mt-1" id="shift-dots">
+                                <!-- Dots will be dynamically generated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Difficulty Selectors & Game Controls -->
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-xs text-slate-400 uppercase tracking-wider font-semibold block mb-2">난이도 선택</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button id="diff-easy" onclick="setDifficulty('easy')" class="py-2 text-xs font-semibold rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 transition">쉬움</button>
+                            <button id="diff-medium" onclick="setDifficulty('medium')" class="py-2 text-xs font-semibold rounded-lg bg-purple-600 border border-purple-500 text-white shadow-lg shadow-purple-600/30 transition">보통</button>
+                            <button id="diff-hard" onclick="setDifficulty('hard')" class="py-2 text-xs font-semibold rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 transition">어려움</button>
+                        </div>
+                    </div>
+
+                    <!-- Mute & Pause Actions -->
+                    <div class="flex gap-2">
+                        <button id="sound-toggle" onclick="toggleMute()" class="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 transition flex items-center justify-center space-x-2 text-sm">
+                            <i id="sound-icon" class="fa-solid fa-volume-high text-cyan-400"></i>
+                            <span id="sound-text">소리 켬</span>
+                        </button>
+                        <button id="pause-btn" onclick="togglePause()" class="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 transition flex items-center justify-center space-x-2 text-sm disabled:opacity-50" disabled>
+                            <i id="pause-icon" class="fa-solid fa-pause text-yellow-400"></i>
+                            <span id="pause-text">일시정지</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Helpful tips inside the left menu -->
+            <div class="hidden lg:block mt-8 p-4 bg-slate-900/50 rounded-xl border border-slate-800/80 text-xs text-slate-400 space-y-2">
+                <p class="font-semibold text-slate-300"><i class="fa-solid fa-circle-info mr-1 text-cyan-400"></i> 조작 안내</p>
+                <p>• 마우스/터치로 방향을 조절하세요.</p>
+                <p>• 화면을 탭하거나 클릭하여 버블을 발사합니다.</p>
+                <p>• 벽에 튕겨서 각도를 꺾을 수 있습니다.</p>
+                <p>• 같은 색상 버블을 <span class="text-cyan-400 font-bold">3개 이상</span> 맞추면 터집니다!</p>
+            </div>
+        </div>
+
+        <!-- Right Panel: Game Board Canvas Container -->
+        <div class="flex-1 p-4 sm:p-6 flex flex-col items-center justify-center relative bg-slate-950/80">
+            <!-- Aspect Ratio adjusted to fit the new 480x700 resolution perfectly -->
+            <div class="relative w-full max-w-[440px] rounded-xl overflow-hidden border border-slate-800 bg-slate-950/90 shadow-2xl flex items-center justify-center" style="aspect-ratio: 480 / 700;">
+                
+                <!-- The Main Game Canvas -->
+                <canvas id="game-canvas" class="w-full h-full block cursor-crosshair"></canvas>
+
+                <!-- Overlay Screens (Start, Pause, Game Over) -->
+                <!-- START SCREEN -->
+                <div id="start-screen" class="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-6 text-center z-10">
+                    <div class="w-20 h-20 bg-gradient-to-tr from-cyan-500 to-purple-600 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-purple-500/30 animate-pulse">
+                        <i class="fa-solid fa-play text-white text-3xl ml-1"></i>
+                    </div>
+                    <h2 class="text-3xl font-extrabold text-white tracking-wide uppercase mb-2">NEON BUBBLE SHOOTER</h2>
+                    <p class="text-slate-400 text-sm max-w-sm mb-8 leading-relaxed">
+                        화려한 네온 버블들을 터뜨려 점수를 획득하세요! 끊임없이 내려오는 장벽을 피해 생존하는 아케이드 슈팅 퍼즐입니다.
+                    </p>
+                    <button onclick="startGame()" class="neon-btn w-full max-w-xs py-4 px-8 bg-gradient-to-r from-cyan-500 to-purple-600 text-white font-bold rounded-xl shadow-lg transition duration-300 uppercase tracking-widest text-sm">
+                        게임 시작하기
+                    </button>
+                </div>
+
+                <!-- GAME OVER SCREEN -->
+                <div id="gameover-screen" class="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-6 text-center z-10 hidden">
+                    <div class="w-20 h-20 bg-red-600/20 border border-red-500 rounded-full flex items-center justify-center mb-6 shadow-lg shadow-red-500/30">
+                        <i class="fa-solid fa-skull-crossbones text-red-500 text-3xl"></i>
+                    </div>
+                    <h2 class="text-3xl font-extrabold text-red-500 tracking-wide uppercase mb-2">GAME OVER</h2>
+                    <p class="text-slate-400 text-sm mb-6">아쉽게도 버블이 데드라인 한계를 넘었습니다!</p>
+                    
+                    <div class="bg-slate-900/95 py-4 px-8 rounded-xl border border-slate-800 w-full max-w-xs mb-8 flex justify-around">
+                        <div class="text-center">
+                            <span class="text-xs text-slate-500 uppercase font-semibold">최종 점수</span>
+                            <p id="final-score" class="text-2xl font-black text-cyan-400">0</p>
+                        </div>
+                        <div class="w-px bg-slate-800"></div>
+                        <div class="text-center">
+                            <span class="text-xs text-slate-500 uppercase font-semibold">최고 기록</span>
+                            <p id="final-high" class="text-2xl font-black text-pink-500">0</p>
+                        </div>
+                    </div>
+
+                    <button onclick="startGame()" class="neon-btn w-full max-w-xs py-4 px-8 bg-gradient-to-r from-red-500 to-purple-600 text-white font-bold rounded-xl shadow-lg transition duration-300 uppercase tracking-widest text-sm">
+                        다시 시도하기
+                    </button>
+                </div>
+
+                <!-- PAUSED OVERLAY -->
+                <div id="paused-screen" class="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center p-6 text-center z-10 hidden">
+                    <div class="w-16 h-16 bg-yellow-500/20 border border-yellow-500 rounded-full flex items-center justify-center mb-4">
+                        <i class="fa-solid fa-pause text-yellow-500 text-2xl"></i>
+                    </div>
+                    <h2 class="text-2xl font-extrabold text-yellow-400 tracking-wide uppercase mb-2">일시 정지</h2>
+                    <p class="text-slate-400 text-sm mb-6">게임이 중단되었습니다.</p>
+                    <button onclick="togglePause()" class="neon-btn w-full max-w-xs py-3 px-6 bg-yellow-500 hover:bg-yellow-600 text-slate-950 font-bold rounded-xl shadow-lg transition duration-300 uppercase tracking-wider text-sm">
+                        게임 계속하기
+                    </button>
+                </div>
+            </div>
+
+            <!-- Mobile instructions (only visible on small screens) -->
+            <div class="block lg:hidden mt-4 text-center text-xs text-slate-500 max-w-xs">
+                화면을 터치 및 슬라이드해서 발사 각도를 조절하고, 손가락을 떼거나 터치해서 발사하세요! 같은 색 3개 매칭 시 팝업!
+            </div>
+        </div>
+    </div>
+
+    <!-- SOUND SYSTEM & LOGIC SCRIPT -->
+    <script>
+        // High fidelity audio synthesizer so no external audio loader is needed.
+        class GameAudioSynth {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            playShoot() {
+                if (this.muted) return;
+                this.init();
+                
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.15);
+                
+                gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+                
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.15);
+            }
+
+            playPop(offsetPitch = 0) {
+                if (this.muted) return;
+                this.init();
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                osc.type = 'sine';
+                // Increase pitch dynamically for beautiful rapid-pop audio progression
+                const baseFreq = 500 + offsetPitch * 40;
+                osc.frequency.setValueAtTime(baseFreq, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(1200 + offsetPitch * 50, this.ctx.currentTime + 0.08);
+                
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+                
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.08);
+            }
+
+            playDrop() {
+                if (this.muted) return;
+                this.init();
+
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(80, this.ctx.currentTime + 0.3);
+                
+                gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.3);
+                
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.3);
+            }
+
+            playWin() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                this.playTone(523.25, now, 0.1); // C5
+                this.playTone(659.25, now + 0.1, 0.1); // E5
+                this.playTone(783.99, now + 0.2, 0.15); // G5
+                this.playTone(1046.50, now + 0.35, 0.3); // C6
+            }
+
+            playLose() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                this.playTone(293.66, now, 0.2); // D4
+                this.playTone(277.18, now + 0.2, 0.2); // C#4
+                this.playTone(261.63, now + 0.4, 0.4); // C4
+            }
+
+            playTone(freq, startTime, duration) {
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(freq, startTime);
+                gain.gain.setValueAtTime(0.15, startTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, startTime + duration);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start(startTime);
+                osc.stop(startTime + duration);
+            }
+        }
+
+        const audio = new GameAudioSynth();
+
+        // Game Board dimensions & Grid standards
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+
+        // Target virtual dimensions - TALLER height (700 instead of 600) to ensure wide clearance
+        const VWIDTH = 480;
+        const VHEIGHT = 700;
+
+        // HIGH DPI (Retina) Canvas Configuration for extreme sharpness
+        const dpr = window.devicePixelRatio || 1;
+        canvas.width = VWIDTH * dpr;
+        canvas.height = VHEIGHT * dpr;
+        ctx.scale(dpr, dpr);
+
+        // Custom responsive sizes - Slightly smaller BUBBLE_RADIUS to look extremely precise and sleek
+        let BUBBLE_RADIUS = 22;
+        let ROW_HEIGHT = BUBBLE_RADIUS * Math.sqrt(3);
+        const MAX_COLS = 11; // Slightly higher resolution widthwise to fit standard grid
+        const MAX_ROWS = 16; // Extra space dynamically
+
+        // Difficulty preset configurations
+        const DIFFICULTY_PRESETS = {
+            easy: { colors: 4, shotsBeforeShift: 8 },
+            medium: { colors: 5, shotsBeforeShift: 6 },
+            hard: { colors: 6, shotsBeforeShift: 4 }
+        };
+
+        let currentDifficulty = 'medium';
+        let colorsInUse = 5;
+        let totalShotsLimit = 6;
+        let shotCounter = 6;
+
+        // Visual Colors Config - Optimized gradient ranges for vivid 3D glass shine
+        const COLOR_MAP = {
+            'red': { base: '#FF2A5F', dark: '#800020', glow: 'rgba(255,42,95,0.4)', text: '체리 레드' },
+            'blue': { base: '#00D2FF', dark: '#004A8F', glow: 'rgba(0,210,255,0.4)', text: '일렉트릭 블루' },
+            'green': { base: '#10F070', dark: '#006020', glow: 'rgba(16,240,112,0.4)', text: '애시드 그린' },
+            'yellow': { base: '#FFEA00', dark: '#8F7A00', glow: 'rgba(255,234,0,0.4)', text: '네온 옐로우' },
+            'purple': { base: '#D426FF', dark: '#5E008F', glow: 'rgba(212,38,255,0.4)', text: '싸이키델릭 퍼플' },
+            'orange': { base: '#FF8800', dark: '#8F3F00', glow: 'rgba(255,136,0,0.4)', text: '플레임 오렌지' }
+        };
+        const COLOR_KEYS = Object.keys(COLOR_MAP);
+
+        // Core Game States
+        let score = 0;
+        let highScore = parseInt(localStorage.getItem('neon_bubble_highscore') || '0');
+        let gameState = 'START'; // START, PLAYING, PAUSED, GAMEOVER
+        let grid = []; // 2D grid array representing the board bubbles
+        let shootingBubble = null;
+        let nextBubble = null;
+        let launcherAngle = -Math.PI / 2; // Default point straight up
+        let mouseX = VWIDTH / 2;
+        let mouseY = VHEIGHT - 40;
+        let isAiming = false;
+
+        // Dynamic entities arrays for visuals
+        let particles = [];
+        let fallingBubbles = [];
+
+        // Preview canvas configurations
+        const prevCanvas = document.getElementById('next-bubble-canvas');
+        const prevCtx = prevCanvas.getContext('2d');
+
+        // Apply DPI scaling to preview canvas too
+        const prevDpr = window.devicePixelRatio || 1;
+        prevCanvas.width = 60 * prevDpr;
+        prevCanvas.height = 60 * prevDpr;
+        prevCtx.scale(prevDpr, prevDpr);
+
+        // Initialize an empty grid structure at load time to prevent undefined pointer errors
+        function preInitEmptyGrid() {
+            grid = [];
+            for (let r = 0; r < MAX_ROWS; r++) {
+                grid[r] = [];
+                for (let c = 0; c < MAX_COLS; c++) {
+                    grid[r][c] = null;
+                }
+            }
+        }
+
+        // Set Difficulty Setup Update
+        function setDifficulty(diff) {
+            if (gameState === 'PLAYING') return; // Cannot modify mid-game
+            
+            currentDifficulty = diff;
+            const config = DIFFICULTY_PRESETS[diff];
+            colorsInUse = config.colors;
+            totalShotsLimit = config.shotsBeforeShift;
+            shotCounter = totalShotsLimit;
+
+            // Highlight chosen buttons UI
+            ['easy', 'medium', 'hard'].forEach(d => {
+                const btn = document.getElementById(`diff-${d}`);
+                if (d === diff) {
+                    btn.className = "py-2 text-xs font-semibold rounded-lg bg-purple-600 border border-purple-500 text-white shadow-lg shadow-purple-600/30 transition";
+                } else {
+                    btn.className = "py-2 text-xs font-semibold rounded-lg bg-slate-800 border border-slate-700 text-slate-300 hover:bg-slate-700 transition";
+                }
+            });
+
+            updateShiftDots();
+        }
+
+        // Setup visual warning dots for shots left until roof shift
+        function updateShiftDots() {
+            const dotsContainer = document.getElementById('shift-dots');
+            if (!dotsContainer) return;
+            dotsContainer.innerHTML = '';
+            for (let i = 0; i < totalShotsLimit; i++) {
+                const dot = document.createElement('div');
+                dot.className = `w-2 h-2 rounded-full transition-all duration-300 ${
+                    i < shotCounter ? 'bg-cyan-400 shadow-sm shadow-cyan-400/50' : 'bg-slate-800'
+                }`;
+                dotsContainer.appendChild(dot);
+            }
+        }
+
+        // Sync visual text stats
+        function updateUI() {
+            document.getElementById('score-val').textContent = String(score).padStart(4, '0');
+            document.getElementById('high-score-val').textContent = String(highScore).padStart(4, '0');
+            
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('neon_bubble_highscore', highScore);
+            }
+            updateShiftDots();
+        }
+
+        // Retrieve Hex Bubble Position Coordinates
+        function getBubbleCoords(row, col) {
+            const isOdd = row % 2 === 1;
+            const xOffset = isOdd ? BUBBLE_RADIUS : 0;
+            const startX = BUBBLE_RADIUS + 3; // Shift slightly to center
+            const x = startX + col * (BUBBLE_RADIUS * 2) + xOffset;
+            const y = BUBBLE_RADIUS + 5 + row * ROW_HEIGHT;
+            return { x, y };
+        }
+
+        // Generate a fresh game grid setup
+        function initGrid() {
+            grid = [];
+            // Create a 2D grid structure
+            for (let r = 0; r < MAX_ROWS; r++) {
+                grid[r] = [];
+                for (let c = 0; c < MAX_COLS; c++) {
+                    // Start screen with random colors on top 4 rows (reduced from 5 to increase distance!)
+                    if (r < 4) {
+                        const isOdd = r % 2 === 1;
+                        if (isOdd && c === MAX_COLS - 1) {
+                            grid[r][c] = null; // Odd rows contain N-1 bubbles visually
+                        } else {
+                            grid[r][c] = {
+                                color: getRandomColor(),
+                                popping: false,
+                                scale: 1
+                            };
+                        }
+                    } else {
+                        grid[r][c] = null;
+                    }
+                }
+            }
+        }
+
+        function getRandomColor() {
+            const index = Math.floor(Math.random() * colorsInUse);
+            return COLOR_KEYS[index];
+        }
+
+        // Launcher bubble setup
+        function prepareNextBubbles() {
+            if (!nextBubble) {
+                nextBubble = {
+                    color: getRandomColor(),
+                    x: VWIDTH / 2,
+                    y: VHEIGHT - 40,
+                    radius: BUBBLE_RADIUS
+                };
+            }
+
+            shootingBubble = {
+                color: nextBubble.color,
+                x: VWIDTH / 2,
+                y: VHEIGHT - 40,
+                radius: BUBBLE_RADIUS,
+                vx: 0,
+                vy: 0,
+                isMoving: false
+            };
+
+            // Prepare next random bubble queue
+            nextBubble = {
+                color: getRandomColor(),
+                x: VWIDTH / 2,
+                y: VHEIGHT - 40,
+                radius: BUBBLE_RADIUS
+            };
+
+            drawNextBubblePreview();
+        }
+
+        // Render preview canvas inside side panels
+        function drawNextBubblePreview() {
+            prevCtx.clearRect(0, 0, 60, 60);
+            if (!nextBubble) return;
+
+            const px = 30;
+            const py = 30;
+            const r = 18;
+
+            // Draw shiny neon bubble on secondary canvas
+            drawGlossyBubble(prevCtx, px, py, r, nextBubble.color);
+
+            // Set color text label
+            const label = document.getElementById('next-bubble-color-text');
+            if (label) {
+                label.textContent = COLOR_MAP[nextBubble.color].text;
+                label.style.color = COLOR_MAP[nextBubble.color].base;
+            }
+        }
+
+        // Utility for realistic looking glowing bubbles (High-DPI optimized glossy texture)
+        function drawGlossyBubble(ctx, x, y, r, colorKey) {
+            const colors = COLOR_MAP[colorKey];
+            if (!colors) return;
+
+            ctx.save();
+            
+            // Outer high-fidelity neon shadow
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = colors.base;
+
+            // Base Glow Layer for absolute brightness
+            ctx.fillStyle = colors.dark;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Main Glass/Glossy Sphere Fill Gradient
+            const grad = ctx.createRadialGradient(
+                x - r / 3, y - r / 3, r / 12,
+                x, y, r
+            );
+            grad.addColorStop(0, '#ffffff');
+            grad.addColorStop(0.18, '#ffffff');
+            grad.addColorStop(0.35, colors.base);
+            grad.addColorStop(0.85, colors.dark);
+            grad.addColorStop(1, '#000000');
+
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Clear glow settings for crisp overlay details
+            ctx.shadowBlur = 0;
+
+            // Core Highlighting Inner Crescent (gives a massive luxury look)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.beginPath();
+            ctx.arc(x - r/3.2, y - r/3.2, r/3.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Bottom delicate light bounce crescent
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.25)';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(x, y, r - 2, 0.25 * Math.PI, 0.75 * Math.PI);
+            ctx.stroke();
+
+            // Extremely crisp ultra-fine outer white border
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            ctx.arc(x, y, r, 0, Math.PI * 2);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        // Find trajectory path including bouncy sidewalls
+        function getAimTrajectory(startX, startY, angle) {
+            const points = [{ x: startX, y: startY }];
+            let curX = startX;
+            let curY = startY;
+            let dx = Math.cos(angle);
+            let dy = Math.sin(angle);
+            
+            const step = 8;
+            const maxTrajectory = 1500;
+            let currentLen = 0;
+
+            while (currentLen < maxTrajectory) {
+                curX += dx * step;
+                curY += dy * step;
+                currentLen += step;
+
+                // Wall Collision physics (bounce left and right boundaries)
+                if (curX <= BUBBLE_RADIUS) {
+                    curX = BUBBLE_RADIUS;
+                    dx = -dx;
+                    points.push({ x: curX, y: curY });
+                } else if (curX >= VWIDTH - BUBBLE_RADIUS) {
+                    curX = VWIDTH - BUBBLE_RADIUS;
+                    dx = -dx;
+                    points.push({ x: curX, y: curY });
+                }
+
+                // Check collisions or reach top ceiling boundary
+                if (curY <= BUBBLE_RADIUS) {
+                    points.push({ x: curX, y: curY });
+                    break;
+                }
+
+                if (checkGridOverlap(curX, curY)) {
+                    points.push({ x: curX, y: curY });
+                    break;
+                }
+            }
+            return points;
+        }
+
+        // Check whether virtual shooter coordinate collides with an active board bubble
+        function checkGridOverlap(x, y) {
+            const overlapDistSq = Math.pow(BUBBLE_RADIUS * 2 - 3, 2); // Overlap offset threshold
+            for (let r = 0; r < MAX_ROWS; r++) {
+                if (!grid[r]) continue;
+                for (let c = 0; c < MAX_COLS; c++) {
+                    const b = grid[r][c];
+                    if (b) {
+                        const coords = getBubbleCoords(r, c);
+                        const distSq = Math.pow(x - coords.x, 2) + Math.pow(y - coords.y, 2);
+                        if (distSq < overlapDistSq) {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        // Trigger exploding debris when matching popping groups
+        function createPopExplosion(x, y, colorKey) {
+            const color = COLOR_MAP[colorKey].base;
+            const count = 12 + Math.floor(Math.random() * 8);
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 2 + Math.random() * 5;
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    radius: 1.5 + Math.random() * 3,
+                    alpha: 1,
+                    decay: 0.02 + Math.random() * 0.03,
+                    color: color
+                });
+            }
+        }
+
+        // Lock shooting bubble perfectly into hex grids on collision
+        function snapToGrid(bubble) {
+            let bestRow = -1;
+            let bestCol = -1;
+            let minDist = Infinity;
+
+            for (let r = 0; r < MAX_ROWS; r++) {
+                const isOdd = r % 2 === 1;
+                const colsLimit = isOdd ? MAX_COLS - 1 : MAX_COLS;
+
+                for (let c = 0; c < colsLimit; c++) {
+                    // Spot must be fully empty
+                    if (grid[r][c] === null) {
+                        const coords = getBubbleCoords(r, c);
+                        const dist = Math.hypot(bubble.x - coords.x, bubble.y - coords.y);
+                        if (dist < minDist) {
+                            minDist = dist;
+                            bestRow = r;
+                            bestCol = c;
+                        }
+                    }
+                }
+            }
+
+            if (bestRow !== -1 && bestCol !== -1) {
+                grid[bestRow][bestCol] = {
+                    color: bubble.color,
+                    popping: false,
+                    scale: 1
+                };
+
+                // Perform Match-3 checks immediately from landed snap spot
+                handleMatches(bestRow, bestCol);
+            }
+        }
+
+        // Get valid surrounding hex coordinates of bubble cells
+        function getNeighbors(row, col) {
+            const neighbors = [];
+            const isOdd = row % 2 === 1;
+
+            // Common left and right horizontal adjacent cells
+            const directions = [
+                { r: 0, c: -1 },
+                { r: 0, c: 1 }
+            ];
+
+            // Diagonal relative coordinate mappings change per odd/even rows
+            if (isOdd) {
+                directions.push(
+                    { r: -1, c: 0 }, { r: -1, c: 1 },
+                    { r: 1, c: 0 }, { r: 1, c: 1 }
+                );
+            } else {
+                directions.push(
+                    { r: -1, c: -1 }, { r: -1, c: 0 },
+                    { r: 1, c: -1 }, { r: 1, c: 0 }
+                );
+            }
+
+            directions.forEach(dir => {
+                const nr = row + dir.r;
+                const nc = col + dir.c;
+                if (nr >= 0 && nr < MAX_ROWS) {
+                    const rowCols = (nr % 2 === 1) ? MAX_COLS - 1 : MAX_COLS;
+                    if (nc >= 0 && nc < rowCols) {
+                        neighbors.push({ r: nr, c: nc });
+                    }
+                }
+            });
+
+            return neighbors;
+        }
+
+        // Traverse and match all connected color clusters of size 3+
+        function handleMatches(startRow, startCol) {
+            const targetColor = grid[startRow][startCol].color;
+            const visited = Array.from({ length: MAX_ROWS }, () => Array(MAX_COLS).fill(false));
+            const queue = [{ r: startRow, c: startCol }];
+            const matches = [];
+
+            visited[startRow][startCol] = true;
+
+            while (queue.length > 0) {
+                const current = queue.shift();
+                matches.push(current);
+
+                const neighbors = getNeighbors(current.r, current.c);
+                neighbors.forEach(n => {
+                    if (!visited[n.r][n.c] && grid[n.r][n.c] && grid[n.r][n.c].color === targetColor) {
+                        visited[n.r][n.c] = true;
+                        queue.push(n);
+                    }
+                });
+            }
+
+            // Match Pop threshold satisfied (3 or more aligned of equal key)
+            if (matches.length >= 3) {
+                let popStreak = 0;
+                matches.forEach(m => {
+                    const b = grid[m.r][m.c];
+                    const coords = getBubbleCoords(m.r, m.c);
+                    createPopExplosion(coords.x, coords.y, b.color);
+                    grid[m.r][m.c] = null;
+                    
+                    // Increment scoring systems
+                    score += 10;
+                    
+                    // Pitch climbs on streak
+                    setTimeout(() => {
+                        audio.playPop(popStreak);
+                        popStreak++;
+                    }, popStreak * 45);
+                });
+
+                // Clear unanchored floating bubbles
+                dropFloatingBubbles();
+            } else {
+                // No match, register shot usage and decrements
+                shotCounter--;
+                if (shotCounter <= 0) {
+                    shiftGridDown();
+                }
+            }
+
+            updateUI();
+            checkGameOver();
+            prepareNextBubbles();
+        }
+
+        // Drop elements completely disconnected from roof ceiling
+        function dropFloatingBubbles() {
+            const visited = Array.from({ length: MAX_ROWS }, () => Array(MAX_COLS).fill(false));
+            const queue = [];
+
+            // Add all valid root ceiling row 0 elements
+            for (let c = 0; c < MAX_COLS; c++) {
+                if (grid[0][c]) {
+                    visited[0][c] = true;
+                    queue.push({ r: 0, c: c });
+                }
+            }
+
+            // Breadth First Search down all paths originating from roof
+            while (queue.length > 0) {
+                const current = queue.shift();
+                const neighbors = getNeighbors(current.r, current.c);
+                neighbors.forEach(n => {
+                    if (!visited[n.r][n.c] && grid[n.r][n.c]) {
+                        visited[n.r][n.c] = true;
+                        queue.push(n);
+                    }
+                });
+            }
+
+            // Find isolated elements that missed matching visitations
+            let didDrop = false;
+            for (let r = 0; r < MAX_ROWS; r++) {
+                for (let c = 0; c < MAX_COLS; c++) {
+                    if (grid[r][c] && !visited[r][c]) {
+                        const coords = getBubbleCoords(r, c);
+                        // Add elements to falling physics list rather than clean deletion
+                        fallingBubbles.push({
+                            color: grid[r][c].color,
+                            x: coords.x,
+                            y: coords.y,
+                            vx: (Math.random() - 0.5) * 4,
+                            vy: 1 + Math.random() * 4,
+                            gravity: 0.25,
+                            rotation: Math.random() * Math.PI,
+                            rotSpeed: (Math.random() - 0.5) * 0.1,
+                            radius: BUBBLE_RADIUS
+                        });
+                        
+                        grid[r][c] = null;
+                        score += 15; // Bonus for dropped floats
+                        didDrop = true;
+                    }
+                }
+            }
+
+            if (didDrop) {
+                audio.playDrop();
+            }
+        }
+
+        // Move the ceiling grid down by one whole unit dynamically
+        function shiftGridDown() {
+            // Check bottom overflow first
+            for (let c = 0; c < MAX_COLS; c++) {
+                if (grid[MAX_ROWS - 1][c] !== null) {
+                    triggerGameOver();
+                    return;
+                }
+            }
+
+            // Shift grid array positions downwards
+            for (let r = MAX_ROWS - 1; r > 0; r--) {
+                grid[r] = [...grid[r - 1]];
+            }
+
+            // Fill a brand-new random ceiling row at Index 0
+            grid[0] = [];
+            for (let c = 0; c < MAX_COLS; c++) {
+                grid[0][c] = {
+                    color: getRandomColor(),
+                    popping: false,
+                    scale: 1
+                };
+            }
+
+            // Odd columns boundary normalization
+            if (MAX_COLS % 2 === 1) {
+                grid[0][MAX_COLS - 1] = null;
+            }
+
+            // Reset counter limitations
+            shotCounter = totalShotsLimit;
+            audio.playDrop();
+        }
+
+        function checkGameOver() {
+            // If any bubble occupies safety threshold row limit, game ends
+            const gameOverRowLimit = MAX_ROWS - 3; // Give a tiny bit of extra safety buffer
+            for (let r = gameOverRowLimit; r < MAX_ROWS; r++) {
+                for (let c = 0; c < MAX_COLS; c++) {
+                    if (grid[r][c]) {
+                        triggerGameOver();
+                        return;
+                    }
+                }
+            }
+        }
+
+        function triggerGameOver() {
+            gameState = 'GAMEOVER';
+            audio.playLose();
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('final-high').textContent = highScore;
+            document.getElementById('gameover-screen').classList.remove('hidden');
+            document.getElementById('pause-btn').disabled = true;
+        }
+
+        // Shoot bubble towards correct aiming angles
+        function fireBubble() {
+            if (gameState !== 'PLAYING' || shootingBubble.isMoving) return;
+
+            const angle = launcherAngle;
+            const shootSpeed = 13; // Symmetrically faster on larger fields
+
+            shootingBubble.vx = Math.cos(angle) * shootSpeed;
+            shootingBubble.vy = Math.sin(angle) * shootSpeed;
+            shootingBubble.isMoving = true;
+
+            audio.playShoot();
+        }
+
+        // Active shot and particle update routines
+        function updateGame() {
+            if (gameState !== 'PLAYING') return;
+
+            // Handle Shooter physical movements
+            if (shootingBubble && shootingBubble.isMoving) {
+                shootingBubble.x += shootingBubble.vx;
+                shootingBubble.y += shootingBubble.vy;
+
+                // Bounce off left/right side rails
+                if (shootingBubble.x <= BUBBLE_RADIUS) {
+                    shootingBubble.x = BUBBLE_RADIUS;
+                    shootingBubble.vx = -shootingBubble.vx;
+                } else if (shootingBubble.x >= VWIDTH - BUBBLE_RADIUS) {
+                    shootingBubble.x = VWIDTH - BUBBLE_RADIUS;
+                    shootingBubble.vx = -shootingBubble.vx;
+                }
+
+                // Check ceiling boundary snap
+                if (shootingBubble.y <= BUBBLE_RADIUS) {
+                    shootingBubble.isMoving = false;
+                    snapToGrid(shootingBubble);
+                } else {
+                    // Check intersections with other stable bubbles
+                    const overlapDistSq = Math.pow(BUBBLE_RADIUS * 2 - 4, 2);
+                    let collided = false;
+
+                    for (let r = 0; r < MAX_ROWS; r++) {
+                        if (!grid[r]) continue;
+                        for (let c = 0; c < MAX_COLS; c++) {
+                            if (grid[r][c]) {
+                                const coords = getBubbleCoords(r, c);
+                                const distSq = Math.pow(shootingBubble.x - coords.x, 2) + Math.pow(shootingBubble.y - coords.y, 2);
+                                if (distSq < overlapDistSq) {
+                                    collided = true;
+                                    break;
+                                }
+                            }
+                        }
+                        if (collided) break;
+                    }
+
+                    if (collided) {
+                        shootingBubble.isMoving = false;
+                        snapToGrid(shootingBubble);
+                    }
+                }
+            }
+
+            // Update Particle systems
+            particles.forEach((p, idx) => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= p.decay;
+                if (p.alpha <= 0) {
+                    particles.splice(idx, 1);
+                }
+            });
+
+            // Update Falling elements physics
+            fallingBubbles.forEach((f, idx) => {
+                f.x += f.vx;
+                f.y += f.vy;
+                f.vy += f.gravity;
+                f.rotation += f.rotSpeed;
+                // Cleanup out of bounds
+                if (f.y - f.radius > VHEIGHT) {
+                    fallingBubbles.splice(idx, 1);
+                }
+            });
+        }
+
+        // Master drawing loops
+        function drawGame() {
+            ctx.clearRect(0, 0, VWIDTH, VHEIGHT);
+
+            // Draw clean grid-based star sky space background
+            drawBackground();
+
+            // Draw Danger/Dead Line warning
+            drawDeadLine();
+
+            // Draw Active Grid Bubbles
+            for (let r = 0; r < MAX_ROWS; r++) {
+                if (!grid[r]) continue;
+                for (let c = 0; c < MAX_COLS; c++) {
+                    const b = grid[r][c];
+                    if (b) {
+                        const coords = getBubbleCoords(r, c);
+                        drawGlossyBubble(ctx, coords.x, coords.y, BUBBLE_RADIUS, b.color);
+                    }
+                }
+            }
+
+            // Draw Aiming trajectory laser if aiming active
+            if (isAiming && !shootingBubble.isMoving && gameState === 'PLAYING') {
+                drawTrajectory();
+            }
+
+            // Draw Current Shooter Launcher Element
+            drawLauncher();
+
+            // Draw Shottee Bubble
+            if (shootingBubble && shootingBubble.isMoving) {
+                drawGlossyBubble(ctx, shootingBubble.x, shootingBubble.y, BUBBLE_RADIUS, shootingBubble.color);
+            } else if (shootingBubble && !shootingBubble.isMoving && gameState === 'PLAYING') {
+                // Keep loaded at center launcher (moved slightly down to accommodate VHEIGHT=700)
+                drawGlossyBubble(ctx, VWIDTH / 2, VHEIGHT - 40, BUBBLE_RADIUS, shootingBubble.color);
+            }
+
+            // Draw Falling disconnected items
+            fallingBubbles.forEach(f => {
+                ctx.save();
+                ctx.translate(f.x, f.y);
+                ctx.rotate(f.rotation);
+                drawGlossyBubble(ctx, 0, 0, f.radius, f.color);
+                ctx.restore();
+            });
+
+            // Draw Sparks Particles
+            particles.forEach(p => {
+                ctx.save();
+                ctx.globalAlpha = p.alpha;
+                ctx.fillStyle = p.color;
+                ctx.shadowBlur = 6;
+                ctx.shadowColor = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+        }
+
+        // Space/Cyber Star Field Background drawing
+        function drawBackground() {
+            const deepGrad = ctx.createRadialGradient(VWIDTH/2, VHEIGHT/2, 50, VWIDTH/2, VHEIGHT/2, VWIDTH);
+            deepGrad.addColorStop(0, '#0c1524');
+            deepGrad.addColorStop(1, '#020612');
+            ctx.fillStyle = deepGrad;
+            ctx.fillRect(0, 0, VWIDTH, VHEIGHT);
+
+            // Draw nice faint decorative laser horizontal gridlines
+            ctx.strokeStyle = 'rgba(51, 65, 85, 0.12)';
+            ctx.lineWidth = 1;
+            for (let y = 0; y < VHEIGHT; y += 40) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(VWIDTH, y);
+                ctx.stroke();
+            }
+        }
+
+        // Draw neon red threat line before crash (adjusted upwards matching 16 row matrix)
+        function drawDeadLine() {
+            const dangerY = (MAX_ROWS - 3) * ROW_HEIGHT + BUBBLE_RADIUS + 5;
+            
+            ctx.save();
+            ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
+            ctx.lineWidth = 2.5;
+            ctx.setLineDash([8, 6]);
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = '#ef4444';
+            ctx.beginPath();
+            ctx.moveTo(0, dangerY);
+            ctx.lineTo(VWIDTH, dangerY);
+            ctx.stroke();
+            
+            // Text warning
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.8)';
+            ctx.font = 'bold 9px Inter';
+            ctx.fillText('WARNING LIMIT', 15, dangerY - 8);
+            ctx.restore();
+        }
+
+        // Draw Launcher device at screen base
+        function drawLauncher() {
+            const lx = VWIDTH / 2;
+            const ly = VHEIGHT - 40;
+
+            ctx.save();
+            // Outer Launcher decorative ring
+            ctx.strokeStyle = '#38bdf8';
+            ctx.lineWidth = 3;
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = '#38bdf8';
+            ctx.beginPath();
+            ctx.arc(lx, ly, 42, Math.PI, Math.PI * 2);
+            ctx.stroke();
+
+            // Draw launcher tube pointer direction
+            ctx.translate(lx, ly);
+            ctx.rotate(launcherAngle);
+
+            // Glowing neon canon pointer line
+            ctx.strokeStyle = '#a855f7';
+            ctx.lineWidth = 6;
+            ctx.shadowColor = '#a855f7';
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.moveTo(0, 0);
+            ctx.lineTo(55, 0);
+            ctx.stroke();
+
+            ctx.restore();
+        }
+
+        // Draw predictive reflective paths
+        function drawTrajectory() {
+            const path = getAimTrajectory(VWIDTH / 2, VHEIGHT - 40, launcherAngle);
+            if (path.length < 2) return;
+
+            ctx.save();
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.65)'; // cyan aiming
+            ctx.lineWidth = 2.5;
+            ctx.setLineDash([4, 6]);
+            ctx.shadowBlur = 8;
+            ctx.shadowColor = '#38bdf8';
+
+            ctx.beginPath();
+            ctx.moveTo(path[0].x, path[0].y);
+            for (let i = 1; i < path.length; i++) {
+                ctx.lineTo(path[i].x, path[i].y);
+            }
+            ctx.stroke();
+
+            // Draw visual endpoint spot
+            const endPoint = path[path.length - 1];
+            ctx.fillStyle = '#38bdf8';
+            ctx.beginPath();
+            ctx.arc(endPoint.x, endPoint.y, 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.restore();
+        }
+
+        // Aim Calculator from screen mouse/finger coordinate positions
+        function updateAim(x, y) {
+            const lx = VWIDTH / 2;
+            const ly = VHEIGHT - 40;
+            
+            // Determine accurate angles from canvas base
+            let angle = Math.atan2(y - ly, x - lx);
+
+            // Clamp constraints to prevent launcher aiming backwards
+            const minAngle = -Math.PI + 0.15; // Pointing near Left horizontal limit
+            const maxAngle = -0.15; // Pointing near Right horizontal limit
+            
+            if (angle > 0 && angle < Math.PI / 2) {
+                angle = maxAngle;
+            } else if (angle > Math.PI / 2 && angle < Math.PI) {
+                angle = minAngle;
+            } else {
+                angle = Math.max(minAngle, Math.min(maxAngle, angle));
+            }
+
+            launcherAngle = angle;
+        }
+
+        // Retrieve proper mouse click/hover coordinate within scales
+        function getCanvasPosition(e) {
+            const rect = canvas.getBoundingClientRect();
+            // Scale correctly under high density responsiveness
+            const x = (e.clientX - rect.left) / (rect.width) * VWIDTH;
+            const y = (e.clientY - rect.top) / (rect.height) * VHEIGHT;
+            return { x, y };
+        }
+
+        // Handle Touch interactions properly on smaller viewports
+        function getTouchPosition(e) {
+            if (e.touches.length === 0) return null;
+            const rect = canvas.getBoundingClientRect();
+            const x = (e.touches[0].clientX - rect.left) / (rect.width) * VWIDTH;
+            const y = (e.touches[0].clientY - rect.top) / (rect.height) * VHEIGHT;
+            return { x, y };
+        }
+
+        // Bind interactive event listeners
+        canvas.addEventListener('mousemove', (e) => {
+            const pos = getCanvasPosition(e);
+            mouseX = pos.x;
+            mouseY = pos.y;
+            isAiming = true;
+            updateAim(mouseX, mouseY);
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            isAiming = false;
+        });
+
+        canvas.addEventListener('mousedown', (e) => {
+            if (gameState === 'PLAYING') {
+                const pos = getCanvasPosition(e);
+                updateAim(pos.x, pos.y);
+                fireBubble();
+            }
+        });
+
+        // Touch triggers for smartphone setups
+        canvas.addEventListener('touchstart', (e) => {
+            if (gameState === 'PLAYING') {
+                e.preventDefault();
+                const pos = getTouchPosition(e);
+                if (pos) {
+                    isAiming = true;
+                    updateAim(pos.x, pos.y);
+                }
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            if (gameState === 'PLAYING') {
+                e.preventDefault();
+                const pos = getTouchPosition(e);
+                if (pos) {
+                    isAiming = true;
+                    updateAim(pos.x, pos.y);
+                }
+            }
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', (e) => {
+            if (gameState === 'PLAYING') {
+                e.preventDefault();
+                isAiming = false;
+                fireBubble();
+            }
+        }, { passive: false });
+
+        // Game Engine Loops
+        function gameLoop() {
+            updateGame();
+            drawGame();
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Initiate start
+        function startGame() {
+            // Unmute synthesizer via user action trigger validation
+            audio.init();
+
+            score = 0;
+            shotCounter = totalShotsLimit;
+            particles = [];
+            fallingBubbles = [];
+            
+            initGrid();
+            prepareNextBubbles();
+            updateUI();
+
+            // Toggle HTML visual overlay states
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('gameover-screen').classList.add('hidden');
+            document.getElementById('paused-screen').classList.add('hidden');
+            document.getElementById('pause-btn').disabled = false;
+
+            gameState = 'PLAYING';
+            audio.playWin(); // Welcoming chimes
+        }
+
+        function togglePause() {
+            if (gameState === 'PLAYING') {
+                gameState = 'PAUSED';
+                document.getElementById('paused-screen').classList.remove('hidden');
+                document.getElementById('pause-text').textContent = "일시중지 중";
+                document.getElementById('pause-icon').className = "fa-solid fa-play text-green-400";
+            } else if (gameState === 'PAUSED') {
+                gameState = 'PLAYING';
+                document.getElementById('paused-screen').classList.add('hidden');
+                document.getElementById('pause-text').textContent = "일시정지";
+                document.getElementById('pause-icon').className = "fa-solid fa-pause text-yellow-400";
+                audio.init();
+            }
+        }
+
+        function toggleMute() {
+            audio.muted = !audio.muted;
+            const icon = document.getElementById('sound-icon');
+            const text = document.getElementById('sound-text');
+            if (audio.muted) {
+                icon.className = "fa-solid fa-volume-xmark text-red-500";
+                text.textContent = "소리 끔";
+            } else {
+                audio.init();
+                icon.className = "fa-solid fa-volume-high text-cyan-400";
+                text.textContent = "소리 켬";
+            }
+        }
+
+        // Kick off engine loops immediately upon DOM loads
+        window.onload = function() {
+            preInitEmptyGrid(); // Ensure safe null-grid initialization instantly
+            setDifficulty('medium');
+            updateUI();
+            requestAnimationFrame(gameLoop);
+        };
+    </script>
+</body>
+</html>
