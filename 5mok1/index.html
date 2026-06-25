@@ -1,1 +1,1299 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Premium Gomoku - 명품 오목</title>
+    <!-- Tailwind CSS for sleek modern UI styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Font "Inter" & "Noto Sans KR" -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons for UI elements -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+        }
+        /* Custom scrollbar for game logs */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(30, 41, 59, 0.5);
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.3);
+            border-radius: 999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.6);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden antialiased selection:bg-amber-500/30 selection:text-amber-200">
 
+    <!-- Navigation / Header Bar -->
+    <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-40 px-4 py-3 sm:px-6">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-9 h-9 bg-gradient-to-tr from-amber-500 to-amber-600 rounded-xl flex items-center justify-center shadow-lg shadow-amber-500/20">
+                    <i class="fa-solid fa-chess-board text-slate-950 text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="font-extrabold text-base sm:text-lg tracking-wider bg-gradient-to-r from-amber-400 to-yellow-200 bg-clip-text text-transparent">PREMIUM GOMOKU</h1>
+                    <p class="text-[10px] text-slate-400 tracking-widest uppercase">Traditional & Elegant</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-2">
+                <button onclick="toggleRulesModal()" class="px-3 py-1.5 text-xs font-semibold rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 transition duration-200 flex items-center gap-1.5 border border-slate-700/50">
+                    <i class="fa-solid fa-circle-question text-amber-400"></i> 규칙 설명
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-8 justify-center items-center lg:items-stretch">
+        
+        <!-- Left Column: Settings and Statistics Panel -->
+        <section class="w-full lg:w-80 flex flex-col gap-5 shrink-0 justify-between">
+            <!-- Game Mode & Settings Panel -->
+            <div class="bg-slate-900/80 border border-slate-850 rounded-2xl p-5 shadow-xl shadow-slate-950/40 backdrop-blur-sm">
+                <h2 class="text-sm font-bold tracking-wider text-slate-400 uppercase mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-amber-500"></i> 게임 설정
+                </h2>
+                
+                <!-- Game Mode Switcher -->
+                <div class="space-y-3">
+                    <label class="block text-xs font-medium text-slate-400">대전 모드</label>
+                    <div class="grid grid-cols-2 gap-2 p-1 bg-slate-950 rounded-xl border border-slate-800/80">
+                        <button id="mode-ai" onclick="setGameMode('ai')" class="py-2 text-xs font-semibold rounded-lg transition duration-200 bg-amber-500 text-slate-950 shadow-md shadow-amber-500/10">
+                            <i class="fa-solid fa-robot mr-1"></i> AI 대전
+                        </button>
+                        <button id="mode-pvp" onclick="setGameMode('pvp')" class="py-2 text-xs font-semibold rounded-lg transition duration-200 text-slate-400 hover:text-slate-100 hover:bg-slate-900/50">
+                            <i class="fa-solid fa-users mr-1"></i> 2인 대전
+                        </button>
+                    </div>
+                </div>
+
+                <!-- AI Difficulty (visible only in AI mode) -->
+                <div id="ai-difficulty-section" class="mt-4 space-y-3">
+                    <label class="block text-xs font-medium text-slate-400 flex justify-between">
+                        <span>인공지능 난이도</span>
+                        <span id="diff-label" class="text-amber-400 font-semibold uppercase">보통</span>
+                    </label>
+                    <div class="grid grid-cols-3 gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800/80">
+                        <button onclick="setDifficulty('easy')" id="diff-easy" class="py-1.5 text-[11px] font-medium rounded-lg text-slate-400 transition hover:text-slate-100">쉬움</button>
+                        <button onclick="setDifficulty('medium')" id="diff-medium" class="py-1.5 text-[11px] font-medium rounded-lg bg-slate-800 text-amber-400 border border-slate-700/50 transition">보통</button>
+                        <button onclick="setDifficulty('hard')" id="diff-hard" class="py-1.5 text-[11px] font-medium rounded-lg text-slate-400 transition hover:text-slate-100">어려움</button>
+                    </div>
+                </div>
+
+                <!-- Player Color Choice (visible only in AI mode) -->
+                <div id="player-color-section" class="mt-4 space-y-3">
+                    <label class="block text-xs font-medium text-slate-400">나의 바둑돌 (선공/후공)</label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="setPlayerColor(1)" id="color-black" class="py-2 rounded-xl bg-slate-950 border-2 border-amber-500 flex items-center justify-center gap-2 text-xs transition">
+                            <span class="w-3 h-3 rounded-full bg-black ring-1 ring-slate-700 shadow-md"></span>
+                            <span>흑돌 (선공)</span>
+                        </button>
+                        <button onclick="setPlayerColor(2)" id="color-white" class="py-2 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center gap-2 text-xs text-slate-400 hover:text-slate-200 transition">
+                            <span class="w-3 h-3 rounded-full bg-white shadow-md"></span>
+                            <span>백돌 (후공)</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Scoreboard -->
+            <div class="bg-slate-900/80 border border-slate-850 rounded-2xl p-5 shadow-xl shadow-slate-950/40 backdrop-blur-sm">
+                <h2 class="text-sm font-bold tracking-wider text-slate-400 uppercase mb-4 flex items-center justify-between">
+                    <span class="flex items-center gap-2">
+                        <i class="fa-solid fa-trophy text-amber-500"></i> 누적 전적
+                    </span>
+                    <button onclick="resetScore()" class="text-[10px] text-slate-500 hover:text-amber-400 transition duration-150">
+                        <i class="fa-solid fa-rotate"></i> 초기화
+                    </button>
+                </h2>
+                
+                <div class="grid grid-cols-3 gap-3 text-center">
+                    <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-850">
+                        <div class="text-[10px] text-slate-400 mb-1">승리</div>
+                        <div id="score-win" class="text-xl font-black text-amber-400">0</div>
+                    </div>
+                    <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-850">
+                        <div class="text-[10px] text-slate-400 mb-1">패배</div>
+                        <div id="score-lose" class="text-xl font-black text-slate-400">0</div>
+                    </div>
+                    <div class="bg-slate-950/60 p-3 rounded-xl border border-slate-850">
+                        <div class="text-[10px] text-slate-400 mb-1">무승부</div>
+                        <div id="score-draw" class="text-xl font-black text-slate-500">0</div>
+                    </div>
+                </div>
+                
+                <!-- Win Rate Meter -->
+                <div class="mt-4 pt-3 border-t border-slate-800/60">
+                    <div class="flex justify-between text-[11px] text-slate-400 mb-1.5">
+                        <span>승률</span>
+                        <span id="win-rate-text" class="font-bold text-slate-200">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-950 rounded-full h-1.5 overflow-hidden">
+                        <div id="win-rate-bar" class="bg-gradient-to-r from-amber-500 to-yellow-400 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Center Column: Main Game Arena -->
+        <section class="flex-1 flex flex-col items-center justify-center gap-4">
+            <!-- Game Info & Turn Panel -->
+            <div class="w-full max-w-[550px] flex items-center justify-between px-2">
+                <div class="flex items-center gap-3">
+                    <div class="flex items-center gap-2 bg-slate-900/80 border border-slate-800 px-3.5 py-1.5 rounded-xl">
+                        <div id="turn-indicator-color" class="w-3.5 h-3.5 rounded-full bg-black ring-2 ring-slate-800 shadow-inner animate-pulse"></div>
+                        <span id="turn-indicator-text" class="text-xs font-semibold text-slate-200">흑돌 차례</span>
+                    </div>
+                    <span id="status-message" class="text-xs text-amber-400/90 font-medium"></span>
+                </div>
+                
+                <div class="text-xs text-slate-400 flex items-center gap-3 bg-slate-900/40 px-3 py-1.5 rounded-xl border border-slate-800/40">
+                    <div>수수: <span id="move-counter" class="font-bold text-slate-200">0</span>수</div>
+                    <div class="h-3 w-[1px] bg-slate-800"></div>
+                    <div class="flex items-center gap-1.5">
+                        <i class="fa-regular fa-clock text-[10px] text-slate-500"></i>
+                        <span id="game-timer" class="font-bold text-slate-200">00:00</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Canvas Container -->
+            <div class="relative w-full max-w-[550px] aspect-square bg-slate-900 rounded-2xl border-4 border-slate-850 shadow-2xl overflow-hidden group">
+                <!-- Wooden Canvas for Board -->
+                <canvas id="board-canvas" width="900" height="900" class="w-full h-full cursor-pointer touch-none block"></canvas>
+                <!-- Confetti Overlay Canvas for Winning Ceremony -->
+                <canvas id="confetti-canvas" width="900" height="900" class="absolute inset-0 pointer-events-none w-full h-full hidden"></canvas>
+            </div>
+
+            <!-- In-game Action Controls -->
+            <div class="w-full max-w-[550px] grid grid-cols-3 gap-3">
+                <button onclick="undoMove()" id="btn-undo" class="py-2.5 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 hover:text-slate-100 font-semibold text-xs transition flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:pointer-events-none">
+                    <i class="fa-solid fa-arrow-rotate-left text-amber-500"></i> 한 수 물리기
+                </button>
+                <button onclick="initGame()" class="py-2.5 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs shadow-lg shadow-amber-500/10 hover:shadow-amber-500/20 transition flex items-center justify-center gap-1.5">
+                    <i class="fa-solid fa-rotate-right"></i> 새 게임
+                </button>
+                <button onclick="toggleAudio()" id="btn-sound" class="py-2.5 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 hover:text-slate-100 font-semibold text-xs transition flex items-center justify-center gap-1.5">
+                    <i id="sound-icon" class="fa-solid fa-volume-high text-amber-500"></i> 소리: 켬
+                </button>
+            </div>
+        </section>
+
+        <!-- Right Column: Game Logs Panel -->
+        <section class="w-full lg:w-60 flex flex-col shrink-0">
+            <div class="bg-slate-900/80 border border-slate-850 rounded-2xl p-5 shadow-xl shadow-slate-950/40 backdrop-blur-sm flex-1 flex flex-col h-[280px] lg:h-auto">
+                <h2 class="text-sm font-bold tracking-wider text-slate-400 uppercase mb-3 flex items-center gap-2 shrink-0">
+                    <i class="fa-solid fa-list-ol text-amber-500"></i> 착수 기록
+                </h2>
+                <div id="log-container" class="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-1.5 text-xs text-slate-400">
+                    <div id="empty-log-message" class="text-center py-8 text-slate-500 italic">착수 기록이 없습니다.</div>
+                    <!-- Dynamically added logs go here -->
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-900 py-4 px-6 text-center text-xs text-slate-600 tracking-wide shrink-0">
+        <p>&copy; 2026 Premium Gomoku. Designed with professional Heuristics & Aesthetic UX.</p>
+    </footer>
+
+    <!-- Rules Modal Dialog -->
+    <div id="rules-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden transition-opacity duration-300">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+            <button onclick="toggleRulesModal()" class="absolute top-4 right-4 text-slate-500 hover:text-slate-200 text-lg transition">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+            
+            <h3 class="text-lg font-bold text-slate-100 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-circle-info text-amber-500"></i> 오목 게임 규칙
+            </h3>
+            
+            <div class="space-y-3.5 text-xs text-slate-300 leading-relaxed">
+                <p class="font-semibold text-amber-400">오목은 가로, 세로, 대각선 중 한 방향으로 같은 색깔의 돌을 연속으로 5개 먼저 나열하는 사람이 승리하는 전통 보드게임입니다.</p>
+                <div class="h-[1px] bg-slate-800"></div>
+                <ul class="space-y-2.5 list-disc pl-4 text-slate-400">
+                    <li><strong class="text-slate-200">착수 방법:</strong> 흑과 백이 번갈아가며 바둑판의 선이 교차하는 지점에 돌을 놓습니다.</li>
+                    <li><strong class="text-slate-200">선공/후공:</strong> 흑돌이 항상 먼저 시작합니다.</li>
+                    <li><strong class="text-slate-200">일반 규칙:</strong> 장목(6목 이상 연속)도 승리로 판정하는 친선 대국용 표준 룰을 따릅니다.</li>
+                    <li><strong class="text-slate-200">되돌리기:</strong> 실수가 있다면 좌측 하단의 '한 수 물리기' 버튼을 활용하세요. AI 대전 시에는 이전 두 수(나의 착수 및 상대 착수)가 함께 무릅니다.</li>
+                </ul>
+            </div>
+            
+            <button onclick="toggleRulesModal()" class="w-full mt-6 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs transition">
+                확인했습니다
+            </button>
+        </div>
+    </div>
+
+    <!-- Victory Overlay / Modal -->
+    <div id="victory-modal" class="fixed inset-0 bg-slate-950/90 backdrop-blur-lg z-50 flex items-center justify-center p-4 hidden transition-all duration-500 scale-95 opacity-0">
+        <div class="bg-slate-900 border-2 border-amber-500/50 rounded-3xl max-w-sm w-full p-8 shadow-2xl shadow-amber-500/10 text-center relative overflow-hidden">
+            <!-- Decorative shining rays -->
+            <div class="absolute -top-12 -left-12 w-32 h-32 bg-amber-500/10 rounded-full blur-2xl"></div>
+            <div class="absolute -bottom-12 -right-12 w-32 h-32 bg-yellow-500/10 rounded-full blur-2xl"></div>
+
+            <div class="w-20 h-20 bg-gradient-to-tr from-amber-500 to-yellow-400 rounded-2xl flex items-center justify-center shadow-lg shadow-amber-500/20 mx-auto mb-6 transform rotate-6 animate-bounce">
+                <i class="fa-solid fa-trophy text-slate-950 text-3xl"></i>
+            </div>
+            
+            <h3 class="text-2xl font-black tracking-wide text-slate-100 mb-1" id="victory-title">승리자가 결정되었습니다!</h3>
+            <p class="text-xs text-amber-400 font-medium uppercase tracking-widest mb-4" id="victory-subtitle">GAME CONCLUDED</p>
+            <p class="text-sm text-slate-300 leading-relaxed mb-6" id="victory-desc">오목 5칸이 완성되었습니다. 훌륭한 대국이었습니다!</p>
+            
+            <div class="grid grid-cols-2 gap-3">
+                <button onclick="closeVictoryModal()" class="py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold transition">
+                    바둑판 보기
+                </button>
+                <button onclick="restartGameFromModal()" class="py-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 text-xs font-black shadow-lg shadow-amber-500/20 transition">
+                    새 게임 시작
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Board Constants
+        const BOARD_SIZE = 15;
+        let board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(0)); // 0: empty, 1: Black, 2: White
+        
+        // Game States
+        let currentPlayer = 1; // 1: Black, 2: White
+        let lastMove = null; // {r, c}
+        let winner = null; // null, 1, 2, or 'draw'
+        let winningLine = []; // Array of [{r, c}, ...]
+        let moveHistory = []; // Array of {board, player, lastMove} for undoing
+        let gameMode = 'ai'; // 'ai' or 'pvp'
+        let aiPlayerColor = 2; // AI is White by default
+        let playerColor = 1; // Human is Black by default
+        let difficulty = 'medium'; // 'easy', 'medium', 'hard'
+        let isAiThinking = false;
+        let isAudioEnabled = true;
+
+        // Cumulative Scoreboard from LocalStorage
+        let stats = {
+            win: 0,
+            lose: 0,
+            draw: 0
+        };
+
+        // Timing Variables
+        let matchStartTime = null;
+        let timerInterval = null;
+        let totalSeconds = 0;
+
+        // Canvas Setup
+        const canvas = document.getElementById('board-canvas');
+        const ctx = canvas.getContext('2d');
+        const confettiCanvas = document.getElementById('confetti-canvas');
+        const confettiCtx = confettiCanvas.getContext('2d');
+        let hoverCell = null; // {r, c}
+
+        // Web Audio API Context (Lazily Initialized)
+        let audioCtx = null;
+
+        // Procedural Audio Synthesizer for Chess Board Sound
+        function playStoneSound() {
+            if (!isAudioEnabled) return;
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+
+                // Node components for synthesizing standard 'wooden' thud sound
+                const osc = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                osc.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+
+                // Deep wooden resonance
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(140, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(70, audioCtx.currentTime + 0.1);
+
+                gainNode.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+
+                osc.start(audioCtx.currentTime);
+                osc.stop(audioCtx.currentTime + 0.12);
+
+                // Adding a crisp snap/click high frequency sound of stone collision
+                const bufferSize = audioCtx.sampleRate * 0.015;
+                const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                const noise = audioCtx.createBufferSource();
+                noise.buffer = buffer;
+                
+                const noiseFilter = audioCtx.createBiquadFilter();
+                noiseFilter.type = 'bandpass';
+                noiseFilter.frequency.value = 1800;
+                
+                const noiseGain = audioCtx.createGain();
+                noiseGain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+                noiseGain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.015);
+
+                noise.connect(noiseFilter);
+                noiseFilter.connect(noiseGain);
+                noiseGain.connect(audioCtx.destination);
+                
+                noise.start(audioCtx.currentTime);
+                noise.stop(audioCtx.currentTime + 0.015);
+            } catch (e) {
+                console.warn("Audio Context failed to trigger sound:", e);
+            }
+        }
+
+        // Generates organic beautiful wood grain background on Canvas
+        function drawBoardBackground() {
+            // Draw luxury warm cherry wood base color
+            const grad = ctx.createRadialGradient(450, 450, 50, 450, 450, 600);
+            grad.addColorStop(0, '#E4A853');
+            grad.addColorStop(0.7, '#D49641');
+            grad.addColorStop(1, '#C28430');
+            ctx.fillStyle = grad;
+            ctx.fillRect(0, 0, 900, 900);
+
+            // Draw organic procedural wood-grain lines
+            ctx.strokeStyle = 'rgba(100, 55, 10, 0.035)';
+            ctx.lineWidth = 3;
+            for (let i = -50; i < 950; i += 18) {
+                ctx.beginPath();
+                ctx.moveTo(-50, i);
+                ctx.bezierCurveTo(250, i + 80, 650, i - 100, 950, i + 30);
+                ctx.stroke();
+            }
+
+            ctx.strokeStyle = 'rgba(120, 65, 15, 0.02)';
+            ctx.lineWidth = 1.5;
+            for (let i = -30; i < 950; i += 24) {
+                ctx.beginPath();
+                ctx.moveTo(-50, i);
+                ctx.bezierCurveTo(300, i - 120, 600, i + 120, 950, i);
+                ctx.stroke();
+            }
+        }
+
+        // Draw Gomoku grid lines & Standard Star Points (화점)
+        function drawGrid() {
+            const padding = 60;
+            const size = 900;
+            const gridSpacing = (size - padding * 2) / (BOARD_SIZE - 1);
+
+            // 1. Board Outer Border
+            ctx.strokeStyle = 'rgba(40, 20, 0, 0.75)';
+            ctx.lineWidth = 3;
+            ctx.strokeRect(padding - 4, padding - 4, (BOARD_SIZE - 1) * gridSpacing + 8, (BOARD_SIZE - 1) * gridSpacing + 8);
+
+            // 2. Interior Grid Lines
+            ctx.strokeStyle = 'rgba(50, 25, 0, 0.55)';
+            ctx.lineWidth = 1.5;
+            
+            for (let i = 0; i < BOARD_SIZE; i++) {
+                const pos = padding + i * gridSpacing;
+                // Horizontal lines
+                ctx.beginPath();
+                ctx.moveTo(padding, pos);
+                ctx.lineTo(size - padding, pos);
+                ctx.stroke();
+                
+                // Vertical lines
+                ctx.beginPath();
+                ctx.moveTo(pos, padding);
+                ctx.lineTo(pos, size - padding);
+                ctx.stroke();
+            }
+
+            // 3. Draw standard Gomoku Star Points (화점 - (3,3), (3,11), (7,7), (11,3), (11,11) etc.)
+            const starPoints = [3, 7, 11];
+            ctx.fillStyle = 'rgba(40, 20, 0, 0.85)';
+            
+            starPoints.forEach(r => {
+                starPoints.forEach(c => {
+                    const x = padding + c * gridSpacing;
+                    const y = padding + r * gridSpacing;
+                    ctx.beginPath();
+                    ctx.arc(x, y, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+            });
+        }
+
+        // Renders realistic 3D stones with lighting highlights and shadows
+        function drawStones() {
+            const padding = 60;
+            const gridSpacing = (900 - padding * 2) / (BOARD_SIZE - 1);
+            const radius = gridSpacing * 0.44;
+
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                for (let c = 0; c < BOARD_SIZE; c++) {
+                    const stoneType = board[r][c];
+                    if (stoneType === 0) continue;
+
+                    const x = padding + c * gridSpacing;
+                    const y = padding + r * gridSpacing;
+
+                    // 1. Draw Drop Shadow (Extends real look)
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(x + 2, y + 3, radius, 0, Math.PI * 2);
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.45)';
+                    ctx.shadowBlur = 8;
+                    ctx.shadowOffsetX = 3;
+                    ctx.shadowOffsetY = 4;
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+                    ctx.fill();
+                    ctx.restore();
+
+                    // 2. Render 3D Stones
+                    ctx.beginPath();
+                    ctx.arc(x, y, radius, 0, Math.PI * 2);
+
+                    const grad = ctx.createRadialGradient(x - radius * 0.25, y - radius * 0.25, radius * 0.05, x, y, radius);
+
+                    if (stoneType === 1) {
+                        // Glossy Deep Black Stone
+                        grad.addColorStop(0, '#555555');
+                        grad.addColorStop(0.2, '#2C2D30');
+                        grad.addColorStop(0.8, '#101112');
+                        grad.addColorStop(1, '#050505');
+                        ctx.fillStyle = grad;
+                        ctx.fill();
+
+                        // Ring Highlight
+                        ctx.strokeStyle = 'rgba(255, 255, 255, 0.08)';
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    } else if (stoneType === 2) {
+                        // Glossy Smooth White Stone
+                        grad.addColorStop(0, '#FFFFFF');
+                        grad.addColorStop(0.65, '#F5F5F7');
+                        grad.addColorStop(0.95, '#DFE1E5');
+                        grad.addColorStop(1, '#B9BCBF');
+                        ctx.fillStyle = grad;
+                        ctx.fill();
+
+                        // Subtle outer boundary shadow
+                        ctx.strokeStyle = 'rgba(0, 0, 0, 0.15)';
+                        ctx.lineWidth = 1;
+                        ctx.stroke();
+                    }
+                }
+            }
+
+            // 3. Highlight Last Move
+            if (lastMove) {
+                const x = padding + lastMove.c * gridSpacing;
+                const y = padding + lastMove.r * gridSpacing;
+                
+                // Delicate modern circular breathing ring for last move
+                ctx.beginPath();
+                ctx.arc(x, y, 5, 0, Math.PI * 2);
+                ctx.fillStyle = '#EF4444'; // Red focal point
+                ctx.shadowColor = 'rgba(239, 68, 68, 0.6)';
+                ctx.shadowBlur = 4;
+                ctx.fill();
+                ctx.shadowBlur = 0; // reset
+            }
+        }
+
+        // Draw delicate hover guide stone on active mouse pointer intersection
+        function drawHoverGuide() {
+            if (winner || isAiThinking || !hoverCell) return;
+            if (board[hoverCell.r][hoverCell.c] !== 0) return;
+
+            const padding = 60;
+            const gridSpacing = (900 - padding * 2) / (BOARD_SIZE - 1);
+            const x = padding + hoverCell.c * gridSpacing;
+            const y = padding + hoverCell.r * gridSpacing;
+            const radius = gridSpacing * 0.42;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(x, y, radius, 0, Math.PI * 2);
+            if (currentPlayer === 1) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+            } else {
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+            }
+            ctx.fill();
+            
+            // Draw cross-hair preview alignment lines
+            ctx.strokeStyle = 'rgba(239, 68, 68, 0.25)';
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 4]);
+            
+            ctx.beginPath();
+            ctx.moveTo(padding, y);
+            ctx.lineTo(900 - padding, y);
+            ctx.moveTo(x, padding);
+            ctx.lineTo(x, 900 - padding);
+            ctx.stroke();
+            
+            ctx.restore();
+        }
+
+        // Highlights the winning stones on canvas with gold laser glow line
+        function drawWinningLine() {
+            if (!winner || winningLine.length < 5) return;
+
+            const padding = 60;
+            const gridSpacing = (900 - padding * 2) / (BOARD_SIZE - 1);
+
+            ctx.save();
+            ctx.strokeStyle = 'rgba(245, 158, 11, 0.8)';
+            ctx.lineWidth = 6;
+            ctx.lineCap = 'round';
+            ctx.shadowColor = '#F59E0B';
+            ctx.shadowBlur = 12;
+
+            ctx.beginPath();
+            const startX = padding + winningLine[0].c * gridSpacing;
+            const startY = padding + winningLine[0].r * gridSpacing;
+            ctx.moveTo(startX, startY);
+
+            for (let i = 1; i < winningLine.length; i++) {
+                const x = padding + winningLine[i].c * gridSpacing;
+                const y = padding + winningLine[i].r * gridSpacing;
+                ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            // Draw glowing halo on each winner's stones
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            winningLine.forEach(cell => {
+                const cx = padding + cell.c * gridSpacing;
+                const cy = padding + cell.r * gridSpacing;
+                ctx.beginPath();
+                ctx.arc(cx, cy, 10, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            ctx.restore();
+        }
+
+        // Repaints the complete Canvas view
+        function render() {
+            ctx.clearRect(0, 0, 900, 900);
+            drawBoardBackground();
+            drawGrid();
+            drawHoverGuide();
+            drawStones();
+            if (winner) {
+                drawWinningLine();
+            }
+        }
+
+        // Check standard win status (five or more in a row)
+        function checkWin(r, c) {
+            const player = board[r][c];
+            if (player === 0) return null;
+
+            const directions = [
+                [[1, 0], [-1, 0]],   // Vertical |
+                [[0, 1], [0, -1]],   // Horizontal -
+                [[1, 1], [-1, -1]],  // Diagonal Down-Right \
+                [[1, -1], [-1, 1]]   // Diagonal Down-Left /
+            ];
+
+            for (let d = 0; d < directions.length; d++) {
+                let currentWinningStones = [{ r, c }];
+                const dirs = directions[d];
+
+                for (let i = 0; i < dirs.length; i++) {
+                    const [dr, dc] = dirs[i];
+                    let nr = r + dr;
+                    let nc = c + dc;
+
+                    while (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE && board[nr][nc] === player) {
+                        currentWinningStones.push({ r: nr, c: nc });
+                        nr += dr;
+                        nc += dc;
+                    }
+                }
+
+                if (currentWinningStones.length >= 5) {
+                    winningLine = currentWinningStones;
+                    return player;
+                }
+            }
+
+            // Check for draw (full board)
+            let isDraw = true;
+            for (let i = 0; i < BOARD_SIZE; i++) {
+                for (let j = 0; j < BOARD_SIZE; j++) {
+                    if (board[i][j] === 0) {
+                        isDraw = false;
+                        break;
+                    }
+                }
+            }
+            if (isDraw) return 'draw';
+
+            return null;
+        }
+
+        // High quality heuristic tactical calculator for AI choices
+        function evaluateCellTactical(r, c, playerColorToCheck) {
+            let score = 0;
+            const directions = [[1, 0], [0, 1], [1, 1], [1, -1]];
+            const opponentColor = playerColorToCheck === 1 ? 2 : 1;
+
+            for (let [dr, dc] of directions) {
+                let count = 1; // Count including the simulated stone placement
+                let openEnds = 0;
+
+                // Positive Vector Direction
+                let nr = r + dr, nc = c + dc;
+                while (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE && board[nr][nc] === playerColorToCheck) {
+                    count++;
+                    nr += dr;
+                    nc += dc;
+                }
+                if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE && board[nr][nc] === 0) {
+                    openEnds++;
+                }
+
+                // Negative Vector Direction
+                nr = r - dr; nc = c - dc;
+                while (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE && board[nr][nc] === playerColorToCheck) {
+                    count++;
+                    nr -= dr;
+                    nc -= dc;
+                }
+                if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE && board[nr][nc] === 0) {
+                    openEnds++;
+                }
+
+                // Standard Gomoku Evaluation Weights
+                if (count >= 5) {
+                    score += 150000; // Immediate win condition
+                } else if (count === 4) {
+                    if (openEnds === 2) score += 35000; // Unstoppable Active Four
+                    else if (openEnds === 1) score += 8000; // Single Blocked Four
+                } else if (count === 3) {
+                    if (openEnds === 2) score += 6000; // Standard Active Three
+                    else if (openEnds === 1) score += 1200; // Standard Blocked Three
+                } else if (count === 2) {
+                    if (openEnds === 2) score += 900; // Secondary Active Two
+                    else if (openEnds === 1) score += 200;
+                } else if (count === 1) {
+                    if (openEnds === 2) score += 100;
+                }
+            }
+            return score;
+        }
+
+        // Chooses the absolute best strategic position for AI
+        function calculateBestAiMove() {
+            let bestScore = -Infinity;
+            let bestMove = null;
+            let candidateMoves = [];
+
+            // Core weighting variables
+            const defenseMultiplier = 0.95; // High priority defense coefficient to block opponent wins
+
+            // Proximity optimizer: focus calculations within 2 cells radius of existing stones
+            let hasStonesNear = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(false));
+            let isBoardEmpty = true;
+
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                for (let c = 0; c < BOARD_SIZE; c++) {
+                    if (board[r][c] !== 0) {
+                        isBoardEmpty = false;
+                        for (let dr = -2; dr <= 2; dr++) {
+                            for (let dc = -2; dc <= 2; dc++) {
+                                const nr = r + dr;
+                                const nc = c + dc;
+                                if (nr >= 0 && nr < BOARD_SIZE && nc >= 0 && nc < BOARD_SIZE) {
+                                    hasStonesNear[nr][nc] = true;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Extreme opening strategy: First turn always plays center
+            if (isBoardEmpty) {
+                return { r: Math.floor(BOARD_SIZE / 2), c: Math.floor(BOARD_SIZE / 2) };
+            }
+
+            for (let r = 0; r < BOARD_SIZE; r++) {
+                for (let c = 0; c < BOARD_SIZE; c++) {
+                    if (board[r][c] !== 0 || !hasStonesNear[r][c]) continue;
+
+                    // Compute attack (AI stone placement weight) & defense (opponent blockage evaluation)
+                    const attackScore = evaluateCellTactical(r, c, aiPlayerColor);
+                    const defenseScore = evaluateCellTactical(r, c, playerColor);
+
+                    // Proximity layout bonus to keep stones dense and naturally oriented near central board
+                    const centralProximityBonus = (14 - Math.abs(r - 7) - Math.abs(c - 7)) * 12;
+                    
+                    // Sum total cell weight
+                    let totalScore = attackScore + (defenseScore * defenseMultiplier) + centralProximityBonus;
+
+                    // Difficulty modifications
+                    if (difficulty === 'easy') {
+                        // Apply soft random fuzziness to encourage mistakes
+                        totalScore += Math.random() * 800;
+                    } else if (difficulty === 'medium') {
+                        // Introduce delicate organic variation
+                        totalScore += Math.random() * 150;
+                    }
+
+                    if (totalScore > bestScore) {
+                        bestScore = totalScore;
+                        bestMove = { r, c };
+                        candidateMoves = [{ r, c, score: totalScore }];
+                    } else if (totalScore === bestScore) {
+                        candidateMoves.push({ r, c, score: totalScore });
+                    }
+                }
+            }
+
+            // If we have several equal weight positions, choose randomly to make play look human
+            if (candidateMoves.length > 0) {
+                const randIndex = Math.floor(Math.random() * candidateMoves.length);
+                return candidateMoves[randIndex];
+            }
+
+            return bestMove;
+        }
+
+        // AI game simulation engine cycle
+        function triggerAiTurn() {
+            if (winner || !isAiThinking) return;
+
+            // Simple delayed processing time to make AI appear like it's deeply thinking (Excellent UX)
+            const thinkDelay = difficulty === 'hard' ? 650 : 450;
+            
+            setTimeout(() => {
+                const aiMove = calculateBestAiMove();
+                if (aiMove) {
+                    executePlacement(aiMove.r, aiMove.c);
+                }
+                isAiThinking = false;
+                document.getElementById('status-message').innerText = "";
+                document.getElementById('btn-undo').disabled = false;
+            }, thinkDelay);
+        }
+
+        // Executes standard stone placement and checks state changes
+        function executePlacement(r, c) {
+            // Push history prior to updating board state
+            moveHistory.push({
+                board: board.map(row => [...row]),
+                player: currentPlayer,
+                lastMove: lastMove ? { ...lastMove } : null
+            });
+
+            board[r][c] = currentPlayer;
+            lastMove = { r, c };
+            playStoneSound();
+
+            // Render log update
+            const playerChar = currentPlayer === 1 ? '● 흑' : '○ 백';
+            const logElement = document.createElement('div');
+            logElement.className = "flex justify-between items-center py-1.5 px-2 bg-slate-950/40 border-l-2 border-amber-500 rounded-r-lg hover:bg-slate-900/40 transition";
+            logElement.innerHTML = `
+                <span class="font-bold text-slate-300">${playerChar}</span>
+                <span class="text-slate-400 font-medium">좌표 [${r+1}, ${c+1}]</span>
+                <span class="text-[10px] text-slate-500 font-mono">${moveHistory.length}수</span>
+            `;
+            const logContainer = document.getElementById('log-container');
+            const emptyLog = document.getElementById('empty-log-message');
+            if (emptyLog) emptyLog.remove();
+            
+            logContainer.appendChild(logElement);
+            logContainer.scrollTop = logContainer.scrollHeight;
+
+            document.getElementById('move-counter').innerText = moveHistory.length;
+
+            // Check game end conditions
+            const result = checkWin(r, c);
+            if (result) {
+                winner = result;
+                endGame(result);
+                render();
+                return;
+            }
+
+            // Move turn forward
+            currentPlayer = currentPlayer === 1 ? 2 : 1;
+            updateHudStatus();
+            render();
+        }
+
+        // Handle Canvas User Interaction clicks
+        function handleBoardClick(event) {
+            if (winner || isAiThinking) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = (event.clientX - rect.left) * scaleX;
+            const y = (event.clientY - rect.top) * scaleY;
+
+            const padding = 60;
+            const gridSpacing = (900 - padding * 2) / (BOARD_SIZE - 1);
+
+            // Fetch closest grid node position
+            const col = Math.round((x - padding) / gridSpacing);
+            const row = Math.round((y - padding) / gridSpacing);
+
+            // Click safety validation boundaries
+            if (row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE) {
+                if (board[row][col] === 0) {
+                    executePlacement(row, col);
+
+                    // Trigger AI opponent loop
+                    if (gameMode === 'ai' && !winner) {
+                        isAiThinking = true;
+                        document.getElementById('status-message').innerText = "AI가 생각하는 중입니다...";
+                        document.getElementById('btn-undo').disabled = true;
+                        triggerAiTurn();
+                    }
+                }
+            }
+        }
+
+        // Tracks pointer to draw alignment guides
+        function handleMouseMove(event) {
+            if (winner || isAiThinking) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = canvas.width / rect.width;
+            const scaleY = canvas.height / rect.height;
+            const x = (event.clientX - rect.left) * scaleX;
+            const y = (event.clientY - rect.top) * scaleY;
+
+            const padding = 60;
+            const gridSpacing = (900 - padding * 2) / (BOARD_SIZE - 1);
+
+            const col = Math.round((x - padding) / gridSpacing);
+            const row = Math.round((y - padding) / gridSpacing);
+
+            if (row >= 0 && row < BOARD_SIZE && col >= 0 && col < BOARD_SIZE) {
+                if (!hoverCell || hoverCell.r !== row || hoverCell.c !== col) {
+                    hoverCell = { r: row, c: col };
+                    render();
+                }
+            } else {
+                if (hoverCell) {
+                    hoverCell = null;
+                    render();
+                }
+            }
+        }
+
+        // Removes pointer overlay on mouse out
+        function handleMouseLeave() {
+            if (hoverCell) {
+                hoverCell = null;
+                render();
+            }
+        }
+
+        // Turn indicator updates on scoreboard
+        function updateHudStatus() {
+            const colorDot = document.getElementById('turn-indicator-color');
+            const turnText = document.getElementById('turn-indicator-text');
+
+            if (currentPlayer === 1) {
+                colorDot.className = "w-3.5 h-3.5 rounded-full bg-black ring-2 ring-slate-800 shadow-inner animate-pulse";
+                turnText.innerText = "흑돌 차례";
+            } else {
+                colorDot.className = "w-3.5 h-3.5 rounded-full bg-white ring-2 ring-slate-700 shadow-inner animate-pulse";
+                turnText.innerText = "백돌 차례";
+            }
+        }
+
+        // Undoes last played moves
+        function undoMove() {
+            if (moveHistory.length === 0 || isAiThinking) return;
+
+            if (gameMode === 'ai') {
+                // In AI mode, we must pop 2 moves to return to the player's prior turn
+                if (moveHistory.length >= 2) {
+                    // Pop AI move
+                    const prevAiState = moveHistory.pop();
+                    // Pop human player move
+                    const prevPlayerState = moveHistory.pop();
+
+                    board = prevPlayerState.board;
+                    currentPlayer = prevPlayerState.player;
+                    lastMove = prevPlayerState.lastMove;
+                } else {
+                    // If only one move has been played, just pop that
+                    const prevState = moveHistory.pop();
+                    board = prevState.board;
+                    currentPlayer = prevState.player;
+                    lastMove = prevState.lastMove;
+                }
+            } else {
+                // In PVP mode, simply pop 1 move
+                const prevState = moveHistory.pop();
+                board = prevState.board;
+                currentPlayer = prevState.player;
+                lastMove = prevState.lastMove;
+            }
+
+            winner = null;
+            winningLine = [];
+            document.getElementById('move-counter').innerText = moveHistory.length;
+
+            // Rebuild visual move list logs
+            const logContainer = document.getElementById('log-container');
+            logContainer.innerHTML = "";
+            
+            if (moveHistory.length === 0) {
+                logContainer.innerHTML = `<div id="empty-log-message" class="text-center py-8 text-slate-500 italic">착수 기록이 없습니다.</div>`;
+            } else {
+                // Re-add logs from history
+                moveHistory.forEach((historyItem, idx) => {
+                    const playerChar = historyItem.player === 1 ? '● 흑' : '○ 백';
+                    // We need to look ahead to find the move location (the difference in boards)
+                    let placedR = -1, placedC = -1;
+                    const nextBoard = idx < moveHistory.length - 1 ? moveHistory[idx+1].board : board;
+                    
+                    for (let r = 0; r < BOARD_SIZE; r++) {
+                        for (let c = 0; c < BOARD_SIZE; c++) {
+                            if (historyItem.board[r][c] === 0 && nextBoard[r][c] !== 0) {
+                                placedR = r;
+                                placedC = c;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (placedR !== -1) {
+                        const logElement = document.createElement('div');
+                        logElement.className = "flex justify-between items-center py-1.5 px-2 bg-slate-950/40 border-l-2 border-amber-500 rounded-r-lg hover:bg-slate-900/40 transition";
+                        logElement.innerHTML = `
+                            <span class="font-bold text-slate-300">${playerChar}</span>
+                            <span class="text-slate-400 font-medium">좌표 [${placedR+1}, ${placedC+1}]</span>
+                            <span class="text-[10px] text-slate-500 font-mono">${idx+1}수</span>
+                        `;
+                        logContainer.appendChild(logElement);
+                    }
+                });
+            }
+
+            updateHudStatus();
+            stopConfetti();
+            render();
+        }
+
+        // Initialize / reset board to starting conditions
+        function initGame() {
+            board = Array(BOARD_SIZE).fill().map(() => Array(BOARD_SIZE).fill(0));
+            currentPlayer = 1; // Black always goes first
+            lastMove = null;
+            winner = null;
+            winningLine = [];
+            moveHistory = [];
+            isAiThinking = false;
+            hoverCell = null;
+
+            // Stop confetti
+            stopConfetti();
+
+            // Setup logs UI reset
+            const logContainer = document.getElementById('log-container');
+            logContainer.innerHTML = `<div id="empty-log-message" class="text-center py-8 text-slate-500 italic">착수 기록이 없습니다.</div>`;
+            document.getElementById('move-counter').innerText = "0";
+            document.getElementById('status-message').innerText = "";
+            document.getElementById('btn-undo').disabled = false;
+
+            updateHudStatus();
+
+            // Set up timer
+            totalSeconds = 0;
+            document.getElementById('game-timer').innerText = "00:00";
+            if (timerInterval) clearInterval(timerInterval);
+            matchStartTime = Date.now();
+            timerInterval = setInterval(updateTimer, 1000);
+
+            // Let AI make its turn if AI color is Black
+            if (gameMode === 'ai' && playerColor === 2) {
+                isAiThinking = true;
+                document.getElementById('status-message').innerText = "AI가 생각하는 중입니다...";
+                triggerAiTurn();
+            }
+
+            render();
+        }
+
+        // Standard timer updates
+        function updateTimer() {
+            totalSeconds++;
+            const minutes = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+            const seconds = String(totalSeconds % 60).padStart(2, '0');
+            document.getElementById('game-timer').innerText = `${minutes}:${seconds}`;
+        }
+
+        // Standard game-over evaluation
+        function endGame(res) {
+            if (timerInterval) clearInterval(timerInterval);
+            
+            let modalTitle = "";
+            let modalDesc = "";
+            
+            if (res === 'draw') {
+                modalTitle = "무승부!";
+                modalDesc = "판 위의 모든 공간이 가득 찼습니다. 대단한 승부였습니다.";
+                stats.draw++;
+            } else {
+                const winnerName = res === 1 ? "흑돌" : "백돌";
+                modalTitle = `${winnerName} 승리!`;
+                modalDesc = `가로, 세로, 혹은 대각선으로 ${winnerName} 5개가 연속 배열되어 대국이 종료되었습니다.`;
+
+                // Update cumulative records
+                if (gameMode === 'ai') {
+                    if (res === playerColor) {
+                        stats.win++;
+                        startConfetti();
+                    } else {
+                        stats.lose++;
+                    }
+                } else {
+                    stats.win++; // Simply count player win in PVP
+                    startConfetti();
+                }
+            }
+
+            saveStats();
+            updateStatsUI();
+
+            // Open Victory Notification modal
+            document.getElementById('victory-title').innerText = modalTitle;
+            document.getElementById('victory-desc').innerText = modalDesc;
+            
+            const modal = document.getElementById('victory-modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                modal.classList.remove('scale-95', 'opacity-0');
+            }, 100);
+        }
+
+        // Stats storage handling
+        function saveStats() {
+            localStorage.setItem('gomoku_stats', JSON.stringify(stats));
+        }
+
+        function loadStats() {
+            const stored = localStorage.getItem('gomoku_stats');
+            if (stored) {
+                try {
+                    stats = JSON.parse(stored);
+                } catch (e) {
+                    console.error("Corrupted stats structure:", e);
+                }
+            }
+            updateStatsUI();
+        }
+
+        function resetScore() {
+            stats = { win: 0, lose: 0, draw: 0 };
+            saveStats();
+            updateStatsUI();
+        }
+
+        function updateStatsUI() {
+            document.getElementById('score-win').innerText = stats.win;
+            document.getElementById('score-lose').innerText = stats.lose;
+            document.getElementById('score-draw').innerText = stats.draw;
+
+            const total = stats.win + stats.lose + stats.draw;
+            const rate = total > 0 ? Math.round((stats.win / total) * 100) : 0;
+            
+            document.getElementById('win-rate-text').innerText = `${rate}%`;
+            document.getElementById('win-rate-bar').style.width = `${rate}%`;
+        }
+
+        // Configure Game Mode (AI vs PVP)
+        function setGameMode(mode) {
+            gameMode = mode;
+            
+            const btnAi = document.getElementById('mode-ai');
+            const btnPvp = document.getElementById('mode-pvp');
+            const aiSection = document.getElementById('ai-difficulty-section');
+            const colorSection = document.getElementById('player-color-section');
+
+            if (mode === 'ai') {
+                btnAi.className = "py-2 text-xs font-semibold rounded-lg transition duration-200 bg-amber-500 text-slate-950 shadow-md shadow-amber-500/10";
+                btnPvp.className = "py-2 text-xs font-semibold rounded-lg transition duration-200 text-slate-400 hover:text-slate-100 hover:bg-slate-900/50";
+                aiSection.classList.remove('hidden');
+                colorSection.classList.remove('hidden');
+            } else {
+                btnPvp.className = "py-2 text-xs font-semibold rounded-lg transition duration-200 bg-amber-500 text-slate-950 shadow-md shadow-amber-500/10";
+                btnAi.className = "py-2 text-xs font-semibold rounded-lg transition duration-200 text-slate-400 hover:text-slate-100 hover:bg-slate-900/50";
+                aiSection.classList.add('hidden');
+                colorSection.classList.add('hidden');
+            }
+            initGame();
+        }
+
+        // Change AI Difficulty Settings
+        function setDifficulty(diff) {
+            difficulty = diff;
+            const diffs = ['easy', 'medium', 'hard'];
+            diffs.forEach(d => {
+                const btn = document.getElementById(`diff-${d}`);
+                if (d === diff) {
+                    btn.className = "py-1.5 text-[11px] font-medium rounded-lg bg-slate-800 text-amber-400 border border-slate-700/50 transition";
+                } else {
+                    btn.className = "py-1.5 text-[11px] font-medium rounded-lg text-slate-400 transition hover:text-slate-100";
+                }
+            });
+
+            const labels = { 'easy': '쉬움', 'medium': '보통', 'hard': '어려움' };
+            document.getElementById('diff-label').innerText = labels[diff];
+            initGame();
+        }
+
+        // Change player turn color in AI Mode
+        function setPlayerColor(color) {
+            playerColor = color;
+            aiPlayerColor = color === 1 ? 2 : 1;
+
+            const btnBlack = document.getElementById('color-black');
+            const btnWhite = document.getElementById('color-white');
+
+            if (color === 1) {
+                btnBlack.className = "py-2 rounded-xl bg-slate-950 border-2 border-amber-500 flex items-center justify-center gap-2 text-xs text-slate-200 transition";
+                btnWhite.className = "py-2 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center gap-2 text-xs text-slate-400 hover:text-slate-200 transition";
+            } else {
+                btnWhite.className = "py-2 rounded-xl bg-slate-950 border-2 border-amber-500 flex items-center justify-center gap-2 text-xs text-slate-200 transition";
+                btnBlack.className = "py-2 rounded-xl bg-slate-950 border border-slate-800 flex items-center justify-center gap-2 text-xs text-slate-400 hover:text-slate-200 transition";
+            }
+            initGame();
+        }
+
+        // Toggle rules overlay modal
+        function toggleRulesModal() {
+            const modal = document.getElementById('rules-modal');
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        // Close victory notification screen
+        function closeVictoryModal() {
+            const modal = document.getElementById('victory-modal');
+            modal.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+        }
+
+        // Reset the game from the popup
+        function restartGameFromModal() {
+            closeVictoryModal();
+            initGame();
+        }
+
+        // Sound controller toggle
+        function toggleAudio() {
+            isAudioEnabled = !isAudioEnabled;
+            const btn = document.getElementById('btn-sound');
+            const icon = document.getElementById('sound-icon');
+            if (isAudioEnabled) {
+                icon.className = "fa-solid fa-volume-high text-amber-500";
+                btn.innerHTML = `<i id="sound-icon" class="fa-solid fa-volume-high text-amber-500"></i> 소리: 켬`;
+            } else {
+                icon.className = "fa-solid fa-volume-xmark text-slate-500";
+                btn.innerHTML = `<i id="sound-icon" class="fa-solid fa-volume-xmark text-slate-500"></i> 소리: 끔`;
+            }
+        }
+
+        // Confetti physics structures to support beautiful victory celebration
+        let confettiActive = false;
+        let confettiParticles = [];
+        const confettiColors = ['#F59E0B', '#FCD34D', '#FFF', '#3B82F6', '#10B981', '#EF4444'];
+
+        function startConfetti() {
+            confettiActive = true;
+            confettiParticles = [];
+            confettiCanvas.classList.remove('hidden');
+
+            for (let i = 0; i < 90; i++) {
+                confettiParticles.push({
+                    x: Math.random() * 900,
+                    y: Math.random() * -400 - 20,
+                    size: Math.random() * 7 + 5,
+                    color: confettiColors[Math.floor(Math.random() * confettiColors.length)],
+                    speedY: Math.random() * 3 + 3,
+                    speedX: Math.random() * 2 - 1,
+                    wobble: Math.random() * 10,
+                    wobbleSpeed: Math.random() * 0.1 + 0.05
+                });
+            }
+
+            animateConfetti();
+        }
+
+        function stopConfetti() {
+            confettiActive = false;
+            confettiCanvas.classList.add('hidden');
+            confettiCtx.clearRect(0, 0, 900, 900);
+        }
+
+        function animateConfetti() {
+            if (!confettiActive) return;
+
+            confettiCtx.clearRect(0, 0, 900, 900);
+
+            confettiParticles.forEach(p => {
+                p.y += p.speedY;
+                p.x += p.speedX + Math.sin(p.wobble) * 0.5;
+                p.wobble += p.wobbleSpeed;
+
+                // Reset particle to top if it reaches bottom
+                if (p.y > 900) {
+                    p.y = -20;
+                    p.x = Math.random() * 900;
+                }
+
+                confettiCtx.fillStyle = p.color;
+                confettiCtx.beginPath();
+                // Draw a beautiful rotating rectangle/diamond
+                confettiCtx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                confettiCtx.fill();
+            });
+
+            requestAnimationFrame(animateConfetti);
+        }
+
+        // Attach interactive event bindings
+        canvas.addEventListener('click', handleBoardClick);
+        canvas.addEventListener('mousemove', handleMouseMove);
+        canvas.addEventListener('mouseleave', handleMouseLeave);
+
+        // Load stats, set initial configuration and render
+        window.onload = function() {
+            loadStats();
+            initGame();
+        };
+    </script>
+</body>
+</html>
