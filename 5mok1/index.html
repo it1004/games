@@ -15,20 +15,6 @@
         body {
             font-family: 'Inter', 'Noto Sans KR', sans-serif;
         }
-        /* Custom scrollbar for game logs */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: rgba(30, 41, 59, 0.5);
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: rgba(148, 163, 184, 0.3);
-            border-radius: 999px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: rgba(148, 163, 184, 0.6);
-        }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden antialiased selection:bg-amber-500/30 selection:text-amber-200">
@@ -54,11 +40,11 @@
         </div>
     </header>
 
-    <!-- Main Content Container with CSS Grid supporting responsive dual-column / triple-column systems -->
-    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[320px_1fr_240px] gap-6 xl:gap-8 items-start justify-center">
+    <!-- Main Content Container: Clean 2-Column Responsive System -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 sm:p-6 lg:p-8 grid grid-cols-1 lg:grid-cols-[320px_1fr] gap-8 items-start justify-center">
         
         <!-- Left Column: Settings and Statistics Panel -->
-        <section class="w-full flex flex-col gap-5 order-2 md:order-2 xl:order-1 md:col-span-1">
+        <section class="w-full flex flex-col gap-5 order-2 lg:order-1">
             <!-- Game Mode & Settings Panel -->
             <div class="bg-slate-900/80 border border-slate-850 rounded-2xl p-5 shadow-xl shadow-slate-950/40 backdrop-blur-sm">
                 <h2 class="text-sm font-bold tracking-wider text-slate-400 uppercase mb-4 flex items-center gap-2">
@@ -146,10 +132,10 @@
             </div>
         </section>
 
-        <!-- Center Column: Main Game Arena -->
-        <section class="w-full flex flex-col items-center justify-center gap-4 order-1 md:order-1 xl:order-2 md:col-span-2 xl:col-span-1">
-            <!-- Game Info & Turn Panel -->
-            <div class="w-full max-w-[550px] flex items-center justify-between px-2">
+        <!-- Center Column: Main Game Arena (Enlarged and centered) -->
+        <section class="w-full flex flex-col items-center justify-center gap-4 order-1 lg:order-2">
+            <!-- Game Info & Turn Panel (Wider max-width for larger board) -->
+            <div class="w-full max-w-[700px] flex items-center justify-between px-2">
                 <div class="flex items-center gap-3">
                     <div class="flex items-center gap-2 bg-slate-900/80 border border-slate-800 px-3.5 py-1.5 rounded-xl">
                         <div id="turn-indicator-color" class="w-3.5 h-3.5 rounded-full bg-black ring-2 ring-slate-800 shadow-inner animate-pulse"></div>
@@ -168,16 +154,16 @@
                 </div>
             </div>
 
-            <!-- Canvas Container -->
-            <div class="relative w-full max-w-[550px] aspect-square bg-slate-900 rounded-2xl border-4 border-slate-850 shadow-2xl overflow-hidden group">
+            <!-- Canvas Container (Enlarged max-width to 700px for supreme visibility) -->
+            <div class="relative w-full max-w-[700px] aspect-square bg-slate-900 rounded-3xl border-4 border-slate-850 shadow-2xl overflow-hidden group">
                 <!-- Wooden Canvas for Board -->
                 <canvas id="board-canvas" width="900" height="900" class="w-full h-full cursor-pointer touch-none block"></canvas>
                 <!-- Confetti Overlay Canvas for Winning Ceremony -->
                 <canvas id="confetti-canvas" width="900" height="900" class="absolute inset-0 pointer-events-none w-full h-full hidden"></canvas>
             </div>
 
-            <!-- In-game Action Controls -->
-            <div class="w-full max-w-[550px] grid grid-cols-3 gap-3">
+            <!-- In-game Action Controls (Wider max-width matched to 700px) -->
+            <div class="w-full max-w-[700px] grid grid-cols-3 gap-3">
                 <button onclick="undoMove()" id="btn-undo" class="py-2.5 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 hover:text-slate-100 font-semibold text-xs transition flex items-center justify-center gap-1.5 disabled:opacity-40 disabled:pointer-events-none">
                     <i class="fa-solid fa-arrow-rotate-left text-amber-500"></i> 한 수 물리기
                 </button>
@@ -187,19 +173,6 @@
                 <button onclick="toggleAudio()" id="btn-sound" class="py-2.5 rounded-xl bg-slate-900 hover:bg-slate-850 border border-slate-800 text-slate-300 hover:text-slate-100 font-semibold text-xs transition flex items-center justify-center gap-1.5">
                     <i id="sound-icon" class="fa-solid fa-volume-high text-amber-500"></i> 소리: 켬
                 </button>
-            </div>
-        </section>
-
-        <!-- Right Column: Game Logs Panel (Highly scrollable and height protected) -->
-        <section class="w-full flex flex-col order-3 md:order-3 xl:order-3 md:col-span-1">
-            <div class="bg-slate-900/80 border border-slate-850 rounded-2xl p-5 shadow-xl shadow-slate-950/40 backdrop-blur-sm flex-1 flex flex-col h-[340px] xl:h-[550px]">
-                <h2 class="text-sm font-bold tracking-wider text-slate-400 uppercase mb-3 flex items-center gap-2 shrink-0">
-                    <i class="fa-solid fa-list-ol text-amber-500"></i> 착수 기록
-                </h2>
-                <div id="log-container" class="flex-1 overflow-y-auto custom-scrollbar space-y-2 pr-1.5 text-xs text-slate-400">
-                    <div id="empty-log-message" class="text-center py-8 text-slate-500 italic">착수 기록이 없습니다.</div>
-                    <!-- Dynamically added logs go here -->
-                </div>
             </div>
         </section>
     </main>
@@ -808,22 +781,6 @@
             lastMove = { r, c };
             playStoneSound();
 
-            // Render log update
-            const playerChar = currentPlayer === 1 ? '● 흑' : '○ 백';
-            const logElement = document.createElement('div');
-            logElement.className = "flex justify-between items-center py-1.5 px-2 bg-slate-950/40 border-l-2 border-amber-500 rounded-r-lg hover:bg-slate-900/40 transition";
-            logElement.innerHTML = `
-                <span class="font-bold text-slate-300">${playerChar}</span>
-                <span class="text-slate-400 font-medium">좌표 [${r+1}, ${c+1}]</span>
-                <span class="text-[10px] text-slate-500 font-mono">${moveHistory.length}수</span>
-            `;
-            const logContainer = document.getElementById('log-container');
-            const emptyLog = document.getElementById('empty-log-message');
-            if (emptyLog) emptyLog.remove();
-            
-            logContainer.appendChild(logElement);
-            logContainer.scrollTop = logContainer.scrollHeight;
-
             document.getElementById('move-counter').innerText = moveHistory.length;
 
             // Check game end conditions
@@ -959,43 +916,6 @@
             winningLine = [];
             document.getElementById('move-counter').innerText = moveHistory.length;
 
-            // Rebuild visual move list logs
-            const logContainer = document.getElementById('log-container');
-            logContainer.innerHTML = "";
-            
-            if (moveHistory.length === 0) {
-                logContainer.innerHTML = `<div id="empty-log-message" class="text-center py-8 text-slate-500 italic">착수 기록이 없습니다.</div>`;
-            } else {
-                // Re-add logs from history
-                moveHistory.forEach((historyItem, idx) => {
-                    const playerChar = historyItem.player === 1 ? '● 흑' : '○ 백';
-                    // We need to look ahead to find the move location (the difference in boards)
-                    let placedR = -1, placedC = -1;
-                    const nextBoard = idx < moveHistory.length - 1 ? moveHistory[idx+1].board : board;
-                    
-                    for (let r = 0; r < BOARD_SIZE; r++) {
-                        for (let c = 0; c < BOARD_SIZE; c++) {
-                            if (historyItem.board[r][c] === 0 && nextBoard[r][c] !== 0) {
-                                placedR = r;
-                                placedC = c;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (placedR !== -1) {
-                        const logElement = document.createElement('div');
-                        logElement.className = "flex justify-between items-center py-1.5 px-2 bg-slate-950/40 border-l-2 border-amber-500 rounded-r-lg hover:bg-slate-900/40 transition";
-                        logElement.innerHTML = `
-                            <span class="font-bold text-slate-300">${playerChar}</span>
-                            <span class="text-slate-400 font-medium">좌표 [${placedR+1}, ${placedC+1}]</span>
-                            <span class="text-[10px] text-slate-500 font-mono">${idx+1}수</span>
-                        `;
-                        logContainer.appendChild(logElement);
-                    }
-                });
-            }
-
             updateHudStatus();
             stopConfetti();
             render();
@@ -1015,9 +935,6 @@
             // Stop confetti
             stopConfetti();
 
-            // Setup logs UI reset
-            const logContainer = document.getElementById('log-container');
-            logContainer.innerHTML = `<div id="empty-log-message" class="text-center py-8 text-slate-500 italic">착수 기록이 없습니다.</div>`;
             document.getElementById('move-counter').innerText = "0";
             document.getElementById('status-message').innerText = "";
             document.getElementById('btn-undo').disabled = false;
