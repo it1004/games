@@ -1,1 +1,816 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>무료 MBTI 검사 (12문항)</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts (Inter & Noto Sans KR) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome for beautiful icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Noto Sans KR', 'Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        primary: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            200: '#c7d2fe',
+                            300: '#a5b4fc',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            800: '#3730a3',
+                            900: '#312e81',
+                        },
+                    },
+                    animation: {
+                        'bounce-slow': 'bounce 3s infinite',
+                        'pulse-slow': 'pulse 2.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .custom-gradient {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #c084fc 100%);
+        }
+        .card-shadow {
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.05), 0 20px 40px -10px rgba(0, 0, 0, 0.03);
+        }
+        /* Glassmorphism details */
+        .glass {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col font-sans selection:bg-indigo-200">
 
+    <!-- Navigation / Header -->
+    <header class="w-full bg-white/80 backdrop-blur-md border-b border-slate-100 sticky top-0 z-50 transition-all">
+        <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-2 cursor-pointer" onclick="resetTest()">
+                <div class="w-10 h-10 rounded-xl custom-gradient flex items-center justify-center text-white font-extrabold text-xl shadow-md shadow-indigo-200">
+                    M
+                </div>
+                <span class="font-bold text-lg bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">심리테스트 연구소</span>
+            </div>
+            <div class="text-xs font-semibold px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-full border border-indigo-100 flex items-center gap-1">
+                <i class="fa-solid fa-bolt text-indigo-500 animate-pulse"></i> 초고속 3분 검사
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-grow flex items-center justify-center p-4 md:p-8">
+        <div class="w-full max-w-5xl flex flex-col lg:flex-row gap-8 items-start justify-center">
+            
+            <!-- Left Area: Core Test Card Container -->
+            <div class="w-full lg:max-w-2xl bg-white rounded-3xl card-shadow border border-slate-100/80 overflow-hidden transition-all duration-500 min-h-[500px] flex flex-col justify-between">
+                
+                <!-- SECTION 1: Welcome/Start Screen -->
+                <div id="start-screen" class="p-6 md:p-10 flex flex-col items-center text-center my-auto">
+                    <div class="relative mb-6">
+                        <div class="absolute -inset-1 rounded-full custom-gradient blur opacity-30 animate-pulse-slow"></div>
+                        <div class="relative bg-white p-5 rounded-full border border-slate-100">
+                            <svg class="w-16 h-16 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <h1 class="text-2xl md:text-3xl font-extrabold text-slate-800 tracking-tight leading-tight">
+                        가장 빠르고 정확한<br>
+                        <span class="bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">무료 MBTI 성격 검사</span>
+                    </h1>
+                    
+                    <p class="mt-4 text-slate-500 text-sm md:text-base leading-relaxed max-w-md">
+                        총 12개의 직관적인 핵심 질문을 통해 분석하는 스마트 검사 시스템입니다. 지금 바로 나의 성향 수치와 최적의 성격 특징을 확인해 보세요.
+                    </p>
+
+                    <!-- Information Grid -->
+                    <div class="grid grid-cols-3 gap-3 w-full my-8 text-center max-w-md">
+                        <div class="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                            <div class="text-indigo-600 text-lg font-bold mb-0.5"><i class="fa-regular fa-clock"></i></div>
+                            <div class="text-xs font-semibold text-slate-700">소요 시간</div>
+                            <div class="text-[10px] text-slate-400 mt-0.5">약 2분 미만</div>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                            <div class="text-violet-600 text-lg font-bold mb-0.5"><i class="fa-regular fa-circle-question"></i></div>
+                            <div class="text-xs font-semibold text-slate-700">총 문항수</div>
+                            <div class="text-[10px] text-slate-400 mt-0.5">12개 질문</div>
+                        </div>
+                        <div class="p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                            <div class="text-pink-600 text-lg font-bold mb-0.5"><i class="fa-solid fa-chart-pie"></i></div>
+                            <div class="text-xs font-semibold text-slate-700">분석 기술</div>
+                            <div class="text-[10px] text-slate-400 mt-0.5">네 가지 지표 분석</div>
+                        </div>
+                    </div>
+
+                    <button onclick="startTest()" class="w-full max-w-md py-4 px-6 rounded-2xl text-white font-bold text-base md:text-lg custom-gradient hover:opacity-95 shadow-lg shadow-indigo-200 transition-all duration-200 transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2">
+                        검사 시작하기 <i class="fa-solid fa-arrow-right text-sm"></i>
+                    </button>
+                </div>
+
+                <!-- SECTION 2: Active Testing Screen (Hidden initially) -->
+                <div id="test-screen" class="hidden p-6 md:p-8 flex-grow flex flex-col justify-between">
+                    <div>
+                        <!-- Top Status & Progress Bar -->
+                        <div class="flex items-center justify-between mb-4">
+                            <span id="question-index" class="text-sm font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full">질문 1 / 12</span>
+                            <div class="flex items-center gap-1.5 text-xs text-slate-400">
+                                <span class="font-semibold text-slate-600" id="progress-percent">0%</span> 완료
+                            </div>
+                        </div>
+                        
+                        <!-- Progress Bar Track -->
+                        <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden mb-8">
+                            <div id="progress-bar" class="custom-gradient h-full rounded-full transition-all duration-300" style="width: 8.33%"></div>
+                        </div>
+
+                        <!-- Question Container -->
+                        <div class="mb-8">
+                            <h2 id="question-text" class="text-xl md:text-2xl font-bold text-slate-800 leading-snug">
+                                질문 로딩 중...
+                            </h2>
+                        </div>
+                    </div>
+
+                    <!-- Answer Choice Buttons -->
+                    <div class="space-y-4 mb-6">
+                        <button onclick="selectAnswer('A')" class="w-full p-5 text-left bg-white hover:bg-indigo-50/50 border-2 border-slate-100 hover:border-indigo-400 rounded-2xl transition-all duration-200 group flex items-start gap-4 shadow-sm hover:shadow-md">
+                            <div class="flex-shrink-0 w-8 h-8 rounded-full bg-slate-100 group-hover:bg-indigo-600 group-hover:text-white transition-colors duration-200 flex items-center justify-center font-bold text-slate-600 text-sm">
+                                A
+                            </div>
+                            <p id="answer-a" class="text-sm md:text-base font-semibold text-slate-700 group-hover:text-indigo-950 transition-colors duration-200 pt-1">
+                                답변 A 내용이 여기에 들어갑니다.
+                            </p>
+                        </button>
+
+                        <button onclick="selectAnswer('B')" class="w-full p-5 text-left bg-white hover:bg-violet-50/50 border-2 border-slate-100 hover:border-violet-400 rounded-2xl transition-all duration-200 group flex items-start gap-4 shadow-sm hover:shadow-md">
+                            <div class="flex-shrink-0 w-8 h-8 rounded-full bg-slate-100 group-hover:bg-violet-600 group-hover:text-white transition-colors duration-200 flex items-center justify-center font-bold text-slate-600 text-sm">
+                                B
+                            </div>
+                            <p id="answer-b" class="text-sm md:text-base font-semibold text-slate-700 group-hover:text-violet-950 transition-colors duration-200 pt-1">
+                                답변 B 내용이 여기에 들어갑니다.
+                            </p>
+                        </button>
+                    </div>
+
+                    <!-- Bottom Back Button -->
+                    <div class="flex items-center justify-between border-t border-slate-100 pt-4">
+                        <button id="back-btn" onclick="prevQuestion()" class="flex items-center gap-2 text-sm font-semibold text-slate-400 hover:text-slate-600 disabled:opacity-30 disabled:pointer-events-none transition-colors" disabled>
+                            <i class="fa-solid fa-arrow-left"></i> 이전 질문으로
+                        </button>
+                        <span class="text-xs text-slate-400">답변 시 자동 다음 단계 이동</span>
+                    </div>
+                </div>
+
+                <!-- SECTION 3: Loading Screen (Hidden initially) -->
+                <div id="loading-screen" class="hidden p-10 flex flex-col items-center justify-center text-center my-auto">
+                    <div class="relative w-24 h-24 mb-6">
+                        <!-- Spinning loading circle -->
+                        <div class="absolute inset-0 rounded-full border-4 border-slate-100"></div>
+                        <div class="absolute inset-0 rounded-full border-4 border-indigo-600 border-t-transparent animate-spin"></div>
+                        <div class="absolute inset-4 rounded-full bg-indigo-50 flex items-center justify-center">
+                            <i class="fa-solid fa-heart-pulse text-indigo-500 text-2xl animate-pulse-slow"></i>
+                        </div>
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-800">성격 유형 분석 중</h3>
+                    <p class="text-sm text-slate-400 mt-2 max-w-xs">
+                        제공해주신 12개 데이터를 바탕으로 최적의 MBTI 유형 및 가중치를 조합하고 있습니다. 잠시만 기다려주세요!
+                    </p>
+                </div>
+
+                <!-- SECTION 4: Result Screen (Hidden initially) -->
+            <div id="result-screen" class="hidden flex-grow flex flex-col">
+                <!-- Result Header Banner (Gradient) -->
+                <div class="custom-gradient p-8 text-white text-center rounded-t-3xl relative overflow-hidden">
+                        <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-xl"></div>
+                        <div class="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-10 -mb-10 blur-xl"></div>
+                        
+                        <span class="text-xs font-bold uppercase tracking-widest bg-white/20 px-3 py-1 rounded-full text-white/90">Your Personality Type</span>
+                        <h1 id="result-code" class="text-5xl md:text-6xl font-black mt-2 tracking-tight drop-shadow-sm">INFJ</h1>
+                        <h2 id="result-title" class="text-lg md:text-xl font-bold mt-1 text-white/90">선의의 옹호자</h2>
+                    </div>
+
+                    <!-- Result Main Body with Enlarged Fonts -->
+                    <div class="p-6 md:p-8 space-y-8 flex-grow">
+                        
+                        <!-- Core Description Sentence -->
+                        <div class="bg-indigo-50/50 rounded-2xl p-5 border border-indigo-100/40">
+                            <h3 class="font-bold text-indigo-950 text-base md:text-lg mb-2 flex items-center gap-1.5">
+                                <i class="fa-solid fa-quote-left text-xs text-indigo-400"></i> 핵심 한줄 성향 요약
+                            </h3>
+                            <p id="result-summary" class="text-sm md:text-base text-slate-600 leading-relaxed font-medium">
+                                설명이 들어가는 공간입니다.
+                            </p>
+                        </div>
+
+                        <!-- MBTI Percentage Progress Bars Grid -->
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-base md:text-lg mb-4 flex items-center gap-2">
+                                <i class="fa-solid fa-chart-bar text-indigo-500"></i> 네 가지 핵심 성향 분석표
+                            </h3>
+                            <div class="space-y-4">
+                                <!-- E vs I -->
+                                <div class="space-y-1">
+                                    <div class="flex justify-between text-sm font-bold text-slate-600">
+                                        <span id="label-E" class="text-indigo-600">외향형 E (<span id="pct-E">50</span>%)</span>
+                                        <span id="label-I" class="text-violet-600">내향형 I (<span id="pct-I">50</span>%)</span>
+                                    </div>
+                                    <div class="h-3 bg-slate-100 rounded-full overflow-hidden flex">
+                                        <div id="bar-E" class="bg-indigo-500 h-full transition-all duration-1000" style="width: 50%"></div>
+                                        <div id="bar-I" class="bg-violet-400 h-full transition-all duration-1000" style="width: 50%"></div>
+                                    </div>
+                                </div>
+
+                                <!-- S vs N -->
+                                <div class="space-y-1">
+                                    <div class="flex justify-between text-sm font-bold text-slate-600">
+                                        <span id="label-S" class="text-indigo-600">감각형 S (<span id="pct-S">50</span>%)</span>
+                                        <span id="label-N" class="text-violet-600">직관형 N (<span id="pct-N">50</span>%)</span>
+                                    </div>
+                                    <div class="h-3 bg-slate-100 rounded-full overflow-hidden flex">
+                                        <div id="bar-S" class="bg-indigo-500 h-full transition-all duration-1000" style="width: 50%"></div>
+                                        <div id="bar-N" class="bg-violet-400 h-full transition-all duration-1000" style="width: 50%"></div>
+                                    </div>
+                                </div>
+
+                                <!-- T vs F -->
+                                <div class="space-y-1">
+                                    <div class="flex justify-between text-sm font-bold text-slate-600">
+                                        <span id="label-T" class="text-indigo-600">사고형 T (<span id="pct-T">50</span>%)</span>
+                                        <span id="label-F" class="text-violet-600">감정형 F (<span id="pct-F">50</span>%)</span>
+                                    </div>
+                                    <div class="h-3 bg-slate-100 rounded-full overflow-hidden flex">
+                                        <div id="bar-T" class="bg-indigo-500 h-full transition-all duration-1000" style="width: 50%"></div>
+                                        <div id="bar-F" class="bg-violet-400 h-full transition-all duration-1000" style="width: 50%"></div>
+                                    </div>
+                                </div>
+
+                                <!-- J vs P -->
+                                <div class="space-y-1">
+                                    <div class="flex justify-between text-sm font-bold text-slate-600">
+                                        <span id="label-J" class="text-indigo-600">판단형 J (<span id="pct-J">50</span>%)</span>
+                                        <span id="label-P" class="text-violet-600">인식형 P (<span id="pct-P">50</span>%)</span>
+                                    </div>
+                                    <div class="h-3 bg-slate-100 rounded-full overflow-hidden flex">
+                                        <div id="bar-J" class="bg-indigo-500 h-full transition-all duration-1000" style="width: 50%"></div>
+                                        <div id="bar-P" class="bg-violet-400 h-full transition-all duration-1000" style="width: 50%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Strengths and Weaknesses (Larger Fonts) -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="bg-emerald-50/40 rounded-2xl p-5 border border-emerald-100/30">
+                                <h4 class="font-bold text-emerald-900 text-base mb-3 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-circle-check text-emerald-500"></i> 대표적인 특징 및 강점
+                                </h4>
+                                <ul id="result-strengths" class="text-sm md:text-base text-slate-700 space-y-2 list-disc pl-5 leading-relaxed">
+                                    <li>강점 1</li>
+                                    <li>강점 2</li>
+                                    <li>강점 3</li>
+                                </ul>
+                            </div>
+                            <div class="bg-rose-50/40 rounded-2xl p-5 border border-rose-100/30">
+                                <h4 class="font-bold text-rose-900 text-base mb-3 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-triangle-exclamation text-rose-500"></i> 조금 보완하면 좋을 약점
+                                </h4>
+                                <ul id="result-weaknesses" class="text-sm md:text-base text-slate-700 space-y-2 list-disc pl-5 leading-relaxed">
+                                    <li>약점 1</li>
+                                    <li>약점 2</li>
+                                    <li>약점 3</li>
+                                </ul>
+                            </div>
+                        </div>
+
+                        <!-- Compatibility Chemistry (Larger Fonts) -->
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="p-5 bg-sky-50/40 border border-sky-100/30 rounded-2xl">
+                                <span class="text-sm text-sky-800 font-bold block mb-1.5">💡 추천하는 어울리는 직무</span>
+                                <p id="result-jobs" class="text-sm md:text-base font-semibold text-slate-700">전문 기획자, 심리학 상담가</p>
+                            </div>
+                            <div class="p-5 bg-amber-50/40 border border-amber-100/30 rounded-2xl">
+                                <span class="text-sm text-amber-800 font-bold block mb-1.5">❤️ 환상의 짝꿍 (꿀케미)</span>
+                                <p id="result-match" class="text-sm md:text-base font-semibold text-slate-700">ENFP, ENTP 유형과 최고의 호환성</p>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons for Result Page (Restructured for single primary restart button) -->
+                        <div class="pt-4 border-t border-slate-100">
+                        <button onclick="resetTest()" class="w-full py-4 px-6 rounded-2xl font-bold text-base text-white custom-gradient hover:opacity-95 shadow-md shadow-indigo-100 transition-all flex items-center justify-center gap-2 transform hover:-translate-y-0.5 active:translate-y-0">
+                            <i class="fa-solid fa-rotate-left"></i> 테스트 다시 하기
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Right Area: PC Exclusive Sidebar (Hidden on mobile/tablet) -->
+            <aside class="hidden lg:block w-80 bg-white rounded-3xl card-shadow border border-slate-100/80 p-6 sticky top-24 shrink-0">
+                <h3 class="text-xl md:text-2xl font-extrabold text-slate-800 mb-5 pb-3 border-b border-slate-100 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-info text-indigo-500 animate-pulse"></i> MBTI 4가지 지표란?
+                </h3>
+                <div class="space-y-6">
+                    <!-- E vs I -->
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between">
+                            <span class="px-2.5 py-1 text-xs font-bold bg-indigo-50 text-indigo-600 rounded-lg border border-indigo-100">외향형 E</span>
+                            <span class="text-xs text-slate-400 font-bold">에너지 방향</span>
+                            <span class="px-2.5 py-1 text-xs font-bold bg-violet-50 text-violet-600 rounded-lg border border-violet-100">내향형 I</span>
+                        </div>
+                        <p class="text-xs text-slate-500 leading-relaxed">
+                            <strong class="text-indigo-950 font-semibold">E :</strong> 사교적, 외부 활동과 인간관계에서 에너지 충전<br>
+                            <strong class="text-violet-950 font-semibold">I :</strong> 내면 사색, 혼자만의 시간을 통한 에너지 회복
+                        </p>
+                    </div>
+                    
+                    <!-- S vs N -->
+                    <div class="space-y-2 pt-4 border-t border-slate-50">
+                        <div class="flex items-center justify-between">
+                            <span class="px-2.5 py-1 text-xs font-bold bg-indigo-50 text-indigo-600 rounded-lg border border-indigo-100">감각형 S</span>
+                            <span class="text-xs text-slate-400 font-bold">정보 인식</span>
+                            <span class="px-2.5 py-1 text-xs font-bold bg-violet-50 text-violet-600 rounded-lg border border-violet-100">직관형 N</span>
+                        </div>
+                        <p class="text-xs text-slate-500 leading-relaxed">
+                            <strong class="text-indigo-950 font-semibold">S :</strong> 오감 활용, 구체적 사실과 현재 경험에 집중<br>
+                            <strong class="text-violet-950 font-semibold">N :</strong> 직관 활용, 미래 가능성과 의미 및 흐름 파악
+                        </p>
+                    </div>
+
+                    <!-- T vs F -->
+                    <div class="space-y-2 pt-4 border-t border-slate-50">
+                        <div class="flex items-center justify-between">
+                            <span class="px-2.5 py-1 text-xs font-bold bg-indigo-50 text-indigo-600 rounded-lg border border-indigo-100">사고형 T</span>
+                            <span class="text-xs text-slate-400 font-bold">의사 결정</span>
+                            <span class="px-2.5 py-1 text-xs font-bold bg-violet-50 text-violet-600 rounded-lg border border-violet-100">감정형 F</span>
+                        </div>
+                        <p class="text-xs text-slate-500 leading-relaxed">
+                            <strong class="text-indigo-950 font-semibold">T :</strong> 객관적 분석, 사실과 논리 및 원칙 기반 결정<br>
+                            <strong class="text-violet-950 font-semibold">F :</strong> 주관적 가치, 관계 조화와 감정 공감 기반 결정
+                        </p>
+                    </div>
+
+                    <!-- J vs P -->
+                    <div class="space-y-2 pt-4 border-t border-slate-50">
+                        <div class="flex items-center justify-between">
+                            <span class="px-2.5 py-1 text-xs font-bold bg-indigo-50 text-indigo-600 rounded-lg border border-indigo-100">판단형 J</span>
+                            <span class="text-xs text-slate-400 font-bold">행동 양식</span>
+                            <span class="px-2.5 py-1 text-xs font-bold bg-violet-50 text-violet-600 rounded-lg border border-violet-100">인식형 P</span>
+                        </div>
+                        <p class="text-xs text-slate-500 leading-relaxed">
+                            <strong class="text-indigo-950 font-semibold">J :</strong> 계획과 조직화, 체계적인 실행 및 빠른 결론 선호<br>
+                            <strong class="text-violet-950 font-semibold">P :</strong> 자율과 융통성, 유동적 대처 및 새로운 탐색 선호
+                        </p>
+                    </div>
+                </div>
+            </aside>
+
+        </div>
+    </main>
+
+    <!-- Footer Area -->
+    <footer class="w-full bg-slate-50 border-t border-slate-100 py-6 text-center text-xs text-slate-400">
+        <p>© 2026 심리테스트 연구소. All rights reserved.</p>
+        <p class="mt-1">본 서비스에서 제공하는 결과는 MBTI 이론에 바탕을 둔 약식 성향 분석 결과입니다.</p>
+    </footer>
+
+    <script>
+        // 12 MBTI Questions Dataset
+        const questions = [
+            {
+                index: 1,
+                category: "EI",
+                text: "사람들과 함께 하루를 보낸 후 나는",
+                A: "에너지가 충전되어 더 활동하고 싶다",
+                B: "혼자만의 시간이 있어야 에너지가 회복된다"
+            },
+            {
+                index: 2,
+                category: "EI",
+                text: "새로운 모임에 참석했을 때 나는",
+                A: "먼저 여러 사람에게 말을 걸며 분위기를 만든다",
+                B: "주변을 살피다가 편안한 사람부터 대화를 시작한다"
+            },
+            {
+                index: 3,
+                category: "EI",
+                text: "주말이 갑자기 시간이 비게 되었을 때 나는",
+                A: "사람을 만나거나 새로운 활동을 계획한다",
+                B: "집에서 쉬거나 혼자 하고 싶은 일을 한다"
+            },
+            {
+                index: 4,
+                category: "SN",
+                text: "대화를 나눌 때 더 흥미롭게 느끼는 주제는?",
+                A: "실제 경험, 구체적이고 사실에 기반한 현실적인 이야기",
+                B: "미래 가능성, 이론적 개념, 새로운 아이디어"
+            },
+            {
+                index: 5,
+                category: "SN",
+                text: "새로운 제품을 구입했을 때 나는",
+                A: "설명서를 꼼꼼히 읽어보며 바뀐 기능과 사용법을 숙지한다",
+                B: "이것저것 직접 눌러보며 전체 기능을 파악하고 새로운 활용법을 찾아본다"
+            },
+            {
+                index: 6,
+                category: "SN",
+                text: "책·영화·콘텐츠를 선택할 때 더 끌리는 유형은?",
+                A: "현실적이고 구체적인 내용, 실생활에 바로 도움이 되는 정보",
+                B: "상상력을 자극하는 내용, 깊은 의미나 새로운 관점을 탐구하는 것"
+            },
+            {
+                index: 7,
+                category: "TF",
+                text: "친구가 고민을 털어놓으면 나는",
+                A: "해결책을 함께 찾는다",
+                B: "먼저 공감하고 감정을 이해해 준다"
+            },
+            {
+                index: 8,
+                category: "TF",
+                text: "친구들과 의견 충돌이 생기면 나는",
+                A: "가장 합리적인 결론을 찾으려 한다",
+                B: "관계가 상하지 않도록 조율하려 한다"
+            },
+            {
+                index: 9,
+                category: "TF",
+                text: "솔직한 답변을 줘야 하는 상황일 때 나는",
+                A: "상대방 감정이 상할 수 있더라도 사실을 정확하게 말한다",
+                B: "상대방 기분을 최대한 배려하면서 부드럽게 돌려서 말한다"
+            },
+            {
+                index: 10,
+                category: "JP",
+                text: "여행을 준비할 때 나는",
+                A: "일정과 계획을 미리 꼼꼼히 세운다",
+                B: "큰 틀만 정하고 현장에서 결정한다"
+            },
+            {
+                index: 11,
+                category: "JP",
+                text: "과제 마감이 일주일 남았을 때 나는",
+                A: "바로 시작해서 마감 전에 여유 있게 완료해 놓는 편이다",
+                B: "마감이 다가올수록 집중력이 높아져 마지막에 몰아서 끝낸다"
+            },
+            {
+                index: 12,
+                category: "JP",
+                text: "책상이나 주변 환경이 어지러워졌을 때 나는",
+                A: "정리정돈되어 있어야 마음이 편하다",
+                B: "무질서 속에서 나름의 규칙과 자유로움을 느낀다"
+            }
+        ];
+
+        // Comprehensive mapping for all 16 MBTI Personality Types
+        const mbtiProfiles = {
+            "ISTJ": {
+                title: "소금형 - 청렴결백한 논리주의자",
+                summary: "현실적이고 철저하며 책임감이 강합니다. 사실주의적 태도로 계획을 세우고 실행하며 약속을 철저히 지킵니다.",
+                strengths: ["탁월한 집중력과 성실함", "강한 책임감과 신뢰도 높은 행동력", "체계적이고 조직적인 정리 정돈 능력"],
+                weaknesses: ["변화에 다소 유연하지 못함", "타인의 감정적 대화 요구에 소홀할 수 있음", "지나치게 보수적인 판단 경향"],
+                jobs: "금융 회계사, 공공기관 공무원, 엔지니어, 법률 분석가",
+                match: "ESFP, ESTP 유형과 편안한 소통을 이룰 수 있습니다."
+            },
+            "ISFJ": {
+                title: "권력형 - 용감한 수호자",
+                summary: "조용하고 차분하며 타인을 배려하고 온화한 성품을 가집니다. 자신보다 주변 사람들을 먼저 챙기는 신뢰할 수 있는 수호자입니다.",
+                strengths: ["매우 섬세하고 깊은 관찰력", "헌신적이며 배려가 깊은 마음씨", "책임감 있고 안정적인 일 처리"],
+                weaknesses: ["자신의 욕구를 희생하는 경향", "지나치게 감정을 내면화하여 혼자 상처받음", "새로운 변화나 모험에 소극적임"],
+                jobs: "간호 및 의료 종사자, 초등 교육자, 사회 복지사, 상담 전문가",
+                match: "ESFP, ESTP 유형과 높은 이해도를 자랑합니다."
+            },
+            "INFJ": {
+                title: "예언자형 - 선의의 옹호자",
+                summary: "가장 흔하지 않은 유형으로 깊은 통찰력과 이상적인 가치관을 가집니다. 타인의 잠재력을 간파하고 깊은 내적 성찰을 선호합니다.",
+                strengths: ["풍부한 상상력과 강력한 통찰력", "깊고 진정성 있는 인간관계 형성", "이타적이고 정의감이 가득한 태도"],
+                weaknesses: ["현실적 디테일을 놓치는 경향", "비판에 예민하고 완벽주의 성향이 강함", "속마음을 좀처럼 밖으로 꺼내지 않음"],
+                jobs: "예술가, 작가, 심리 치료사, 인재 육성 전문가, 환경 운동가",
+                match: "ENFP, ENTP 유형과 최고의 환상 호흡을 이룹니다."
+            },
+            "INTJ": {
+                title: "과학자형 - 용의주도한 전략가",
+                summary: "독립적이고 분석적인 성격으로 전략적 지성을 가집니다. 지적 호기심이 매우 높고 자신만의 엄격한 기준을 적용합니다.",
+                strengths: ["장기적인 목표 설계와 논리적 기획", "높은 독립심과 자가 피드백 능력", "효율적이고 분석적인 문제 해결"],
+                weaknesses: ["지나치게 차가운 이미지로 오해받음", "타인의 감정 공감 요구를 불필요하게 여김", "때때로 너무 완벽주의를 고집함"],
+                jobs: "투자 분석가, 시스템 개발자, 경영 전략 컨설턴트, 연구원",
+                match: "ENFP, ENTP 유형과 함께하면 큰 시너지를 냅니다."
+            },
+            "ISTP": {
+                title: "백과사전형 - 만능 재주꾼",
+                summary: "냉철한 이성을 소유한 조용한 관찰자이나 필요한 상황이 오면 임기응변 능력이 뛰어난 실용적인 모험가입니다.",
+                strengths: ["탁월한 도구 및 기계 조작 능력", "위기 상황에서도 잃지 않는 침착성", "실용적이고 합리적인 삶의 태도"],
+                weaknesses: ["계획 세우기를 번거로워함", "사생활 영역에 개입받는 것을 몹시 싫어함", "반복되는 Routine 일상에 쉽게 싫증을 느낌"],
+                jobs: "엔지니어, 응급 구조대원, 기술 전문가, 파일럿, 프로그래머",
+                match: "ESFJ, ESTJ 유형과 균형 잡힌 호환성을 보여줍니다."
+            },
+            "ISFP": {
+                title: "성인군자형 - 호기심 많은 예술가",
+                summary: "온화하고 유연하며 매사에 조용하게 배려하는 예술적 감수성을 지녔습니다. 자유로운 영혼의 삶을 살아갑니다.",
+                strengths: ["예술적이고 창의적인 미적 감각", "친근하고 갈등을 싫어하는 수용력", "현실에 안주하며 순간을 즐기는 능력"],
+                weaknesses: ["거절하는 것을 어려워함", "미래에 대한 장기적 계획 설계의 부재", "스트레스 상황에서 쉽게 위축되는 성향"],
+                jobs: "디자이너, 음악가, 조경사, 메이크업 아티스트, 동물 매개 치료사",
+                match: "ENFJ, ESFJ 유형과 상호 보완적인 호흡을 보여줍니다."
+            },
+            "INFP": {
+                title: "잔다르크형 - 열정적인 중재자",
+                summary: "마음이 깊고 상상력이 풍부한 중재자입니다. 진정성을 최우선 가치로 치며 이상적인 세상을 꿈꾸는 낭만주의자입니다.",
+                strengths: ["뛰어난 공감 능력과 언어적 표현력", "도덕적 신념과 이타적인 봉사심", "창의적이고 독창적인 영감 보유"],
+                weaknesses: ["지나치게 이상적인 면에 치우쳐 현실을 부정함", "개인적인 비판을 지나치게 깊게 내면화함", "맺고 끊음이 확실하지 못함"],
+                jobs: "크리에이터, 소설가, 일러스트레이터, 상담 치료사, 인적 자원 관리",
+                match: "ENFJ, ENTJ 유형과 삶의 가치관 공유 시 찰떡궁합입니다."
+            },
+            "INTP": {
+                title: "아이디어형 - 논리적인 사색가",
+                summary: "논리적이고 객관적인 문제 분석가입니다. 비평적인 관점으로 세상을 분석하고 사색하며 탐구하는 것을 즐깁니다.",
+                strengths: ["매우 창의적이고 날카로운 통찰", "호기심 많고 독창적인 개념 정립력", "문제 해결에 대한 객관적인 접근법"],
+                weaknesses: ["실제 세부적인 실행력 및 끈기 부족", "주변 타인의 사교 활동에 가치를 느끼지 못함", "때로 상대에게 가혹할 정도로 비판적"],
+                jobs: "웹 개발자, 물리학자, 연구 과학자, 전략 기획가, 대학 교수",
+                match: "ENTJ, ENFJ 유형과 영감 있는 대화가 가능합니다."
+            },
+            "ESTP": {
+                title: "활동가형 - 모험을 즐기는 사업가",
+                summary: "느긋하고 관대하며 매사 에너지가 넘칩니다. 실질적인 문제를 직접 겪으며 역동적으로 해결하는 능력이 탁월합니다.",
+                strengths: ["매우 적극적이고 매력적인 외향성", "현실적 상황 판단과 빠른 행동력", "자연스러운 리더십과 뛰어난 설득력"],
+                weaknesses: ["지나치게 충동적인 행동 주의", "감정을 꼼꼼하게 살피는 데 미숙함", "긴 장기 프로젝트에 대한 집중도 저하"],
+                jobs: "스타트업 창업가, 소방관, 영업 마케터, 스포츠 전문가, 마케팅 디렉터",
+                match: "ISFJ, ISTJ 유형과 궁합이 매우 잘 맞습니다."
+            },
+            "ESFP": {
+                title: "사교형 - 자유로운 영혼의 연예인",
+                summary: "인생은 파티와 같습니다. 주변 사람들과 어울려 흥을 돋우며 다정다감하고 에너지를 불어넣는 인간 비타민입니다.",
+                strengths: ["유쾌하고 유머러스한 분위기 메이커", "타인을 돕는 것에 아낌이 없는 상냥함", "현장의 즉각적인 디테일에 민감함"],
+                weaknesses: ["집중력이 다소 산만한 경향", "장기적인 결과를 고려하지 않는 충동적 지출", "객관적 비판을 감정적으로 받아일어남"],
+                jobs: "이벤트 플래너, 배우 및 엔터테이너, 영업 담당자, 레크리에이션 강사",
+                match: "ISFJ, ISTJ 유형과 시각을 균형 있게 맞출 수 있어 우수합니다."
+            },
+            "ENFP": {
+                title: "스파크형 - 재기발랄한 활동가",
+                summary: "긍정적이고 활기차며 에너지가 가득합니다. 새로운 가능성을 쫓으며 타인의 가치를 북돋우는 따뜻한 혁신가입니다.",
+                strengths: ["엄청난 상상력과 긍정 전파력", "대인관계 능력이 탁월하며 열정적임", "매우 다양한 분야의 뛰어난 관심사"],
+                weaknesses: ["반복되는 서류 작업이나 마무리가 흐지부지됨", "지나치게 걱정이 많고 타인의 눈치를 많이 봄", "쉽게 피로와 번아웃을 겪음"],
+                jobs: "홍보 마케터, 카피라이터, 크리에이티브 디렉터, 여행 작가, 인사 담당",
+                match: "INFJ, INTJ 유형과 만났을 때 소울메이트가 됩니다."
+            },
+            "ENTP": {
+                title: "발명가형 - 뜨거운 논쟁을 즐기는 변론가",
+                summary: "독창적이며 끊임없는 아이디어를 제시하는 변론가입니다. 복잡한 지적 대결을 유희로 즐기는 두뇌 회전의 최강자입니다.",
+                strengths: ["풍부한 유머 감각과 지적 논쟁력", "상식을 뛰어넘는 역발상 아이디어", "위기 극복에 강한 순발력"],
+                weaknesses: ["세세하고 지루한 업무 실행 기피", "비판적이고 직설적인 언행으로 갈등 야기", "일관성이 다소 부족하다는 평을 들음"],
+                jobs: "벤처 창업 투자자, 광고 디렉터, 정치 평론가, 컨설턴트, 마케터",
+                match: "INFJ, INTJ 유형과 아주 흥미진진한 관계를 유지할 수 있습니다."
+            },
+            "ESTJ": {
+                title: "엄격한 관리자형 - 사업가형",
+                summary: "구체적이고 현실적이며 체계가 확고합니다. 뛰어난 관리력과 통솔력을 발휘하여 조직을 성공적으로 지휘합니다.",
+                strengths: ["규칙과 질서를 수호하는 리더십", "극도의 효율성과 탁월한 실행력", "강한 책임감과 정직한 약속 이행"],
+                weaknesses: ["자기 주장을 굽히기 힘든 고집", "타인의 사소한 비효율에 참을성 부재", "유연성 부족으로 융통성 없다는 평을 들음"],
+                jobs: "프로젝트 매니저, 경찰 및 군 장교, 재무 책임자, 행정 공무원",
+                match: "ISTP, ISFP 유형과 생산적인 조합을 이뤄낼 수 있습니다."
+            },
+            "ESFJ": {
+                title: "친선도모형 - 사교적인 외교관",
+                summary: "사교성이 풍부하고 타인을 배려하며 친화력이 강합니다. 조화로운 소통을 주선하며 헌신적인 지지를 보내는 기둥입니다.",
+                strengths: ["누구에게나 따스한 대인 관계 형성력", "조직과 가족 내에서 높은 충성심", "풍부한 협업 및 갈등 조율 능력"],
+                weaknesses: ["타인의 평가에 매우 조마조마하고 상처받음", "자기 주장을 직설적으로 하지 못해 속앓이함", "변화와 개방적인 발상에 보수적임"],
+                jobs: "인사 상담원, 교육 서비스 행정, 홍보 전문가, 간호사, 호텔 지배인",
+                match: "ISTP, ISFP 유형과 가장 신뢰가 가는 궁합을 보여줍니다."
+            },
+            "ENFJ": {
+                title: "지도자형 - 정의로운 언도자",
+                summary: "따뜻하며 이타적이며 강력한 비전을 주도하는 리더입니다. 사람들을 고무시키고 성장할 수 있도록 격려하는 능력이 있습니다.",
+                strengths: ["뛰어난 설득력과 카리스마 있는 웅변", "타인을 돕는 헌신성과 이타주의", "높은 사회성 및 성숙한 공감 능력"],
+                weaknesses: ["지나친 감정 몰입으로 내면이 쉽게 지침", "모두에게 잘 보이려 애쓰며 거절을 못함", "현실적 장애물을 가끔 과소평가함"],
+                jobs: "교육자, 인사 관리자, 사회적 기업가, 대중 소통 강사, 카운셀러",
+                match: "INFP, ISFP 유형과 신성하고 아름다운 조화를 자랑합니다."
+            },
+            "ENTJ": {
+                title: "지도자형 - 대담한 통솔자",
+                summary: "강한 의지와 추진력으로 가득한 통솔가입니다. 목표를 위해 가장 빠르고 효율적인 경로를 설계하며 앞장섭니다.",
+                strengths: ["목표 달성을 향한 초인적인 장기 비전 및 의지", "논리 정연한 구조 분석 및 지배력", "단호하고 확실한 의사 결정력"],
+                weaknesses: ["공감 부족으로 타인에게 직설적인 상처를 줌", "지나치게 성급한 과업 중심의 태도", "부하직원의 미숙함에 참을성이 부족함"],
+                jobs: "기업 전문 경영인, 마케팅 총괄, 벤처 캐피탈리스트, 경영 분석가",
+                match: "INFP, INTP 유형과 아주 창의적이고 강력한 시너지를 발생시킵니다."
+            }
+        };
+
+        let currentIdx = 0;
+        let userAnswers = []; // size 12 array to store A or B responses
+
+        // Start test logic
+        function startTest() {
+            document.getElementById('start-screen').classList.add('hidden');
+            document.getElementById('test-screen').classList.remove('hidden');
+            currentIdx = 0;
+            userAnswers = new Array(questions.length).fill(null);
+            showQuestion();
+        }
+
+        // Render current question
+        function showQuestion() {
+            const q = questions[currentIdx];
+            
+            // Update question Index and bar
+            document.getElementById('question-index').textContent = `질문 ${currentIdx + 1} / ${questions.length}`;
+            const progressPct = Math.round((currentIdx / questions.length) * 100);
+            document.getElementById('progress-percent').textContent = `${progressPct}%`;
+            document.getElementById('progress-bar').style.width = `${((currentIdx + 1) / questions.length) * 100}%`;
+            
+            // Set text content
+            document.getElementById('question-text').textContent = `${q.index}. ${q.text}`;
+            document.getElementById('answer-a').textContent = q.A;
+            document.getElementById('answer-b').textContent = q.B;
+
+            // Enable or disable back button
+            const backBtn = document.getElementById('back-btn');
+            if (currentIdx === 0) {
+                backBtn.disabled = true;
+            } else {
+                backBtn.disabled = false;
+            }
+        }
+
+        // Selected answer handlers
+        function selectAnswer(option) {
+            userAnswers[currentIdx] = option;
+            
+            if (currentIdx < questions.length - 1) {
+                currentIdx++;
+                showQuestion();
+            } else {
+                // Completed all questions
+                processResults();
+            }
+        }
+
+        // Move to previous question
+        function prevQuestion() {
+            if (currentIdx > 0) {
+                currentIdx--;
+                showQuestion();
+            }
+        }
+
+        // Process MBTI results calculation
+        function processResults() {
+            document.getElementById('test-screen').classList.add('hidden');
+            document.getElementById('loading-screen').classList.remove('hidden');
+
+            // Show a pleasant loading feedback block to feel like active engine calculation
+            setTimeout(() => {
+                calculateScoresAndRender();
+            }, 1800);
+        }
+
+        function calculateScoresAndRender() {
+            let counts = {
+                E: 0, I: 0,
+                S: 0, N: 0,
+                T: 0, F: 0,
+                J: 0, P: 0
+            };
+
+            // Loop and tabulate based on 12 responses
+            for (let i = 0; i < questions.length; i++) {
+                const category = questions[i].category; // e.g., 'EI', 'SN', 'TF', 'JP'
+                const ans = userAnswers[i]; // 'A' or 'B'
+                
+                if (category === "EI") {
+                    if (ans === 'A') counts.E++;
+                    else counts.I++;
+                } else if (category === "SN") {
+                    if (ans === 'A') counts.S++;
+                    else counts.N++;
+                } else if (category === "TF") {
+                    if (ans === 'A') counts.T++;
+                    else counts.F++;
+                } else if (category === "JP") {
+                    if (ans === 'A') counts.J++;
+                    else counts.P++;
+                }
+            }
+
+            // Calculations into percentages out of 3 questions
+            const pctE = Math.round((counts.E / 3) * 100);
+            const pctI = 100 - pctE;
+
+            const pctS = Math.round((counts.S / 3) * 100);
+            const pctN = 100 - pctS;
+
+            const pctT = Math.round((counts.T / 3) * 100);
+            const pctF = 100 - pctT;
+
+            const pctJ = Math.round((counts.J / 3) * 100);
+            const pctP = 100 - pctJ;
+
+            // Generate final 4-letter code
+            const mbtiCode = 
+                (counts.E >= 2 ? 'E' : 'I') +
+                (counts.S >= 2 ? 'S' : 'N') +
+                (counts.T >= 2 ? 'T' : 'F') +
+                (counts.J >= 2 ? 'J' : 'P');
+
+            // Load and update profile details
+            const profile = mbtiProfiles[mbtiCode] || {
+                title: "숨겨진 실력자",
+                summary: "정의하기 힘든 매력의 소유자입니다.",
+                strengths: ["유연한 사고력", "자연스러운 행동력"],
+                weaknesses: ["계획 세우기 부족"],
+                jobs: "연구가",
+                match: "모든 유형"
+            };
+
+            document.getElementById('result-code').textContent = mbtiCode;
+            document.getElementById('result-title').textContent = profile.title;
+            document.getElementById('result-summary').textContent = profile.summary;
+
+            // Display strength bullet points (Enlarged and modern typography)
+            const strengthsUl = document.getElementById('result-strengths');
+            strengthsUl.innerHTML = '';
+            profile.strengths.forEach(str => {
+                const li = document.createElement('li');
+                li.textContent = str;
+                strengthsUl.appendChild(li);
+            });
+
+            // Display weaknesses bullet points (Enlarged and modern typography)
+            const weaknessesUl = document.getElementById('result-weaknesses');
+            weaknessesUl.innerHTML = '';
+            profile.weaknesses.forEach(wk => {
+                const li = document.createElement('li');
+                li.textContent = wk;
+                weaknessesUl.appendChild(li);
+            });
+
+            // Display job options and match
+            document.getElementById('result-jobs').textContent = profile.jobs;
+            document.getElementById('result-match').textContent = profile.match;
+
+            // Update DOM percentages
+            document.getElementById('pct-E').textContent = pctE;
+            document.getElementById('pct-I').textContent = pctI;
+            document.getElementById('bar-E').style.width = `${pctE}%`;
+            document.getElementById('bar-I').style.width = `${pctI}%`;
+
+            document.getElementById('pct-S').textContent = pctS;
+            document.getElementById('pct-N').textContent = pctN;
+            document.getElementById('bar-S').style.width = `${pctS}%`;
+            document.getElementById('bar-N').style.width = `${pctN}%`;
+
+            document.getElementById('pct-T').textContent = pctT;
+            document.getElementById('pct-F').textContent = pctF;
+            document.getElementById('bar-T').style.width = `${pctT}%`;
+            document.getElementById('bar-F').style.width = `${pctF}%`;
+
+            document.getElementById('pct-J').textContent = pctJ;
+            document.getElementById('pct-P').textContent = pctP;
+            document.getElementById('bar-J').style.width = `${pctJ}%`;
+            document.getElementById('bar-P').style.width = `${pctP}%`;
+
+            // Display results, hide loading screen
+            document.getElementById('loading-screen').classList.add('hidden');
+            document.getElementById('result-screen').classList.remove('hidden');
+        }
+
+        // Reset state for new test
+        function resetTest() {
+            document.getElementById('result-screen').classList.add('hidden');
+            document.getElementById('test-screen').classList.add('hidden');
+            document.getElementById('loading-screen').classList.add('hidden');
+            document.getElementById('start-screen').classList.remove('hidden');
+            currentIdx = 0;
+            userAnswers = [];
+        }
+    </script>
+</body>
+</html>
