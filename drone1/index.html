@@ -44,13 +44,7 @@
         #notification h2 { color: #00e5ff; margin-bottom: 10px; }
         #notification p { color: rgba(255,255,255,0.7); font-size: 14px; }
 
-        /* === 메인 메뉴 === */
-        #main-menu {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(135deg, #0a1628 0%, #1a237e 50%, #0d47a1 100%);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            z-index: 200; color: #fff; padding: 20px;
-        }
+        #main-menu { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, #0a1628 0%, #1a237e 50%, #0d47a1 100%); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 200; color: #fff; padding: 20px; }
         #main-menu h1 { font-size: 52px; color: #00e5ff; margin-bottom: 8px; text-shadow: 0 0 30px rgba(0, 229, 255, 0.5); letter-spacing: 3px; }
         #main-menu .subtitle { color: rgba(255,255,255,0.5); margin-bottom: 40px; font-size: 16px; letter-spacing: 2px; }
         .mode-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; max-width: 1200px; width: 100%; }
@@ -63,7 +57,6 @@
         .mode-desc { font-size: 12px; color: rgba(255,255,255,0.6); line-height: 1.5; }
         .mode-tag { display: inline-block; margin-top: 12px; padding: 3px 10px; border-radius: 10px; font-size: 10px; background: color-mix(in srgb, var(--card-color) 20%, transparent); color: var(--card-color); border: 1px solid color-mix(in srgb, var(--card-color) 40%, transparent); }
 
-        /* === 완료/결과 화면 === */
         #complete-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 10, 30, 0.85); display: none; flex-direction: column; align-items: center; justify-content: center; z-index: 300; color: #fff; backdrop-filter: blur(8px); }
         #complete-screen.show { display: flex; animation: fadeIn 0.5s ease; }
         #complete-screen h1 { font-size: 52px; color: #ffd700; text-shadow: 0 0 30px rgba(255, 215, 0, 0.6); margin-bottom: 10px; animation: bounce 1s ease infinite; }
@@ -91,39 +84,12 @@
         #mode-label { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0, 20, 40, 0.85); border: 1px solid rgba(0, 200, 255, 0.4); border-radius: 20px; padding: 8px 20px; color: #00e5ff; font-size: 14px; font-weight: bold; z-index: 11; display: none; pointer-events: none; letter-spacing: 1px; }
         #timer-display { position: fixed; top: 60px; left: 50%; transform: translateX(-50%); background: rgba(0, 20, 40, 0.85); border: 1px solid rgba(255, 215, 0, 0.5); border-radius: 20px; padding: 8px 20px; color: #ffd700; font-size: 20px; font-weight: bold; font-family: 'Courier New', monospace; z-index: 11; display: none; pointer-events: none; }
         
-        /* === 메인이동 버튼 === */
-        #main-menu-btn {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            background: linear-gradient(135deg, rgba(255, 215, 0, 0.9), rgba(255, 152, 0, 0.9));
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-radius: 25px;
-            padding: 10px 20px;
-            color: #1a1a2e;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            pointer-events: all;
-            z-index: 20;
-            display: none;
-            transition: all 0.3s;
-            box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4);
-            letter-spacing: 1px;
-        }
-        #main-menu-btn:hover {
-            transform: scale(1.05);
-            box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
-            background: linear-gradient(135deg, rgba(255, 230, 50, 1), rgba(255, 170, 0, 1));
-        }
-        #main-menu-btn::before {
-            content: '🏠 ';
-            margin-right: 4px;
-        }
+        #main-menu-btn { position: fixed; top: 20px; right: 20px; background: linear-gradient(135deg, rgba(255, 215, 0, 0.9), rgba(255, 152, 0, 0.9)); border: 2px solid rgba(255, 255, 255, 0.3); border-radius: 25px; padding: 10px 20px; color: #1a1a2e; font-size: 14px; font-weight: bold; cursor: pointer; pointer-events: all; z-index: 20; display: none; transition: all 0.3s; box-shadow: 0 4px 15px rgba(255, 215, 0, 0.4); letter-spacing: 1px; }
+        #main-menu-btn:hover { transform: scale(1.05); box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6); }
+        #main-menu-btn::before { content: '🏠 '; margin-right: 4px; }
     </style>
 </head>
 <body>
-    <!-- 메인 메뉴 -->
     <div id="main-menu">
         <h1>🚁 드론 시뮬레이터</h1>
         <p class="subtitle">DRONE FLIGHT SIMULATOR</p>
@@ -131,44 +97,41 @@
             <div class="mode-card" style="--card-color: #00e5ff;" data-mode="free">
                 <span class="mode-icon">🌍</span>
                 <div class="mode-title">자유비행</div>
-                <div class="mode-desc">제한 없이 하늘을 자유롭게 날아보세요. 배터리 걱정 없이 마음껏 비행할 수 있습니다.</div>
+                <div class="mode-desc">제한 없이 하늘을 자유롭게 날아보세요.</div>
                 <span class="mode-tag">FREE FLIGHT</span>
             </div>
             <div class="mode-card" style="--card-color: #ffd700;" data-mode="mission">
                 <span class="mode-icon">🎯</span>
                 <div class="mode-title">미션수행</div>
-                <div class="mode-desc">이륙, 링 통과, 고고도 비행, 정밀 착륙! 4가지 미션을 모두 완료하세요.</div>
+                <div class="mode-desc">이륙, 링 통과, 고고도 비행, 정밀 착륙!</div>
                 <span class="mode-tag">MISSION</span>
             </div>
             <div class="mode-card" style="--card-color: #ff4081;" data-mode="racing">
                 <span class="mode-icon">🏁</span>
                 <div class="mode-title">레이싱 경주</div>
-                <div class="mode-desc">8개의 체크포인트를 순서대로 통과하며 최단 시간 기록에 도전하세요!</div>
+                <div class="mode-desc">8개의 체크포인트를 순서대로 통과하세요!</div>
                 <span class="mode-tag">RACING</span>
             </div>
             <div class="mode-card" style="--card-color: #00e676;" data-mode="delivery">
                 <span class="mode-icon">📦</span>
                 <div class="mode-title">택배배달</div>
-                <div class="mode-desc">택배를 픽업하여 목적지까지 안전하게 배달하세요. 3건의 배달 임무!</div>
+                <div class="mode-desc">택배를 픽업하여 목적지까지 배달하세요.</div>
                 <span class="mode-tag">DELIVERY</span>
             </div>
             <div class="mode-card" style="--card-color: #aa66ff;" data-mode="practice">
                 <span class="mode-icon">🎓</span>
                 <div class="mode-title">드론연습</div>
-                <div class="mode-desc">상승·하강·전진·후진·좌우이동·회전 등 기본 조작법을 단계별로 연습하세요.</div>
+                <div class="mode-desc">기본 조작법을 단계별로 연습하세요.</div>
                 <span class="mode-tag">PRACTICE</span>
             </div>
         </div>
     </div>
 
     <canvas id="canvas"></canvas>
-
     <div id="collision-flash"></div>
     <div id="collision-text">💥 충돌!</div>
     <div id="mode-label"></div>
     <div id="timer-display">00:00.00</div>
-    
-    <!-- 메인이동 버튼 (모든 게임 화면에 표시) -->
     <button id="main-menu-btn">메인이동</button>
 
     <div id="hud">
@@ -182,14 +145,11 @@
             <div class="info-row"><span class="info-label">배터리</span><span class="info-value" id="battery-text">100%</span></div>
             <div id="battery-bar"><div id="battery-fill" style="width: 100%"></div></div>
         </div>
-
         <div class="hud-panel" id="minimap"><canvas id="minimap-canvas" width="160" height="160"></canvas></div>
-
         <div class="hud-panel" id="mission-panel">
             <h3 id="mission-panel-title">🎯 미션</h3>
             <div id="mission-list"></div>
         </div>
-
         <div class="hud-panel" id="controls-panel">
             <h3>🎮 조작법</h3>
             <div class="control-section">
@@ -213,7 +173,6 @@
                 <div class="control-row"><span class="key-badge">ESC</span><span class="control-desc">메인메뉴</span></div>
             </div>
         </div>
-
         <div class="hud-panel" id="speed-indicator">
             <h3 style="font-size:12px; color:#fff; margin-bottom:5px;">자세</h3>
             <div id="attitude-indicator"><div id="attitude-crosshair"></div></div>
@@ -232,7 +191,7 @@
 
     <div id="complete-screen">
         <h1 id="complete-title">🎉 축하합니다! 🎉</h1>
-        <div class="result-info" id="complete-info">모든 미션을 성공적으로 완료했습니다!</div>
+        <div class="result-info" id="complete-info"></div>
         <div class="complete-buttons">
             <button class="complete-btn btn-restart" id="btn-restart">🔄 다시하기</button>
             <button class="complete-btn btn-home" id="btn-home">🏠 메인화면</button>
@@ -240,39 +199,59 @@
     </div>
 
     <script>
-        // ==================== 전역 변수 ====================
         let scene, camera, renderer, droneGroup, propellers = [];
         let keys = {};
-        let droneState = {
-            position: new THREE.Vector3(0, 0.5, 0),
-            velocity: new THREE.Vector3(0, 0, 0),
-            rotation: 0, pitch: 0, roll: 0, battery: 100
-        };
-        let cameraMode = 0;
-        let rings = [];
-        let landingPad;
-        let obstacles = [];
-        let clock = new THREE.Clock();
-        let gameStarted = false;
-        let collisionCooldown = 0;
-        let droneRadius = 1.0;
-        let fireworks = [];
-        let fireworkParticles = [];
+        let droneState = { position: new THREE.Vector3(0, 0.5, 0), velocity: new THREE.Vector3(0, 0, 0), rotation: 0, pitch: 0, roll: 0, battery: 100 };
+        let cameraMode = 0, rings = [], landingPad, obstacles = [];
+        let clock = new THREE.Clock(), gameStarted = false, collisionCooldown = 0, droneRadius = 1.0;
+        let fireworks = [], fireworkParticles = [];
+        let currentMode = null, modeState = {}, modeObjects = [];
+        let raceTimer = 0, raceStarted = false, allMissionsComplete = false, showFireworks = false;
 
-        let currentMode = null;
-        let modeState = {};
-        let modeObjects = [];
-        let raceTimer = 0;
-        let raceStarted = false;
-        let allMissionsComplete = false;
-        let showFireworks = false;
+        // ==================== 숫자 라벨 생성 ====================
+        function createNumberLabel(number, bgColor, textColor, size) {
+            size = size || 2.5;
+            const canvas = document.createElement('canvas');
+            canvas.width = 256; canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            ctx.shadowColor = bgColor; ctx.shadowBlur = 30;
+            ctx.beginPath(); ctx.arc(128, 128, 100, 0, Math.PI * 2);
+            const r = (bgColor >> 16) & 255, g = (bgColor >> 8) & 255, b = bgColor & 255;
+            const gradient = ctx.createRadialGradient(128, 100, 20, 128, 128, 100);
+            gradient.addColorStop(0, `rgba(${Math.min(255, r+60)}, ${Math.min(255, g+60)}, ${Math.min(255, b+60)}, 1)`);
+            gradient.addColorStop(1, `rgba(${r}, ${g}, ${b}, 0.95)`);
+            ctx.fillStyle = gradient; ctx.fill();
+            ctx.shadowBlur = 0; ctx.lineWidth = 8; ctx.strokeStyle = textColor || '#fff'; ctx.stroke();
+            ctx.fillStyle = textColor || '#fff';
+            ctx.font = 'bold 140px Arial'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.shadowColor = 'rgba(0,0,0,0.5)'; ctx.shadowBlur = 8; ctx.shadowOffsetY = 4;
+            ctx.fillText(String(number), 128, 138);
+            const texture = new THREE.CanvasTexture(canvas);
+            const spriteMat = new THREE.SpriteMaterial({ map: texture, transparent: true, depthTest: false });
+            const sprite = new THREE.Sprite(spriteMat);
+            sprite.scale.set(size, size, 1); sprite.renderOrder = 999;
+            sprite.userData.number = number;
+            return sprite;
+        }
+
+        function updateNumberLabelColor(sprite, newColor, textColor) {
+            const oldNum = sprite.userData.number;
+            const oldSize = sprite.scale.x;
+            const parent = sprite.parent;
+            const pos = sprite.position.clone();
+            const newSprite = createNumberLabel(oldNum, newColor, textColor, oldSize);
+            newSprite.position.copy(pos);
+            if (parent) { parent.remove(sprite); parent.add(newSprite); }
+            if (sprite.material.map) sprite.material.map.dispose();
+            sprite.material.dispose();
+            return newSprite;
+        }
 
         // ==================== 초기화 ====================
         function init() {
             scene = new THREE.Scene();
             scene.background = new THREE.Color(0x87CEEB);
             scene.fog = new THREE.Fog(0x87CEEB, 100, 500);
-
             camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.1, 1000);
             renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas'), antialias: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
@@ -284,18 +263,13 @@
             dirLight.position.set(50, 100, 50);
             dirLight.castShadow = true;
             dirLight.shadow.mapSize.set(2048, 2048);
-            dirLight.shadow.camera.near = 0.5;
-            dirLight.shadow.camera.far = 500;
-            dirLight.shadow.camera.left = -100;
-            dirLight.shadow.camera.right = 100;
-            dirLight.shadow.camera.top = 100;
-            dirLight.shadow.camera.bottom = -100;
+            dirLight.shadow.camera.near = 0.5; dirLight.shadow.camera.far = 500;
+            dirLight.shadow.camera.left = -100; dirLight.shadow.camera.right = 100;
+            dirLight.shadow.camera.top = 100; dirLight.shadow.camera.bottom = -100;
             scene.add(dirLight);
             scene.add(new THREE.HemisphereLight(0x87CEEB, 0x3d5c3d, 0.4));
 
-            createGround();
-            createDrone();
-            createStaticEnvironment();
+            createGround(); createDrone(); createStaticEnvironment();
 
             document.addEventListener('keydown', (e) => {
                 keys[e.code] = true;
@@ -304,259 +278,107 @@
             });
             document.addEventListener('keyup', (e) => { keys[e.code] = false; });
             window.addEventListener('resize', onResize);
-
-            document.querySelectorAll('.mode-card').forEach(card => {
-                card.addEventListener('click', () => startMode(card.dataset.mode));
-            });
-
+            document.querySelectorAll('.mode-card').forEach(card => card.addEventListener('click', () => startMode(card.dataset.mode)));
             document.getElementById('btn-restart').addEventListener('click', restartMode);
             document.getElementById('btn-home').addEventListener('click', goHome);
-            
-            // 메인이동 버튼 클릭 이벤트
             document.getElementById('main-menu-btn').addEventListener('click', goHome);
-
             animate();
         }
 
-        // ==================== 지면 ====================
         function createGround() {
-            const ground = new THREE.Mesh(
-                new THREE.PlaneGeometry(500, 500),
-                new THREE.MeshLambertMaterial({ color: 0x3d8c40 })
-            );
-            ground.rotation.x = -Math.PI / 2;
-            ground.receiveShadow = true;
-            scene.add(ground);
-
+            const ground = new THREE.Mesh(new THREE.PlaneGeometry(500, 500), new THREE.MeshLambertMaterial({ color: 0x3d8c40 }));
+            ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; scene.add(ground);
             const grid = new THREE.GridHelper(500, 50, 0x2d6b30, 0x2d6b30);
-            grid.position.y = 0.01;
-            grid.material.opacity = 0.3;
-            grid.material.transparent = true;
-            scene.add(grid);
-
-            const runway = new THREE.Mesh(
-                new THREE.PlaneGeometry(8, 40),
-                new THREE.MeshLambertMaterial({ color: 0x333333 })
-            );
-            runway.rotation.x = -Math.PI / 2;
-            runway.position.set(0, 0.02, 15);
-            scene.add(runway);
+            grid.position.y = 0.01; grid.material.opacity = 0.3; grid.material.transparent = true; scene.add(grid);
+            const runway = new THREE.Mesh(new THREE.PlaneGeometry(8, 40), new THREE.MeshLambertMaterial({ color: 0x333333 }));
+            runway.rotation.x = -Math.PI / 2; runway.position.set(0, 0.02, 15); scene.add(runway);
         }
 
-        // ==================== 드론 (DJI 스타일) ====================
         function createDrone() {
             droneGroup = new THREE.Group();
             const bodyMat = new THREE.MeshPhongMaterial({ color: 0x2a2a2a, shininess: 120, specular: 0x555555 });
             const bodyAccentMat = new THREE.MeshPhongMaterial({ color: 0x1a1a1a, shininess: 100 });
 
             const belly = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.12, 1.4), bodyMat);
-            belly.position.set(0, -0.05, 0);
-            belly.castShadow = true;
-            droneGroup.add(belly);
-
+            belly.position.set(0, -0.05, 0); belly.castShadow = true; droneGroup.add(belly);
             const topBody = new THREE.Mesh(new THREE.SphereGeometry(0.4, 16, 12), bodyMat);
-            topBody.scale.set(0.9, 0.35, 1.7);
-            topBody.position.set(0, 0.08, -0.05);
-            topBody.castShadow = true;
-            droneGroup.add(topBody);
-
+            topBody.scale.set(0.9, 0.35, 1.7); topBody.position.set(0, 0.08, -0.05); droneGroup.add(topBody);
             const nose = new THREE.Mesh(new THREE.ConeGeometry(0.28, 0.5, 12), bodyMat);
-            nose.rotation.x = Math.PI / 2;
-            nose.position.set(0, 0.02, -0.85);
-            droneGroup.add(nose);
-
+            nose.rotation.x = Math.PI / 2; nose.position.set(0, 0.02, -0.85); droneGroup.add(nose);
             const noseBridge = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.35, 0.3, 12), bodyMat);
-            noseBridge.rotation.x = Math.PI / 2;
-            noseBridge.position.set(0, 0.02, -0.6);
-            droneGroup.add(noseBridge);
-
+            noseBridge.rotation.x = Math.PI / 2; noseBridge.position.set(0, 0.02, -0.6); droneGroup.add(noseBridge);
             const tail = new THREE.Mesh(new THREE.SphereGeometry(0.3, 12, 12), bodyAccentMat);
-            tail.scale.set(1, 0.5, 0.8);
-            tail.position.set(0, 0.02, 0.6);
-            droneGroup.add(tail);
-
-            const topLine = new THREE.Mesh(
-                new THREE.BoxGeometry(0.06, 0.02, 1.2),
-                new THREE.MeshPhongMaterial({ color: 0x666666, shininess: 150 })
-            );
-            topLine.position.set(0, 0.22, -0.05);
-            droneGroup.add(topLine);
+            tail.scale.set(1, 0.5, 0.8); tail.position.set(0, 0.02, 0.6); droneGroup.add(tail);
+            const topLine = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.02, 1.2), new THREE.MeshPhongMaterial({ color: 0x666666, shininess: 150 }));
+            topLine.position.set(0, 0.22, -0.05); droneGroup.add(topLine);
 
             for (let i = 0; i < 4; i++) {
-                const batLed = new THREE.Mesh(
-                    new THREE.BoxGeometry(0.04, 0.015, 0.04),
-                    new THREE.MeshBasicMaterial({ color: 0x00ff44 })
-                );
-                batLed.position.set(-0.09 + i * 0.06, 0.23, 0.15);
-                droneGroup.add(batLed);
+                const batLed = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.015, 0.04), new THREE.MeshBasicMaterial({ color: 0x00ff44 }));
+                batLed.position.set(-0.09 + i * 0.06, 0.23, 0.15); droneGroup.add(batLed);
             }
 
-            const gimbalMount = new THREE.Mesh(
-                new THREE.BoxGeometry(0.2, 0.08, 0.15),
-                new THREE.MeshPhongMaterial({ color: 0x333333 })
-            );
-            gimbalMount.position.set(0, -0.14, -0.55);
-            droneGroup.add(gimbalMount);
+            const gimbalMount = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.08, 0.15), new THREE.MeshPhongMaterial({ color: 0x333333 }));
+            gimbalMount.position.set(0, -0.14, -0.55); droneGroup.add(gimbalMount);
+            const camHouse = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.14, 0.16), new THREE.MeshPhongMaterial({ color: 0x1a1a1a }));
+            camHouse.position.set(0, -0.22, -0.55); droneGroup.add(camHouse);
+            const lens = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.06, 0.04, 16), new THREE.MeshPhongMaterial({ color: 0x000022, shininess: 200, specular: 0x4488ff }));
+            lens.rotation.x = Math.PI / 2; lens.position.set(0, -0.22, -0.65); droneGroup.add(lens);
 
-            const camHouse = new THREE.Mesh(
-                new THREE.BoxGeometry(0.18, 0.14, 0.16),
-                new THREE.MeshPhongMaterial({ color: 0x1a1a1a })
-            );
-            camHouse.position.set(0, -0.22, -0.55);
-            droneGroup.add(camHouse);
-
-            const lens = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.05, 0.06, 0.04, 16),
-                new THREE.MeshPhongMaterial({ color: 0x000022, shininess: 200, specular: 0x4488ff })
-            );
-            lens.rotation.x = Math.PI / 2;
-            lens.position.set(0, -0.22, -0.65);
-            droneGroup.add(lens);
-
-            const lensGlass = new THREE.Mesh(
-                new THREE.CircleGeometry(0.045, 16),
-                new THREE.MeshPhongMaterial({ color: 0x112244, shininess: 200, specular: 0x6699ff, transparent: true, opacity: 0.8 })
-            );
-            lensGlass.position.set(0, -0.22, -0.67);
-            droneGroup.add(lensGlass);
-
-            const sensorGeo = new THREE.BoxGeometry(0.06, 0.04, 0.03);
-            const sensorMat = new THREE.MeshPhongMaterial({ color: 0x222222 });
-            const sensorL = new THREE.Mesh(sensorGeo, sensorMat);
-            sensorL.position.set(0.15, -0.05, -0.72);
-            droneGroup.add(sensorL);
-            const sensorR = new THREE.Mesh(sensorGeo, sensorMat);
-            sensorR.position.set(-0.15, -0.05, -0.72);
-            droneGroup.add(sensorR);
-
-            const armConfigs = [
-                { x: 0.65, z: -0.45, isFront: true },
-                { x: -0.65, z: -0.45, isFront: true },
-                { x: 0.55, z: 0.45, isFront: false },
-                { x: -0.55, z: 0.45, isFront: false }
-            ];
+            const armConfigs = [{ x: 0.65, z: -0.45 }, { x: -0.65, z: -0.45 }, { x: 0.55, z: 0.45 }, { x: -0.55, z: 0.45 }];
             const armMat = new THREE.MeshPhongMaterial({ color: 0x3a3a3a, shininess: 80 });
-
-            armConfigs.forEach((cfg, i) => {
+            armConfigs.forEach((cfg) => {
                 const armLen = Math.sqrt(cfg.x * cfg.x + cfg.z * cfg.z);
                 const arm = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.06, armLen), armMat);
-                arm.rotation.y = Math.atan2(cfg.x, cfg.z);
-                arm.position.set(cfg.x / 2, 0.02, cfg.z / 2);
-                arm.castShadow = true;
-                droneGroup.add(arm);
-
-                const joint = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.06, 0.06, 0.07, 8),
-                    new THREE.MeshPhongMaterial({ color: 0x555555 })
-                );
-                joint.position.set(cfg.x * 0.45, 0.02, cfg.z * 0.45);
-                droneGroup.add(joint);
-
-                const motorMount = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.12, 0.14, 0.08, 12),
-                    new THREE.MeshPhongMaterial({ color: 0x444444 })
-                );
-                motorMount.position.set(cfg.x, 0.06, cfg.z);
-                droneGroup.add(motorMount);
-
-                const motor = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.08, 0.08, 0.1, 12),
-                    new THREE.MeshPhongMaterial({ color: 0x666666 })
-                );
-                motor.position.set(cfg.x, 0.14, cfg.z);
-                droneGroup.add(motor);
-
-                const guard = new THREE.Mesh(
-                    new THREE.TorusGeometry(0.38, 0.02, 8, 24),
-                    new THREE.MeshPhongMaterial({ color: 0x444444 })
-                );
-                guard.position.set(cfg.x, 0.2, cfg.z);
-                guard.rotation.x = Math.PI / 2;
-                droneGroup.add(guard);
-
+                arm.rotation.y = Math.atan2(cfg.x, cfg.z); arm.position.set(cfg.x / 2, 0.02, cfg.z / 2); droneGroup.add(arm);
+                const joint = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.07, 8), new THREE.MeshPhongMaterial({ color: 0x555555 }));
+                joint.position.set(cfg.x * 0.45, 0.02, cfg.z * 0.45); droneGroup.add(joint);
+                const motorMount = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.08, 12), new THREE.MeshPhongMaterial({ color: 0x444444 }));
+                motorMount.position.set(cfg.x, 0.06, cfg.z); droneGroup.add(motorMount);
+                const motor = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.1, 12), new THREE.MeshPhongMaterial({ color: 0x666666 }));
+                motor.position.set(cfg.x, 0.14, cfg.z); droneGroup.add(motor);
+                const guard = new THREE.Mesh(new THREE.TorusGeometry(0.38, 0.02, 8, 24), new THREE.MeshPhongMaterial({ color: 0x444444 }));
+                guard.position.set(cfg.x, 0.2, cfg.z); guard.rotation.x = Math.PI / 2; droneGroup.add(guard);
                 const propGroup = new THREE.Group();
                 const bladeMat = new THREE.MeshPhongMaterial({ color: 0x222222, transparent: true, opacity: 0.65 });
-                const blade1 = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.01, 0.06), bladeMat);
-                propGroup.add(blade1);
+                propGroup.add(new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.01, 0.06), bladeMat));
                 const blade2 = new THREE.Mesh(new THREE.BoxGeometry(0.65, 0.01, 0.06), bladeMat);
-                blade2.rotation.y = Math.PI / 2;
-                propGroup.add(blade2);
-                const hub = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.035, 0.035, 0.05, 8),
-                    new THREE.MeshPhongMaterial({ color: 0x888888 })
-                );
-                propGroup.add(hub);
-                propGroup.position.set(cfg.x, 0.22, cfg.z);
-                droneGroup.add(propGroup);
-                propellers.push(propGroup);
+                blade2.rotation.y = Math.PI / 2; propGroup.add(blade2);
+                propGroup.add(new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.05, 8), new THREE.MeshPhongMaterial({ color: 0x888888 })));
+                propGroup.position.set(cfg.x, 0.22, cfg.z); droneGroup.add(propGroup); propellers.push(propGroup);
             });
 
-            const frontLed = new THREE.Mesh(
-                new THREE.BoxGeometry(0.4, 0.02, 0.02),
-                new THREE.MeshBasicMaterial({ color: 0x00ff44 })
-            );
-            frontLed.position.set(0, 0, -0.95);
-            droneGroup.add(frontLed);
-
+            const frontLed = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.02, 0.02), new THREE.MeshBasicMaterial({ color: 0x00ff44 }));
+            frontLed.position.set(0, 0, -0.95); droneGroup.add(frontLed);
             const smallLedGeo = new THREE.SphereGeometry(0.025, 8, 8);
-            const greenLedMat = new THREE.MeshBasicMaterial({ color: 0x00ff44 });
-            const ledFL = new THREE.Mesh(smallLedGeo, greenLedMat);
-            ledFL.position.set(0.25, 0, -0.75);
-            droneGroup.add(ledFL);
-            const ledFR = new THREE.Mesh(smallLedGeo, greenLedMat);
-            ledFR.position.set(-0.25, 0, -0.75);
-            droneGroup.add(ledFR);
-
-            const rearLed = new THREE.Mesh(
-                new THREE.BoxGeometry(0.35, 0.02, 0.02),
-                new THREE.MeshBasicMaterial({ color: 0xff2222 })
-            );
-            rearLed.position.set(0, 0.05, 0.75);
-            droneGroup.add(rearLed);
-
-            const redLedMat = new THREE.MeshBasicMaterial({ color: 0xff2222 });
-            const ledRL = new THREE.Mesh(smallLedGeo, redLedMat);
-            ledRL.position.set(0.2, 0.05, 0.65);
-            droneGroup.add(ledRL);
-            const ledRR = new THREE.Mesh(smallLedGeo, redLedMat);
-            ledRR.position.set(-0.2, 0.05, 0.65);
-            droneGroup.add(ledRR);
+            const ledFL = new THREE.Mesh(smallLedGeo, new THREE.MeshBasicMaterial({ color: 0x00ff44 }));
+            ledFL.position.set(0.25, 0, -0.75); droneGroup.add(ledFL);
+            const ledFR = new THREE.Mesh(smallLedGeo, new THREE.MeshBasicMaterial({ color: 0x00ff44 }));
+            ledFR.position.set(-0.25, 0, -0.75); droneGroup.add(ledFR);
+            const rearLed = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.02, 0.02), new THREE.MeshBasicMaterial({ color: 0xff2222 }));
+            rearLed.position.set(0, 0.05, 0.75); droneGroup.add(rearLed);
+            const ledRL = new THREE.Mesh(smallLedGeo, new THREE.MeshBasicMaterial({ color: 0xff2222 }));
+            ledRL.position.set(0.2, 0.05, 0.65); droneGroup.add(ledRL);
+            const ledRR = new THREE.Mesh(smallLedGeo, new THREE.MeshBasicMaterial({ color: 0xff2222 }));
+            ledRR.position.set(-0.2, 0.05, 0.65); droneGroup.add(ledRR);
 
             const legMat = new THREE.MeshPhongMaterial({ color: 0x2a2a2a });
             const legGeo = new THREE.CylinderGeometry(0.015, 0.015, 0.25, 6);
             [[0.2, -0.35], [-0.2, -0.35], [0.18, 0.3], [-0.18, 0.3]].forEach(([x, z]) => {
-                const leg = new THREE.Mesh(legGeo, legMat);
-                leg.position.set(x, -0.22, z);
-                droneGroup.add(leg);
+                const leg = new THREE.Mesh(legGeo, legMat); leg.position.set(x, -0.22, z); droneGroup.add(leg);
             });
             const footGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.45, 6);
-            const footF = new THREE.Mesh(footGeo, legMat);
-            footF.rotation.z = Math.PI / 2;
-            footF.position.set(0, -0.34, -0.38);
-            droneGroup.add(footF);
-            const footR = new THREE.Mesh(footGeo, legMat);
-            footR.rotation.z = Math.PI / 2;
-            footR.position.set(0, -0.34, 0.33);
-            droneGroup.add(footR);
+            const footF = new THREE.Mesh(footGeo, legMat); footF.rotation.z = Math.PI / 2; footF.position.set(0, -0.34, -0.38); droneGroup.add(footF);
+            const footR = new THREE.Mesh(footGeo, legMat); footR.rotation.z = Math.PI / 2; footR.position.set(0, -0.34, 0.33); droneGroup.add(footR);
 
-            const antenna = new THREE.Mesh(
-                new THREE.CylinderGeometry(0.008, 0.012, 0.2, 6),
-                new THREE.MeshPhongMaterial({ color: 0x555555 })
-            );
-            antenna.position.set(0, 0.32, 0.3);
-            droneGroup.add(antenna);
-            const antennaTip = new THREE.Mesh(
-                new THREE.SphereGeometry(0.02, 8, 8),
-                new THREE.MeshBasicMaterial({ color: 0xff0000 })
-            );
-            antennaTip.position.set(0, 0.43, 0.3);
-            droneGroup.add(antennaTip);
+            const antenna = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.012, 0.2, 6), new THREE.MeshPhongMaterial({ color: 0x555555 }));
+            antenna.position.set(0, 0.32, 0.3); droneGroup.add(antenna);
+            const antennaTip = new THREE.Mesh(new THREE.SphereGeometry(0.02, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff0000 }));
+            antennaTip.position.set(0, 0.43, 0.3); droneGroup.add(antennaTip);
 
             droneGroup.position.copy(droneState.position);
             scene.add(droneGroup);
         }
 
-        // ==================== 정적 환경 ====================
         function createStaticEnvironment() {
             const buildingData = [
                 { x: -50, z: -50, w: 8, h: 15, d: 8, color: 0x78909c },
@@ -569,95 +391,51 @@
                 { x: 50, z: 80, w: 11, h: 16, d: 7, color: 0x90a4ae },
             ];
             buildingData.forEach(b => {
-                const mesh = new THREE.Mesh(
-                    new THREE.BoxGeometry(b.w, b.h, b.d),
-                    new THREE.MeshPhongMaterial({ color: b.color })
-                );
-                mesh.position.set(b.x, b.h / 2, b.z);
-                mesh.castShadow = true;
-                mesh.receiveShadow = true;
-                scene.add(mesh);
-                obstacles.push({
-                    min: new THREE.Vector3(b.x - b.w / 2, 0, b.z - b.d / 2),
-                    max: new THREE.Vector3(b.x + b.w / 2, b.h, b.z + b.d / 2),
-                    center: new THREE.Vector3(b.x, b.h / 2, b.z)
-                });
+                const mesh = new THREE.Mesh(new THREE.BoxGeometry(b.w, b.h, b.d), new THREE.MeshPhongMaterial({ color: b.color }));
+                mesh.position.set(b.x, b.h / 2, b.z); mesh.castShadow = true; mesh.receiveShadow = true; scene.add(mesh);
+                obstacles.push({ min: new THREE.Vector3(b.x - b.w/2, 0, b.z - b.d/2), max: new THREE.Vector3(b.x + b.w/2, b.h, b.z + b.d/2), center: new THREE.Vector3(b.x, b.h/2, b.z) });
                 const windowMat = new THREE.MeshBasicMaterial({ color: 0xffeb3b, transparent: true, opacity: 0.6 });
                 for (let y = 2; y < b.h - 1; y += 3) {
-                    for (let x = -b.w / 2 + 1.5; x < b.w / 2 - 1; x += 2.5) {
+                    for (let x = -b.w/2 + 1.5; x < b.w/2 - 1; x += 2.5) {
                         const wMesh = new THREE.Mesh(new THREE.PlaneGeometry(1, 1.5), windowMat);
-                        wMesh.position.set(b.x + x, y, b.z + b.d / 2 + 0.01);
-                        scene.add(wMesh);
+                        wMesh.position.set(b.x + x, y, b.z + b.d/2 + 0.01); scene.add(wMesh);
                     }
                 }
             });
 
             for (let i = 0; i < 40; i++) {
-                const tx = (Math.random() - 0.5) * 200;
-                const tz = (Math.random() - 0.5) * 200;
+                const tx = (Math.random() - 0.5) * 200, tz = (Math.random() - 0.5) * 200;
                 if (Math.abs(tx) < 10 && Math.abs(tz) < 10) continue;
-                const trunk = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.2, 0.3, 3),
-                    new THREE.MeshPhongMaterial({ color: 0x5d4037 })
-                );
-                trunk.position.set(tx, 1.5, tz);
-                trunk.castShadow = true;
-                scene.add(trunk);
+                const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 3), new THREE.MeshPhongMaterial({ color: 0x5d4037 }));
+                trunk.position.set(tx, 1.5, tz); trunk.castShadow = true; scene.add(trunk);
                 const treeRadius = 1.5 + Math.random();
-                const leaves = new THREE.Mesh(
-                    new THREE.SphereGeometry(treeRadius, 8, 8),
-                    new THREE.MeshPhongMaterial({ color: 0x2e7d32 })
-                );
-                const leavesY = 4 + Math.random();
-                leaves.position.set(tx, leavesY, tz);
-                leaves.castShadow = true;
-                scene.add(leaves);
-                obstacles.push({ min: new THREE.Vector3(tx - 0.4, 0, tz - 0.4), max: new THREE.Vector3(tx + 0.4, 3, tz + 0.4), center: new THREE.Vector3(tx, 1.5, tz) });
-                obstacles.push({ min: new THREE.Vector3(tx - treeRadius, leavesY - treeRadius, tz - treeRadius), max: new THREE.Vector3(tx + treeRadius, leavesY + treeRadius, tz + treeRadius), center: new THREE.Vector3(tx, leavesY, tz) });
+                const leaves = new THREE.Mesh(new THREE.SphereGeometry(treeRadius, 8, 8), new THREE.MeshPhongMaterial({ color: 0x2e7d32 }));
+                const leavesY = 4 + Math.random(); leaves.position.set(tx, leavesY, tz); leaves.castShadow = true; scene.add(leaves);
+                obstacles.push({ min: new THREE.Vector3(tx-0.4, 0, tz-0.4), max: new THREE.Vector3(tx+0.4, 3, tz+0.4), center: new THREE.Vector3(tx, 1.5, tz) });
+                obstacles.push({ min: new THREE.Vector3(tx-treeRadius, leavesY-treeRadius, tz-treeRadius), max: new THREE.Vector3(tx+treeRadius, leavesY+treeRadius, tz+treeRadius), center: new THREE.Vector3(tx, leavesY, tz) });
             }
 
             for (let i = 0; i < 15; i++) {
                 const cloudGroup = new THREE.Group();
                 const cloudMat = new THREE.MeshLambertMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 });
                 for (let j = 0; j < 5; j++) {
-                    const c = new THREE.Mesh(new THREE.SphereGeometry(3 + Math.random() * 3, 8, 8), cloudMat);
-                    c.position.set(Math.random() * 8 - 4, Math.random() * 2, Math.random() * 8 - 4);
-                    cloudGroup.add(c);
+                    const c = new THREE.Mesh(new THREE.SphereGeometry(3 + Math.random()*3, 8, 8), cloudMat);
+                    c.position.set(Math.random()*8-4, Math.random()*2, Math.random()*8-4); cloudGroup.add(c);
                 }
-                cloudGroup.position.set((Math.random() - 0.5) * 400, 60 + Math.random() * 30, (Math.random() - 0.5) * 400);
-                scene.add(cloudGroup);
+                cloudGroup.position.set((Math.random()-0.5)*400, 60+Math.random()*30, (Math.random()-0.5)*400); scene.add(cloudGroup);
             }
-
             createLandingPadAt(-15, -15);
         }
 
         function createLandingPadAt(x, z) {
-            const pad = new THREE.Mesh(
-                new THREE.CylinderGeometry(3, 3, 0.1, 32),
-                new THREE.MeshPhongMaterial({ color: 0x333333 })
-            );
-            pad.position.set(x, 0.05, z);
-            scene.add(pad);
-            modeObjects.push(pad);
-
+            const pad = new THREE.Mesh(new THREE.CylinderGeometry(3, 3, 0.1, 32), new THREE.MeshPhongMaterial({ color: 0x333333 }));
+            pad.position.set(x, 0.05, z); scene.add(pad); modeObjects.push(pad);
             const hMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-            const h1 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.02, 2), hMat);
-            h1.position.set(x - 0.5, 0.12, z);
-            scene.add(h1); modeObjects.push(h1);
-            const h2 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.02, 2), hMat);
-            h2.position.set(x + 0.5, 0.12, z);
-            scene.add(h2); modeObjects.push(h2);
-            const h3 = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.02, 0.3), hMat);
-            h3.position.set(x, 0.12, z);
-            scene.add(h3); modeObjects.push(h3);
-
-            const circle = new THREE.Mesh(
-                new THREE.RingGeometry(2.5, 2.8, 32),
-                new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide })
-            );
-            circle.rotation.x = -Math.PI / 2;
-            circle.position.set(x, 0.12, z);
-            scene.add(circle); modeObjects.push(circle);
+            const h1 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.02, 2), hMat); h1.position.set(x-0.5, 0.12, z); scene.add(h1); modeObjects.push(h1);
+            const h2 = new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.02, 2), hMat); h2.position.set(x+0.5, 0.12, z); scene.add(h2); modeObjects.push(h2);
+            const h3 = new THREE.Mesh(new THREE.BoxGeometry(1.3, 0.02, 0.3), hMat); h3.position.set(x, 0.12, z); scene.add(h3); modeObjects.push(h3);
+            const circle = new THREE.Mesh(new THREE.RingGeometry(2.5, 2.8, 32), new THREE.MeshBasicMaterial({ color: 0xffffff, side: THREE.DoubleSide }));
+            circle.rotation.x = -Math.PI/2; circle.position.set(x, 0.12, z); scene.add(circle); modeObjects.push(circle);
         }
 
         // ==================== 모드 시작 ====================
@@ -666,52 +444,39 @@
             document.getElementById('main-menu').style.display = 'none';
             document.getElementById('hud').style.display = 'block';
             document.getElementById('mode-label').style.display = 'block';
-            document.getElementById('main-menu-btn').style.display = 'block'; // 메인이동 버튼 표시
-            gameStarted = true;
-            allMissionsComplete = false;
-            showFireworks = false;
-
-            clearModeObjects();
-            rings = [];
-            landingPad = null;
-
+            document.getElementById('main-menu-btn').style.display = 'block';
+            gameStarted = true; allMissionsComplete = false; showFireworks = false;
+            clearModeObjects(); rings = []; landingPad = null;
             createLandingPadAt(-15, -15);
             landingPad = { position: new THREE.Vector3(-15, 0.05, -15) };
-
             resetDrone();
 
             const modeLabel = document.getElementById('mode-label');
             const missionTitle = document.getElementById('mission-panel-title');
-            const missionList = document.getElementById('mission-list');
 
             if (mode === 'free') {
-                modeLabel.textContent = '🌍 자유비행';
-                modeLabel.style.borderColor = 'rgba(0, 229, 255, 0.5)';
+                modeLabel.textContent = '🌍 자유비행'; modeLabel.style.borderColor = 'rgba(0, 229, 255, 0.5)';
                 missionTitle.textContent = '🌍 자유비행';
-                missionList.innerHTML = '<div style="color:rgba(255,255,255,0.6); font-size:12px; line-height:1.6;">마음껏 비행하세요!<br>배터리 제한 없음<br>장애물을 피하며 자유롭게 탐험하세요.</div>';
+                document.getElementById('mission-list').innerHTML = '<div style="color:rgba(255,255,255,0.6); font-size:12px; line-height:1.6;">마음껏 비행하세요!<br>배터리 제한 없음</div>';
                 droneState.battery = 100;
                 document.getElementById('timer-display').style.display = 'none';
             } else if (mode === 'mission') {
-                modeLabel.textContent = '🎯 미션수행';
-                modeLabel.style.borderColor = 'rgba(255, 215, 0, 0.5)';
+                modeLabel.textContent = '🎯 미션수행'; modeLabel.style.borderColor = 'rgba(255, 215, 0, 0.5)';
                 missionTitle.textContent = '🎯 미션';
                 setupMissionMode();
                 document.getElementById('timer-display').style.display = 'none';
             } else if (mode === 'racing') {
-                modeLabel.textContent = '🏁 레이싱 경주';
-                modeLabel.style.borderColor = 'rgba(255, 64, 129, 0.5)';
+                modeLabel.textContent = '🏁 레이싱 경주'; modeLabel.style.borderColor = 'rgba(255, 64, 129, 0.5)';
                 missionTitle.textContent = '🏁 레이싱';
                 setupRacingMode();
                 document.getElementById('timer-display').style.display = 'block';
             } else if (mode === 'delivery') {
-                modeLabel.textContent = '📦 택배배달';
-                modeLabel.style.borderColor = 'rgba(0, 230, 118, 0.5)';
+                modeLabel.textContent = '📦 택배배달'; modeLabel.style.borderColor = 'rgba(0, 230, 118, 0.5)';
                 missionTitle.textContent = '📦 배달 임무';
                 setupDeliveryMode();
-                document.getElementById('timer-display').style.display = 'block';
+                document.getElementById('timer-display').style.display = 'none';
             } else if (mode === 'practice') {
-                modeLabel.textContent = '🎓 드론연습';
-                modeLabel.style.borderColor = 'rgba(170, 102, 255, 0.5)';
+                modeLabel.textContent = '🎓 드론연습'; modeLabel.style.borderColor = 'rgba(170, 102, 255, 0.5)';
                 missionTitle.textContent = '🎓 조작 연습';
                 setupPracticeMode();
                 document.getElementById('timer-display').style.display = 'none';
@@ -719,204 +484,122 @@
         }
 
         function clearModeObjects() {
-            modeObjects.forEach(obj => scene.remove(obj));
+            modeObjects.forEach(obj => {
+                if (obj.material) { if (obj.material.map) obj.material.map.dispose(); obj.material.dispose(); }
+                if (obj.geometry) obj.geometry.dispose();
+                scene.remove(obj);
+            });
             modeObjects = [];
         }
 
         function resetDrone() {
-            droneState.position.set(0, 0.5, 0);
-            droneState.velocity.set(0, 0, 0);
-            droneState.rotation = 0;
-            droneState.pitch = 0;
-            droneState.roll = 0;
-            droneState.battery = 100;
+            droneState.position.set(0, 0.5, 0); droneState.velocity.set(0, 0, 0);
+            droneState.rotation = 0; droneState.pitch = 0; droneState.roll = 0; droneState.battery = 100;
         }
 
-        // ==================== 미션수행 모드 ====================
+        // ==================== 미션수행 ====================
         function setupMissionMode() {
             modeState = { takeoff: false, ring: false, highAlt: false, landing: false };
-            const ringPositions = [
-                { x: 15, y: 8, z: 15 },
-                { x: -20, y: 12, z: 25 },
-                { x: 40, y: 6, z: -10 },
-            ];
-            ringPositions.forEach(pos => {
-                const ring = new THREE.Mesh(
-                    new THREE.TorusGeometry(3, 0.3, 8, 24),
-                    new THREE.MeshPhongMaterial({ color: 0xffeb3b, emissive: 0x665500 })
-                );
-                ring.position.set(pos.x, pos.y, pos.z);
-                ring.castShadow = true;
-                scene.add(ring);
-                modeObjects.push(ring);
+            [{ x:15,y:8,z:15 }, { x:-20,y:12,z:25 }, { x:40,y:6,z:-10 }].forEach(pos => {
+                const ring = new THREE.Mesh(new THREE.TorusGeometry(3, 0.3, 8, 24), new THREE.MeshPhongMaterial({ color: 0xffeb3b, emissive: 0x665500 }));
+                ring.position.set(pos.x, pos.y, pos.z); scene.add(ring); modeObjects.push(ring);
                 rings.push({ mesh: ring, pos: new THREE.Vector3(pos.x, pos.y, pos.z), passed: false });
             });
             updateMissionListMission();
         }
 
         function updateMissionListMission() {
-            const list = document.getElementById('mission-list');
-            list.innerHTML = `
-                <div class="mission-item"><div class="mission-check ${modeState.takeoff ? 'done' : ''}">✓</div><span>이륙 (고도 5m 이상)</span></div>
-                <div class="mission-item"><div class="mission-check ${modeState.ring ? 'done' : ''}">✓</div><span>링 통과 (3개)</span></div>
-                <div class="mission-item"><div class="mission-check ${modeState.highAlt ? 'done' : ''}">✓</div><span>고도 20m 도달</span></div>
-                <div class="mission-item"><div class="mission-check ${modeState.landing ? 'done' : ''}">✓</div><span>착륙 패드 착륙</span></div>
-            `;
+            document.getElementById('mission-list').innerHTML = `
+                <div class="mission-item"><div class="mission-check ${modeState.takeoff?'done':''}">✓</div><span>이륙 (고도 5m)</span></div>
+                <div class="mission-item"><div class="mission-check ${modeState.ring?'done':''}">✓</div><span>링 통과 (3개)</span></div>
+                <div class="mission-item"><div class="mission-check ${modeState.highAlt?'done':''}">✓</div><span>고도 20m 도달</span></div>
+                <div class="mission-item"><div class="mission-check ${modeState.landing?'done':''}">✓</div><span>착륙 패드 착륙</span></div>`;
         }
 
         function updateMissionMode() {
             if (allMissionsComplete) return;
-            if (droneState.position.y > 5 && !modeState.takeoff) {
-                modeState.takeoff = true;
-                showNotification('🎉 이륙 성공!', '고도 5m 달성!');
-            }
+            if (droneState.position.y > 5 && !modeState.takeoff) { modeState.takeoff = true; showNotification('🎉 이륙 성공!', '고도 5m 달성!'); }
             let allRings = true;
-            rings.forEach(ring => {
-                if (!ring.passed) {
-                    if (droneState.position.distanceTo(ring.pos) < 3.5) {
-                        ring.passed = true;
-                        ring.mesh.material.color.setHex(0x00e676);
-                        ring.mesh.material.emissive.setHex(0x004d1a);
-                    } else allRings = false;
-                }
-            });
-            if (allRings && rings.length > 0 && !modeState.ring) {
-                modeState.ring = true;
-                showNotification('🎯 모든 링 통과!', '훌륭합니다!');
-            }
-            if (droneState.position.y > 20 && !modeState.highAlt) {
-                modeState.highAlt = true;
-                showNotification('🏔️ 고고도 달성!', '고도 20m 이상!');
-            }
-            const landDist = Math.sqrt(
-                (droneState.position.x - landingPad.position.x) ** 2 +
-                (droneState.position.z - landingPad.position.z) ** 2
-            );
+            rings.forEach(ring => { if (!ring.passed) { if (droneState.position.distanceTo(ring.pos) < 3.5) { ring.passed = true; ring.mesh.material.color.setHex(0x00e676); ring.mesh.material.emissive.setHex(0x004d1a); } else allRings = false; }});
+            if (allRings && rings.length > 0 && !modeState.ring) { modeState.ring = true; showNotification('🎯 모든 링 통과!', '훌륭합니다!'); }
+            if (droneState.position.y > 20 && !modeState.highAlt) { modeState.highAlt = true; showNotification('🏔️ 고고도 달성!', '고도 20m 이상!'); }
+            const landDist = Math.sqrt((droneState.position.x-landingPad.position.x)**2 + (droneState.position.z-landingPad.position.z)**2);
             if (landDist < 3 && droneState.position.y < 1.5 && droneState.position.y > 0.4 && !modeState.landing) {
-                const hSpeed = Math.sqrt(droneState.velocity.x ** 2 + droneState.velocity.z ** 2);
-                if (hSpeed < 2 && Math.abs(droneState.velocity.y) < 2) {
-                    modeState.landing = true;
-                    showNotification('🛬 착륙 성공!', '완벽한 착륙!');
-                }
+                if (Math.sqrt(droneState.velocity.x**2+droneState.velocity.z**2) < 2 && Math.abs(droneState.velocity.y) < 2) { modeState.landing = true; showNotification('🛬 착륙 성공!', '완벽한 착륙!'); }
             }
             updateMissionListMission();
             if (modeState.takeoff && modeState.ring && modeState.highAlt && modeState.landing && !allMissionsComplete) {
-                allMissionsComplete = true;
-                showFireworks = true;
+                allMissionsComplete = true; showFireworks = true;
                 setTimeout(() => showComplete('🎉 미션 완료!', '모든 미션을 성공적으로 완료했습니다!'), 1500);
             }
         }
 
-        // ==================== 레이싱 모드 ====================
+        // ==================== 레이싱 ====================
         function setupRacingMode() {
-            raceTimer = 0;
-            raceStarted = false;
+            raceTimer = 0; raceStarted = false;
             modeState = { currentCheckpoint: 0, totalCheckpoints: 8, finished: false };
-            const checkpoints = [
-                { x: 10, y: 5, z: 10 },
-                { x: 25, y: 7, z: 5 },
-                { x: 35, y: 10, z: -10 },
-                { x: 20, y: 12, z: -25 },
-                { x: 0, y: 15, z: -20 },
-                { x: -15, y: 12, z: -5 },
-                { x: -25, y: 8, z: 15 },
-                { x: -10, y: 5, z: 25 },
-            ];
+            const checkpoints = [{x:10,y:5,z:10},{x:25,y:7,z:5},{x:35,y:10,z:-10},{x:20,y:12,z:-25},{x:0,y:15,z:-20},{x:-15,y:12,z:-5},{x:-25,y:8,z:15},{x:-10,y:5,z:25}];
             checkpoints.forEach((pos, i) => {
-                const color = i === 0 ? 0x00ff88 : 0xffeb3b;
-                const ring = new THREE.Mesh(
-                    new THREE.TorusGeometry(3, 0.3, 8, 24),
-                    new THREE.MeshPhongMaterial({ color: color, emissive: i === 0 ? 0x004422 : 0x665500 })
-                );
-                ring.position.set(pos.x, pos.y, pos.z);
-                ring.castShadow = true;
-                scene.add(ring);
-                modeObjects.push(ring);
-
-                const numMarker = new THREE.Mesh(
-                    new THREE.SphereGeometry(0.4, 8, 8),
-                    new THREE.MeshBasicMaterial({ color: color })
-                );
-                numMarker.position.set(pos.x, pos.y + 3.5, pos.z);
-                scene.add(numMarker);
-                modeObjects.push(numMarker);
-
-                rings.push({ mesh: ring, pos: new THREE.Vector3(pos.x, pos.y, pos.z), passed: false, index: i, marker: numMarker });
+                const isStart = i === 0;
+                const ringColor = isStart ? 0x00ff88 : 0xffeb3b;
+                const ring = new THREE.Mesh(new THREE.TorusGeometry(3, 0.3, 8, 24), new THREE.MeshPhongMaterial({ color: ringColor, emissive: isStart ? 0x004422 : 0x665500 }));
+                ring.position.set(pos.x, pos.y, pos.z); scene.add(ring); modeObjects.push(ring);
+                const labelColor = isStart ? 0x00cc66 : 0xffaa00;
+                const numLabel = createNumberLabel(i + 1, labelColor, '#ffffff', 2.2);
+                numLabel.position.set(pos.x, pos.y + 4.5, pos.z); numLabel.userData.ringIndex = i; numLabel.userData.baseColor = labelColor;
+                scene.add(numLabel); modeObjects.push(numLabel);
+                const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.5, 6), new THREE.MeshBasicMaterial({ color: ringColor, transparent: true, opacity: 0.5 }));
+                pole.position.set(pos.x, pos.y + 2.5, pos.z); scene.add(pole); modeObjects.push(pole);
+                rings.push({ mesh: ring, pos: new THREE.Vector3(pos.x, pos.y, pos.z), passed: false, index: i, label: numLabel, pole: pole });
             });
             updateMissionListRacing();
         }
 
         function updateMissionListRacing() {
-            const list = document.getElementById('mission-list');
             let html = `<div style="color:#ffd700; font-size:13px; margin-bottom:8px;">체크포인트: ${modeState.currentCheckpoint} / ${modeState.totalCheckpoints}</div>`;
             rings.forEach((ring, i) => {
                 const isActive = i === modeState.currentCheckpoint;
-                const isPassed = ring.passed;
-                html += `<div class="mission-item">
-                    <div class="mission-check ${isPassed ? 'done' : ''} ${isActive ? 'active' : ''}">${i + 1}</div>
-                    <span>CP ${i + 1} ${isPassed ? '✓' : isActive ? '◀ 현재' : ''}</span>
-                </div>`;
+                html += `<div class="mission-item"><div class="mission-check ${ring.passed?'done':''} ${isActive?'active':''}">${i+1}</div><span>CP ${i+1} ${ring.passed?'✓':isActive?'◀ 현재':''}</span></div>`;
             });
-            list.innerHTML = html;
+            document.getElementById('mission-list').innerHTML = html;
         }
 
         function updateRacingMode(dt) {
             if (modeState.finished) return;
             if (!raceStarted && droneState.position.y > 2) raceStarted = true;
-            if (raceStarted) {
-                raceTimer += dt;
-                updateTimerDisplay();
-            }
-
+            if (raceStarted) { raceTimer += dt; updateTimerDisplay(); }
             const current = modeState.currentCheckpoint;
             if (current < rings.length) {
                 const ring = rings[current];
                 if (droneState.position.distanceTo(ring.pos) < 3.5) {
                     ring.passed = true;
-                    ring.mesh.material.color.setHex(0x00e676);
-                    ring.mesh.material.emissive.setHex(0x004d1a);
-                    if (ring.marker) ring.marker.material.color.setHex(0x00e676);
+                    ring.mesh.material.color.setHex(0x00e676); ring.mesh.material.emissive.setHex(0x004d1a);
+                    if (ring.label) { const nl = updateNumberLabelColor(ring.label, 0x00cc44, '#fff'); nl.userData.ringIndex = ring.index; ring.label = nl; }
+                    if (ring.pole) ring.pole.material.color.setHex(0x00e676);
                     modeState.currentCheckpoint++;
                     if (modeState.currentCheckpoint < rings.length) {
                         const next = rings[modeState.currentCheckpoint];
-                        next.mesh.material.color.setHex(0xff8800);
-                        next.mesh.material.emissive.setHex(0x442200);
-                        if (next.marker) next.marker.material.color.setHex(0xff8800);
+                        next.mesh.material.color.setHex(0xff8800); next.mesh.material.emissive.setHex(0x663300);
+                        if (next.label) { const al = updateNumberLabelColor(next.label, 0xff6600, '#fff'); al.userData.ringIndex = next.index; next.label = al; }
+                        if (next.pole) next.pole.material.color.setHex(0xff8800);
                     }
-                    showNotification(`✅ CP ${current + 1} 통과!`, `남은 체크포인트: ${modeState.totalCheckpoints - modeState.currentCheckpoint}`);
+                    showNotification(`✅ CP ${current+1} 통과!`, `남은 체크포인트: ${modeState.totalCheckpoints - modeState.currentCheckpoint}`);
                     updateMissionListRacing();
                 }
             }
-
             if (modeState.currentCheckpoint >= modeState.totalCheckpoints && !modeState.finished) {
-                modeState.finished = true;
-                allMissionsComplete = true;
-                showFireworks = true;
-                const timeStr = formatTime(raceTimer);
-                setTimeout(() => showComplete('🏁 레이싱 완료!', `기록: ${timeStr}`), 1000);
+                modeState.finished = true; allMissionsComplete = true; showFireworks = true;
+                setTimeout(() => showComplete('🏁 레이싱 완료!', `기록: ${formatTime(raceTimer)}`), 1000);
             }
         }
 
-        function updateTimerDisplay() {
-            document.getElementById('timer-display').textContent = formatTime(raceTimer);
-        }
+        function updateTimerDisplay() { document.getElementById('timer-display').textContent = formatTime(raceTimer); }
+        function formatTime(t) { const m = Math.floor(t/60), s = Math.floor(t%60), ms = Math.floor((t%1)*100); return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}.${String(ms).padStart(2,'0')}`; }
 
-        function formatTime(t) {
-            const mins = Math.floor(t / 60);
-            const secs = Math.floor(t % 60);
-            const ms = Math.floor((t % 1) * 100);
-            return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}.${String(ms).padStart(2, '0')}`;
-        }
-
-        // ==================== 택배배달 모드 ====================
+        // ==================== 택배배달 ====================
         function setupDeliveryMode() {
-            raceTimer = 0;
             modeState = {
-                currentDelivery: 0,
-                totalDeliveries: 3,
-                phase: 'pickup',
-                carrying: false,
-                finished: false,
+                currentDelivery: 0, totalDeliveries: 3, phase: 'pickup', carrying: false, finished: false,
                 deliveries: [
                     { pickup: { x: 10, z: 10 }, dropoff: { x: -30, z: 20 }, name: '서울행 소포' },
                     { pickup: { x: -20, z: -15 }, dropoff: { x: 30, z: -30 }, name: '부산행 택배' },
@@ -925,52 +608,42 @@
             };
 
             modeState.deliveries.forEach((del, i) => {
-                const pickupPad = new THREE.Mesh(
-                    new THREE.CylinderGeometry(2.5, 2.5, 0.1, 24),
-                    new THREE.MeshPhongMaterial({ color: 0x2196f3, emissive: 0x0d47a1 })
-                );
-                pickupPad.position.set(del.pickup.x, 0.06, del.pickup.z);
-                scene.add(pickupPad);
-                modeObjects.push(pickupPad);
+                // === 픽업 위치 ===
+                const pickupPad = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.5, 0.1, 24), new THREE.MeshPhongMaterial({ color: 0x2196f3, emissive: 0x0d47a1 }));
+                pickupPad.position.set(del.pickup.x, 0.06, del.pickup.z); scene.add(pickupPad); modeObjects.push(pickupPad);
 
-                const box = new THREE.Mesh(
-                    new THREE.BoxGeometry(1, 1, 1),
-                    new THREE.MeshPhongMaterial({ color: 0x8d6e63 })
-                );
-                box.position.set(del.pickup.x, 0.6, del.pickup.z);
-                box.castShadow = true;
-                scene.add(box);
-                modeObjects.push(box);
+                // 픽업 숫자 라벨 (1, 2, 3)
+                const pickupLabel = createNumberLabel(i + 1, 0x1565c0, '#ffffff', 2.5);
+                pickupLabel.position.set(del.pickup.x, 4, del.pickup.z);
+                pickupLabel.userData.type = 'pickup'; pickupLabel.userData.deliveryIndex = i;
+                scene.add(pickupLabel); modeObjects.push(pickupLabel);
 
-                const ribbon1 = new THREE.Mesh(
-                    new THREE.BoxGeometry(1.02, 0.1, 0.15),
-                    new THREE.MeshBasicMaterial({ color: 0xff5252 })
-                );
-                ribbon1.position.set(del.pickup.x, 1.15, del.pickup.z);
-                scene.add(ribbon1);
-                modeObjects.push(ribbon1);
+                const pickupPole = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 3, 8), new THREE.MeshBasicMaterial({ color: 0x2196f3, transparent: true, opacity: 0.4 }));
+                pickupPole.position.set(del.pickup.x, 2, del.pickup.z); scene.add(pickupPole); modeObjects.push(pickupPole);
 
-                const dropoffPad = new THREE.Mesh(
-                    new THREE.CylinderGeometry(2.5, 2.5, 0.1, 24),
-                    new THREE.MeshPhongMaterial({ color: 0x4caf50, emissive: 0x1b5e20 })
-                );
-                dropoffPad.position.set(del.dropoff.x, 0.06, del.dropoff.z);
-                scene.add(dropoffPad);
-                modeObjects.push(dropoffPad);
+                const box = new THREE.Mesh(new THREE.BoxGeometry(1, 1, 1), new THREE.MeshPhongMaterial({ color: 0x8d6e63 }));
+                box.position.set(del.pickup.x, 0.6, del.pickup.z); box.castShadow = true; scene.add(box); modeObjects.push(box);
+                const ribbon = new THREE.Mesh(new THREE.BoxGeometry(1.02, 0.1, 0.15), new THREE.MeshBasicMaterial({ color: 0xff5252 }));
+                ribbon.position.set(del.pickup.x, 1.15, del.pickup.z); scene.add(ribbon); modeObjects.push(ribbon);
 
-                const beacon = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.2, 0.2, 8, 8),
-                    new THREE.MeshBasicMaterial({ color: 0x4caf50, transparent: true, opacity: 0.4 })
-                );
-                beacon.position.set(del.dropoff.x, 4, del.dropoff.z);
-                scene.add(beacon);
-                modeObjects.push(beacon);
+                // === 배달 위치 ===
+                const dropoffPad = new THREE.Mesh(new THREE.CylinderGeometry(2.5, 2.5, 0.1, 24), new THREE.MeshPhongMaterial({ color: 0x4caf50, emissive: 0x1b5e20 }));
+                dropoffPad.position.set(del.dropoff.x, 0.06, del.dropoff.z); scene.add(dropoffPad); modeObjects.push(dropoffPad);
 
-                del.pickupPad = pickupPad;
-                del.box = box;
-                del.ribbon = ribbon1;
-                del.dropoffPad = dropoffPad;
-                del.beacon = beacon;
+                // 배달 숫자 라벨 (1, 2, 3)
+                const dropoffLabel = createNumberLabel(i + 1, 0x2e7d32, '#ffffff', 2.5);
+                dropoffLabel.position.set(del.dropoff.x, 4, del.dropoff.z);
+                dropoffLabel.userData.type = 'dropoff'; dropoffLabel.userData.deliveryIndex = i;
+                scene.add(dropoffLabel); modeObjects.push(dropoffLabel);
+
+                const beacon = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 8, 8), new THREE.MeshBasicMaterial({ color: 0x4caf50, transparent: true, opacity: 0.35 }));
+                beacon.position.set(del.dropoff.x, 4, del.dropoff.z); scene.add(beacon); modeObjects.push(beacon);
+                const dropArrow = new THREE.Mesh(new THREE.ConeGeometry(0.6, 1.2, 8), new THREE.MeshBasicMaterial({ color: 0x4caf50, transparent: true, opacity: 0.7 }));
+                dropArrow.rotation.x = Math.PI; dropArrow.position.set(del.dropoff.x, 8.5, del.dropoff.z); scene.add(dropArrow); modeObjects.push(dropArrow);
+
+                del.pickupPad = pickupPad; del.pickupLabel = pickupLabel; del.pickupPole = pickupPole;
+                del.box = box; del.ribbon = ribbon;
+                del.dropoffPad = dropoffPad; del.dropoffLabel = dropoffLabel; del.beacon = beacon; del.dropArrow = dropArrow;
             });
 
             highlightCurrentDelivery();
@@ -983,14 +656,13 @@
             const del = modeState.deliveries[idx];
             if (modeState.phase === 'pickup') {
                 del.pickupPad.material.emissive.setHex(0x1565c0);
-                del.box.visible = true;
-                del.ribbon.visible = true;
+                del.box.visible = true; del.ribbon.visible = true;
             }
         }
 
         function updateMissionListDelivery() {
             const list = document.getElementById('mission-list');
-            let html = `<div style="color:#00e676; font-size:13px; margin-bottom:8px;">배달: ${modeState.currentDelivery} / ${modeState.totalDeliveries}</div>`;
+            let html = '';
             modeState.deliveries.forEach((del, i) => {
                 const isCurrent = i === modeState.currentDelivery;
                 const isDone = i < modeState.currentDelivery;
@@ -1007,462 +679,110 @@
 
         function updateDeliveryMode(dt) {
             if (modeState.finished) return;
-            raceTimer += dt;
-            updateTimerDisplay();
-
             const idx = modeState.currentDelivery;
             if (idx >= modeState.deliveries.length) return;
             const del = modeState.deliveries[idx];
 
             if (modeState.phase === 'pickup') {
-                const dist = Math.sqrt(
-                    (droneState.position.x - del.pickup.x) ** 2 +
-                    (droneState.position.z - del.pickup.z) ** 2
-                );
+                const dist = Math.sqrt((droneState.position.x - del.pickup.x)**2 + (droneState.position.z - del.pickup.z)**2);
                 if (dist < 3 && droneState.position.y < 3 && droneState.position.y > 0.5) {
-                    modeState.carrying = true;
-                    modeState.phase = 'deliver';
-                    del.box.visible = false;
-                    del.ribbon.visible = false;
+                    modeState.carrying = true; modeState.phase = 'deliver';
+                    del.box.visible = false; del.ribbon.visible = false;
+                    if (del.pickupLabel) { const dl = updateNumberLabelColor(del.pickupLabel, 0x00884a, '#fff'); dl.userData.type = 'pickup'; dl.userData.deliveryIndex = idx; del.pickupLabel = dl; }
+                    del.pickupPad.material.emissive.setHex(0x004422); del.pickupPad.material.color.setHex(0x00884a);
+                    if (del.pickupPole) del.pickupPole.material.color.setHex(0x00884a);
                     del.dropoffPad.material.emissive.setHex(0x2e7d32);
                     showNotification(`📦 ${del.name} 픽업!`, '목적지까지 배달하세요!');
                     updateMissionListDelivery();
                 }
             } else {
-                const dist = Math.sqrt(
-                    (droneState.position.x - del.dropoff.x) ** 2 +
-                    (droneState.position.z - del.dropoff.z) ** 2
-                );
+                const dist = Math.sqrt((droneState.position.x - del.dropoff.x)**2 + (droneState.position.z - del.dropoff.z)**2);
                 if (dist < 3 && droneState.position.y < 3 && droneState.position.y > 0.5) {
                     modeState.carrying = false;
-                    modeState.currentDelivery++;
-                    modeState.phase = 'pickup';
+                    if (del.dropoffLabel) { const dl = updateNumberLabelColor(del.dropoffLabel, 0x00884a, '#fff'); dl.userData.type = 'dropoff'; dl.userData.deliveryIndex = idx; del.dropoffLabel = dl; }
+                    del.dropoffPad.material.color.setHex(0x00884a); del.dropoffPad.material.emissive.setHex(0x004422);
+                    if (del.beacon) del.beacon.material.color.setHex(0x00884a);
+                    if (del.dropArrow) del.dropArrow.material.color.setHex(0x00884a);
+                    modeState.currentDelivery++; modeState.phase = 'pickup';
                     showNotification(`✅ ${del.name} 배달 완료!`, `남은 배달: ${modeState.totalDeliveries - modeState.currentDelivery}`);
-                    if (modeState.currentDelivery < modeState.deliveries.length) {
-                        highlightCurrentDelivery();
-                    }
+                    if (modeState.currentDelivery < modeState.deliveries.length) highlightCurrentDelivery();
                     updateMissionListDelivery();
-
                     if (modeState.currentDelivery >= modeState.totalDeliveries) {
-                        modeState.finished = true;
-                        allMissionsComplete = true;
-                        showFireworks = true;
-                        setTimeout(() => showComplete('📦 배달 완료!', `총 시간: ${formatTime(raceTimer)}`), 1000);
+                        modeState.finished = true; allMissionsComplete = true; showFireworks = true;
+                        setTimeout(() => showComplete('📦 배달 완료!', '모든 택배를 성공적으로 배달했습니다!'), 1000);
                     }
                 }
             }
         }
 
-        // ==================== 드론연습 모드 (8단계 기본 조작) ====================
+        // ==================== 드론연습 ====================
         function setupPracticeMode() {
             modeState = {
-                currentStage: 0,
-                totalStages: 8,
-                finished: false,
-                stageStartTime: 0,
-                startPos: new THREE.Vector3(0, 0.5, 0),
-                startRotation: 0,
+                currentStage: 0, totalStages: 8, finished: false,
+                startPos: new THREE.Vector3(0, 0.5, 0), startRotation: 0,
                 stages: [
-                    { 
-                        name: '상승 연습', 
-                        desc: 'W키를 눌러 고도 5m까지 상승하세요',
-                        key: 'KeyW',
-                        keyLabel: 'W',
-                        icon: '⬆️',
-                        color: 0x00e5ff,
+                    { name: '상승 연습', desc: 'W키를 눌러 고도 5m까지 상승하세요', keyLabel: 'W', icon: '⬆️',
                         check: () => droneState.position.y >= 5,
-                        createGuide: (scene) => {
-                            // 수직 화살표 (위쪽)
-                            const arrowGroup = new THREE.Group();
-                            const shaft = new THREE.Mesh(
-                                new THREE.CylinderGeometry(0.3, 0.3, 3, 8),
-                                new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.6 })
-                            );
-                            shaft.position.set(0, 3, 0);
-                            arrowGroup.add(shaft);
-                            const head = new THREE.Mesh(
-                                new THREE.ConeGeometry(0.8, 1.5, 8),
-                                new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.8 })
-                            );
-                            head.position.set(0, 5, 0);
-                            arrowGroup.add(head);
-                            
-                            // 목표 고도 링
-                            const targetRing = new THREE.Mesh(
-                                new THREE.TorusGeometry(3, 0.15, 8, 32),
-                                new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.5 })
-                            );
-                            targetRing.rotation.x = Math.PI / 2;
-                            targetRing.position.set(0, 5, 0);
-                            arrowGroup.add(targetRing);
-                            
-                            scene.add(arrowGroup);
-                            return arrowGroup;
-                        }
+                        createGuide: () => { const g = new THREE.Group(); g.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,3,8), new THREE.MeshBasicMaterial({color:0x00e5ff,transparent:true,opacity:0.6})),{position:new THREE.Vector3(0,3,0)})); g.add(Object.assign(new THREE.Mesh(new THREE.ConeGeometry(0.8,1.5,8), new THREE.MeshBasicMaterial({color:0x00e5ff,transparent:true,opacity:0.8})),{position:new THREE.Vector3(0,5,0)})); const tr = new THREE.Mesh(new THREE.TorusGeometry(3,0.15,8,32), new THREE.MeshBasicMaterial({color:0x00e5ff,transparent:true,opacity:0.5})); tr.rotation.x=Math.PI/2; tr.position.set(0,5,0); g.add(tr); return g; }
                     },
-                    { 
-                        name: '하강 연습', 
-                        desc: 'S키를 눌러 고도 2m까지 하강하세요',
-                        key: 'KeyS',
-                        keyLabel: 'S',
-                        icon: '⬇️',
-                        color: 0xff9800,
+                    { name: '하강 연습', desc: 'S키를 눌러 고도 2m까지 하강하세요', keyLabel: 'S', icon: '⬇️',
                         check: () => droneState.position.y <= 2 && droneState.position.y >= 0.5,
-                        createGuide: (scene) => {
-                            const arrowGroup = new THREE.Group();
-                            const shaft = new THREE.Mesh(
-                                new THREE.CylinderGeometry(0.3, 0.3, 2, 8),
-                                new THREE.MeshBasicMaterial({ color: 0xff9800, transparent: true, opacity: 0.6 })
-                            );
-                            shaft.position.set(0, 3.5, 0);
-                            arrowGroup.add(shaft);
-                            const head = new THREE.Mesh(
-                                new THREE.ConeGeometry(0.8, 1.5, 8),
-                                new THREE.MeshBasicMaterial({ color: 0xff9800, transparent: true, opacity: 0.8 })
-                            );
-                            head.rotation.z = Math.PI;
-                            head.position.set(0, 2, 0);
-                            arrowGroup.add(head);
-                            
-                            const targetRing = new THREE.Mesh(
-                                new THREE.TorusGeometry(3, 0.15, 8, 32),
-                                new THREE.MeshBasicMaterial({ color: 0xff9800, transparent: true, opacity: 0.5 })
-                            );
-                            targetRing.rotation.x = Math.PI / 2;
-                            targetRing.position.set(0, 2, 0);
-                            arrowGroup.add(targetRing);
-                            
-                            scene.add(arrowGroup);
-                            return arrowGroup;
-                        }
+                        createGuide: () => { const g = new THREE.Group(); g.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,2,8), new THREE.MeshBasicMaterial({color:0xff9800,transparent:true,opacity:0.6})),{position:new THREE.Vector3(0,3.5,0)})); const h = new THREE.Mesh(new THREE.ConeGeometry(0.8,1.5,8), new THREE.MeshBasicMaterial({color:0xff9800,transparent:true,opacity:0.8})); h.rotation.z=Math.PI; h.position.set(0,2,0); g.add(h); const tr = new THREE.Mesh(new THREE.TorusGeometry(3,0.15,8,32), new THREE.MeshBasicMaterial({color:0xff9800,transparent:true,opacity:0.5})); tr.rotation.x=Math.PI/2; tr.position.set(0,2,0); g.add(tr); return g; }
                     },
-                    { 
-                        name: '전진 연습', 
-                        desc: '↑키를 눌러 앞으로 20m 이동하세요',
-                        key: 'ArrowUp',
-                        keyLabel: '↑',
-                        icon: '🔼',
-                        color: 0x00e676,
-                        check: () => {
-                            const startZ = modeState.startPos.z;
-                            const forward = new THREE.Vector3(-Math.sin(modeState.startRotation), 0, -Math.cos(modeState.startRotation));
-                            const currentOffset = new THREE.Vector3(
-                                droneState.position.x - modeState.startPos.x,
-                                0,
-                                droneState.position.z - startZ
-                            );
-                            return currentOffset.dot(forward) <= -20;
-                        },
-                        createGuide: (scene) => {
-                            const arrowGroup = new THREE.Group();
-                            // 드론 앞쪽에 긴 화살표
-                            const forward = new THREE.Vector3(-Math.sin(modeState.startRotation), 0, -Math.cos(modeState.startRotation));
-                            const shaft = new THREE.Mesh(
-                                new THREE.CylinderGeometry(0.3, 0.3, 15, 8),
-                                new THREE.MeshBasicMaterial({ color: 0x00e676, transparent: true, opacity: 0.6 })
-                            );
-                            shaft.rotation.x = Math.PI / 2;
-                            shaft.position.set(forward.x * 10, 1.5, forward.z * 10);
-                            shaft.rotation.y = modeState.startRotation;
-                            arrowGroup.add(shaft);
-                            
-                            const head = new THREE.Mesh(
-                                new THREE.ConeGeometry(1, 2, 8),
-                                new THREE.MeshBasicMaterial({ color: 0x00e676, transparent: true, opacity: 0.8 })
-                            );
-                            head.rotation.x = Math.PI / 2;
-                            head.position.set(forward.x * 20, 1.5, forward.z * 20);
-                            head.rotation.y = modeState.startRotation;
-                            arrowGroup.add(head);
-                            
-                            // 목표 지점 마커
-                            const target = new THREE.Mesh(
-                                new THREE.CylinderGeometry(2, 2, 0.1, 24),
-                                new THREE.MeshBasicMaterial({ color: 0x00e676, transparent: true, opacity: 0.4 })
-                            );
-                            target.position.set(forward.x * 20, 0.1, forward.z * 20);
-                            arrowGroup.add(target);
-                            
-                            scene.add(arrowGroup);
-                            return arrowGroup;
-                        }
+                    { name: '전진 연습', desc: '↑키를 눌러 앞으로 20m 이동하세요', keyLabel: '↑', icon: '🔼',
+                        check: () => { const f = new THREE.Vector3(-Math.sin(modeState.startRotation),0,-Math.cos(modeState.startRotation)); const o = new THREE.Vector3(droneState.position.x-modeState.startPos.x,0,droneState.position.z-modeState.startPos.z); return o.dot(f) <= -20; },
+                        createGuide: () => { const g = new THREE.Group(); const f = new THREE.Vector3(-Math.sin(modeState.startRotation),0,-Math.cos(modeState.startRotation)); const s = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,15,8), new THREE.MeshBasicMaterial({color:0x00e676,transparent:true,opacity:0.6})); s.rotation.x=Math.PI/2; s.position.set(f.x*10,1.5,f.z*10); g.add(s); const h = new THREE.Mesh(new THREE.ConeGeometry(1,2,8), new THREE.MeshBasicMaterial({color:0x00e676,transparent:true,opacity:0.8})); h.rotation.x=Math.PI/2; h.position.set(f.x*20,1.5,f.z*20); g.add(h); const t = new THREE.Mesh(new THREE.CylinderGeometry(2,2,0.1,24), new THREE.MeshBasicMaterial({color:0x00e676,transparent:true,opacity:0.4})); t.position.set(f.x*20,0.1,f.z*20); g.add(t); return g; }
                     },
-                    { 
-                        name: '후진 연습', 
-                        desc: '↓키를 눌러 뒤로 15m 이동하세요',
-                        key: 'ArrowDown',
-                        keyLabel: '↓',
-                        icon: '🔽',
-                        color: 0xff5252,
-                        check: () => {
-                            const backward = new THREE.Vector3(Math.sin(modeState.startRotation), 0, Math.cos(modeState.startRotation));
-                            const currentOffset = new THREE.Vector3(
-                                droneState.position.x - modeState.startPos.x,
-                                0,
-                                droneState.position.z - modeState.startPos.z
-                            );
-                            return currentOffset.dot(backward) >= 15;
-                        },
-                        createGuide: (scene) => {
-                            const arrowGroup = new THREE.Group();
-                            const backward = new THREE.Vector3(Math.sin(modeState.startRotation), 0, Math.cos(modeState.startRotation));
-                            const shaft = new THREE.Mesh(
-                                new THREE.CylinderGeometry(0.3, 0.3, 10, 8),
-                                new THREE.MeshBasicMaterial({ color: 0xff5252, transparent: true, opacity: 0.6 })
-                            );
-                            shaft.rotation.x = Math.PI / 2;
-                            shaft.position.set(backward.x * 8, 1.5, backward.z * 8);
-                            shaft.rotation.y = modeState.startRotation;
-                            arrowGroup.add(shaft);
-                            
-                            const head = new THREE.Mesh(
-                                new THREE.ConeGeometry(1, 2, 8),
-                                new THREE.MeshBasicMaterial({ color: 0xff5252, transparent: true, opacity: 0.8 })
-                            );
-                            head.rotation.x = -Math.PI / 2;
-                            head.position.set(backward.x * 15, 1.5, backward.z * 15);
-                            head.rotation.y = modeState.startRotation;
-                            arrowGroup.add(head);
-                            
-                            const target = new THREE.Mesh(
-                                new THREE.CylinderGeometry(2, 2, 0.1, 24),
-                                new THREE.MeshBasicMaterial({ color: 0xff5252, transparent: true, opacity: 0.4 })
-                            );
-                            target.position.set(backward.x * 15, 0.1, backward.z * 15);
-                            arrowGroup.add(target);
-                            
-                            scene.add(arrowGroup);
-                            return arrowGroup;
-                        }
+                    { name: '후진 연습', desc: '↓키를 눌러 뒤로 15m 이동하세요', keyLabel: '↓', icon: '🔽',
+                        check: () => { const b = new THREE.Vector3(Math.sin(modeState.startRotation),0,Math.cos(modeState.startRotation)); const o = new THREE.Vector3(droneState.position.x-modeState.startPos.x,0,droneState.position.z-modeState.startPos.z); return o.dot(b) >= 15; },
+                        createGuide: () => { const g = new THREE.Group(); const b = new THREE.Vector3(Math.sin(modeState.startRotation),0,Math.cos(modeState.startRotation)); const s = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,10,8), new THREE.MeshBasicMaterial({color:0xff5252,transparent:true,opacity:0.6})); s.rotation.x=Math.PI/2; s.position.set(b.x*8,1.5,b.z*8); g.add(s); const h = new THREE.Mesh(new THREE.ConeGeometry(1,2,8), new THREE.MeshBasicMaterial({color:0xff5252,transparent:true,opacity:0.8})); h.rotation.x=-Math.PI/2; h.position.set(b.x*15,1.5,b.z*15); g.add(h); const t = new THREE.Mesh(new THREE.CylinderGeometry(2,2,0.1,24), new THREE.MeshBasicMaterial({color:0xff5252,transparent:true,opacity:0.4})); t.position.set(b.x*15,0.1,b.z*15); g.add(t); return g; }
                     },
-                    { 
-                        name: '좌측 이동 연습', 
-                        desc: '←키를 눌러 왼쪽으로 15m 이동하세요',
-                        key: 'ArrowLeft',
-                        keyLabel: '←',
-                        icon: '◀️',
-                        color: 0x2196f3,
-                        check: () => {
-                            const left = new THREE.Vector3(-Math.cos(modeState.startRotation), 0, Math.sin(modeState.startRotation));
-                            const currentOffset = new THREE.Vector3(
-                                droneState.position.x - modeState.startPos.x,
-                                0,
-                                droneState.position.z - modeState.startPos.z
-                            );
-                            return currentOffset.dot(left) >= 15;
-                        },
-                        createGuide: (scene) => {
-                            const arrowGroup = new THREE.Group();
-                            const left = new THREE.Vector3(-Math.cos(modeState.startRotation), 0, Math.sin(modeState.startRotation));
-                            const shaft = new THREE.Mesh(
-                                new THREE.CylinderGeometry(0.3, 0.3, 10, 8),
-                                new THREE.MeshBasicMaterial({ color: 0x2196f3, transparent: true, opacity: 0.6 })
-                            );
-                            shaft.rotation.z = Math.PI / 2;
-                            shaft.position.set(left.x * 8, 1.5, left.z * 8);
-                            arrowGroup.add(shaft);
-                            
-                            const head = new THREE.Mesh(
-                                new THREE.ConeGeometry(1, 2, 8),
-                                new THREE.MeshBasicMaterial({ color: 0x2196f3, transparent: true, opacity: 0.8 })
-                            );
-                            head.rotation.z = -Math.PI / 2;
-                            head.position.set(left.x * 15, 1.5, left.z * 15);
-                            arrowGroup.add(head);
-                            
-                            const target = new THREE.Mesh(
-                                new THREE.CylinderGeometry(2, 2, 0.1, 24),
-                                new THREE.MeshBasicMaterial({ color: 0x2196f3, transparent: true, opacity: 0.4 })
-                            );
-                            target.position.set(left.x * 15, 0.1, left.z * 15);
-                            arrowGroup.add(target);
-                            
-                            scene.add(arrowGroup);
-                            return arrowGroup;
-                        }
+                    { name: '좌측 이동', desc: '←키를 눌러 왼쪽으로 15m 이동하세요', keyLabel: '←', icon: '◀️',
+                        check: () => { const l = new THREE.Vector3(-Math.cos(modeState.startRotation),0,Math.sin(modeState.startRotation)); const o = new THREE.Vector3(droneState.position.x-modeState.startPos.x,0,droneState.position.z-modeState.startPos.z); return o.dot(l) >= 15; },
+                        createGuide: () => { const g = new THREE.Group(); const l = new THREE.Vector3(-Math.cos(modeState.startRotation),0,Math.sin(modeState.startRotation)); const s = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,10,8), new THREE.MeshBasicMaterial({color:0x2196f3,transparent:true,opacity:0.6})); s.rotation.z=Math.PI/2; s.position.set(l.x*8,1.5,l.z*8); g.add(s); const h = new THREE.Mesh(new THREE.ConeGeometry(1,2,8), new THREE.MeshBasicMaterial({color:0x2196f3,transparent:true,opacity:0.8})); h.rotation.z=-Math.PI/2; h.position.set(l.x*15,1.5,l.z*15); g.add(h); const t = new THREE.Mesh(new THREE.CylinderGeometry(2,2,0.1,24), new THREE.MeshBasicMaterial({color:0x2196f3,transparent:true,opacity:0.4})); t.position.set(l.x*15,0.1,l.z*15); g.add(t); return g; }
                     },
-                    { 
-                        name: '우측 이동 연습', 
-                        desc: '→키를 눌러 오른쪽으로 15m 이동하세요',
-                        key: 'ArrowRight',
-                        keyLabel: '→',
-                        icon: '▶️',
-                        color: 0xffeb3b,
-                        check: () => {
-                            const right = new THREE.Vector3(Math.cos(modeState.startRotation), 0, -Math.sin(modeState.startRotation));
-                            const currentOffset = new THREE.Vector3(
-                                droneState.position.x - modeState.startPos.x,
-                                0,
-                                droneState.position.z - modeState.startPos.z
-                            );
-                            return currentOffset.dot(right) >= 15;
-                        },
-                        createGuide: (scene) => {
-                            const arrowGroup = new THREE.Group();
-                            const right = new THREE.Vector3(Math.cos(modeState.startRotation), 0, -Math.sin(modeState.startRotation));
-                            const shaft = new THREE.Mesh(
-                                new THREE.CylinderGeometry(0.3, 0.3, 10, 8),
-                                new THREE.MeshBasicMaterial({ color: 0xffeb3b, transparent: true, opacity: 0.6 })
-                            );
-                            shaft.rotation.z = Math.PI / 2;
-                            shaft.position.set(right.x * 8, 1.5, right.z * 8);
-                            arrowGroup.add(shaft);
-                            
-                            const head = new THREE.Mesh(
-                                new THREE.ConeGeometry(1, 2, 8),
-                                new THREE.MeshBasicMaterial({ color: 0xffeb3b, transparent: true, opacity: 0.8 })
-                            );
-                            head.rotation.z = Math.PI / 2;
-                            head.position.set(right.x * 15, 1.5, right.z * 15);
-                            arrowGroup.add(head);
-                            
-                            const target = new THREE.Mesh(
-                                new THREE.CylinderGeometry(2, 2, 0.1, 24),
-                                new THREE.MeshBasicMaterial({ color: 0xffeb3b, transparent: true, opacity: 0.4 })
-                            );
-                            target.position.set(right.x * 15, 0.1, right.z * 15);
-                            arrowGroup.add(target);
-                            
-                            scene.add(arrowGroup);
-                            return arrowGroup;
-                        }
+                    { name: '우측 이동', desc: '→키를 눌러 오른쪽으로 15m 이동하세요', keyLabel: '→', icon: '▶️',
+                        check: () => { const r = new THREE.Vector3(Math.cos(modeState.startRotation),0,-Math.sin(modeState.startRotation)); const o = new THREE.Vector3(droneState.position.x-modeState.startPos.x,0,droneState.position.z-modeState.startPos.z); return o.dot(r) >= 15; },
+                        createGuide: () => { const g = new THREE.Group(); const r = new THREE.Vector3(Math.cos(modeState.startRotation),0,-Math.sin(modeState.startRotation)); const s = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,10,8), new THREE.MeshBasicMaterial({color:0xffeb3b,transparent:true,opacity:0.6})); s.rotation.z=Math.PI/2; s.position.set(r.x*8,1.5,r.z*8); g.add(s); const h = new THREE.Mesh(new THREE.ConeGeometry(1,2,8), new THREE.MeshBasicMaterial({color:0xffeb3b,transparent:true,opacity:0.8})); h.rotation.z=Math.PI/2; h.position.set(r.x*15,1.5,r.z*15); g.add(h); const t = new THREE.Mesh(new THREE.CylinderGeometry(2,2,0.1,24), new THREE.MeshBasicMaterial({color:0xffeb3b,transparent:true,opacity:0.4})); t.position.set(r.x*15,0.1,r.z*15); g.add(t); return g; }
                     },
-                    { 
-                        name: '좌회전 연습', 
-                        desc: 'A키를 눌러 180도 좌회전하세요',
-                        key: 'KeyA',
-                        keyLabel: 'A',
-                        icon: '↺',
-                        color: 0xaa66ff,
-                        check: () => {
-                            let rotationDiff = droneState.rotation - modeState.startRotation;
-                            rotationDiff = ((rotationDiff % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-                            return rotationDiff >= Math.PI - 0.2 && rotationDiff <= Math.PI + 0.2;
-                        },
-                        createGuide: (scene) => {
-                            const arrowGroup = new THREE.Group();
-                            // 회전 호 (반원)
-                            const curve = new THREE.EllipseCurve(0, 0, 3, 3, 0, Math.PI, false, 0);
-                            const points = curve.getPoints(32);
-                            const geometry = new THREE.BufferGeometry().setFromPoints(points);
-                            const material = new THREE.LineBasicMaterial({ color: 0xaa66ff, linewidth: 2 });
-                            const arc = new THREE.Line(geometry, material);
-                            arc.rotation.x = -Math.PI / 2;
-                            arc.position.y = 2;
-                            arrowGroup.add(arc);
-                            
-                            // 화살표 헤드
-                            const head = new THREE.Mesh(
-                                new THREE.ConeGeometry(0.5, 1, 8),
-                                new THREE.MeshBasicMaterial({ color: 0xaa66ff })
-                            );
-                            head.position.set(-3, 2, 0);
-                            head.rotation.z = Math.PI / 2;
-                            arrowGroup.add(head);
-                            
-                            // 텍스트 "180°"
-                            const textGeo = new THREE.SphereGeometry(0.3, 8, 8);
-                            const textMat = new THREE.MeshBasicMaterial({ color: 0xaa66ff });
-                            const textMarker = new THREE.Mesh(textGeo, textMat);
-                            textMarker.position.set(0, 4, 0);
-                            arrowGroup.add(textMarker);
-                            
-                            scene.add(arrowGroup);
-                            return arrowGroup;
-                        }
+                    { name: '좌회전 연습', desc: 'A키를 눌러 180도 좌회전하세요', keyLabel: 'A', icon: '↺',
+                        check: () => { let d = droneState.rotation - modeState.startRotation; d = ((d%(Math.PI*2))+(Math.PI*2))%(Math.PI*2); return d >= Math.PI-0.2 && d <= Math.PI+0.2; },
+                        createGuide: () => { const g = new THREE.Group(); const pts = new THREE.EllipseCurve(0,0,3,3,0,Math.PI,false,0).getPoints(32); const arc = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({color:0xaa66ff})); arc.rotation.x=-Math.PI/2; arc.position.y=2; g.add(arc); const h = new THREE.Mesh(new THREE.ConeGeometry(0.5,1,8), new THREE.MeshBasicMaterial({color:0xaa66ff})); h.position.set(-3,2,0); h.rotation.z=Math.PI/2; g.add(h); return g; }
                     },
-                    { 
-                        name: '우회전 연습', 
-                        desc: 'D키를 눌러 180도 우회전하세요',
-                        key: 'KeyD',
-                        keyLabel: 'D',
-                        icon: '↻',
-                        color: 0xff4081,
-                        check: () => {
-                            let rotationDiff = modeState.startRotation - droneState.rotation;
-                            rotationDiff = ((rotationDiff % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
-                            return rotationDiff >= Math.PI - 0.2 && rotationDiff <= Math.PI + 0.2;
-                        },
-                        createGuide: (scene) => {
-                            const arrowGroup = new THREE.Group();
-                            const curve = new THREE.EllipseCurve(0, 0, 3, 3, 0, -Math.PI, true, 0);
-                            const points = curve.getPoints(32);
-                            const geometry = new THREE.BufferGeometry().setFromPoints(points);
-                            const material = new THREE.LineBasicMaterial({ color: 0xff4081, linewidth: 2 });
-                            const arc = new THREE.Line(geometry, material);
-                            arc.rotation.x = -Math.PI / 2;
-                            arc.position.y = 2;
-                            arrowGroup.add(arc);
-                            
-                            const head = new THREE.Mesh(
-                                new THREE.ConeGeometry(0.5, 1, 8),
-                                new THREE.MeshBasicMaterial({ color: 0xff4081 })
-                            );
-                            head.position.set(3, 2, 0);
-                            head.rotation.z = -Math.PI / 2;
-                            arrowGroup.add(head);
-                            
-                            const textMarker = new THREE.Mesh(
-                                new THREE.SphereGeometry(0.3, 8, 8),
-                                new THREE.MeshBasicMaterial({ color: 0xff4081 })
-                            );
-                            textMarker.position.set(0, 4, 0);
-                            arrowGroup.add(textMarker);
-                            
-                            scene.add(arrowGroup);
-                            return arrowGroup;
-                        }
+                    { name: '우회전 연습', desc: 'D키를 눌러 180도 우회전하세요', keyLabel: 'D', icon: '↻',
+                        check: () => { let d = modeState.startRotation - droneState.rotation; d = ((d%(Math.PI*2))+(Math.PI*2))%(Math.PI*2); return d >= Math.PI-0.2 && d <= Math.PI+0.2; },
+                        createGuide: () => { const g = new THREE.Group(); const pts = new THREE.EllipseCurve(0,0,3,3,0,-Math.PI,true,0).getPoints(32); const arc = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({color:0xff4081})); arc.rotation.x=-Math.PI/2; arc.position.y=2; g.add(arc); const h = new THREE.Mesh(new THREE.ConeGeometry(0.5,1,8), new THREE.MeshBasicMaterial({color:0xff4081})); h.position.set(3,2,0); h.rotation.z=-Math.PI/2; g.add(h); return g; }
                     },
                 ],
                 currentGuide: null
             };
-
-            // 첫 번째 스테이지 가이드 생성
             createStageGuide();
             updateMissionListPractice();
         }
 
         function createStageGuide() {
-            // 이전 가이드 제거
-            if (modeState.currentGuide) {
-                scene.remove(modeState.currentGuide);
-            }
-            
+            if (modeState.currentGuide) scene.remove(modeState.currentGuide);
             const stage = modeState.stages[modeState.currentStage];
             if (!stage) return;
-            
-            // 시작 위치 저장 (이동/회전 단계용)
             modeState.startPos.copy(droneState.position);
             modeState.startRotation = droneState.rotation;
-            
-            // 새 가이드 생성
-            modeState.currentGuide = stage.createGuide(scene);
+            modeState.currentGuide = stage.createGuide();
             modeObjects.push(modeState.currentGuide);
         }
 
         function updateMissionListPractice() {
             const list = document.getElementById('mission-list');
             const stage = modeState.stages[modeState.currentStage];
-            let html = `<div style="color:#aa66ff; font-size:13px; margin-bottom:8px;">단계: ${modeState.currentStage + 1} / ${modeState.totalStages}</div>`;
-            
+            let html = '';
             modeState.stages.forEach((s, i) => {
-                const isCurrent = i === modeState.currentStage;
-                const isDone = i < modeState.currentStage;
-                html += `<div class="mission-item">
-                    <div class="mission-check ${isDone ? 'done' : ''} ${isCurrent ? 'active' : ''}">${i + 1}</div>
-                    <span>${s.icon} ${s.name}</span>
-                </div>`;
+                html += `<div class="mission-item"><div class="mission-check ${i<modeState.currentStage?'done':''} ${i===modeState.currentStage?'active':''}">${i+1}</div><span>${s.icon} ${s.name}</span></div>`;
             });
-            
             if (stage && !modeState.finished) {
                 html += `<div style="margin-top:10px; padding:12px; background:rgba(170,102,255,0.15); border-radius:8px; border:1px solid rgba(170,102,255,0.4);">
                     <div style="color:#aa66ff; font-size:13px; font-weight:bold; margin-bottom:6px;">현재 단계</div>
                     <div style="color:#fff; font-size:14px; margin-bottom:4px;">${stage.icon} ${stage.name}</div>
                     <div style="color:rgba(255,255,255,0.7); font-size:12px; margin-bottom:8px;">${stage.desc}</div>
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <span style="background:rgba(170,102,255,0.3); border:1px solid #aa66ff; border-radius:4px; padding:4px 10px; font-family:'Courier New', monospace; font-size:14px; font-weight:bold; color:#fff;">${stage.keyLabel}</span>
-                        <span style="color:rgba(255,255,255,0.6); font-size:11px;">키를 사용하세요</span>
-                    </div>
+                    <span style="background:rgba(170,102,255,0.3); border:1px solid #aa66ff; border-radius:4px; padding:4px 10px; font-family:'Courier New',monospace; font-size:14px; font-weight:bold; color:#fff;">${stage.keyLabel}</span>
                 </div>`;
             }
             list.innerHTML = html;
@@ -1472,34 +792,20 @@
             if (modeState.finished) return;
             const stage = modeState.stages[modeState.currentStage];
             if (!stage) return;
-
             if (stage.check()) {
-                // 스테이지 완료
-                showNotification(`✅ ${stage.name} 완료!`, modeState.currentStage < modeState.totalStages - 1 ? `다음: ${modeState.stages[modeState.currentStage + 1].name}` : '모든 단계 완료!');
-                
+                showNotification(`✅ ${stage.name} 완료!`, modeState.currentStage < modeState.totalStages-1 ? `다음: ${modeState.stages[modeState.currentStage+1].name}` : '모든 단계 완료!');
                 modeState.currentStage++;
-                
                 if (modeState.currentStage >= modeState.totalStages) {
-                    // 모든 스테이지 완료
-                    modeState.finished = true;
-                    allMissionsComplete = true;
-                    showFireworks = true;
+                    modeState.finished = true; allMissionsComplete = true; showFireworks = true;
                     setTimeout(() => showComplete('🎓 연습 완료!', '모든 기본 조작을 마스터했습니다!'), 1000);
-                } else {
-                    // 다음 스테이지 가이드 생성
-                    createStageGuide();
-                }
-                
+                } else { createStageGuide(); }
                 updateMissionListPractice();
             }
         }
 
-        // ==================== 자유비행 모드 ====================
-        function updateFreeMode() {
-            droneState.battery = 100;
-        }
+        function updateFreeMode() { droneState.battery = 100; }
 
-        // ==================== 완료 화면 ====================
+        // ==================== 완료/리셋 ====================
         function showComplete(title, info) {
             document.getElementById('complete-title').textContent = title;
             document.getElementById('complete-info').textContent = info;
@@ -1508,13 +814,8 @@
 
         function restartMode() {
             document.getElementById('complete-screen').classList.remove('show');
-            clearFireworks();
-            clearModeObjects();
-            rings = [];
-            allMissionsComplete = false;
-            showFireworks = false;
-            raceTimer = 0;
-            raceStarted = false;
+            clearFireworks(); clearModeObjects(); rings = [];
+            allMissionsComplete = false; showFireworks = false; raceTimer = 0; raceStarted = false;
             document.getElementById('timer-display').style.display = 'none';
             startMode(currentMode);
         }
@@ -1524,229 +825,116 @@
             document.getElementById('hud').style.display = 'none';
             document.getElementById('mode-label').style.display = 'none';
             document.getElementById('timer-display').style.display = 'none';
-            document.getElementById('main-menu-btn').style.display = 'none'; // 메인이동 버튼 숨김
+            document.getElementById('main-menu-btn').style.display = 'none';
             document.getElementById('main-menu').style.display = 'flex';
-            clearFireworks();
-            clearModeObjects();
-            rings = [];
-            allMissionsComplete = false;
-            showFireworks = false;
-            raceTimer = 0;
-            raceStarted = false;
-            gameStarted = false;
-            currentMode = null;
-            resetDrone();
+            clearFireworks(); clearModeObjects(); rings = [];
+            allMissionsComplete = false; showFireworks = false; raceTimer = 0; raceStarted = false;
+            gameStarted = false; currentMode = null; resetDrone();
         }
 
         // ==================== 충돌 ====================
         function checkCollisions() {
-            const pos = droneState.position;
-            const vel = droneState.velocity;
+            const pos = droneState.position, vel = droneState.velocity;
             let collided = false;
-
             for (let obs of obstacles) {
-                const droneMinY = pos.y - droneRadius * 0.5;
-                const droneMaxY = pos.y + droneRadius * 0.5;
-                if (droneMaxY < obs.min.y || droneMinY > obs.max.y) continue;
-
-                const closestX = Math.max(obs.min.x, Math.min(pos.x, obs.max.x));
-                const closestZ = Math.max(obs.min.z, Math.min(pos.z, obs.max.z));
-                const dx = pos.x - closestX;
-                const dz = pos.z - closestZ;
-                const dist = Math.sqrt(dx * dx + dz * dz);
-
+                if (pos.y + droneRadius*0.5 < obs.min.y || pos.y - droneRadius*0.5 > obs.max.y) continue;
+                const cx = Math.max(obs.min.x, Math.min(pos.x, obs.max.x));
+                const cz = Math.max(obs.min.z, Math.min(pos.z, obs.max.z));
+                const dx = pos.x - cx, dz = pos.z - cz;
+                const dist = Math.sqrt(dx*dx + dz*dz);
                 if (dist < droneRadius) {
                     collided = true;
                     let nx, nz;
-                    if (dist > 0.001) {
-                        nx = dx / dist; nz = dz / dist;
-                    } else {
-                        const toCenterX = pos.x - obs.center.x;
-                        const toCenterZ = pos.z - obs.center.z;
-                        const halfW = (obs.max.x - obs.min.x) / 2;
-                        const halfD = (obs.max.z - obs.min.z) / 2;
-                        if (halfW - Math.abs(toCenterX) < halfD - Math.abs(toCenterZ)) {
-                            nx = Math.sign(toCenterX) || 1; nz = 0;
-                        } else {
-                            nx = 0; nz = Math.sign(toCenterZ) || 1;
-                        }
-                    }
-                    pos.x += nx * (droneRadius - dist + 0.05);
-                    pos.z += nz * (droneRadius - dist + 0.05);
-                    const velDotN = vel.x * nx + vel.z * nz;
-                    if (velDotN < 0) {
-                        vel.x -= velDotN * nx * 1.3;
-                        vel.z -= velDotN * nz * 1.3;
-                        vel.x *= 0.5; vel.z *= 0.5;
-                    }
+                    if (dist > 0.001) { nx = dx/dist; nz = dz/dist; }
+                    else { const tx = pos.x-obs.center.x, tz = pos.z-obs.center.z; const hw = (obs.max.x-obs.min.x)/2, hd = (obs.max.z-obs.min.z)/2; if (hw-Math.abs(tx) < hd-Math.abs(tz)) { nx = Math.sign(tx)||1; nz = 0; } else { nx = 0; nz = Math.sign(tz)||1; } }
+                    pos.x += nx*(droneRadius-dist+0.05); pos.z += nz*(droneRadius-dist+0.05);
+                    const vn = vel.x*nx + vel.z*nz;
+                    if (vn < 0) { vel.x -= vn*nx*1.3; vel.z -= vn*nz*1.3; vel.x *= 0.5; vel.z *= 0.5; }
                 }
             }
-            if (collided && collisionCooldown <= 0) {
-                triggerCollisionEffect();
-                collisionCooldown = 0.3;
-            }
+            if (collided && collisionCooldown <= 0) { triggerCollisionEffect(); collisionCooldown = 0.3; }
         }
 
         function triggerCollisionEffect() {
-            const flash = document.getElementById('collision-flash');
-            const text = document.getElementById('collision-text');
-            flash.style.opacity = '1';
-            text.style.opacity = '1';
-            setTimeout(() => { flash.style.opacity = '0'; text.style.opacity = '0'; }, 300);
+            document.getElementById('collision-flash').style.opacity = '1';
+            document.getElementById('collision-text').style.opacity = '1';
+            setTimeout(() => { document.getElementById('collision-flash').style.opacity = '0'; document.getElementById('collision-text').style.opacity = '0'; }, 300);
         }
 
         // ==================== 폭죽 ====================
         function createFirework() {
-            const colors = [0xff0044, 0x00ff88, 0x4488ff, 0xffdd00, 0xff44ff, 0x00ddff, 0xff8800];
-            const color = colors[Math.floor(Math.random() * colors.length)];
-            const x = droneState.position.x + (Math.random() - 0.5) * 40;
-            const z = droneState.position.z + (Math.random() - 0.5) * 40;
-            const targetY = 30 + Math.random() * 30;
-            const rocket = new THREE.Mesh(
-                new THREE.SphereGeometry(0.2, 8, 8),
-                new THREE.MeshBasicMaterial({ color })
-            );
-            rocket.position.set(x, 1, z);
+            const colors = [0xff0044,0x00ff88,0x4488ff,0xffdd00,0xff44ff,0x00ddff,0xff8800];
+            const color = colors[Math.floor(Math.random()*colors.length)];
+            const rocket = new THREE.Mesh(new THREE.SphereGeometry(0.2,8,8), new THREE.MeshBasicMaterial({color}));
+            rocket.position.set(droneState.position.x+(Math.random()-0.5)*40, 1, droneState.position.z+(Math.random()-0.5)*40);
             scene.add(rocket);
-            fireworks.push({ mesh: rocket, velocity: new THREE.Vector3(0, 25 + Math.random() * 10, 0), targetY, color, exploded: false });
+            fireworks.push({ mesh: rocket, velocity: new THREE.Vector3(0, 25+Math.random()*10, 0), targetY: 30+Math.random()*30, color, exploded: false });
         }
 
         function explodeFirework(fw) {
-            fw.exploded = true;
-            const pos = fw.mesh.position.clone();
-            scene.remove(fw.mesh);
+            fw.exploded = true; const pos = fw.mesh.position.clone(); scene.remove(fw.mesh);
             for (let i = 0; i < 60; i++) {
-                const p = new THREE.Mesh(
-                    new THREE.SphereGeometry(0.1 + Math.random() * 0.1, 6, 6),
-                    new THREE.MeshBasicMaterial({ color: fw.color, transparent: true, opacity: 1.0 })
-                );
+                const p = new THREE.Mesh(new THREE.SphereGeometry(0.1+Math.random()*0.1,6,6), new THREE.MeshBasicMaterial({color:fw.color,transparent:true,opacity:1}));
                 p.position.copy(pos);
-                const theta = Math.random() * Math.PI * 2;
-                const phi = Math.random() * Math.PI;
-                const speed = 5 + Math.random() * 10;
-                const vx = Math.sin(phi) * Math.cos(theta) * speed;
-                const vy = Math.sin(phi) * Math.sin(theta) * speed * 0.5 + 3;
-                const vz = Math.cos(phi) * speed;
+                const theta = Math.random()*Math.PI*2, phi = Math.random()*Math.PI, speed = 5+Math.random()*10;
                 scene.add(p);
-                const maxLife = 2.0 + Math.random();
-                fireworkParticles.push({ mesh: p, velocity: new THREE.Vector3(vx, vy, vz), life: maxLife, maxLife });
+                const ml = 2+Math.random();
+                fireworkParticles.push({ mesh:p, velocity:new THREE.Vector3(Math.sin(phi)*Math.cos(theta)*speed, Math.sin(phi)*Math.sin(theta)*speed*0.5+3, Math.cos(phi)*speed), life:ml, maxLife:ml });
             }
         }
 
         function updateFireworks(dt) {
-            if (showFireworks && Math.random() < dt * 2) createFirework();
-            for (let i = fireworks.length - 1; i >= 0; i--) {
-                const fw = fireworks[i];
-                fw.mesh.position.add(fw.velocity.clone().multiplyScalar(dt));
-                fw.velocity.y -= 5 * dt;
-                if (fw.mesh.position.y >= fw.targetY || fw.velocity.y < 0) {
-                    explodeFirework(fw);
-                    fireworks.splice(i, 1);
-                }
+            if (showFireworks && Math.random() < dt*2) createFirework();
+            for (let i = fireworks.length-1; i >= 0; i--) {
+                const fw = fireworks[i]; fw.mesh.position.add(fw.velocity.clone().multiplyScalar(dt)); fw.velocity.y -= 5*dt;
+                if (fw.mesh.position.y >= fw.targetY || fw.velocity.y < 0) { explodeFirework(fw); fireworks.splice(i,1); }
             }
-            for (let i = fireworkParticles.length - 1; i >= 0; i--) {
-                const p = fireworkParticles[i];
-                p.mesh.position.add(p.velocity.clone().multiplyScalar(dt));
-                p.velocity.y -= 9.8 * dt;
-                p.velocity.multiplyScalar(0.98);
-                p.life -= dt;
-                const r = p.life / p.maxLife;
-                p.mesh.material.opacity = r;
-                p.mesh.scale.setScalar(r);
-                if (p.life <= 0) {
-                    scene.remove(p.mesh);
-                    fireworkParticles.splice(i, 1);
-                }
+            for (let i = fireworkParticles.length-1; i >= 0; i--) {
+                const p = fireworkParticles[i]; p.mesh.position.add(p.velocity.clone().multiplyScalar(dt)); p.velocity.y -= 9.8*dt; p.velocity.multiplyScalar(0.98); p.life -= dt;
+                const r = p.life/p.maxLife; p.mesh.material.opacity = r; p.mesh.scale.setScalar(r);
+                if (p.life <= 0) { scene.remove(p.mesh); fireworkParticles.splice(i,1); }
             }
         }
 
-        function clearFireworks() {
-            fireworks.forEach(fw => scene.remove(fw.mesh));
-            fireworks = [];
-            fireworkParticles.forEach(p => scene.remove(p.mesh));
-            fireworkParticles = [];
-        }
+        function clearFireworks() { fireworks.forEach(fw => scene.remove(fw.mesh)); fireworks = []; fireworkParticles.forEach(p => scene.remove(p.mesh)); fireworkParticles = []; }
 
         // ==================== 드론 업데이트 ====================
         function updateDrone(dt) {
             if (!gameStarted) return;
             collisionCooldown -= dt;
-
-            const accel = 15, strafeAccel = 12, drag = 3, verticalAccel = 12;
-            const rotSpeed = 2.5, maxSpeed = 20, maxStrafeSpeed = 15, maxVerticalSpeed = 10;
-
-            let forwardInput = 0, strafeInput = 0, turnInput = 0, verticalInput = 0;
-            if (keys['KeyW']) verticalInput += 1;
-            if (keys['KeyS']) verticalInput -= 1;
-            if (keys['KeyA']) turnInput += 1;
-            if (keys['KeyD']) turnInput -= 1;
-            if (keys['ArrowUp']) forwardInput += 1;
-            if (keys['ArrowDown']) forwardInput -= 1;
-            if (keys['ArrowLeft']) strafeInput -= 1;
-            if (keys['ArrowRight']) strafeInput += 1;
-
-            const isMoving = forwardInput !== 0 || strafeInput !== 0 || turnInput !== 0 || verticalInput !== 0;
-
+            const accel=15, strafeAccel=12, drag=3, verticalAccel=12, rotSpeed=2.5, maxSpeed=20, maxStrafeSpeed=15, maxVerticalSpeed=10;
+            let forwardInput=0, strafeInput=0, turnInput=0, verticalInput=0;
+            if (keys['KeyW']) verticalInput += 1; if (keys['KeyS']) verticalInput -= 1;
+            if (keys['KeyA']) turnInput += 1; if (keys['KeyD']) turnInput -= 1;
+            if (keys['ArrowUp']) forwardInput += 1; if (keys['ArrowDown']) forwardInput -= 1;
+            if (keys['ArrowLeft']) strafeInput -= 1; if (keys['ArrowRight']) strafeInput += 1;
+            const isMoving = forwardInput!==0 || strafeInput!==0 || turnInput!==0 || verticalInput!==0;
             droneState.rotation += turnInput * rotSpeed * dt;
-            const forward = new THREE.Vector3(-Math.sin(droneState.rotation), 0, -Math.cos(droneState.rotation));
-            const right = new THREE.Vector3(Math.cos(droneState.rotation), 0, -Math.sin(droneState.rotation));
-
-            if (forwardInput !== 0) droneState.velocity.add(forward.clone().multiplyScalar(forwardInput * accel * dt));
-            if (strafeInput !== 0) droneState.velocity.add(right.clone().multiplyScalar(strafeInput * strafeAccel * dt));
-            if (verticalInput !== 0) droneState.velocity.y += verticalInput * verticalAccel * dt;
-
-            droneState.velocity.x -= droneState.velocity.x * drag * dt;
-            droneState.velocity.z -= droneState.velocity.z * drag * dt;
-            droneState.velocity.y -= droneState.velocity.y * drag * 0.5 * dt;
-            droneState.velocity.y -= 2 * dt;
-
-            const forwardVel = droneState.velocity.dot(forward);
-            const strafeVel = droneState.velocity.dot(right);
-            if (Math.abs(forwardVel) > maxSpeed) {
-                droneState.velocity.sub(forward.clone().multiplyScalar(Math.sign(forwardVel) * (Math.abs(forwardVel) - maxSpeed)));
-            }
-            if (Math.abs(strafeVel) > maxStrafeSpeed) {
-                droneState.velocity.sub(right.clone().multiplyScalar(Math.sign(strafeVel) * (Math.abs(strafeVel) - maxStrafeSpeed)));
-            }
+            const forward = new THREE.Vector3(-Math.sin(droneState.rotation),0,-Math.cos(droneState.rotation));
+            const right = new THREE.Vector3(Math.cos(droneState.rotation),0,-Math.sin(droneState.rotation));
+            if (forwardInput) droneState.velocity.add(forward.clone().multiplyScalar(forwardInput*accel*dt));
+            if (strafeInput) droneState.velocity.add(right.clone().multiplyScalar(strafeInput*strafeAccel*dt));
+            if (verticalInput) droneState.velocity.y += verticalInput*verticalAccel*dt;
+            droneState.velocity.x -= droneState.velocity.x*drag*dt; droneState.velocity.z -= droneState.velocity.z*drag*dt;
+            droneState.velocity.y -= droneState.velocity.y*drag*0.5*dt; droneState.velocity.y -= 2*dt;
+            const fv = droneState.velocity.dot(forward), sv = droneState.velocity.dot(right);
+            if (Math.abs(fv) > maxSpeed) droneState.velocity.sub(forward.clone().multiplyScalar(Math.sign(fv)*(Math.abs(fv)-maxSpeed)));
+            if (Math.abs(sv) > maxStrafeSpeed) droneState.velocity.sub(right.clone().multiplyScalar(Math.sign(sv)*(Math.abs(sv)-maxStrafeSpeed)));
             droneState.velocity.y = Math.max(-maxVerticalSpeed, Math.min(maxVerticalSpeed, droneState.velocity.y));
-
             droneState.position.add(droneState.velocity.clone().multiplyScalar(dt));
-
-            if (droneState.position.y < 0.5) {
-                droneState.position.y = 0.5;
-                droneState.velocity.y = Math.max(0, droneState.velocity.y);
-            }
-            if (droneState.position.y > 80) {
-                droneState.position.y = 80;
-                droneState.velocity.y = Math.min(0, droneState.velocity.y);
-            }
-
+            if (droneState.position.y < 0.5) { droneState.position.y = 0.5; droneState.velocity.y = Math.max(0, droneState.velocity.y); }
+            if (droneState.position.y > 80) { droneState.position.y = 80; droneState.velocity.y = Math.min(0, droneState.velocity.y); }
             checkCollisions();
-
-            droneState.pitch += (forwardInput * -0.2 - droneState.pitch) * 5 * dt;
-            droneState.roll += (strafeInput * -0.2 - droneState.roll) * 5 * dt;
-
+            droneState.pitch += (forwardInput*-0.2 - droneState.pitch)*5*dt;
+            droneState.roll += (strafeInput*-0.2 - droneState.roll)*5*dt;
             droneGroup.position.copy(droneState.position);
             droneGroup.rotation.set(droneState.pitch, droneState.rotation, droneState.roll);
-
-            const propSpeed = isMoving ? 30 : 15;
-            propellers.forEach((p, i) => { p.rotation.y += propSpeed * dt * (i % 2 === 0 ? 1 : -1); });
-
-            if (currentMode !== 'free') {
-                if (isMoving) droneState.battery -= dt * 0.5;
-                else droneState.battery -= dt * 0.1;
-                droneState.battery = Math.max(0, droneState.battery);
-            }
+            const ps = isMoving ? 30 : 15;
+            propellers.forEach((p,i) => { p.rotation.y += ps*dt*(i%2===0?1:-1); });
+            if (currentMode !== 'free') { droneState.battery -= (isMoving ? 0.5 : 0.1)*dt; droneState.battery = Math.max(0, droneState.battery); }
             document.getElementById('warning').style.display = (droneState.battery < 20 && currentMode !== 'free') ? 'block' : 'none';
-
-            if (keys['KeyR']) {
-                restartMode();
-            }
-            if (keys['KeyC']) {
-                keys['KeyC'] = false;
-                cameraMode = (cameraMode + 1) % 3;
-            }
-
+            if (keys['KeyR']) restartMode();
+            if (keys['KeyC']) { keys['KeyC'] = false; cameraMode = (cameraMode+1)%3; }
             if (currentMode === 'free') updateFreeMode();
             else if (currentMode === 'mission') updateMissionMode();
             else if (currentMode === 'racing') updateRacingMode(dt);
@@ -1754,158 +942,61 @@
             else if (currentMode === 'practice') updatePracticeMode(dt);
         }
 
-        // ==================== 카메라 ====================
         function updateCamera() {
-            const dronePos = droneState.position;
-            if (cameraMode === 0) {
-                const offset = new THREE.Vector3(Math.sin(droneState.rotation) * 8, 4, Math.cos(droneState.rotation) * 8);
-                camera.position.lerp(dronePos.clone().add(offset), 0.05);
-                camera.lookAt(dronePos);
-            } else if (cameraMode === 1) {
-                const offset = new THREE.Vector3(-Math.sin(droneState.rotation) * 0.5, 0.3, -Math.cos(droneState.rotation) * 0.5);
-                camera.position.copy(dronePos.clone().add(offset));
-                camera.lookAt(dronePos.clone().add(new THREE.Vector3(-Math.sin(droneState.rotation) * 10, -0.5, -Math.cos(droneState.rotation) * 10)));
-            } else {
-                camera.position.lerp(dronePos.clone().add(new THREE.Vector3(0, 25, 5)), 0.05);
-                camera.lookAt(dronePos);
-            }
+            const dp = droneState.position;
+            if (cameraMode === 0) { const o = new THREE.Vector3(Math.sin(droneState.rotation)*8, 4, Math.cos(droneState.rotation)*8); camera.position.lerp(dp.clone().add(o), 0.05); camera.lookAt(dp); }
+            else if (cameraMode === 1) { const o = new THREE.Vector3(-Math.sin(droneState.rotation)*0.5, 0.3, -Math.cos(droneState.rotation)*0.5); camera.position.copy(dp.clone().add(o)); camera.lookAt(dp.clone().add(new THREE.Vector3(-Math.sin(droneState.rotation)*10, -0.5, -Math.cos(droneState.rotation)*10))); }
+            else { camera.position.lerp(dp.clone().add(new THREE.Vector3(0, 25, 5)), 0.05); camera.lookAt(dp); }
         }
 
-        // ==================== HUD ====================
         function updateHUD() {
             document.getElementById('altitude').textContent = droneState.position.y.toFixed(1) + ' m';
-            const hSpeed = Math.sqrt(droneState.velocity.x ** 2 + droneState.velocity.z ** 2);
-            document.getElementById('speed').textContent = hSpeed.toFixed(1) + ' m/s';
-            const vSpeed = droneState.velocity.y;
-            document.getElementById('vspeed').textContent = (vSpeed >= 0 ? '+' : '') + vSpeed.toFixed(1) + ' m/s';
-            const heading = ((droneState.rotation * 180 / Math.PI) % 360 + 360) % 360;
-            document.getElementById('heading').textContent = Math.round(heading) + '°';
+            const hs = Math.sqrt(droneState.velocity.x**2 + droneState.velocity.z**2);
+            document.getElementById('speed').textContent = hs.toFixed(1) + ' m/s';
+            const vs = droneState.velocity.y;
+            document.getElementById('vspeed').textContent = (vs >= 0 ? '+' : '') + vs.toFixed(1) + ' m/s';
+            document.getElementById('heading').textContent = Math.round(((droneState.rotation*180/Math.PI)%360+360)%360) + '°';
             document.getElementById('position').textContent = droneState.position.x.toFixed(0) + ', ' + droneState.position.z.toFixed(0);
             document.getElementById('battery-text').textContent = Math.round(droneState.battery) + '%';
             document.getElementById('battery-fill').style.width = droneState.battery + '%';
             document.getElementById('battery-fill').style.background = droneState.battery < 30 ? 'linear-gradient(90deg, #ff1744, #ff5252)' : 'linear-gradient(90deg, #00e676, #00e5ff)';
-
-            const pitchOffset = droneState.pitch * 50;
-            document.getElementById('attitude-indicator').style.background = `linear-gradient(180deg, #1a237e ${50 - pitchOffset}%, #4e342e ${50 - pitchOffset}%)`;
+            const po = droneState.pitch * 50;
+            document.getElementById('attitude-indicator').style.background = `linear-gradient(180deg, #1a237e ${50-po}%, #4e342e ${50-po}%)`;
             document.getElementById('compass-needle').style.transform = `translate(-50%, -100%) rotate(${-droneState.rotation}rad)`;
-
             updateMinimap();
         }
 
         function updateMinimap() {
-            const canvas = document.getElementById('minimap-canvas');
-            const ctx = canvas.getContext('2d');
-            const w = canvas.width, h = canvas.height;
-            const scale = 1.2;
-            ctx.clearRect(0, 0, w, h);
-            ctx.fillStyle = 'rgba(0, 20, 10, 0.9)';
-            ctx.fillRect(0, 0, w, h);
-            const cx = w / 2, cy = h / 2;
-
-            ctx.fillStyle = 'rgba(100, 100, 100, 0.6)';
-            obstacles.forEach(obs => {
-                const rx = cx + (obs.center.x - droneState.position.x) * scale;
-                const ry = cy + (obs.center.z - droneState.position.z) * scale;
-                if (rx > -10 && rx < w + 10 && ry > -10 && ry < h + 10) ctx.fillRect(rx - 3, ry - 3, 6, 6);
-            });
-
-            rings.forEach(ring => {
-                const rx = cx + (ring.pos.x - droneState.position.x) * scale;
-                const ry = cy + (ring.pos.z - droneState.position.z) * scale;
-                if (rx > 0 && rx < w && ry > 0 && ry < h) {
-                    ctx.beginPath();
-                    ctx.arc(rx, ry, 4, 0, Math.PI * 2);
-                    ctx.fillStyle = ring.passed ? '#00e676' : '#ffeb3b';
-                    ctx.fill();
-                }
-            });
-
-            if (landingPad) {
-                const lpx = cx + (landingPad.position.x - droneState.position.x) * scale;
-                const lpy = cy + (landingPad.position.z - droneState.position.z) * scale;
-                if (lpx > 0 && lpx < w && lpy > 0 && lpy < h) {
-                    ctx.beginPath();
-                    ctx.arc(lpx, lpy, 5, 0, Math.PI * 2);
-                    ctx.strokeStyle = '#00e5ff';
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
-                }
-            }
-
-            if (currentMode === 'delivery' && modeState.deliveries) {
-                const idx = modeState.currentDelivery;
-                if (idx < modeState.deliveries.length) {
-                    const del = modeState.deliveries[idx];
-                    const target = modeState.phase === 'pickup' ? del.pickup : del.dropoff;
-                    const tx = cx + (target.x - droneState.position.x) * scale;
-                    const ty = cy + (target.z - droneState.position.z) * scale;
-                    if (tx > 0 && tx < w && ty > 0 && ty < h) {
-                        ctx.beginPath();
-                        ctx.arc(tx, ty, 6, 0, Math.PI * 2);
-                        ctx.strokeStyle = modeState.phase === 'pickup' ? '#2196f3' : '#4caf50';
-                        ctx.lineWidth = 2;
-                        ctx.stroke();
-                        ctx.fillStyle = modeState.phase === 'pickup' ? '#2196f3' : '#4caf50';
-                        ctx.font = 'bold 10px monospace';
-                        ctx.fillText(modeState.phase === 'pickup' ? 'P' : 'D', tx - 3, ty + 3);
-                    }
-                }
-            }
-
-            ctx.save();
-            ctx.translate(cx, cy);
-            ctx.rotate(-droneState.rotation);
-            ctx.beginPath();
-            ctx.moveTo(0, -6);
-            ctx.lineTo(-4, 4);
-            ctx.lineTo(4, 4);
-            ctx.closePath();
-            ctx.fillStyle = '#00e5ff';
-            ctx.fill();
+            const canvas = document.getElementById('minimap-canvas'), ctx = canvas.getContext('2d');
+            const w = canvas.width, h = canvas.height, scale = 1.2;
+            ctx.clearRect(0,0,w,h); ctx.fillStyle = 'rgba(0,20,10,0.9)'; ctx.fillRect(0,0,w,h);
+            const cx = w/2, cy = h/2;
+            ctx.fillStyle = 'rgba(100,100,100,0.6)';
+            obstacles.forEach(obs => { const rx = cx+(obs.center.x-droneState.position.x)*scale, ry = cy+(obs.center.z-droneState.position.z)*scale; if (rx>-10&&rx<w+10&&ry>-10&&ry<h+10) ctx.fillRect(rx-3,ry-3,6,6); });
+            rings.forEach(ring => { const rx = cx+(ring.pos.x-droneState.position.x)*scale, ry = cy+(ring.pos.z-droneState.position.z)*scale; if (rx>0&&rx<w&&ry>0&&ry<h) { ctx.beginPath(); ctx.arc(rx,ry,4,0,Math.PI*2); ctx.fillStyle = ring.passed?'#00e676':'#ffeb3b'; ctx.fill(); }});
+            if (landingPad) { const lx = cx+(landingPad.position.x-droneState.position.x)*scale, ly = cy+(landingPad.position.z-droneState.position.z)*scale; if (lx>0&&lx<w&&ly>0&&ly<h) { ctx.beginPath(); ctx.arc(lx,ly,5,0,Math.PI*2); ctx.strokeStyle='#00e5ff'; ctx.lineWidth=2; ctx.stroke(); }}
+            ctx.save(); ctx.translate(cx,cy); ctx.rotate(-droneState.rotation);
+            ctx.beginPath(); ctx.moveTo(0,-6); ctx.lineTo(-4,4); ctx.lineTo(4,4); ctx.closePath(); ctx.fillStyle='#00e5ff'; ctx.fill();
             ctx.restore();
-
-            ctx.strokeStyle = 'rgba(0, 200, 255, 0.3)';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(0, 0, w, h);
+            ctx.strokeStyle = 'rgba(0,200,255,0.3)'; ctx.lineWidth = 1; ctx.strokeRect(0,0,w,h);
         }
 
         function showNotification(title, text) {
-            const notif = document.getElementById('notification');
-            notif.querySelector('h2').textContent = title;
-            notif.querySelector('p').textContent = text;
-            notif.style.display = 'block';
-            clearTimeout(notif._timer);
-            notif._timer = setTimeout(() => { notif.style.display = 'none'; }, 2500);
+            const n = document.getElementById('notification');
+            n.querySelector('h2').textContent = title; n.querySelector('p').textContent = text;
+            n.style.display = 'block'; clearTimeout(n._timer); n._timer = setTimeout(() => { n.style.display = 'none'; }, 2500);
         }
 
-        // ==================== 링 애니메이션 ====================
-        function animateRings(time) {
-            rings.forEach(ring => {
-                if (!ring.passed) {
-                    ring.mesh.rotation.x = Math.sin(time * 0.5) * 0.1;
-                    ring.mesh.rotation.y = time * 0.3;
-                }
-            });
-        }
+        function animateRings(time) { rings.forEach(ring => { if (!ring.passed) { ring.mesh.rotation.x = Math.sin(time*0.5)*0.1; ring.mesh.rotation.y = time*0.3; }}); }
 
-        // ==================== 메인 루프 ====================
         function animate() {
             requestAnimationFrame(animate);
-            const dt = Math.min(clock.getDelta(), 0.05);
-            const time = clock.getElapsedTime();
-            updateDrone(dt);
-            updateCamera();
-            updateHUD();
-            animateRings(time);
-            updateFireworks(dt);
+            const dt = Math.min(clock.getDelta(), 0.05), time = clock.getElapsedTime();
+            updateDrone(dt); updateCamera(); updateHUD(); animateRings(time); updateFireworks(dt);
             renderer.render(scene, camera);
         }
 
-        function onResize() {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        }
+        function onResize() { camera.aspect = window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); }
 
         init();
     </script>
