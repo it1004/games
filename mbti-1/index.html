@@ -73,7 +73,7 @@
 
     <!-- Navigation / Header -->
     <header class="w-full bg-white/80 backdrop-blur-md border-b border-slate-100 sticky top-0 z-50 transition-all">
-        <div class="max-w-5xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div class="max-w-2xl mx-auto px-4 py-4 flex items-center justify-between">
             <div class="flex items-center space-x-2 cursor-pointer" onclick="resetTest()">
                 <div class="w-10 h-10 rounded-xl custom-gradient flex items-center justify-center text-white font-extrabold text-xl shadow-md shadow-indigo-200">
                     M
@@ -81,17 +81,18 @@
                 <span class="font-bold text-lg bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">심리테스트 연구소</span>
             </div>
             <div class="text-xs font-semibold px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-full border border-indigo-100 flex items-center gap-1">
-                <i class="fa-solid fa-bolt text-indigo-500 animate-pulse"></i> 초고속 3분 검사
+                <i class="fa-solid fa-bolt text-indigo-500 animate-pulse"></i> 초고속 2분 검사
             </div>
         </div>
     </header>
 
     <!-- Main Content Container -->
     <main class="flex-grow flex items-center justify-center p-4 md:p-8">
-        <div class="w-full max-w-5xl flex flex-col lg:flex-row gap-8 items-start justify-center">
+        <!-- Main stack having maximum consistent width -->
+        <div class="w-full max-w-2xl flex flex-col gap-8 items-center justify-center">
             
-            <!-- Left Area: Core Test Card Container -->
-            <div class="w-full lg:max-w-2xl bg-white rounded-3xl card-shadow border border-slate-100/80 overflow-hidden transition-all duration-500 min-h-[500px] flex flex-col justify-between">
+            <!-- Left Area: Core Test Card Container (Consistent Width) -->
+            <div class="w-full bg-white rounded-3xl card-shadow border border-slate-100/80 overflow-hidden transition-all duration-500 min-h-[500px] flex flex-col justify-between">
                 
                 <!-- SECTION 1: Welcome/Start Screen -->
                 <div id="start-screen" class="p-6 md:p-10 flex flex-col items-center text-center my-auto">
@@ -208,9 +209,9 @@
                 </div>
 
                 <!-- SECTION 4: Result Screen (Hidden initially) -->
-            <div id="result-screen" class="hidden flex-grow flex flex-col">
-                <!-- Result Header Banner (Gradient) -->
-                <div class="custom-gradient p-8 text-white text-center rounded-t-3xl relative overflow-hidden">
+                <div id="result-screen" class="hidden flex-grow flex flex-col">
+                    <!-- Result Header Banner (Gradient) -->
+                    <div class="custom-gradient p-8 text-white text-center rounded-t-3xl relative overflow-hidden">
                         <div class="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-10 -mt-10 blur-xl"></div>
                         <div class="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-10 -mb-10 blur-xl"></div>
                         
@@ -326,73 +327,75 @@
 
                         <!-- Action Buttons for Result Page (Restructured for single primary restart button) -->
                         <div class="pt-4 border-t border-slate-100">
-                        <button onclick="resetTest()" class="w-full py-4 px-6 rounded-2xl font-bold text-base text-white custom-gradient hover:opacity-95 shadow-md shadow-indigo-100 transition-all flex items-center justify-center gap-2 transform hover:-translate-y-0.5 active:translate-y-0">
-                            <i class="fa-solid fa-rotate-left"></i> 테스트 다시 하기
-                        </button>
-                    </div>
+                            <button onclick="resetTest()" class="w-full py-4 px-6 rounded-2xl font-bold text-base text-white custom-gradient hover:opacity-95 shadow-md shadow-indigo-100 transition-all flex items-center justify-center gap-2 transform hover:-translate-y-0.5 active:translate-y-0">
+                                <i class="fa-solid fa-rotate-left"></i> 테스트 다시 하기
+                            </button>
+                        </div>
 
+                    </div>
                 </div>
             </div>
 
-            <!-- Right Area: PC Exclusive Sidebar (Hidden on mobile/tablet) -->
-            <aside class="hidden lg:block w-80 bg-white rounded-3xl card-shadow border border-slate-100/80 p-6 sticky top-24 shrink-0">
-                <h3 class="text-xl md:text-2xl font-extrabold text-slate-800 mb-5 pb-3 border-b border-slate-100 flex items-center gap-2">
+            <!-- Expanded "MBTI 4가지 지표란?" Section - Matches Test Card Width perfectly -->
+            <section class="w-full bg-white rounded-3xl card-shadow border border-slate-100/80 p-6 md:p-8">
+                <h3 class="text-2xl md:text-3xl font-extrabold text-slate-800 mb-6 pb-4 border-b border-slate-100 flex items-center gap-2.5">
                     <i class="fa-solid fa-circle-info text-indigo-500 animate-pulse"></i> MBTI 4가지 지표란?
                 </h3>
-                <div class="space-y-6">
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
                     <!-- E vs I -->
-                    <div class="space-y-2">
+                    <div class="space-y-3 p-4 rounded-2xl bg-indigo-50/30 border border-slate-100">
                         <div class="flex items-center justify-between">
-                            <span class="px-2.5 py-1 text-xs font-bold bg-indigo-50 text-indigo-600 rounded-lg border border-indigo-100">외향형 E</span>
-                            <span class="text-xs text-slate-400 font-bold">에너지 방향</span>
-                            <span class="px-2.5 py-1 text-xs font-bold bg-violet-50 text-violet-600 rounded-lg border border-violet-100">내향형 I</span>
+                            <span class="px-3 py-1.5 text-xs md:text-sm font-bold bg-indigo-50 text-indigo-600 rounded-lg border border-indigo-100">외향형 E</span>
+                            <span class="text-xs md:text-sm text-slate-400 font-bold">에너지 방향</span>
+                            <span class="px-3 py-1.5 text-xs md:text-sm font-bold bg-violet-50 text-violet-600 rounded-lg border border-violet-100">내향형 I</span>
                         </div>
-                        <p class="text-xs text-slate-500 leading-relaxed">
-                            <strong class="text-indigo-950 font-semibold">E :</strong> 사교적, 외부 활동과 인간관계에서 에너지 충전<br>
-                            <strong class="text-violet-950 font-semibold">I :</strong> 내면 사색, 혼자만의 시간을 통한 에너지 회복
+                        <p class="text-sm md:text-base text-slate-600 leading-relaxed pt-1">
+                            <strong class="text-indigo-950 font-bold">E (외향) :</strong> 외부 활동 및 대인 관계에서 에너지 충전<br>
+                            <strong class="text-violet-950 font-bold">I (내향) :</strong> 내면 성찰 및 혼자만의 시간에 집중하며 에너지 회복
                         </p>
                     </div>
                     
                     <!-- S vs N -->
-                    <div class="space-y-2 pt-4 border-t border-slate-50">
+                    <div class="space-y-3 p-4 rounded-2xl bg-indigo-50/30 border border-slate-100">
                         <div class="flex items-center justify-between">
-                            <span class="px-2.5 py-1 text-xs font-bold bg-indigo-50 text-indigo-600 rounded-lg border border-indigo-100">감각형 S</span>
-                            <span class="text-xs text-slate-400 font-bold">정보 인식</span>
-                            <span class="px-2.5 py-1 text-xs font-bold bg-violet-50 text-violet-600 rounded-lg border border-violet-100">직관형 N</span>
+                            <span class="px-3 py-1.5 text-xs md:text-sm font-bold bg-indigo-50 text-indigo-600 rounded-lg border border-indigo-100">감각형 S</span>
+                            <span class="text-xs md:text-sm text-slate-400 font-bold">정보 인식</span>
+                            <span class="px-3 py-1.5 text-xs md:text-sm font-bold bg-violet-50 text-violet-600 rounded-lg border border-violet-100">직관형 N</span>
                         </div>
-                        <p class="text-xs text-slate-500 leading-relaxed">
-                            <strong class="text-indigo-950 font-semibold">S :</strong> 오감 활용, 구체적 사실과 현재 경험에 집중<br>
-                            <strong class="text-violet-950 font-semibold">N :</strong> 직관 활용, 미래 가능성과 의미 및 흐름 파악
+                        <p class="text-sm md:text-base text-slate-600 leading-relaxed pt-1">
+                            <strong class="text-indigo-950 font-bold">S (감각) :</strong> 현실적이고 구체적인 사실과 오감 및 경험 중심<br>
+                            <strong class="text-violet-950 font-bold">N (직관) :</strong> 미래 지향적 가능성, 의미, 흐름 및 통찰 활용
                         </p>
                     </div>
 
                     <!-- T vs F -->
-                    <div class="space-y-2 pt-4 border-t border-slate-50">
+                    <div class="space-y-3 p-4 rounded-2xl bg-indigo-50/30 border border-slate-100">
                         <div class="flex items-center justify-between">
-                            <span class="px-2.5 py-1 text-xs font-bold bg-indigo-50 text-indigo-600 rounded-lg border border-indigo-100">사고형 T</span>
-                            <span class="text-xs text-slate-400 font-bold">의사 결정</span>
-                            <span class="px-2.5 py-1 text-xs font-bold bg-violet-50 text-violet-600 rounded-lg border border-violet-100">감정형 F</span>
+                            <span class="px-3 py-1.5 text-xs md:text-sm font-bold bg-indigo-50 text-indigo-600 rounded-lg border border-indigo-100">사고형 T</span>
+                            <span class="text-xs md:text-sm text-slate-400 font-bold">의사 결정</span>
+                            <span class="px-3 py-1.5 text-xs md:text-sm font-bold bg-violet-50 text-violet-600 rounded-lg border border-violet-100">감정형 F</span>
                         </div>
-                        <p class="text-xs text-slate-500 leading-relaxed">
-                            <strong class="text-indigo-950 font-semibold">T :</strong> 객관적 분석, 사실과 논리 및 원칙 기반 결정<br>
-                            <strong class="text-violet-950 font-semibold">F :</strong> 주관적 가치, 관계 조화와 감정 공감 기반 결정
+                        <p class="text-sm md:text-base text-slate-600 leading-relaxed pt-1">
+                            <strong class="text-indigo-950 font-bold">T (사고) :</strong> 논리 정연한 분석, 사실에 기반한 객관적 결정<br>
+                            <strong class="text-violet-950 font-bold">F (감정) :</strong> 감정 공감, 대인 관계의 조화 및 주관적 가치 중시
                         </p>
                     </div>
 
                     <!-- J vs P -->
-                    <div class="space-y-2 pt-4 border-t border-slate-50">
+                    <div class="space-y-3 p-4 rounded-2xl bg-indigo-50/30 border border-slate-100">
                         <div class="flex items-center justify-between">
-                            <span class="px-2.5 py-1 text-xs font-bold bg-indigo-50 text-indigo-600 rounded-lg border border-indigo-100">판단형 J</span>
-                            <span class="text-xs text-slate-400 font-bold">행동 양식</span>
-                            <span class="px-2.5 py-1 text-xs font-bold bg-violet-50 text-violet-600 rounded-lg border border-violet-100">인식형 P</span>
+                            <span class="px-3 py-1.5 text-xs md:text-sm font-bold bg-indigo-50 text-indigo-600 rounded-lg border border-indigo-100">판단형 J</span>
+                            <span class="text-xs md:text-sm text-slate-400 font-bold">행동 양식</span>
+                            <span class="px-3 py-1.5 text-xs md:text-sm font-bold bg-violet-50 text-violet-600 rounded-lg border border-violet-100">인식형 P</span>
                         </div>
-                        <p class="text-xs text-slate-500 leading-relaxed">
-                            <strong class="text-indigo-950 font-semibold">J :</strong> 계획과 조직화, 체계적인 실행 및 빠른 결론 선호<br>
-                            <strong class="text-violet-950 font-semibold">P :</strong> 자율과 융통성, 유동적 대처 및 새로운 탐색 선호
+                        <p class="text-sm md:text-base text-slate-600 leading-relaxed pt-1">
+                            <strong class="text-indigo-950 font-bold">J (판단) :</strong> 계획 및 체계적인 행동, 신속하고 확실한 결론<br>
+                            <strong class="text-violet-950 font-bold">P (인식) :</strong> 자율성과 융통성, 개방적 탐색 및 유연한 변화 대처
                         </p>
                     </div>
                 </div>
-            </aside>
+            </section>
 
         </div>
     </main>
@@ -800,6 +803,9 @@
             // Display results, hide loading screen
             document.getElementById('loading-screen').classList.add('hidden');
             document.getElementById('result-screen').classList.remove('hidden');
+            
+            // Scroll to the top of the test card for best visibility of the result banner
+            document.getElementById('result-screen').scrollIntoView({ behavior: 'smooth' });
         }
 
         // Reset state for new test
