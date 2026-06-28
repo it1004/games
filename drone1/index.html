@@ -453,11 +453,12 @@
 
             const modeLabel = document.getElementById('mode-label');
             const missionTitle = document.getElementById('mission-panel-title');
+            const missionList = document.getElementById('mission-list');
 
             if (mode === 'free') {
                 modeLabel.textContent = '🌍 자유비행'; modeLabel.style.borderColor = 'rgba(0, 229, 255, 0.5)';
                 missionTitle.textContent = '🌍 자유비행';
-                document.getElementById('mission-list').innerHTML = '<div style="color:rgba(255,255,255,0.6); font-size:12px; line-height:1.6;">마음껏 비행하세요!<br>배터리 제한 없음</div>';
+                missionList.innerHTML = '<div style="color:rgba(255,255,255,0.6); font-size:12px; line-height:1.6;">마음껏 비행하세요!<br>배터리 제한 없음<br>장애물을 피하며 자유롭게 탐험하세요.</div>';
                 droneState.battery = 100;
                 document.getElementById('timer-display').style.display = 'none';
             } else if (mode === 'mission') {
@@ -721,37 +722,159 @@
                 currentStage: 0, totalStages: 8, finished: false,
                 startPos: new THREE.Vector3(0, 0.5, 0), startRotation: 0,
                 stages: [
-                    { name: '상승 연습', desc: 'W키를 눌러 고도 5m까지 상승하세요', keyLabel: 'W', icon: '⬆️',
+                    { 
+                        name: '상승 연습', 
+                        desc: 'W키를 눌러 고도 5m까지 상승하세요', 
+                        keyLabel: 'W', icon: '⬆️',
                         check: () => droneState.position.y >= 5,
-                        createGuide: () => { const g = new THREE.Group(); g.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,3,8), new THREE.MeshBasicMaterial({color:0x00e5ff,transparent:true,opacity:0.6})),{position:new THREE.Vector3(0,3,0)})); g.add(Object.assign(new THREE.Mesh(new THREE.ConeGeometry(0.8,1.5,8), new THREE.MeshBasicMaterial({color:0x00e5ff,transparent:true,opacity:0.8})),{position:new THREE.Vector3(0,5,0)})); const tr = new THREE.Mesh(new THREE.TorusGeometry(3,0.15,8,32), new THREE.MeshBasicMaterial({color:0x00e5ff,transparent:true,opacity:0.5})); tr.rotation.x=Math.PI/2; tr.position.set(0,5,0); g.add(tr); return g; }
+                        createGuide: () => { 
+                            const g = new THREE.Group(); 
+                            const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,3,8), new THREE.MeshBasicMaterial({color:0x00e5ff,transparent:true,opacity:0.6}));
+                            shaft.position.set(0,3,0); g.add(shaft);
+                            const head = new THREE.Mesh(new THREE.ConeGeometry(0.8,1.5,8), new THREE.MeshBasicMaterial({color:0x00e5ff,transparent:true,opacity:0.8}));
+                            head.position.set(0,5,0); g.add(head);
+                            const tr = new THREE.Mesh(new THREE.TorusGeometry(3,0.15,8,32), new THREE.MeshBasicMaterial({color:0x00e5ff,transparent:true,opacity:0.5}));
+                            tr.rotation.x=Math.PI/2; tr.position.set(0,5,0); g.add(tr); 
+                            return g; 
+                        }
                     },
-                    { name: '하강 연습', desc: 'S키를 눌러 고도 2m까지 하강하세요', keyLabel: 'S', icon: '⬇️',
+                    { 
+                        name: '하강 연습', 
+                        desc: 'S키를 눌러 고도 2m까지 하강하세요', 
+                        keyLabel: 'S', icon: '⬇️',
                         check: () => droneState.position.y <= 2 && droneState.position.y >= 0.5,
-                        createGuide: () => { const g = new THREE.Group(); g.add(Object.assign(new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,2,8), new THREE.MeshBasicMaterial({color:0xff9800,transparent:true,opacity:0.6})),{position:new THREE.Vector3(0,3.5,0)})); const h = new THREE.Mesh(new THREE.ConeGeometry(0.8,1.5,8), new THREE.MeshBasicMaterial({color:0xff9800,transparent:true,opacity:0.8})); h.rotation.z=Math.PI; h.position.set(0,2,0); g.add(h); const tr = new THREE.Mesh(new THREE.TorusGeometry(3,0.15,8,32), new THREE.MeshBasicMaterial({color:0xff9800,transparent:true,opacity:0.5})); tr.rotation.x=Math.PI/2; tr.position.set(0,2,0); g.add(tr); return g; }
+                        createGuide: () => { 
+                            const g = new THREE.Group(); 
+                            const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,2,8), new THREE.MeshBasicMaterial({color:0xff9800,transparent:true,opacity:0.6}));
+                            shaft.position.set(0,3.5,0); g.add(shaft);
+                            const head = new THREE.Mesh(new THREE.ConeGeometry(0.8,1.5,8), new THREE.MeshBasicMaterial({color:0xff9800,transparent:true,opacity:0.8}));
+                            head.rotation.z=Math.PI; head.position.set(0,2,0); g.add(head);
+                            const tr = new THREE.Mesh(new THREE.TorusGeometry(3,0.15,8,32), new THREE.MeshBasicMaterial({color:0xff9800,transparent:true,opacity:0.5}));
+                            tr.rotation.x=Math.PI/2; tr.position.set(0,2,0); g.add(tr); 
+                            return g; 
+                        }
                     },
-                    { name: '전진 연습', desc: '↑키를 눌러 앞으로 20m 이동하세요', keyLabel: '↑', icon: '🔼',
-                        check: () => { const f = new THREE.Vector3(-Math.sin(modeState.startRotation),0,-Math.cos(modeState.startRotation)); const o = new THREE.Vector3(droneState.position.x-modeState.startPos.x,0,droneState.position.z-modeState.startPos.z); return o.dot(f) <= -20; },
-                        createGuide: () => { const g = new THREE.Group(); const f = new THREE.Vector3(-Math.sin(modeState.startRotation),0,-Math.cos(modeState.startRotation)); const s = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,15,8), new THREE.MeshBasicMaterial({color:0x00e676,transparent:true,opacity:0.6})); s.rotation.x=Math.PI/2; s.position.set(f.x*10,1.5,f.z*10); g.add(s); const h = new THREE.Mesh(new THREE.ConeGeometry(1,2,8), new THREE.MeshBasicMaterial({color:0x00e676,transparent:true,opacity:0.8})); h.rotation.x=Math.PI/2; h.position.set(f.x*20,1.5,f.z*20); g.add(h); const t = new THREE.Mesh(new THREE.CylinderGeometry(2,2,0.1,24), new THREE.MeshBasicMaterial({color:0x00e676,transparent:true,opacity:0.4})); t.position.set(f.x*20,0.1,f.z*20); g.add(t); return g; }
+                    { 
+                        name: '전진 연습', 
+                        desc: '↑키를 눌러 앞으로 20m 이동하세요', 
+                        keyLabel: '↑', icon: '🔼',
+                        check: () => { 
+                            const f = new THREE.Vector3(-Math.sin(modeState.startRotation),0,-Math.cos(modeState.startRotation)); 
+                            const o = new THREE.Vector3(droneState.position.x-modeState.startPos.x,0,droneState.position.z-modeState.startPos.z); 
+                            return o.dot(f) <= -20; 
+                        },
+                        createGuide: () => { 
+                            const g = new THREE.Group(); 
+                            const f = new THREE.Vector3(-Math.sin(modeState.startRotation),0,-Math.cos(modeState.startRotation)); 
+                            const s = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,15,8), new THREE.MeshBasicMaterial({color:0x00e676,transparent:true,opacity:0.6}));
+                            s.rotation.x=Math.PI/2; s.position.set(f.x*10,1.5,f.z*10); g.add(s); 
+                            const h = new THREE.Mesh(new THREE.ConeGeometry(1,2,8), new THREE.MeshBasicMaterial({color:0x00e676,transparent:true,opacity:0.8}));
+                            h.rotation.x=Math.PI/2; h.position.set(f.x*20,1.5,f.z*20); g.add(h); 
+                            const t = new THREE.Mesh(new THREE.CylinderGeometry(2,2,0.1,24), new THREE.MeshBasicMaterial({color:0x00e676,transparent:true,opacity:0.4}));
+                            t.position.set(f.x*20,0.1,f.z*20); g.add(t); 
+                            return g; 
+                        }
                     },
-                    { name: '후진 연습', desc: '↓키를 눌러 뒤로 15m 이동하세요', keyLabel: '↓', icon: '🔽',
-                        check: () => { const b = new THREE.Vector3(Math.sin(modeState.startRotation),0,Math.cos(modeState.startRotation)); const o = new THREE.Vector3(droneState.position.x-modeState.startPos.x,0,droneState.position.z-modeState.startPos.z); return o.dot(b) >= 15; },
-                        createGuide: () => { const g = new THREE.Group(); const b = new THREE.Vector3(Math.sin(modeState.startRotation),0,Math.cos(modeState.startRotation)); const s = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,10,8), new THREE.MeshBasicMaterial({color:0xff5252,transparent:true,opacity:0.6})); s.rotation.x=Math.PI/2; s.position.set(b.x*8,1.5,b.z*8); g.add(s); const h = new THREE.Mesh(new THREE.ConeGeometry(1,2,8), new THREE.MeshBasicMaterial({color:0xff5252,transparent:true,opacity:0.8})); h.rotation.x=-Math.PI/2; h.position.set(b.x*15,1.5,b.z*15); g.add(h); const t = new THREE.Mesh(new THREE.CylinderGeometry(2,2,0.1,24), new THREE.MeshBasicMaterial({color:0xff5252,transparent:true,opacity:0.4})); t.position.set(b.x*15,0.1,b.z*15); g.add(t); return g; }
+                    { 
+                        name: '후진 연습', 
+                        desc: '↓키를 눌러 뒤로 15m 이동하세요', 
+                        keyLabel: '↓', icon: '🔽',
+                        check: () => { 
+                            const b = new THREE.Vector3(Math.sin(modeState.startRotation),0,Math.cos(modeState.startRotation)); 
+                            const o = new THREE.Vector3(droneState.position.x-modeState.startPos.x,0,droneState.position.z-modeState.startPos.z); 
+                            return o.dot(b) >= 15; 
+                        },
+                        createGuide: () => { 
+                            const g = new THREE.Group(); 
+                            const b = new THREE.Vector3(Math.sin(modeState.startRotation),0,Math.cos(modeState.startRotation)); 
+                            const s = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,10,8), new THREE.MeshBasicMaterial({color:0xff5252,transparent:true,opacity:0.6}));
+                            s.rotation.x=Math.PI/2; s.position.set(b.x*8,1.5,b.z*8); g.add(s); 
+                            const h = new THREE.Mesh(new THREE.ConeGeometry(1,2,8), new THREE.MeshBasicMaterial({color:0xff5252,transparent:true,opacity:0.8}));
+                            h.rotation.x=-Math.PI/2; h.position.set(b.x*15,1.5,b.z*15); g.add(h); 
+                            const t = new THREE.Mesh(new THREE.CylinderGeometry(2,2,0.1,24), new THREE.MeshBasicMaterial({color:0xff5252,transparent:true,opacity:0.4}));
+                            t.position.set(b.x*15,0.1,b.z*15); g.add(t); 
+                            return g; 
+                        }
                     },
-                    { name: '좌측 이동', desc: '←키를 눌러 왼쪽으로 15m 이동하세요', keyLabel: '←', icon: '◀️',
-                        check: () => { const l = new THREE.Vector3(-Math.cos(modeState.startRotation),0,Math.sin(modeState.startRotation)); const o = new THREE.Vector3(droneState.position.x-modeState.startPos.x,0,droneState.position.z-modeState.startPos.z); return o.dot(l) >= 15; },
-                        createGuide: () => { const g = new THREE.Group(); const l = new THREE.Vector3(-Math.cos(modeState.startRotation),0,Math.sin(modeState.startRotation)); const s = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,10,8), new THREE.MeshBasicMaterial({color:0x2196f3,transparent:true,opacity:0.6})); s.rotation.z=Math.PI/2; s.position.set(l.x*8,1.5,l.z*8); g.add(s); const h = new THREE.Mesh(new THREE.ConeGeometry(1,2,8), new THREE.MeshBasicMaterial({color:0x2196f3,transparent:true,opacity:0.8})); h.rotation.z=-Math.PI/2; h.position.set(l.x*15,1.5,l.z*15); g.add(h); const t = new THREE.Mesh(new THREE.CylinderGeometry(2,2,0.1,24), new THREE.MeshBasicMaterial({color:0x2196f3,transparent:true,opacity:0.4})); t.position.set(l.x*15,0.1,l.z*15); g.add(t); return g; }
+                    { 
+                        name: '좌측 이동', 
+                        desc: '←키를 눌러 왼쪽으로 15m 이동하세요', 
+                        keyLabel: '←', icon: '◀️',
+                        check: () => { 
+                            const l = new THREE.Vector3(-Math.cos(modeState.startRotation),0,Math.sin(modeState.startRotation)); 
+                            const o = new THREE.Vector3(droneState.position.x-modeState.startPos.x,0,droneState.position.z-modeState.startPos.z); 
+                            return o.dot(l) >= 15; 
+                        },
+                        createGuide: () => { 
+                            const g = new THREE.Group(); 
+                            const l = new THREE.Vector3(-Math.cos(modeState.startRotation),0,Math.sin(modeState.startRotation)); 
+                            const s = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,10,8), new THREE.MeshBasicMaterial({color:0x2196f3,transparent:true,opacity:0.6}));
+                            s.rotation.z=Math.PI/2; s.position.set(l.x*8,1.5,l.z*8); g.add(s); 
+                            const h = new THREE.Mesh(new THREE.ConeGeometry(1,2,8), new THREE.MeshBasicMaterial({color:0x2196f3,transparent:true,opacity:0.8}));
+                            h.rotation.z=-Math.PI/2; h.position.set(l.x*15,1.5,l.z*15); g.add(h); 
+                            const t = new THREE.Mesh(new THREE.CylinderGeometry(2,2,0.1,24), new THREE.MeshBasicMaterial({color:0x2196f3,transparent:true,opacity:0.4}));
+                            t.position.set(l.x*15,0.1,l.z*15); g.add(t); 
+                            return g; 
+                        }
                     },
-                    { name: '우측 이동', desc: '→키를 눌러 오른쪽으로 15m 이동하세요', keyLabel: '→', icon: '▶️',
-                        check: () => { const r = new THREE.Vector3(Math.cos(modeState.startRotation),0,-Math.sin(modeState.startRotation)); const o = new THREE.Vector3(droneState.position.x-modeState.startPos.x,0,droneState.position.z-modeState.startPos.z); return o.dot(r) >= 15; },
-                        createGuide: () => { const g = new THREE.Group(); const r = new THREE.Vector3(Math.cos(modeState.startRotation),0,-Math.sin(modeState.startRotation)); const s = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,10,8), new THREE.MeshBasicMaterial({color:0xffeb3b,transparent:true,opacity:0.6})); s.rotation.z=Math.PI/2; s.position.set(r.x*8,1.5,r.z*8); g.add(s); const h = new THREE.Mesh(new THREE.ConeGeometry(1,2,8), new THREE.MeshBasicMaterial({color:0xffeb3b,transparent:true,opacity:0.8})); h.rotation.z=Math.PI/2; h.position.set(r.x*15,1.5,r.z*15); g.add(h); const t = new THREE.Mesh(new THREE.CylinderGeometry(2,2,0.1,24), new THREE.MeshBasicMaterial({color:0xffeb3b,transparent:true,opacity:0.4})); t.position.set(r.x*15,0.1,r.z*15); g.add(t); return g; }
+                    { 
+                        name: '우측 이동', 
+                        desc: '→키를 눌러 오른쪽으로 15m 이동하세요', 
+                        keyLabel: '→', icon: '▶️',
+                        check: () => { 
+                            const r = new THREE.Vector3(Math.cos(modeState.startRotation),0,-Math.sin(modeState.startRotation)); 
+                            const o = new THREE.Vector3(droneState.position.x-modeState.startPos.x,0,droneState.position.z-modeState.startPos.z); 
+                            return o.dot(r) >= 15; 
+                        },
+                        createGuide: () => { 
+                            const g = new THREE.Group(); 
+                            const r = new THREE.Vector3(Math.cos(modeState.startRotation),0,-Math.sin(modeState.startRotation)); 
+                            const s = new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.3,10,8), new THREE.MeshBasicMaterial({color:0xffeb3b,transparent:true,opacity:0.6}));
+                            s.rotation.z=Math.PI/2; s.position.set(r.x*8,1.5,r.z*8); g.add(s); 
+                            const h = new THREE.Mesh(new THREE.ConeGeometry(1,2,8), new THREE.MeshBasicMaterial({color:0xffeb3b,transparent:true,opacity:0.8}));
+                            h.rotation.z=Math.PI/2; h.position.set(r.x*15,1.5,r.z*15); g.add(h); 
+                            const t = new THREE.Mesh(new THREE.CylinderGeometry(2,2,0.1,24), new THREE.MeshBasicMaterial({color:0xffeb3b,transparent:true,opacity:0.4}));
+                            t.position.set(r.x*15,0.1,r.z*15); g.add(t); 
+                            return g; 
+                        }
                     },
-                    { name: '좌회전 연습', desc: 'A키를 눌러 180도 좌회전하세요', keyLabel: 'A', icon: '↺',
-                        check: () => { let d = droneState.rotation - modeState.startRotation; d = ((d%(Math.PI*2))+(Math.PI*2))%(Math.PI*2); return d >= Math.PI-0.2 && d <= Math.PI+0.2; },
-                        createGuide: () => { const g = new THREE.Group(); const pts = new THREE.EllipseCurve(0,0,3,3,0,Math.PI,false,0).getPoints(32); const arc = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({color:0xaa66ff})); arc.rotation.x=-Math.PI/2; arc.position.y=2; g.add(arc); const h = new THREE.Mesh(new THREE.ConeGeometry(0.5,1,8), new THREE.MeshBasicMaterial({color:0xaa66ff})); h.position.set(-3,2,0); h.rotation.z=Math.PI/2; g.add(h); return g; }
+                    { 
+                        name: '좌회전 연습', 
+                        desc: 'A키를 눌러 180도 좌회전하세요', 
+                        keyLabel: 'A', icon: '↺',
+                        check: () => { 
+                            let d = droneState.rotation - modeState.startRotation; 
+                            d = ((d%(Math.PI*2))+(Math.PI*2))%(Math.PI*2); 
+                            return d >= Math.PI-0.2 && d <= Math.PI+0.2; 
+                        },
+                        createGuide: () => { 
+                            const g = new THREE.Group(); 
+                            const pts = new THREE.EllipseCurve(0,0,3,3,0,Math.PI,false,0).getPoints(32); 
+                            const arc = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({color:0xaa66ff})); 
+                            arc.rotation.x=-Math.PI/2; arc.position.y=2; g.add(arc); 
+                            const h = new THREE.Mesh(new THREE.ConeGeometry(0.5,1,8), new THREE.MeshBasicMaterial({color:0xaa66ff}));
+                            h.position.set(-3,2,0); h.rotation.z=Math.PI/2; g.add(h); 
+                            return g; 
+                        }
                     },
-                    { name: '우회전 연습', desc: 'D키를 눌러 180도 우회전하세요', keyLabel: 'D', icon: '↻',
-                        check: () => { let d = modeState.startRotation - droneState.rotation; d = ((d%(Math.PI*2))+(Math.PI*2))%(Math.PI*2); return d >= Math.PI-0.2 && d <= Math.PI+0.2; },
-                        createGuide: () => { const g = new THREE.Group(); const pts = new THREE.EllipseCurve(0,0,3,3,0,-Math.PI,true,0).getPoints(32); const arc = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({color:0xff4081})); arc.rotation.x=-Math.PI/2; arc.position.y=2; g.add(arc); const h = new THREE.Mesh(new THREE.ConeGeometry(0.5,1,8), new THREE.MeshBasicMaterial({color:0xff4081})); h.position.set(3,2,0); h.rotation.z=-Math.PI/2; g.add(h); return g; }
+                    { 
+                        name: '우회전 연습', 
+                        desc: 'D키를 눌러 180도 우회전하세요', 
+                        keyLabel: 'D', icon: '↻',
+                        check: () => { 
+                            let d = modeState.startRotation - droneState.rotation; 
+                            d = ((d%(Math.PI*2))+(Math.PI*2))%(Math.PI*2); 
+                            return d >= Math.PI-0.2 && d <= Math.PI+0.2; 
+                        },
+                        createGuide: () => { 
+                            const g = new THREE.Group(); 
+                            const pts = new THREE.EllipseCurve(0,0,3,3,0,-Math.PI,true,0).getPoints(32); 
+                            const arc = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineBasicMaterial({color:0xff4081})); 
+                            arc.rotation.x=-Math.PI/2; arc.position.y=2; g.add(arc); 
+                            const h = new THREE.Mesh(new THREE.ConeGeometry(0.5,1,8), new THREE.MeshBasicMaterial({color:0xff4081}));
+                            h.position.set(3,2,0); h.rotation.z=-Math.PI/2; g.add(h); 
+                            return g; 
+                        }
                     },
                 ],
                 currentGuide: null
@@ -773,18 +896,36 @@
         function updateMissionListPractice() {
             const list = document.getElementById('mission-list');
             const stage = modeState.stages[modeState.currentStage];
+            
+            // 1. 단계 목록 생성
             let html = '';
             modeState.stages.forEach((s, i) => {
-                html += `<div class="mission-item"><div class="mission-check ${i<modeState.currentStage?'done':''} ${i===modeState.currentStage?'active':''}">${i+1}</div><span>${s.icon} ${s.name}</span></div>`;
+                const isCurrent = i === modeState.currentStage;
+                const isDone = i < modeState.currentStage;
+                html += `<div class="mission-item">
+                    <div class="mission-check ${isDone ? 'done' : ''} ${isCurrent ? 'active' : ''}">${i+1}</div>
+                    <span>${s.icon} ${s.name}</span>
+                </div>`;
             });
+
+            // 2. 현재 단계 상세 도움말 추가
             if (stage && !modeState.finished) {
-                html += `<div style="margin-top:10px; padding:12px; background:rgba(170,102,255,0.15); border-radius:8px; border:1px solid rgba(170,102,255,0.4);">
-                    <div style="color:#aa66ff; font-size:13px; font-weight:bold; margin-bottom:6px;">현재 단계</div>
-                    <div style="color:#fff; font-size:14px; margin-bottom:4px;">${stage.icon} ${stage.name}</div>
-                    <div style="color:rgba(255,255,255,0.7); font-size:12px; margin-bottom:8px;">${stage.desc}</div>
-                    <span style="background:rgba(170,102,255,0.3); border:1px solid #aa66ff; border-radius:4px; padding:4px 10px; font-family:'Courier New',monospace; font-size:14px; font-weight:bold; color:#fff;">${stage.keyLabel}</span>
+                html += `
+                <div style="margin-top:15px; padding:15px; background:rgba(170,102,255,0.1); border-radius:10px; border:1px solid rgba(170,102,255,0.4);">
+                    <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+                        <span style="font-size:24px;">${stage.icon}</span>
+                        <div>
+                            <div style="color:#aa66ff; font-size:14px; font-weight:bold;">현재 단계: ${stage.name}</div>
+                            <div style="color:rgba(255,255,255,0.8); font-size:12px; margin-top:2px;">${stage.desc}</div>
+                        </div>
+                    </div>
+                    <div style="display:flex; align-items:center; gap:10px; background:rgba(0,0,0,0.2); padding:10px; border-radius:6px;">
+                        <span style="background:rgba(170,102,255,0.3); border:1px solid #aa66ff; border-radius:4px; padding:4px 12px; font-family:'Courier New',monospace; font-size:16px; font-weight:bold; color:#fff; min-width:30px; text-align:center;">${stage.keyLabel}</span>
+                        <span style="color:rgba(255,255,255,0.7); font-size:12px;">키를 사용하여 조작하세요</span>
+                    </div>
                 </div>`;
             }
+            
             list.innerHTML = html;
         }
 
