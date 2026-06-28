@@ -1,1 +1,1610 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>슬램 덩크 아케이드 - Slam Dunk Arcade</title>
+    <!-- Tailwind CSS for modern responsive UI styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tone.js for high-quality synthesizer audio effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- FontAwesome for gorgeous retro & modern game icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts for typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+KR:wght@300;500;700;900&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #0b0f19;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow: hidden;
+        }
+        .retro-title {
+            font-family: 'Orbitron', sans-serif;
+            text-shadow: 0 0 10px rgba(249, 115, 22, 0.6), 0 0 20px rgba(249, 115, 22, 0.3);
+        }
+        .neon-border {
+            box-shadow: 0 0 15px rgba(249, 115, 22, 0.4), inset 0 0 15px rgba(249, 115, 22, 0.2);
+        }
+        .neon-text-blue {
+            text-shadow: 0 0 8px rgba(56, 189, 248, 0.8);
+        }
+        .neon-text-orange {
+            text-shadow: 0 0 8px rgba(249, 115, 22, 0.8);
+        }
+        /* Hidden scrollbar but keep functional */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+        /* Fire/Fever animation background effect */
+        @keyframes fireGlow {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        .fever-active {
+            background: linear-gradient(-45deg, #f97316, #ef4444, #e11d48, #b91c1c);
+            background-size: 400% 400%;
+            animation: fireGlow 3s ease infinite;
+        }
+    </style>
+</head>
+<body class="flex items-center justify-center min-h-screen text-white relative">
 
+    <!-- Background Gradient and Court Atmosphere -->
+    <div class="absolute inset-0 z-0 bg-cover bg-center opacity-40 transition-all duration-700" id="bgAtmosphere" style="background-image: linear-gradient(to bottom, #0d1527, #070a13);"></div>
+    <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-orange-500/10 via-transparent to-transparent z-0"></div>
+
+    <!-- Main Container -->
+    <div class="relative z-10 w-full max-w-4xl h-[95vh] max-h-[750px] mx-auto bg-slate-900/80 backdrop-blur-md rounded-2xl border border-slate-700/50 flex flex-col overflow-hidden shadow-2xl">
+        
+        <!-- Header HUD -->
+        <header class="flex justify-between items-center px-6 py-4 bg-slate-950/60 border-b border-slate-800/80 shrink-0">
+            <div class="flex items-center gap-3">
+                <i class="fa-solid fa-basketball text-orange-500 text-3xl animate-bounce"></i>
+                <div>
+                    <h1 class="text-xl font-black tracking-wider retro-title uppercase text-orange-500">Slam Dunk</h1>
+                    <p class="text-[10px] text-slate-400 font-bold tracking-widest uppercase">Arcade Champion</p>
+                </div>
+            </div>
+            
+            <!-- Realtime score updates -->
+            <div class="flex items-center gap-6">
+                <div class="text-center">
+                    <p class="text-xs text-slate-400 font-bold">SCORE</p>
+                    <p class="text-2xl font-black text-orange-400 tracking-widest" id="hudScore">000</p>
+                </div>
+                <div class="text-center bg-slate-800/60 px-3 py-1 rounded-lg border border-slate-700">
+                    <p class="text-xs text-slate-400 font-bold">BEST</p>
+                    <p class="text-md font-black text-amber-300" id="hudBest">0</p>
+                </div>
+                <div class="text-center min-w-[70px]" id="timerContainer">
+                    <p class="text-xs text-slate-400 font-bold" id="timeLabel">TIME LEFT</p>
+                    <p class="text-2xl font-black text-rose-500 tracking-wider" id="hudTimer">60s</p>
+                </div>
+            </div>
+
+            <!-- Header Controls -->
+            <div class="flex items-center gap-2">
+                <button id="btnSound" class="w-10 h-10 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition" title="사운드 설정">
+                    <i class="fa-solid fa-volume-high" id="soundIcon"></i>
+                </button>
+                <button id="btnPause" class="w-10 h-10 rounded-lg bg-slate-800 hover:bg-slate-700 text-rose-400 flex items-center justify-center transition hidden" title="일시정지">
+                    <i class="fa-solid fa-pause"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- SCREEN 1: Main Menu Overlay -->
+        <div id="screenMainMenu" class="absolute inset-0 z-30 flex flex-col justify-between p-8 bg-slate-950/90 backdrop-blur-md transition-all duration-500">
+            <div class="text-center mt-6">
+                <span class="px-4 py-1.5 rounded-full bg-orange-500/10 text-orange-400 text-xs font-bold tracking-widest border border-orange-500/20 uppercase">No.1 HTML5 Physics Hoop Game</span>
+                <h1 class="text-5xl md:text-6xl font-black mt-4 retro-title text-transparent bg-clip-text bg-gradient-to-r from-orange-400 via-orange-500 to-rose-500 tracking-tight">
+                    SLAM DUNK<br><span class="text-3xl md:text-4xl text-white font-extrabold tracking-normal">ARCADE</span>
+                </h1>
+                <p class="text-slate-400 text-sm max-w-md mx-auto mt-4 leading-relaxed">
+                    드래그하여 각도와 세기를 정한 후 던지세요! 연속 골을 성공시키면 불타는 <span class="text-amber-400 font-bold">피버 모드</span>와 스위시 콤보가 발동합니다.
+                </p>
+            </div>
+
+            <!-- Game Mode Options -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-2xl mx-auto w-full my-4">
+                <button onclick="startGame('classic')" class="group relative flex flex-col items-center justify-center p-5 rounded-2xl bg-gradient-to-b from-slate-800 to-slate-900 border border-slate-700 hover:border-orange-500/50 hover:from-slate-800/80 hover:to-orange-950/30 transition-all duration-300 shadow-lg text-center">
+                    <div class="absolute -top-3 right-4 bg-orange-500 text-white text-[9px] font-black px-2 py-0.5 rounded-full tracking-wider animate-pulse">POPULAR</div>
+                    <div class="w-12 h-12 rounded-xl bg-orange-500/10 text-orange-500 flex items-center justify-center mb-3 group-hover:scale-110 transition duration-300">
+                        <i class="fa-solid fa-stopwatch text-2xl"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-orange-400">클래식 모드</h3>
+                    <p class="text-xs text-slate-400 mt-1">제한 시간 60초 동안 짜릿한 슬램덩크 슛 아웃 기록 갱신!</p>
+                </button>
+
+                <button onclick="startGame('arcade')" class="group flex flex-col items-center justify-center p-5 rounded-2xl bg-gradient-to-b from-slate-800 to-slate-900 border border-slate-700 hover:border-sky-500/50 hover:from-slate-800/80 hover:to-sky-950/30 transition-all duration-300 shadow-lg text-center">
+                    <div class="w-12 h-12 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center mb-3 group-hover:scale-110 transition duration-300">
+                        <i class="fa-solid fa-wand-magic-sparkles text-2xl"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-sky-400">아케이드 모드</h3>
+                    <p class="text-xs text-slate-400 mt-1">좌우상하 무빙 골대 정밀 조준! 60초 동안 챌린지에 도전!</p>
+                </button>
+
+                <button onclick="startGame('zen')" class="group flex flex-col items-center justify-center p-5 rounded-2xl bg-gradient-to-b from-slate-800 to-slate-900 border border-slate-700 hover:border-emerald-500/50 hover:from-slate-800/80 hover:to-emerald-950/30 transition-all duration-300 shadow-lg text-center">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-3 group-hover:scale-110 transition duration-300">
+                        <i class="fa-solid fa-spa text-2xl"></i>
+                    </div>
+                    <h3 class="font-bold text-lg text-emerald-400">연습 모드</h3>
+                    <p class="text-xs text-slate-400 mt-1">시간 제한 없이 편안하고 여유롭게 농구선수 슛 폼 연습</p>
+                </button>
+            </div>
+
+            <!-- Footer Section & Shop Trigger -->
+            <div class="flex justify-between items-center max-w-2xl mx-auto w-full border-t border-slate-800 pt-5 text-xs text-slate-500">
+                <div class="flex items-center gap-1">
+                    <span class="font-bold text-slate-400">조작 방법:</span> 농구선수 주변 또는 화면 왼쪽을 드래그하여 조절 후 발사!
+                </div>
+                <button onclick="openShop()" class="flex items-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-black px-4 py-2 rounded-xl transition shadow-md shadow-orange-900/30">
+                    <i class="fa-solid fa-shirt"></i> 스킨 상점
+                </button>
+            </div>
+        </div>
+
+        <!-- SCREEN 2: Interactive Gameplay Area -->
+        <div class="relative flex-1 bg-slate-950 overflow-hidden" id="canvasContainer">
+            <!-- Dynamic floating combos and feedback labels -->
+            <div id="gameplayAlert" class="absolute left-1/2 top-1/4 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none z-20 transition-all duration-300 opacity-0 scale-75">
+                <span id="alertCombo" class="block font-black text-amber-400 text-xl tracking-widest uppercase mb-1 drop-shadow"></span>
+                <span id="alertText" class="block font-black text-3xl md:text-5xl text-white tracking-tight italic uppercase drop-shadow">SWISH!</span>
+                <span id="alertBonus" class="inline-block mt-2 px-3 py-1 bg-rose-500 text-white text-xs font-bold rounded-full shadow-lg">+10 SCORE</span>
+            </div>
+
+            <!-- Combo Multiplier Tag in game screen -->
+            <div id="comboTracker" class="absolute left-6 top-6 z-20 bg-slate-900/90 border border-slate-700/60 px-4 py-2 rounded-xl flex items-center gap-2 shadow-lg opacity-0 transition">
+                <div class="w-3 h-3 rounded-full bg-red-500 animate-ping"></div>
+                <p class="font-black text-slate-200 uppercase tracking-widest text-xs">COMBO x<span class="text-orange-500" id="comboValue">1</span></p>
+            </div>
+
+            <!-- Physics Rendering Canvas -->
+            <canvas id="gameCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+        </div>
+
+        <!-- SCREEN 4: Skin Shop Overlay -->
+        <div id="screenShop" class="absolute inset-0 z-40 hidden flex-col justify-between p-8 bg-slate-950/95 backdrop-blur-lg transition-all duration-500">
+            <div>
+                <div class="flex justify-between items-center border-b border-slate-800 pb-4">
+                    <div class="flex items-center gap-3">
+                        <i class="fa-solid fa-palette text-amber-500 text-2xl animate-spin-slow"></i>
+                        <h2 class="text-2xl font-black retro-title text-white">커스텀 농구공 상점</h2>
+                    </div>
+                    <button onclick="closeShop()" class="w-9 h-9 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 flex items-center justify-center transition">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+
+                <div class="mt-4 flex justify-between items-center bg-slate-900 px-4 py-3 rounded-xl border border-slate-800">
+                    <span class="text-xs text-slate-400 font-bold">현재 적용된 상태</span>
+                    <span class="text-sm font-black text-amber-400 flex items-center gap-1">
+                        <i class="fa-solid fa-unlock text-sm"></i> 모든 스킨 조건 없이 즉시 잠금해제됨!
+                    </span>
+                </div>
+
+                <!-- Skin Grid Container -->
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-6 overflow-y-auto max-h-[350px] pr-1" id="shopGrid">
+                    <!-- Standard Ball -->
+                    <div class="p-4 rounded-xl bg-slate-800/80 border-2 border-orange-500 flex flex-col items-center justify-between text-center relative">
+                        <span class="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-orange-500 text-[8px] font-bold text-white">장착됨</span>
+                        <div class="w-12 h-12 rounded-full bg-orange-600 border border-orange-400 shadow-md relative overflow-hidden flex items-center justify-center mb-2">
+                            <div class="absolute inset-x-0 h-[2px] bg-slate-950 top-1/2 -translate-y-1/2"></div>
+                            <div class="absolute inset-y-0 w-[2px] bg-slate-950 left-1/2 -translate-x-1/2"></div>
+                        </div>
+                        <h4 class="font-bold text-sm text-slate-200">클래식 오렌지</h4>
+                        <p class="text-[10px] text-slate-400 mt-1">기본형 농구공</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="text-center pt-4 border-t border-slate-800 text-[11px] text-slate-500">
+                원하는 공을 터치하여 즉시 장착할 수 있습니다. 상점 개방 완료!
+            </div>
+        </div>
+
+        <!-- SCREEN 4: Game Over Overlay -->
+        <div id="screenGameOver" class="absolute inset-0 z-30 hidden flex-col justify-center items-center p-8 bg-slate-950/95 backdrop-blur-md transition-all duration-500">
+            <div class="text-center max-w-sm w-full bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-2xl relative">
+                <!-- Golden trophy crown decor -->
+                <div class="absolute -top-12 left-1/2 -translate-x-1/2 w-24 h-24 bg-gradient-to-b from-yellow-400 to-amber-500 rounded-full flex items-center justify-center shadow-lg border-4 border-slate-950 animate-bounce">
+                    <i class="fa-solid fa-trophy text-slate-950 text-4xl"></i>
+                </div>
+                
+                <h2 class="text-2xl font-black uppercase text-amber-500 mt-10 tracking-widest retro-title">GAME OVER</h2>
+                <p class="text-slate-400 text-xs mt-1" id="gameOverMode">클래식 챌린지 종료</p>
+
+                <!-- Score Board Summary -->
+                <div class="grid grid-cols-2 gap-3 my-6">
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">최종 점수</p>
+                        <p class="text-3xl font-black text-orange-400" id="gameOverScore">0</p>
+                    </div>
+                    <div class="bg-slate-950 p-3 rounded-xl border border-slate-800">
+                        <p class="text-[10px] text-slate-500 font-bold uppercase tracking-wider">최고 콤보</p>
+                        <p class="text-3xl font-black text-emerald-400" id="gameOverCombo">0</p>
+                    </div>
+                </div>
+
+                <div id="newBestBadge" class="hidden mb-4 py-1.5 bg-yellow-500/20 border border-yellow-500/30 text-yellow-300 rounded-xl font-black text-xs tracking-wider animate-pulse">
+                    🎉 최고 기록 달성! 🎉
+                </div>
+
+                <!-- Actions buttons -->
+                <div class="flex flex-col gap-2">
+                    <button onclick="restartGame()" class="w-full bg-gradient-to-r from-orange-500 to-rose-500 hover:from-orange-600 hover:to-rose-600 text-white font-black py-3 rounded-xl transition-all duration-300 flex items-center justify-center gap-2 shadow-lg shadow-orange-950/30">
+                        <i class="fa-solid fa-rotate-left"></i> 다시 도전하기
+                    </button>
+                    <button onclick="goToMenu()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold py-2.5 rounded-xl transition text-sm">
+                        메인 메뉴로 이동
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCREEN 5: Pause Menu Overlay -->
+        <div id="screenPause" class="absolute inset-0 z-30 hidden flex-col justify-center items-center p-8 bg-slate-950/90 backdrop-blur-md">
+            <div class="text-center max-w-xs w-full bg-slate-900 p-6 rounded-2xl border border-slate-800 shadow-2xl">
+                <i class="fa-solid fa-circle-pause text-slate-400 text-5xl mb-4"></i>
+                <h3 class="text-xl font-black text-white">일시 정지됨</h3>
+                <p class="text-slate-400 text-xs mt-1">경기가 잠시 대기 상태입니다.</p>
+
+                <div class="flex flex-col gap-2 mt-6">
+                    <button onclick="resumeGame()" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-black py-2.5 rounded-xl transition">
+                        경기 재개하기
+                    </button>
+                    <button onclick="goToMenu()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2 rounded-xl transition text-sm">
+                        경기 그만두기 (메인 메뉴)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // Sound Configuration using Tone.js Synthesizers
+        let isMuted = false;
+        let synthBouncing, synthRimClank, synthSwish, synthGoalMelody;
+
+        function initAudio() {
+            if (synthBouncing) return; // Already initialized
+
+            // Bounce synth sound (deep round pop)
+            synthBouncing = new Tone.MembraneSynth({
+                envelope: { attack: 0.001, decay: 0.15, sustain: 0 },
+                volume: -6
+            }).toDestination();
+
+            // Rim collision metal strike
+            synthRimClank = new Tone.MetalSynth({
+                frequency: 450,
+                envelope: { attack: 0.01, decay: 0.08, release: 0.1 },
+                resonance: 4000,
+                harmonicity: 5.1,
+                volume: -10
+            }).toDestination();
+
+            // Net swish sweep (high-pass white noise)
+            synthSwish = new Tone.NoiseSynth({
+                noise: { type: 'white' },
+                envelope: { attack: 0.05, decay: 0.15, release: 0.1 },
+                volume: -3
+            }).toDestination();
+
+            // Success melody
+            synthGoalMelody = new Tone.PolySynth(Tone.Synth, {
+                oscillator: { type: "sine" },
+                envelope: { attack: 0.01, decay: 0.1, sustain: 0.3, release: 0.2 },
+                volume: -8
+            }).toDestination();
+        }
+
+        // Play reactive sounds with custom triggers
+        function playSound(type) {
+            if (isMuted) return;
+            try {
+                // Ensure audio context is run
+                if (Tone.context.state !== 'running') {
+                    Tone.context.resume();
+                }
+
+                initAudio();
+
+                const now = Tone.now();
+                switch(type) {
+                    case 'bounce':
+                        synthBouncing.triggerAttackRelease("C1", "16n", now);
+                        break;
+                    case 'rim':
+                        synthRimClank.triggerAttackRelease("16n", now);
+                        break;
+                    case 'swish':
+                        synthSwish.triggerAttackRelease("16n", now);
+                        break;
+                    case 'goal':
+                        synthGoalMelody.triggerAttackRelease(["E5", "G5", "C6"], "8n", now);
+                        break;
+                    case 'fever':
+                        synthGoalMelody.triggerAttackRelease(["C5", "E5", "G5", "C6"], "4n", now);
+                        break;
+                    case 'tick':
+                        synthBouncing.triggerAttackRelease("G2", "32n", now);
+                        break;
+                }
+            } catch(e) {
+                console.log("Audio play deferred or failed: ", e);
+            }
+        }
+
+        // Sound controller toggle
+        const btnSound = document.getElementById('btnSound');
+        const soundIcon = document.getElementById('soundIcon');
+        btnSound.addEventListener('click', () => {
+            isMuted = !isMuted;
+            if (isMuted) {
+                soundIcon.className = "fa-solid fa-volume-xmark text-rose-400";
+                btnSound.classList.add("bg-rose-950/20", "border-rose-500/20");
+            } else {
+                soundIcon.className = "fa-solid fa-volume-high text-slate-300";
+                btnSound.classList.remove("bg-rose-950/20", "border-rose-500/20");
+                // Resume Context immediately on user toggle
+                if (Tone && Tone.context.state !== 'running') {
+                    Tone.context.resume();
+                }
+            }
+        });
+    </script>
+
+    <script>
+        // Core Canvas Variables
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const canvasContainer = document.getElementById('canvasContainer');
+
+        // Physics Resolution Settings (Virtual coordinates scaled dynamically)
+        const V_WIDTH = 1000;
+        const V_HEIGHT = 700;
+        let scaleX = 1;
+        let scaleY = 1;
+
+        // Custom Skin Shop & Local Storage
+        let highScore = parseInt(localStorage.getItem('bball_high_score')) || 0;
+        let cumulativeScore = parseInt(localStorage.getItem('bball_cumulative_score')) || 0;
+        let selectedSkin = 'orange';
+
+        // Custom Skins Configuration
+        const SKINS = [
+            { id: 'orange', name: '클래식 오렌지', scoreRequired: 0, color: '#f97316', innerPattern: 'classic', description: '기본형 농구공 (즉시 사용)' },
+            { id: 'neonBlue', name: '사이버 네온', scoreRequired: 0, color: '#06b6d4', innerPattern: 'neon', description: '푸른 광선을 내뿜는 볼 (즉시 사용)' },
+            { id: 'lava', name: '아그니 락', scoreRequired: 0, color: '#ef4444', innerPattern: 'lava', description: '불타는 마그마 스킨 (즉시 사용)' },
+            { id: 'galaxy', name: '코스믹 퍼플', scoreRequired: 0, color: '#8b5cf6', innerPattern: 'galaxy', description: '우주의 에너지를 담은 볼 (즉시 사용)' },
+            { id: 'gold', name: '황금빛 챔프', scoreRequired: 0, color: '#fbbf24', innerPattern: 'gold', description: '진정한 챔피언의 골드스킨 (즉시 사용)' }
+        ];
+
+        // Animated Basketball Player State Object
+        const basketballPlayer = {
+            shoulderX: 130,
+            shoulderY: 480,
+            pelvisX: 125,
+            pelvisY: 565,
+            headX: 130,
+            headY: 420, 
+            followthroughTimer: 0,
+            state: 'idle' // 'idle', 'aiming', 'shoot'
+        };
+
+        // Core Physics Object Definition
+        const ball = {
+            x: 180,
+            y: 500,
+            vx: 0,
+            vy: 0,
+            radius: 22,
+            mass: 1.0,
+            restitution: 0.72, // Bounce coefficient
+            gravity: 0.42,
+            isHeld: false,
+            isFlying: false,
+            hasScored: false,
+            hasTouchedRim: false,
+            spin: 0,
+            maxPower: 26,
+            stuckFrames: 0, // Frame tracker for position-based stuck prevention
+            lastX: null,    // Historical coordinates to monitor static state
+            lastY: null,
+            trail: [] // Stores previous ball positions
+        };
+
+        // Basketball Hoop, Rim & Backboard Coordinates
+        const hoop = {
+            backboardX: 860,
+            backboardTopY: 140,
+            backboardBottomY: 380,
+            backboardWidth: 10,
+            
+            // Rim coordinates (inner scoring area: rimLeft to rimRight)
+            rimLeftX: 745,
+            rimLeftY: 280,
+            rimRightX: 835,
+            rimRightY: 280,
+            rimRadius: 7,
+            
+            // Movement vectors for Arcade mode
+            originY: 280,
+            originX: 745,
+            moveDir: 1,
+            moveRange: 80,
+            moveSpeed: 1.2
+        };
+
+        // Aiming drag vector
+        const drag = {
+            startX: 0,
+            startY: 0,
+            currentX: 0,
+            currentY: 0,
+            active: false
+        };
+
+        // Net simulation elements (particles representing net meshes)
+        let netParticles = [];
+        let netSprings = [];
+
+        // Game State Variables
+        let currentGameMode = 'classic'; // 'classic', 'arcade', 'zen'
+        let currentScore = 0;
+        let comboStreak = 0;
+        let maxComboInGame = 0;
+        let isGameActive = false;
+        let gameTimeRemaining = 60;
+        let gameTimerInterval = null;
+        let particleSystem = [];
+        let gameAnimationFrame = null;
+        let isPaused = false;
+
+        // Helper to generate dynamic flexible basketball net
+        function initNet() {
+            netParticles = [];
+            netSprings = [];
+            
+            const rows = 5;
+            const cols = 6;
+            const spacingX = (hoop.rimRightX - hoop.rimLeftX) / (cols - 1);
+            const spacingY = 16;
+            
+            // Generate Mesh Particles
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const px = hoop.rimLeftX + c * spacingX;
+                    const py = hoop.rimLeftY + r * spacingY;
+                    netParticles.push({
+                        x: px,
+                        y: py,
+                        ox: px,
+                        oy: py,
+                        vx: 0,
+                        vy: 0,
+                        pinned: (r === 0) // Anchor top row to the rim
+                    });
+                }
+            }
+            
+            // Generate Horizontal and Vertical Spring Connections
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    const idx = r * cols + c;
+                    
+                    // Connect rightwards
+                    if (c < cols - 1) {
+                        netSprings.push({ p1: idx, p2: idx + 1, restLength: spacingX, k: 0.35 });
+                    }
+                    // Connect downwards
+                    if (r < rows - 1) {
+                        netSprings.push({ p1: idx, p2: idx + cols, restLength: spacingY, k: 0.35 });
+                    }
+                    // Shearing diagonals for mesh stability
+                    if (r < rows - 1 && c < cols - 1) {
+                        netSprings.push({ p1: idx, p2: idx + cols + 1, restLength: Math.sqrt(spacingX*spacingX + spacingY*spacingY), k: 0.2 });
+                    }
+                }
+            }
+        }
+
+        function updateNet() {
+            // Adapt top anchor elements with moving hoop
+            const cols = 6;
+            const spacingX = (hoop.rimRightX - hoop.rimLeftX) / (cols - 1);
+            
+            for (let c = 0; c < cols; c++) {
+                netParticles[c].x = hoop.rimLeftX + c * spacingX;
+                netParticles[c].y = hoop.rimLeftY;
+            }
+
+            // Apply gravity & verlet forces to net parts
+            netParticles.forEach(p => {
+                if (!p.pinned) {
+                    p.vy += 0.25; // Net gravity
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vx *= 0.82; // Net friction
+                    p.vy *= 0.82;
+                }
+            });
+
+            // Satisfy Springs Constraints Multiple Times for stability
+            for (let iteration = 0; iteration < 4; iteration++) {
+                netSprings.forEach(s => {
+                    const p1 = netParticles[s.p1];
+                    const p2 = netParticles[s.p2];
+                    const dx = p2.x - p1.x;
+                    const dy = p2.y - p1.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy) || 0.001;
+                    const diff = s.restLength - dist;
+                    const percent = (diff / dist) * s.k * 0.5;
+                    const offsetColX = dx * percent;
+                    const offsetColY = dy * percent;
+
+                    if (!p1.pinned) {
+                        p1.x -= offsetColX;
+                        p1.y -= offsetColY;
+                    }
+                    if (!p2.pinned) {
+                        p2.x += offsetColX;
+                        p2.y += offsetColY;
+                    }
+                });
+            }
+        }
+
+        function resizeCanvas() {
+            const containerWidth = canvasContainer.clientWidth || 1000;
+            const containerHeight = canvasContainer.clientHeight || 700;
+            
+            canvas.width = containerWidth;
+            canvas.height = containerHeight;
+            
+            scaleX = Math.max(0.001, containerWidth / V_WIDTH);
+            scaleY = Math.max(0.001, containerHeight / V_HEIGHT);
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // Convert virtual viewport coordinates to canvas scaled pixel layout
+        function toCanvasX(vx) { return vx * scaleX; }
+        function toCanvasY(vy) { return vy * scaleY; }
+        function toVirtualX(cx) { return cx / scaleX; }
+        function toVirtualY(cy) { return cy / scaleY; }
+
+        function createConfetti(x, y, count = 25, isFever = false) {
+            const colors = isFever 
+                ? ['#f97316', '#ef4444', '#facc15', '#fbbf24'] 
+                : ['#38bdf8', '#818cf8', '#60a5fa', '#fbcfe8'];
+                
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 8 + 3;
+                particleSystem.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed - (Math.random() * 3),
+                    radius: Math.random() * 4 + 2,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    life: 1.0,
+                    decay: Math.random() * 0.03 + 0.015,
+                    gravity: 0.15
+                });
+            }
+        }
+
+        function triggerScoreAlert(isSwish) {
+            const alertBox = document.getElementById('gameplayAlert');
+            const alertText = document.getElementById('alertText');
+            const alertCombo = document.getElementById('alertCombo');
+            const alertBonus = document.getElementById('alertBonus');
+
+            let bonusValue = 1;
+            if (isSwish) {
+                alertText.innerText = "스위시 클린 슛!";
+                alertText.className = "block font-black text-3xl md:text-5xl text-amber-400 tracking-tight italic uppercase drop-shadow";
+                bonusValue = 3;
+            } else {
+                alertText.innerText = "득 점!";
+                alertText.className = "block font-black text-3xl md:text-5xl text-orange-400 tracking-tight italic uppercase drop-shadow";
+            }
+
+            if (comboStreak > 1) {
+                alertCombo.innerText = `COMBO X ${comboStreak}`;
+                bonusValue += comboStreak;
+            } else {
+                alertCombo.innerText = "";
+            }
+
+            alertBonus.innerText = `+${bonusValue} POINTS`;
+            
+            alertBox.classList.remove('opacity-0', 'scale-75');
+            alertBox.classList.add('opacity-100', 'scale-110');
+
+            setTimeout(() => {
+                alertBox.classList.remove('opacity-100', 'scale-110');
+                alertBox.classList.add('opacity-0', 'scale-75');
+            }, 1200);
+        }
+
+        function renderSkinsShop() {
+            const grid = document.getElementById('shopGrid');
+            grid.innerHTML = "";
+            
+            SKINS.forEach(skin => {
+                const isUnlocked = true; 
+                const isEquipped = selectedSkin === skin.id;
+                
+                let cardHtml = `
+                    <div onclick="selectSkin('${skin.id}')" 
+                         class="p-4 rounded-xl flex flex-col items-center justify-between text-center relative transition duration-300 ${
+                             isEquipped 
+                                 ? 'bg-orange-500/10 border-2 border-orange-500 shadow-md shadow-orange-950/20' 
+                                 : 'bg-slate-800/80 border border-slate-700 hover:border-slate-500 cursor-pointer'
+                         }">
+                `;
+
+                // Badge top right
+                if (isEquipped) {
+                    cardHtml += `<span class="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-orange-500 text-[8px] font-bold text-white uppercase">장착됨</span>`;
+                } else {
+                    cardHtml += `<span class="absolute top-2 right-2 px-1.5 py-0.5 rounded bg-emerald-500 text-[8px] font-bold text-white uppercase">잠금해제</span>`;
+                }
+
+                // Render dynamic preview circles of skins
+                let gradientStyle = `background-color: ${skin.color};`;
+                if (skin.innerPattern === 'neon') {
+                    gradientStyle = `background: radial-gradient(circle, ${skin.color} 30%, #000 100%); box-shadow: 0 0 10px ${skin.color};`;
+                } else if (skin.innerPattern === 'lava') {
+                    gradientStyle = `background: radial-gradient(circle, #f97316 20%, #ef4444 60%, #1e1b4b 100%);`;
+                } else if (skin.innerPattern === 'galaxy') {
+                    gradientStyle = `background: radial-gradient(circle, #a855f7 10%, #4f46e5 50%, #03001e 100%);`;
+                } else if (skin.innerPattern === 'gold') {
+                    gradientStyle = `background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #b45309 100%); box-shadow: 0 0 12px rgba(251, 191, 36, 0.4);`;
+                }
+
+                cardHtml += `
+                    <div class="w-12 h-12 rounded-full border border-white/20 relative overflow-hidden flex items-center justify-center mb-2" style="${gradientStyle}">
+                        <div class="absolute inset-x-0 h-[2px] bg-slate-950/40 top-1/2 -translate-y-1/2"></div>
+                        <div class="absolute inset-y-0 w-[2px] bg-slate-950/40 left-1/2 -translate-x-1/2"></div>
+                    </div>
+                    <h4 class="font-bold text-sm text-slate-200">${skin.name}</h4>
+                    <p class="text-[10px] text-slate-400 mt-1">${skin.description}</p>
+                `;
+
+                cardHtml += `</div>`;
+                grid.innerHTML += cardHtml;
+            });
+
+            const shopTotalScoreEl = document.getElementById('shopTotalScore');
+            if (shopTotalScoreEl) {
+                shopTotalScoreEl.innerText = highScore;
+            }
+        }
+
+        function selectSkin(skinId) {
+            selectedSkin = skinId;
+            localStorage.setItem('bball_selected_skin', skinId);
+            renderSkinsShop();
+            playSound('goal');
+        }
+
+        function openShop() {
+            renderSkinsShop();
+            document.getElementById('screenShop').classList.remove('hidden');
+            document.getElementById('screenShop').classList.add('flex');
+        }
+
+        function closeShop() {
+            document.getElementById('screenShop').classList.add('hidden');
+            document.getElementById('screenShop').classList.remove('flex');
+        }
+
+        if (localStorage.getItem('bball_selected_skin')) {
+            selectedSkin = localStorage.getItem('bball_selected_skin');
+        }
+
+        function getMousePos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            
+            return {
+                x: toVirtualX(clientX - rect.left),
+                y: toVirtualY(clientY - rect.top)
+            };
+        }
+
+        function handleStart(e) {
+            if (!isGameActive || isPaused || ball.isFlying) return;
+
+            const pos = getMousePos(e);
+            
+            // Comfortably starts drag if clicked on the left side or within proximity of the player
+            const distToBall = Math.hypot(pos.x - ball.x, pos.y - ball.y);
+            if (pos.x < 450 || distToBall < 180) {
+                ball.isHeld = true;
+                drag.startX = pos.x;
+                drag.startY = pos.y;
+                drag.currentX = pos.x;
+                drag.currentY = pos.y;
+                drag.active = true;
+                basketballPlayer.state = 'aiming';
+            }
+        }
+
+        function handleMove(e) {
+            if (!drag.active) return;
+            const pos = getMousePos(e);
+            drag.currentX = pos.x;
+            drag.currentY = pos.y;
+
+            // Slingshot: Dragging backwards pulls the ball relative to its launch position
+            const dx = drag.currentX - drag.startX;
+            const dy = drag.currentY - drag.startY;
+            const pullDist = Math.hypot(dx, dy);
+            
+            const maxVisualPull = 45; 
+            const pullRatio = Math.min(1, pullDist / 180); 
+            const angle = Math.atan2(dy, dx);
+            const visualDist = pullRatio * maxVisualPull;
+            
+            ball.x = 180 + Math.cos(angle) * visualDist;
+            ball.y = 500 + Math.sin(angle) * visualDist;
+        }
+
+        function handleEnd() {
+            if (!drag.active) return;
+            drag.active = false;
+            ball.isHeld = false;
+
+            // Direct inverse of the dragging vector determines firing direction
+            const dx = drag.startX - drag.currentX;
+            const dy = drag.startY - drag.currentY;
+            
+            const forceMultiplier = 0.145; 
+            let vx = dx * forceMultiplier;
+            let vy = dy * forceMultiplier;
+
+            // Force cap safety
+            const totalSpeed = Math.hypot(vx, vy);
+            if (totalSpeed > ball.maxPower) {
+                vx = (vx / totalSpeed) * ball.maxPower;
+                vy = (vy / totalSpeed) * ball.maxPower;
+            }
+
+            // Enforce minimum forward firing threshold
+            if (vx > 2.0) { 
+                ball.vx = vx;
+                ball.vy = vy;
+                ball.isFlying = true;
+                ball.trail = [];
+                ball.hasScored = false;
+                ball.hasTouchedRim = false;
+                
+                // Track initial coordinates to run stuck-prevention physics safely
+                ball.lastX = ball.x;
+                ball.lastY = ball.y;
+                ball.stuckFrames = 0;
+                
+                basketballPlayer.state = 'shoot';
+                basketballPlayer.followthroughTimer = 35; 
+
+                playSound('bounce');
+            } else {
+                resetBall();
+            }
+        }
+
+        function resetBall() {
+            ball.x = 180; 
+            ball.y = 500;
+            ball.vx = 0;
+            ball.vy = 0;
+            ball.isHeld = false;
+            ball.isFlying = false;
+            ball.hasScored = false;
+            ball.hasTouchedRim = false;
+            ball.spin = 0;
+            ball.stuckFrames = 0;
+            ball.lastX = null;
+            ball.lastY = null;
+            ball.trail = [];
+            
+            if (basketballPlayer.state !== 'shoot') {
+                basketballPlayer.state = 'idle';
+            }
+        }
+
+        function getClosestPointOnSegment(px, py, x1, y1, x2, y2) {
+            const abx = x2 - x1;
+            const aby = y2 - y1;
+            const apx = px - x1;
+            const apy = py - y1;
+            
+            let t = (apx * abx + apy * aby) / (abx * abx + aby * aby);
+            t = Math.max(0, Math.min(1, t)); 
+            
+            return {
+                x: x1 + t * abx,
+                y: y1 + t * aby
+            };
+        }
+
+        function updatePhysics() {
+            // Particle system frame update
+            for (let i = particleSystem.length - 1; i >= 0; i--) {
+                const p = particleSystem[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += p.gravity;
+                p.life -= p.decay;
+                if (p.life <= 0) {
+                    particleSystem.splice(i, 1);
+                }
+            }
+
+            if (!isGameActive || isPaused) return;
+
+            // Player shoot animation return-to-idle clock
+            if (basketballPlayer.state === 'shoot') {
+                basketballPlayer.followthroughTimer--;
+                if (basketballPlayer.followthroughTimer <= 0) {
+                    basketballPlayer.state = 'idle';
+                }
+            }
+
+            // Basket movement simulation in Arcade Mode
+            if (currentGameMode === 'arcade') {
+                hoop.originY += hoop.moveSpeed * hoop.moveDir;
+                if (hoop.originY > 380 || hoop.originY < 180) {
+                    hoop.moveDir *= -1; 
+                }
+                hoop.rimLeftY = hoop.originY;
+                hoop.rimRightY = hoop.originY;
+                hoop.backboardTopY = hoop.originY - 140;
+                hoop.backboardBottomY = hoop.originY + 100;
+            } else {
+                hoop.rimLeftY = hoop.originY;
+                hoop.rimRightY = hoop.originY;
+                hoop.backboardTopY = 140;
+                hoop.backboardBottomY = 380;
+            }
+
+            updateNet();
+
+            if (ball.isHeld) {
+                ball.trail = [];
+            }
+
+            if (ball.isFlying) {
+                // 1. Position-based stuck protection (Guarantees infinite-rebound and stuck errors never occur)
+                if (ball.lastX === null || ball.lastX === undefined) {
+                    ball.lastX = ball.x;
+                    ball.lastY = ball.y;
+                    ball.stuckFrames = 0;
+                }
+                const distMoved = Math.hypot(ball.x - ball.lastX, ball.y - ball.lastY);
+                if (distMoved < 0.45) { // Barely any physical displacement
+                    ball.stuckFrames++;
+                    if (ball.stuckFrames > 45) { // Auto-recovery reset after ~0.75 seconds
+                        if (!ball.hasScored) {
+                            comboStreak = 0;
+                            const ct = document.getElementById('comboTracker');
+                            if (ct) ct.classList.add('opacity-0');
+                        }
+                        resetBall();
+                        return;
+                    }
+                } else {
+                    ball.stuckFrames = 0;
+                }
+                ball.lastX = ball.x;
+                ball.lastY = ball.y;
+
+                // Apply gravity and drag vectors
+                ball.vy += ball.gravity;
+                ball.vx *= 0.992;
+                ball.vy *= 0.992;
+
+                const prevX = ball.x;
+                const prevY = ball.y;
+                ball.x += ball.vx;
+                ball.y += ball.vy;
+
+                // Motion trail
+                ball.trail.push({ x: ball.x, y: ball.y });
+                if (ball.trail.length > 12) {
+                    ball.trail.shift();
+                }
+
+                // 2. Boundary ground/walls bounce checks
+                if (ball.y + ball.radius >= 648) { 
+                    // Instant landing settlement if velocities are low to prevent subpixel bouncing locks
+                    if (Math.abs(ball.vy) < 1.2 && Math.abs(ball.vx) < 1.2) {
+                        if (!ball.hasScored) {
+                            comboStreak = 0;
+                            const ct = document.getElementById('comboTracker');
+                            if (ct) ct.classList.add('opacity-0');
+                        }
+                        resetBall();
+                        return;
+                    }
+
+                    ball.y = 650 - ball.radius;
+                    ball.vy = -ball.vy * ball.restitution;
+                    ball.vx *= 0.8; // High floor friction
+                    
+                    if (Math.abs(ball.vy) > 1.5) {
+                        playSound('bounce');
+                        createConfetti(ball.x, ball.y + ball.radius, 4);
+                    }
+                }
+                
+                // Out of screen borders trigger auto-reset
+                if (ball.x + ball.radius < -100 || ball.x - ball.radius > V_WIDTH + 100 || ball.y - ball.radius > V_HEIGHT + 100 || ball.y < -500) {
+                    if (!ball.hasScored) {
+                        comboStreak = 0;
+                        const ct = document.getElementById('comboTracker');
+                        if (ct) ct.classList.add('opacity-0');
+                    }
+                    resetBall();
+                    return;
+                }
+
+                // 3. Rigid Backboard line segment collision check
+                const closestPoint = getClosestPointOnSegment(ball.x, ball.y, hoop.backboardX, hoop.backboardTopY, hoop.backboardX, hoop.backboardBottomY);
+                const distToBackboard = Math.hypot(ball.x - closestPoint.x, ball.y - closestPoint.y);
+                
+                if (distToBackboard < ball.radius) {
+                    ball.x = hoop.backboardX - ball.radius;
+                    ball.vx = -ball.vx * ball.restitution;
+                    playSound('bounce');
+                    ball.hasTouchedRim = true; 
+                    createConfetti(closestPoint.x, closestPoint.y, 5);
+                }
+
+                // 4. Hoop rim node circle collisions (Left Rim Node & Right Rim Node)
+                [
+                    { x: hoop.rimLeftX, y: hoop.rimLeftY },
+                    { x: hoop.rimRightX, y: hoop.rimRightY }
+                ].forEach(rimNode => {
+                    const distToRim = Math.hypot(ball.x - rimNode.x, ball.y - rimNode.y);
+                    if (distToRim < ball.radius) {
+                        const angle = Math.atan2(ball.y - rimNode.y, ball.x - rimNode.x);
+                        
+                        ball.x = rimNode.x + Math.cos(angle) * ball.radius;
+                        ball.y = rimNode.y + Math.sin(angle) * ball.radius;
+                        
+                        const speed = Math.hypot(ball.vx, ball.vy);
+                        ball.vx = Math.cos(angle) * speed * ball.restitution;
+                        ball.vy = Math.sin(angle) * speed * ball.restitution;
+                        
+                        ball.hasTouchedRim = true;
+                        playSound('rim');
+                        createConfetti(rimNode.x, rimNode.y, 6);
+                    }
+                });
+
+                // 5. Net physics interactive disruption by ball passing through
+                netParticles.forEach(p => {
+                    const dist = Math.hypot(p.x - ball.x, p.y - ball.y);
+                    if (dist < ball.radius) {
+                        const angle = Math.atan2(p.y - ball.y, p.x - ball.x);
+                        p.vx += ball.vx * 0.1 + Math.cos(angle) * 3;
+                        p.vy += ball.vy * 0.1 + Math.sin(angle) * 3;
+                    }
+                });
+
+                // 6. Scoring Mechanism - Cross rim plane from TOP to BOTTOM
+                if (!ball.hasScored && prevY <= hoop.rimLeftY && ball.y > hoop.rimLeftY) {
+                    const intersectX = prevX + (ball.x - prevX) * ((hoop.rimLeftY - prevY) / (ball.y - prevY));
+                    if (intersectX > hoop.rimLeftX && intersectX < hoop.rimRightX) {
+                        
+                        ball.hasScored = true;
+                        
+                        let pointsGained = 1;
+                        let isSwish = !ball.hasTouchedRim;
+
+                        if (isSwish) {
+                            comboStreak++;
+                            pointsGained = 3 + comboStreak; 
+                            playSound('swish');
+                            createConfetti(hoop.rimLeftX + (hoop.rimRightX - hoop.rimLeftX)/2, hoop.rimLeftY + 10, 40, true);
+                        } else {
+                            comboStreak = Math.max(0, comboStreak - 1); 
+                            pointsGained = 1 + comboStreak;
+                            playSound('goal');
+                            createConfetti(hoop.rimLeftX + (hoop.rimRightX - hoop.rimLeftX)/2, hoop.rimLeftY + 10, 20, false);
+                        }
+
+                        if (comboStreak > maxComboInGame) {
+                            maxComboInGame = comboStreak;
+                        }
+
+                        currentScore += pointsGained;
+                        
+                        triggerScoreAlert(isSwish);
+                        document.getElementById('hudScore').innerText = String(currentScore).padStart(3, '0');
+                        
+                        if (comboStreak > 1) {
+                            const ct = document.getElementById('comboTracker');
+                            ct.classList.remove('opacity-0');
+                            document.getElementById('comboValue').innerText = comboStreak;
+                        } else {
+                            document.getElementById('comboTracker').classList.add('opacity-0');
+                        }
+
+                        if ((currentGameMode === 'classic' || currentGameMode === 'arcade') && comboStreak > 2) {
+                            gameTimeRemaining += 3;
+                            document.getElementById('hudTimer').classList.add('text-green-400');
+                            setTimeout(() => {
+                                document.getElementById('hudTimer').classList.remove('text-green-400');
+                            }, 500);
+                        }
+                    }
+                }
+            }
+        }
+
+        function drawPlayer() {
+            ctx.save();
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            function drawMuscleSegment(x1, y1, x2, y2, r1, r2, isDarker = false) {
+                ctx.save();
+                ctx.fillStyle = isDarker ? '#d79053' : '#fdba74'; 
+                ctx.strokeStyle = '#1e293b'; 
+                ctx.lineWidth = toCanvasX(3);
+                
+                const angle = Math.atan2(y2 - y1, x2 - x1);
+                
+                ctx.beginPath();
+                ctx.arc(toCanvasX(x1), toCanvasY(y1), toCanvasX(r1), angle + Math.PI/2, angle - Math.PI/2);
+                ctx.arc(toCanvasX(x2), toCanvasY(y2), toCanvasX(r2), angle - Math.PI/2, angle + Math.PI/2);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+                ctx.restore();
+            }
+
+            // 1. Legs & Feet
+            ctx.lineWidth = toCanvasX(12);
+            ctx.strokeStyle = '#111827'; 
+
+            // Left leg
+            ctx.beginPath();
+            ctx.moveTo(toCanvasX(100), toCanvasY(650));
+            ctx.lineTo(toCanvasX(110), toCanvasY(605)); 
+            ctx.lineTo(toCanvasX(basketballPlayer.pelvisX), toCanvasY(basketballPlayer.pelvisY));
+            ctx.stroke();
+
+            // Right leg
+            ctx.beginPath();
+            ctx.moveTo(toCanvasX(155), toCanvasY(650));
+            ctx.lineTo(toCanvasX(145), toCanvasY(605));
+            ctx.lineTo(toCanvasX(basketballPlayer.pelvisX), toCanvasY(basketballPlayer.pelvisY));
+            ctx.stroke();
+
+            // Athletic High Socks
+            ctx.fillStyle = '#ffffff';
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = toCanvasX(2.5);
+            ctx.beginPath();
+            ctx.rect(toCanvasX(94), toCanvasY(612), toCanvasX(12), toCanvasY(26));
+            ctx.rect(toCanvasX(149), toCanvasY(612), toCanvasX(12), toCanvasY(26));
+            ctx.fill();
+            ctx.stroke();
+
+            // Sock red stripes
+            ctx.fillStyle = '#ef4444';
+            ctx.fillRect(toCanvasX(94), toCanvasY(617), toCanvasX(12), toCanvasY(3));
+            ctx.fillRect(toCanvasX(149), toCanvasY(617), toCanvasX(12), toCanvasY(3));
+
+            // Detailed Air-Jordan Sneakers
+            // Left shoe
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.ellipse(toCanvasX(96), toCanvasY(646), toCanvasX(15), toCanvasY(8), 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#dc2626';
+            ctx.fillRect(toCanvasX(91), toCanvasY(639), toCanvasX(8), toCanvasY(7));
+            ctx.fillStyle = '#111827';
+            ctx.fillRect(toCanvasX(84), toCanvasY(650), toCanvasX(28), toCanvasY(3)); 
+
+            // Right shoe
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.ellipse(toCanvasX(159), toCanvasY(646), toCanvasX(15), toCanvasY(8), 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#dc2626';
+            ctx.fillRect(toCanvasX(154), toCanvasY(639), toCanvasX(8), toCanvasY(7));
+            ctx.fillStyle = '#111827';
+            ctx.fillRect(toCanvasX(147), toCanvasY(650), toCanvasX(28), toCanvasY(3));
+
+            // 2. Neck
+            ctx.fillStyle = '#d79053'; 
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = toCanvasX(3);
+            ctx.beginPath();
+            ctx.moveTo(toCanvasX(121), toCanvasY(480));
+            ctx.lineTo(toCanvasX(124), toCanvasY(442)); 
+            ctx.lineTo(toCanvasX(134), toCanvasY(442));
+            ctx.lineTo(toCanvasX(137), toCanvasY(480));
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+
+            // Highlight layer of neck
+            ctx.fillStyle = '#fdba74';
+            ctx.beginPath();
+            ctx.moveTo(toCanvasX(126), toCanvasY(480));
+            ctx.lineTo(toCanvasX(128), toCanvasY(442));
+            ctx.lineTo(toCanvasX(134), toCanvasY(442));
+            ctx.lineTo(toCanvasX(136), toCanvasY(480));
+            ctx.closePath();
+            ctx.fill();
+
+            // 3. Jersey Torso
+            ctx.fillStyle = '#dc2626'; 
+            ctx.beginPath();
+            ctx.moveTo(toCanvasX(110), toCanvasY(570));
+            ctx.lineTo(toCanvasX(145), toCanvasY(570));
+            ctx.lineTo(toCanvasX(141), toCanvasY(478)); 
+            ctx.lineTo(toCanvasX(113), toCanvasY(478)); 
+            ctx.closePath();
+            ctx.fill();
+            ctx.stroke();
+            
+            // Dynamic Jersey armholes & collar lining
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = toCanvasX(3);
+            ctx.beginPath();
+            ctx.arc(toCanvasX(127), toCanvasY(478), toCanvasX(7), 0, Math.PI);
+            ctx.stroke();
+
+            // Backnumber '23'
+            ctx.fillStyle = '#111827';
+            ctx.font = `900 ${toCanvasX(19)}px 'Orbitron', sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.fillText("23", toCanvasX(129), toCanvasY(534)); 
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText("23", toCanvasX(127), toCanvasY(532));
+
+            // 4. Head, Hair & Headband
+            ctx.fillStyle = '#fdba74'; 
+            ctx.beginPath();
+            ctx.arc(toCanvasX(basketballPlayer.headX), toCanvasY(basketballPlayer.headY), Math.max(0.1, toCanvasX(16.5)), 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Hair
+            ctx.fillStyle = '#1e293b';
+            ctx.beginPath();
+            ctx.arc(toCanvasX(basketballPlayer.headX - 3), toCanvasY(basketballPlayer.headY - 6), Math.max(0.1, toCanvasX(13.5)), Math.PI * 0.9, Math.PI * 1.95);
+            ctx.lineTo(toCanvasX(basketballPlayer.headX - 16), toCanvasY(basketballPlayer.headY - 4));
+            ctx.closePath();
+            ctx.fill();
+
+            // Headband
+            ctx.fillStyle = '#2563eb'; 
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = toCanvasX(2.5);
+            ctx.beginPath();
+            ctx.rect(toCanvasX(basketballPlayer.headX - 16.5), toCanvasY(basketballPlayer.headY - 11), toCanvasX(33), toCanvasY(7));
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(toCanvasX(basketballPlayer.headX - 16.5), toCanvasY(basketballPlayer.headY - 9), toCanvasX(33), toCanvasY(1.8));
+
+            // Focused Eye
+            ctx.fillStyle = '#111827';
+            ctx.beginPath();
+            ctx.arc(toCanvasX(basketballPlayer.headX + 7), toCanvasY(basketballPlayer.headY - 1), Math.max(0.1, toCanvasX(3.5)), 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#fbbf24';
+            ctx.beginPath();
+            ctx.arc(toCanvasX(basketballPlayer.headX + 8), toCanvasY(basketballPlayer.headY - 1), Math.max(0.1, toCanvasX(1.2)), 0, Math.PI * 2);
+            ctx.fill();
+
+            // 5. Muscular Arms (IK)
+            let targetHandX = ball.x;
+            let targetHandY = ball.y;
+
+            if (basketballPlayer.state === 'shoot') {
+                targetHandX = basketballPlayer.shoulderX + 60;
+                targetHandY = basketballPlayer.shoulderY - 50;
+            }
+
+            // Clamping to avoid long-arm stretching
+            const maxArmLength = 65;
+            const dx = targetHandX - basketballPlayer.shoulderX;
+            const dy = targetHandY - basketballPlayer.shoulderY;
+            const currentDist = Math.hypot(dx, dy);
+            
+            if (currentDist > maxArmLength) {
+                targetHandX = basketballPlayer.shoulderX + (dx / currentDist) * maxArmLength;
+                targetHandY = basketballPlayer.shoulderY + (dy / currentDist) * maxArmLength;
+            }
+
+            let bendAngle = Math.atan2(targetHandY - basketballPlayer.shoulderY, targetHandX - basketballPlayer.shoulderX) + Math.PI / 2.8;
+            if (basketballPlayer.state === 'shoot') {
+                bendAngle = Math.atan2(targetHandY - basketballPlayer.shoulderY, targetHandX - basketballPlayer.shoulderX) - Math.PI / 4.5;
+            }
+
+            const segmentLength = 32.5; 
+            const elbowX = basketballPlayer.shoulderX + Math.cos(bendAngle) * segmentLength;
+            const elbowY = basketballPlayer.shoulderY + Math.sin(bendAngle) * segmentLength;
+
+            // Background Arm
+            drawMuscleSegment(basketballPlayer.shoulderX - 8, basketballPlayer.shoulderY, elbowX - 4, elbowY + 4, 11, 8.5, true);
+            drawMuscleSegment(elbowX - 4, elbowY + 4, targetHandX - 4, targetHandY, 8.5, 6.5, true);
+
+            // Foreground Arm
+            drawMuscleSegment(basketballPlayer.shoulderX + 8, basketballPlayer.shoulderY, elbowX + 4, elbowY - 4, 12, 9.5, false);
+            drawMuscleSegment(elbowX + 4, elbowY - 4, targetHandX + 4, targetHandY, 9.5, 7.5, false);
+
+            ctx.restore();
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Court floor lines
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(0, toCanvasY(650));
+            ctx.lineTo(canvas.width, toCanvasY(650));
+            ctx.stroke();
+
+            // Three point arc
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(toCanvasX(150), toCanvasY(650), Math.max(0.1, toCanvasX(400)), Math.PI * 1.5, Math.PI * 2);
+            ctx.stroke();
+
+            drawPlayer();
+
+            // Ball glow trails
+            if (ball.isFlying && ball.trail.length > 1) {
+                ctx.beginPath();
+                ctx.moveTo(toCanvasX(ball.trail[0].x), toCanvasY(ball.trail[0].y));
+                for (let i = 1; i < ball.trail.length; i++) {
+                    ctx.lineTo(toCanvasX(ball.trail[i].x), toCanvasY(ball.trail[i].y));
+                }
+                const activeSkin = SKINS.find(s => s.id === selectedSkin) || SKINS[0];
+                ctx.strokeStyle = activeSkin.color + '33'; 
+                ctx.lineWidth = toCanvasX(ball.radius * 1.5);
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.stroke();
+                
+                ctx.strokeStyle = activeSkin.color + 'aa';
+                ctx.lineWidth = toCanvasX(ball.radius * 0.6);
+                ctx.stroke();
+            }
+
+            // Aiming prediction dots
+            if (drag.active) {
+                ctx.beginPath();
+                const dx = drag.startX - drag.currentX;
+                const dy = drag.startY - drag.currentY;
+                const forceMultiplier = 0.145; 
+                let simVx = dx * forceMultiplier;
+                let simVy = dy * forceMultiplier;
+
+                const totalSpeed = Math.hypot(simVx, simVy);
+                if (totalSpeed > ball.maxPower) {
+                    simVx = (simVx / totalSpeed) * ball.maxPower;
+                    simVy = (simVy / totalSpeed) * ball.maxPower;
+                }
+
+                let simX = ball.x;
+                let simY = ball.y;
+                let gravity = ball.gravity;
+                
+                ctx.strokeStyle = 'rgba(249, 115, 22, 0.6)';
+                ctx.setLineDash([5, 8]);
+                ctx.lineWidth = 4;
+                
+                ctx.beginPath();
+                ctx.moveTo(toCanvasX(simX), toCanvasY(simY));
+                for (let step = 0; step < 30; step++) {
+                    simVy += gravity;
+                    simX += simVx;
+                    simY += simVy;
+                    ctx.lineTo(toCanvasX(simX), toCanvasY(simY));
+                }
+                ctx.stroke();
+                ctx.setLineDash([]); 
+            }
+
+            // Draw Ball
+            ctx.save();
+            ctx.translate(toCanvasX(ball.x), toCanvasY(ball.y));
+            
+            if (ball.isFlying) {
+                ball.spin += ball.vx * 0.04;
+            }
+            ctx.rotate(ball.spin);
+
+            const activeSkin = SKINS.find(s => s.id === selectedSkin) || SKINS[0];
+            const renderRad = toCanvasX(ball.radius);
+
+            ctx.shadowColor = activeSkin.color;
+            ctx.shadowBlur = (comboStreak >= 3) ? 15 : 0;
+
+            ctx.fillStyle = activeSkin.color;
+            ctx.beginPath();
+            ctx.arc(0, 0, Math.max(0.1, renderRad), 0, Math.PI * 2);
+            ctx.fill();
+            ctx.shadowBlur = 0; 
+
+            // Inner lines
+            ctx.strokeStyle = '#1e293b';
+            ctx.lineWidth = 2.5;
+            
+            ctx.beginPath();
+            ctx.moveTo(0, -renderRad);
+            ctx.lineTo(0, renderRad);
+            ctx.moveTo(-renderRad, 0);
+            ctx.lineTo(renderRad, 0);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.arc(-renderRad * 1.1, 0, Math.max(0.1, renderRad), -Math.PI/3, Math.PI/3);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(renderRad * 1.1, 0, Math.max(0.1, renderRad), Math.PI * 0.7, Math.PI * 1.3);
+            ctx.stroke();
+
+            // Contour highlights
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(0, 0, Math.max(0.1, renderRad - 1.5), Math.PI * 1.1, Math.PI * 1.7);
+            ctx.stroke();
+
+            ctx.restore();
+
+            // Drawing explosion particles
+            particleSystem.forEach(p => {
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life;
+                ctx.beginPath();
+                ctx.arc(toCanvasX(p.x), toCanvasY(p.y), Math.max(0.1, toCanvasX(p.radius)), 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1.0; 
+
+            // Backboard structure
+            ctx.strokeStyle = '#475569';
+            ctx.lineWidth = 14;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(toCanvasX(hoop.backboardX), toCanvasY(hoop.backboardTopY));
+            ctx.lineTo(toCanvasX(hoop.backboardX), toCanvasY(hoop.backboardBottomY));
+            ctx.stroke();
+
+            // Glass plate
+            ctx.strokeStyle = 'rgba(148, 163, 184, 0.2)';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.rect(
+                toCanvasX(hoop.backboardX - 8), 
+                toCanvasY(hoop.backboardTopY + 25), 
+                toCanvasX(2), 
+                toCanvasY(hoop.backboardBottomY - hoop.backboardTopY - 50)
+            );
+            ctx.stroke();
+
+            // Net strings
+            ctx.strokeStyle = '#e2e8f0';
+            ctx.lineWidth = 1.8;
+            netSprings.forEach(s => {
+                const p1 = netParticles[s.p1];
+                const p2 = netParticles[s.p2];
+                ctx.beginPath();
+                ctx.moveTo(toCanvasX(p1.x), toCanvasY(p1.y));
+                ctx.lineTo(toCanvasX(p2.x), toCanvasY(p2.y));
+                ctx.stroke();
+            });
+
+            // Orange Rim
+            ctx.strokeStyle = '#ef4444'; 
+            ctx.lineWidth = 6;
+            ctx.lineCap = 'round';
+            ctx.beginPath();
+            ctx.moveTo(toCanvasX(hoop.rimLeftX), toCanvasY(hoop.rimLeftY));
+            ctx.lineTo(toCanvasX(hoop.rimRightX), toCanvasY(hoop.rimRightY));
+            ctx.stroke();
+
+            // Bolts
+            ctx.fillStyle = '#b91c1c';
+            ctx.beginPath();
+            ctx.arc(toCanvasX(hoop.rimLeftX), toCanvasY(hoop.rimLeftY), Math.max(0.1, toCanvasX(5)), 0, Math.PI * 2);
+            ctx.arc(toCanvasX(hoop.rimRightX), toCanvasY(hoop.rimRightY), Math.max(0.1, toCanvasX(5)), 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function gameLoop() {
+            updatePhysics();
+            draw();
+            gameAnimationFrame = requestAnimationFrame(gameLoop);
+        }
+
+        function startGame(mode) {
+            if (Tone && Tone.context.state !== 'running') {
+                Tone.context.resume();
+            }
+
+            currentGameMode = mode;
+            currentScore = 0;
+            comboStreak = 0;
+            maxComboInGame = 0;
+            isGameActive = true;
+            isPaused = false;
+            particleSystem = [];
+
+            document.getElementById('hudScore').innerText = "000";
+            document.getElementById('hudBest').innerText = highScore;
+            document.getElementById('screenMainMenu').classList.add('hidden');
+            document.getElementById('btnPause').classList.remove('hidden');
+            document.getElementById('comboTracker').classList.add('opacity-0');
+
+            const bgAtm = document.getElementById('bgAtmosphere');
+            
+            if (mode === 'classic' || mode === 'arcade') {
+                gameTimeRemaining = 60;
+                document.getElementById('hudTimer').innerText = `${gameTimeRemaining}s`;
+                document.getElementById('timerContainer').classList.remove('hidden');
+                document.getElementById('timeLabel').innerText = "제한 시간";
+                
+                if (mode === 'classic') {
+                    bgAtm.style.backgroundImage = "linear-gradient(to bottom, #111827, #070a13)";
+                } else {
+                    bgAtm.style.backgroundImage = "linear-gradient(to bottom, #1e1b4b, #070a13)";
+                }
+                
+                clearInterval(gameTimerInterval);
+                gameTimerInterval = setInterval(() => {
+                    if (!isPaused) {
+                        gameTimeRemaining--;
+                        document.getElementById('hudTimer').innerText = `${gameTimeRemaining}s`;
+                        
+                        if (gameTimeRemaining <= 10) {
+                            document.getElementById('hudTimer').classList.add('animate-pulse', 'text-rose-500');
+                            playSound('tick');
+                        }
+
+                        if (gameTimeRemaining <= 0) {
+                            endGame();
+                        }
+                    }
+                }, 1000);
+
+            } else if (mode === 'zen') { 
+                document.getElementById('timerContainer').classList.add('hidden');
+                bgAtm.style.backgroundImage = "linear-gradient(to bottom, #064e3b, #022c22)";
+                clearInterval(gameTimerInterval);
+            }
+
+            resetBall();
+            initNet();
+
+            if (gameAnimationFrame) cancelAnimationFrame(gameAnimationFrame);
+            gameLoop();
+        }
+
+        function endGame() {
+            isGameActive = false;
+            clearInterval(gameTimerInterval);
+            if (gameAnimationFrame) cancelAnimationFrame(gameAnimationFrame);
+
+            playSound('goal');
+
+            document.getElementById('gameOverScore').innerText = currentScore;
+            document.getElementById('gameOverCombo').innerText = maxComboInGame;
+            
+            let isNewBest = false;
+            if (currentScore > highScore) {
+                highScore = currentScore;
+                localStorage.setItem('bball_high_score', highScore);
+                isNewBest = true;
+            }
+
+            cumulativeScore += currentScore;
+            localStorage.setItem('bball_cumulative_score', cumulativeScore);
+
+            document.getElementById('gameOverMode').innerText = 
+                currentGameMode === 'classic' ? '클래식 60초 챌린지 종료' : 
+                currentGameMode === 'arcade' ? '무빙 아케이드 챌린지 종료' : '연습실 훈련 종료';
+
+            if (isNewBest) {
+                document.getElementById('newBestBadge').classList.remove('hidden');
+            } else {
+                document.getElementById('newBestBadge').classList.add('hidden');
+            }
+
+            document.getElementById('screenGameOver').classList.remove('hidden');
+            document.getElementById('screenGameOver').classList.add('flex');
+            document.getElementById('btnPause').classList.add('hidden');
+        }
+
+        function restartGame() {
+            document.getElementById('screenGameOver').classList.add('hidden');
+            document.getElementById('screenGameOver').classList.remove('flex');
+            startGame(currentGameMode);
+        }
+
+        function goToMenu() {
+            isGameActive = false;
+            clearInterval(gameTimerInterval);
+            if (gameAnimationFrame) cancelAnimationFrame(gameAnimationFrame);
+
+            document.getElementById('screenGameOver').classList.add('hidden');
+            document.getElementById('screenGameOver').classList.remove('flex');
+            document.getElementById('screenPause').classList.add('hidden');
+            document.getElementById('screenPause').classList.remove('flex');
+            document.getElementById('btnPause').classList.add('hidden');
+
+            document.getElementById('screenMainMenu').classList.remove('hidden');
+        }
+
+        const btnPause = document.getElementById('btnPause');
+        btnPause.addEventListener('click', () => {
+            if (isGameActive) {
+                isPaused = true;
+                document.getElementById('screenPause').classList.remove('hidden');
+                document.getElementById('screenPause').classList.add('flex');
+            }
+        });
+
+        function resumeGame() {
+            isPaused = false;
+            document.getElementById('screenPause').classList.add('hidden');
+            document.getElementById('screenPause').classList.remove('flex');
+        }
+
+        // Global responsive controls binding
+        canvas.addEventListener('mousedown', handleStart);
+        window.addEventListener('mousemove', handleMove);
+        window.addEventListener('mouseup', handleEnd);
+
+        canvas.addEventListener('touchstart', (e) => {
+            handleStart(e);
+            if (e.cancelable) e.preventDefault();
+        }, { passive: false });
+        
+        window.addEventListener('touchmove', (e) => {
+            handleMove(e);
+            if (drag.active && e.cancelable) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+        
+        window.addEventListener('touchend', handleEnd);
+
+        window.onload = function() {
+            resizeCanvas();
+            initNet();
+            draw();
+            document.getElementById('hudBest').innerText = highScore;
+        };
+    </script>
+</body>
+</html>
