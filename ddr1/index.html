@@ -2,13 +2,13 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NEON BEAT STRIKER - ARCADE DDR</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Google Fonts: Arcade-like & Sans -->
+    <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Press+Start+2P&family=Rajdhani:wght@500;700&display=swap" rel="stylesheet">
@@ -20,6 +20,7 @@
             overflow: hidden;
             user-select: none;
             -webkit-user-select: none;
+            touch-action: none;
         }
         .arcade-font {
             font-family: 'Press Start 2P', monospace;
@@ -66,6 +67,8 @@
         /* Key press highlights */
         .arrow-btn {
             transition: transform 0.05s ease, background-color 0.05s ease;
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
         }
         .arrow-btn:active, .arrow-btn.pressed {
             transform: scale(0.92);
@@ -123,27 +126,27 @@
 <body class="flex items-center justify-center min-h-screen grid-bg relative text-white">
 
     <!-- Sound Effects/Mute Control -->
-    <div class="absolute top-4 right-4 z-50 flex gap-3">
-        <button id="mute-btn" class="bg-gray-900 border border-gray-700 p-3 rounded-full hover:bg-gray-800 text-cyan-400 flex items-center justify-center shadow-lg cursor-pointer">
+    <div class="absolute top-3 right-3 z-50 flex gap-2">
+        <button id="mute-btn" class="bg-gray-900/90 border border-gray-700 p-2.5 rounded-full hover:bg-gray-800 text-cyan-400 flex items-center justify-center shadow-lg cursor-pointer">
             <i class="fas fa-volume-up" id="mute-icon"></i>
         </button>
-        <button id="help-btn" class="bg-gray-900 border border-gray-700 p-3 rounded-full hover:bg-gray-800 text-pink-400 flex items-center justify-center shadow-lg cursor-pointer">
+        <button id="help-btn" class="bg-gray-900/90 border border-gray-700 p-2.5 rounded-full hover:bg-gray-800 text-pink-400 flex items-center justify-center shadow-lg cursor-pointer">
             <i class="fas fa-question"></i>
         </button>
     </div>
 
-    <!-- Main Arcade Cabinet Container -->
-    <div id="arcade-cabinet" class="relative w-full max-w-4xl h-[92vh] md:h-[850px] bg-slate-950 rounded-2xl border-4 border-cyan-500 shadow-[0_0_30px_rgba(0,240,255,0.3)] flex flex-col overflow-hidden crt-overlay m-2">
+    <!-- Main Arcade Cabinet Container (Optimized to take full height on mobile) -->
+    <div id="arcade-cabinet" class="relative w-full sm:max-w-4xl h-[100dvh] sm:h-[92vh] sm:max-h-[850px] bg-slate-950 sm:rounded-2xl border-b-4 sm:border-4 border-cyan-500 shadow-[0_0_30px_rgba(0,240,255,0.3)] flex flex-col overflow-hidden crt-overlay">
         
         <!-- Header: Cabinet Marquee -->
-        <div class="h-16 bg-slate-900 border-b-4 border-pink-500 flex items-center justify-between px-6 shrink-0 relative overflow-hidden">
+        <div class="h-14 bg-slate-900 border-b-4 border-pink-500 flex items-center justify-between px-4 shrink-0 relative overflow-hidden">
             <div class="absolute inset-0 bg-gradient-to-r from-pink-500/10 via-cyan-500/10 to-pink-500/10"></div>
-            <div class="flex items-center gap-3 z-10">
-                <i class="fas fa-bolt text-pink-500 animate-pulse text-xl"></i>
-                <span class="arcade-font text-xs md:text-sm tracking-widest text-pink-400 neon-text-pink">NEON BEAT DDR</span>
+            <div class="flex items-center gap-2 z-10">
+                <i class="fas fa-bolt text-pink-500 animate-pulse text-lg"></i>
+                <span class="arcade-font text-[10px] sm:text-xs tracking-widest text-pink-400 neon-text-pink">NEON BEAT DDR</span>
             </div>
-            <div class="z-10 bg-black/50 px-3 py-1 border border-cyan-500/30 rounded">
-                <span class="retro-font text-xs text-cyan-400">CREDIT: <span id="credit-count">99</span></span>
+            <div class="z-10 bg-black/50 px-2.5 py-1 border border-cyan-500/30 rounded">
+                <span class="retro-font text-[10px] sm:text-xs text-cyan-400">CREDIT: <span id="credit-count">99</span></span>
             </div>
         </div>
 
@@ -151,41 +154,41 @@
         <div class="flex-1 relative flex flex-col md:flex-row bg-black overflow-hidden">
             
             <!-- SECTION 1: START SCREEN -->
-            <div id="screen-start" class="absolute inset-0 z-30 flex flex-col items-center justify-center p-6 bg-gradient-to-b from-[#0a0518] to-black">
-                <div class="text-center space-y-8 animate-fade-in max-w-lg">
+            <div id="screen-start" class="absolute inset-0 z-30 flex flex-col items-center justify-center p-4 sm:p-6 bg-gradient-to-b from-[#0a0518] to-black">
+                <div class="text-center space-y-6 sm:space-y-8 animate-fade-in max-w-lg">
                     <div class="relative inline-block">
-                        <span class="arcade-font text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400 tracking-tighter block leading-tight">
+                        <span class="arcade-font text-2xl sm:text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400 tracking-tighter block leading-tight">
                             NEON BEAT
                         </span>
-                        <span class="retro-font text-lg md:text-2xl text-cyan-300 font-bold tracking-widest block uppercase mt-2 neon-text-cyan">
+                        <span class="retro-font text-base sm:text-2xl text-cyan-300 font-bold tracking-widest block uppercase mt-1 neon-text-cyan">
                             STRIKER DDR
                         </span>
-                        <div class="absolute -top-6 -right-6 text-yellow-400 animate-bounce text-xl">
+                        <div class="absolute -top-4 -right-4 text-yellow-400 animate-bounce text-lg">
                             <i class="fas fa-star neon-text-yellow"></i>
                         </div>
                     </div>
 
                     <!-- Cyber Decorative Graphic -->
-                    <div class="flex justify-center items-center gap-1 my-4">
-                        <div class="h-[2px] w-12 bg-pink-500 shadow-[0_0_8px_#ff007f]"></div>
-                        <i class="fas fa-gamepad text-pink-500 text-lg mx-2"></i>
-                        <div class="h-[2px] w-12 bg-pink-500 shadow-[0_0_8px_#ff007f]"></div>
+                    <div class="flex justify-center items-center gap-1 my-2">
+                        <div class="h-[2px] w-10 bg-pink-500 shadow-[0_0_8px_#ff007f]"></div>
+                        <i class="fas fa-gamepad text-pink-500 text-base mx-1"></i>
+                        <div class="h-[2px] w-10 bg-pink-500 shadow-[0_0_8px_#ff007f]"></div>
                     </div>
 
-                    <p class="text-gray-400 text-sm md:text-base px-4">
+                    <p class="text-gray-400 text-xs sm:text-sm px-4">
                         브라우저 합성기로 들려주는 초정밀 실시간 테크노 리듬에 맞춰, 쏟아지는 네온 화살표를 리드미컬하게 격파하세요!
                     </p>
 
                     <!-- Insert Coin / Start Button -->
-                    <div class="py-6 flex flex-col items-center justify-center gap-3">
-                        <button id="btn-insert-coin" class="cursor-pointer bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold py-4 px-8 rounded-xl text-lg md:text-xl border-b-4 border-purple-900 shadow-[0_0_20px_rgba(255,0,127,0.4)] transition active:translate-y-1 active:border-b-0 flex items-center gap-3 arcade-font">
+                    <div class="py-4 flex flex-col items-center justify-center gap-3">
+                        <button id="btn-insert-coin" class="cursor-pointer bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-bold py-3 px-6 sm:py-4 sm:px-8 rounded-xl text-base sm:text-xl border-b-4 border-purple-900 shadow-[0_0_20px_rgba(255,0,127,0.4)] transition active:translate-y-1 active:border-b-0 flex items-center gap-3 arcade-font">
                             <span>INSERT COIN</span>
                         </button>
-                        <span class="retro-font text-xs text-cyan-400 animate-pulse mt-2">INSERT COIN TO INITIALIZE SOUND SYNTHESIZER</span>
+                        <span class="retro-font text-[10px] sm:text-xs text-cyan-400 animate-pulse mt-1">TAP TO START & PLAY MUSIC SYNTHESIZER</span>
                     </div>
 
                     <!-- Hardware Spec Labels -->
-                    <div class="grid grid-cols-2 gap-3 text-xs text-gray-500 border-t border-gray-800/60 pt-6">
+                    <div class="grid grid-cols-2 gap-3 text-[10px] text-gray-500 border-t border-gray-800/60 pt-4">
                         <div class="text-left"><i class="fas fa-microchip mr-1"></i> Synth Engine: WebAudio V2</div>
                         <div class="text-right"><i class="fas fa-tachometer-alt mr-1"></i> FPS Lock: 60Hz / WebGL</div>
                     </div>
@@ -193,45 +196,46 @@
             </div>
 
             <!-- SECTION 2: SONG SELECTION SCREEN -->
-            <div id="screen-select" class="absolute inset-0 z-20 hidden flex-col p-4 md:p-6 bg-slate-950">
-                <div class="mb-4 shrink-0">
-                    <h2 class="arcade-font text-pink-500 text-xs md:text-sm neon-text-pink mb-1">SELECT MUSIC</h2>
-                    <p class="text-gray-400 text-xs">연주할 트랙과 난이도를 고르고 출발하세요!</p>
+            <div id="screen-select" class="absolute inset-0 z-20 hidden flex-col p-3 sm:p-5 bg-slate-950 overflow-hidden">
+                <div class="mb-3 shrink-0">
+                    <h2 class="arcade-font text-pink-500 text-[10px] sm:text-xs neon-text-pink mb-0.5">SELECT MUSIC</h2>
+                    <p class="text-gray-400 text-[11px]">연주할 트랙과 난이도를 고르고 출발하세요!</p>
                 </div>
 
-                <!-- Redesigned Difficulty Selection Cards (Highly visible & distinct) -->
-                <div class="grid grid-cols-2 gap-4 mb-4 shrink-0">
+                <!-- Difficulty Selection Cards (High Contrast & Visible) -->
+                <div class="grid grid-cols-2 gap-2 sm:gap-4 mb-3 shrink-0">
                     <!-- EASY MODE CARD -->
-                    <button id="card-diff-easy" class="cursor-pointer border-2 border-slate-800 bg-slate-950 hover:bg-slate-900/60 p-3 rounded-xl flex flex-col items-center justify-center text-center transition-all diff-easy-active">
-                        <div class="flex items-center gap-1.5 text-[#00f0ff] font-black retro-font text-xs tracking-wider">
-                            <i class="fas fa-baby text-sm"></i>
+                    <button id="card-diff-easy" class="cursor-pointer border border-slate-800 bg-slate-950 hover:bg-slate-900/60 p-2 sm:p-3 rounded-xl flex flex-col items-center justify-center text-center transition-all diff-easy-active">
+                        <div class="flex items-center gap-1 text-[#00f0ff] font-black retro-font text-[10px] sm:text-xs tracking-wider">
+                            <i class="fas fa-baby"></i>
                             <span>EASY MODE</span>
                         </div>
-                        <span class="text-[10px] text-gray-400 mt-1.5 font-semibold leading-tight">초보자 추천 • 베이직 속도<br>정박 위주 단색 노트 출현</span>
+                        <span class="text-[9px] sm:text-[10px] text-gray-400 mt-1 font-semibold leading-tight">초보자용 베이직 속도<br>정박 위주 노트 출현</span>
                     </button>
                     
                     <!-- HARD MODE CARD -->
-                    <button id="card-diff-hard" class="cursor-pointer border-2 border-slate-800 bg-slate-950 hover:bg-slate-900/60 p-3 rounded-xl flex flex-col items-center justify-center text-center transition-all">
-                        <div class="flex items-center gap-1.5 text-pink-500 font-black retro-font text-xs tracking-wider">
-                            <i class="fas fa-fire-alt text-sm animate-bounce"></i>
+                    <button id="card-diff-hard" class="cursor-pointer border border-slate-800 bg-slate-950 hover:bg-slate-900/60 p-2 sm:p-3 rounded-xl flex flex-col items-center justify-center text-center transition-all">
+                        <div class="flex items-center gap-1 text-pink-500 font-black retro-font text-[10px] sm:text-xs tracking-wider">
+                            <i class="fas fa-fire-alt animate-bounce"></i>
                             <span>HARD EXTREME</span>
                         </div>
-                        <span class="text-[10px] text-gray-400 mt-1.5 font-semibold leading-tight">베테랑 전용 • 익스트림 속도<br>초고속 16비트 & 엇박 아르페지오</span>
+                        <span class="text-[9px] sm:text-[10px] text-gray-400 mt-1 font-semibold leading-tight">베테랑용 익스트림 속도<br>초고속 16비트 & 엇박</span>
                     </button>
                 </div>
 
                 <!-- Music Cards Container -->
-                <div class="flex-1 overflow-y-auto space-y-3 pr-1" id="song-list-container">
-                    <!-- Song card items will be injected here dynamically -->
+                <div class="flex-1 overflow-y-auto space-y-2 pr-1 mb-3" id="song-list-container">
+                    <!-- Song card items injected here -->
                 </div>
 
-                <!-- Footer Difficulty Quick Select and Play controls -->
-                <div class="mt-4 p-3 bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-between gap-3 shrink-0">
+                <!-- STAGE START panel (Enhanced for Mobile layout safety) -->
+                <div class="mt-auto p-2 sm:p-3 bg-slate-900 border border-slate-800 rounded-xl flex flex-col sm:flex-row items-center justify-between gap-2 shrink-0">
                     <div class="flex items-center gap-2">
-                        <span class="retro-font text-xs text-gray-400">SELECTED:</span>
-                        <span id="display-selected-diff" class="retro-font text-sm font-black text-cyan-400 neon-text-cyan">EASY</span>
+                        <span class="retro-font text-[10px] sm:text-xs text-gray-400">SELECTED:</span>
+                        <span id="display-selected-diff" class="retro-font text-xs sm:text-sm font-black text-cyan-400 neon-text-cyan">EASY</span>
                     </div>
-                    <button id="btn-start-game" class="cursor-pointer w-full sm:w-auto bg-green-500 hover:bg-green-600 text-black font-bold py-2.5 px-8 rounded-lg retro-font text-sm flex items-center justify-center gap-2 shadow-[0_0_15px_rgba(57,255,20,0.4)] transition">
+                    <!-- Big pulsate glowing button, highly clickable on mobile -->
+                    <button id="btn-start-game" class="cursor-pointer w-full sm:w-auto bg-green-500 hover:bg-green-600 text-black font-extrabold py-3 px-10 rounded-lg retro-font text-xs sm:text-sm flex items-center justify-center gap-2 shadow-[0_0_18px_rgba(57,255,20,0.6)] transition active:scale-95">
                         <span>STAGE START</span>
                         <i class="fas fa-play"></i>
                     </button>
@@ -247,71 +251,70 @@
                     <div id="game-visual-flash" class="absolute inset-0 bg-cyan-500/0 pointer-events-none transition-all duration-75 z-0"></div>
                     
                     <!-- HUD top (Progress Bar & Combo Mini) -->
-                    <div class="absolute top-0 inset-x-0 h-10 bg-slate-950/80 backdrop-blur-sm px-4 flex items-center justify-between z-20 border-b border-slate-900 text-xs">
-                        <span id="game-song-title" class="retro-font font-bold text-cyan-400 truncate max-w-[120px] md:max-w-[200px]">SONG TITLE</span>
+                    <div class="absolute top-0 inset-x-0 h-10 bg-slate-950/90 backdrop-blur-sm px-3 flex items-center justify-between z-20 border-b border-slate-900 text-xs">
+                        <span id="game-song-title" class="retro-font font-bold text-cyan-400 truncate max-w-[100px] sm:max-w-[180px]">SONG TITLE</span>
                         <!-- Playback Progress Bar -->
-                        <div class="flex-1 mx-3 h-2 bg-slate-800 rounded-full overflow-hidden relative">
+                        <div class="flex-1 mx-2 sm:mx-3 h-2 bg-slate-800 rounded-full overflow-hidden relative">
                             <div id="song-progress" class="h-full bg-cyan-400 w-0"></div>
                         </div>
-                        <div class="flex items-center gap-3">
-                            <span id="game-song-timer" class="retro-font text-gray-400">00:00</span>
+                        <div class="flex items-center gap-2">
+                            <span id="game-song-timer" class="retro-font text-gray-400 text-[10px] sm:text-xs">00:00</span>
                             <!-- GAME EXIT BUTTON -->
-                            <button id="btn-game-exit" class="cursor-pointer bg-red-950/80 hover:bg-red-800 border border-red-500/40 text-red-400 px-2.5 py-1 rounded text-[10px] retro-font transition duration-150 flex items-center gap-1 z-30">
+                            <button id="btn-game-exit" class="cursor-pointer bg-red-950/90 hover:bg-red-800 border border-red-500/40 text-red-400 px-2.5 py-1 rounded text-[10px] retro-font transition duration-150 flex items-center gap-1 z-30">
                                 <i class="fas fa-sign-out-alt"></i>
-                                <span class="hidden sm:inline">EXIT</span>
+                                <span>EXIT</span>
                             </button>
                         </div>
                     </div>
 
                     <!-- Game Play Canvas Container -->
-                    <div class="flex-1 w-full relative pt-10 pb-4" id="canvas-container">
-                        <!-- We render the dynamic notes, columns, receptors, particles here on a Canvas -->
+                    <div class="flex-1 w-full relative pt-10 pb-2" id="canvas-container">
                         <canvas id="ddr-canvas" class="w-full h-full block"></canvas>
                     </div>
                 </div>
 
-                <!-- Game Stats Dashboard / Sidebar Panel (Right Side on desktop) -->
-                <div class="w-full md:w-80 bg-slate-900 border-t md:border-t-0 md:border-l border-pink-500/20 p-4 flex flex-row md:flex-col justify-between md:justify-start gap-4 shrink-0 z-20">
+                <!-- Game Stats Panel (Compact horizontal row on mobile, sidebar on desktop) -->
+                <div class="w-full md:w-80 bg-slate-900 border-t md:border-t-0 md:border-l border-pink-500/20 p-2 sm:p-4 flex flex-row md:flex-col justify-between md:justify-start gap-2 sm:gap-4 shrink-0 z-20">
                     
                     <!-- Top section: Score & Grade Gauge -->
-                    <div class="flex-1 md:flex-initial space-y-3">
-                        <div class="bg-black/40 p-3 rounded-lg border border-slate-800">
-                            <div class="flex justify-between text-[11px] retro-font text-gray-500 mb-1">
+                    <div class="flex-1 md:flex-initial space-y-1.5 sm:space-y-3">
+                        <div class="bg-black/40 p-2 rounded-lg border border-slate-800">
+                            <div class="flex justify-between text-[9px] sm:text-[11px] retro-font text-gray-500 mb-0.5">
                                 <span>GROOVE GAUGE</span>
                                 <span id="gauge-text" class="text-green-400">100%</span>
                             </div>
-                            <div class="h-4 bg-slate-800 rounded-full overflow-hidden p-[2px] border border-slate-700/50">
+                            <div class="h-3 sm:h-4 bg-slate-800 rounded-full overflow-hidden p-[1px] border border-slate-700/50">
                                 <div id="groove-gauge" class="gauge-fill h-full rounded-full bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400 w-full"></div>
                             </div>
                         </div>
 
                         <div class="grid grid-cols-2 gap-2">
-                            <div class="bg-black/40 p-2 rounded-lg border border-slate-800 text-center">
-                                <span class="block text-[10px] retro-font text-gray-500">SCORE</span>
-                                <span id="hud-score" class="retro-font text-lg font-black text-cyan-400 neon-text-cyan">000,000</span>
+                            <div class="bg-black/40 p-1.5 rounded-lg border border-slate-800 text-center">
+                                <span class="block text-[9px] retro-font text-gray-500">SCORE</span>
+                                <span id="hud-score" class="retro-font text-sm sm:text-lg font-black text-cyan-400 neon-text-cyan">000,000</span>
                             </div>
-                            <div class="bg-black/40 p-2 rounded-lg border border-slate-800 text-center">
-                                <span class="block text-[10px] retro-font text-gray-500">MAX COMBO</span>
-                                <span id="hud-maxcombo" class="retro-font text-lg font-black text-pink-500 neon-text-pink">0</span>
+                            <div class="bg-black/40 p-1.5 rounded-lg border border-slate-800 text-center">
+                                <span class="block text-[9px] retro-font text-gray-500">MAX COMBO</span>
+                                <span id="hud-maxcombo" class="retro-font text-sm sm:text-lg font-black text-pink-500 neon-text-pink">0</span>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Bottom section: Mini Score Judgement Counter -->
-                    <div class="flex-1 md:flex-initial md:mt-auto grid grid-cols-2 md:grid-cols-1 gap-2">
-                        <div class="bg-slate-950/50 p-3 rounded-lg border border-slate-800 flex justify-between items-center">
-                            <span class="retro-font text-xs font-bold text-yellow-400">PERFECT</span>
-                            <span id="judge-perfect" class="retro-font text-sm font-bold text-white">0</span>
+                    <!-- Bottom section: Mini Score Judgement Counter (Hidden on extra small mobile screens to prevent cramp) -->
+                    <div class="hidden sm:grid grid-cols-2 md:grid-cols-1 gap-1.5 sm:gap-2">
+                        <div class="bg-slate-950/50 p-1.5 sm:p-2.5 rounded-lg border border-slate-800 flex justify-between items-center">
+                            <span class="retro-font text-[9px] sm:text-xs font-bold text-yellow-400">PERFECT</span>
+                            <span id="judge-perfect" class="retro-font text-xs sm:text-sm font-bold text-white">0</span>
                         </div>
-                        <div class="bg-slate-950/50 p-3 rounded-lg border border-slate-800 flex justify-between items-center">
-                            <span class="retro-font text-xs font-bold text-green-400">GREAT</span>
-                            <span id="judge-great" class="retro-font text-sm font-bold text-white">0</span>
+                        <div class="bg-slate-950/50 p-1.5 sm:p-2.5 rounded-lg border border-slate-800 flex justify-between items-center">
+                            <span class="retro-font text-[9px] sm:text-xs font-bold text-green-400">GREAT</span>
+                            <span id="judge-great" class="retro-font text-xs sm:text-sm font-bold text-white">0</span>
                         </div>
-                        <div class="hidden md:flex bg-slate-950/50 p-3 rounded-lg border border-slate-800 justify-between items-center">
+                        <div class="hidden md:flex bg-slate-950/50 p-2.5 rounded-lg border border-slate-800 justify-between items-center">
                             <span class="retro-font text-xs font-bold text-cyan-400">GOOD</span>
                             <span id="judge-good" class="retro-font text-sm font-bold text-white">0</span>
                         </div>
-                        <div class="hidden md:flex bg-slate-950/50 p-3 rounded-lg border border-slate-800 justify-between items-center">
+                        <div class="hidden md:flex bg-slate-950/50 p-2.5 rounded-lg border border-slate-800 justify-between items-center">
                             <span class="retro-font text-xs font-bold text-red-500">MISS</span>
                             <span id="judge-miss" class="retro-font text-sm font-bold text-white">0</span>
                         </div>
@@ -320,49 +323,49 @@
             </div>
 
             <!-- SECTION 4: EVALUATION / RESULTS SCREEN -->
-            <div id="screen-results" class="absolute inset-0 z-40 hidden flex-col items-center justify-center p-6 bg-gradient-to-b from-[#0b031c] via-[#05010a] to-black">
-                <div class="w-full max-w-xl text-center space-y-6">
-                    <div class="space-y-1">
-                        <span class="arcade-font text-green-400 text-xs md:text-sm neon-text-green">STAGE CLEARED</span>
-                        <h2 class="retro-font text-2xl md:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-400 to-cyan-400 tracking-wide uppercase mt-1">
+            <div id="screen-results" class="absolute inset-0 z-40 hidden flex-col items-center justify-center p-4 sm:p-6 bg-gradient-to-b from-[#0b031c] via-[#05010a] to-black">
+                <div class="w-full max-w-xl text-center space-y-4 sm:space-y-6">
+                    <div class="space-y-0.5">
+                        <span class="arcade-font text-green-400 text-[10px] sm:text-xs neon-text-green">STAGE CLEARED</span>
+                        <h2 class="retro-font text-xl sm:text-3xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-400 to-cyan-400 tracking-wide uppercase">
                             PERFORMANCE REPORT
                         </h2>
                     </div>
 
                     <!-- Score Card Grid -->
-                    <div class="bg-slate-900/60 border-2 border-cyan-500/50 p-5 rounded-2xl grid grid-cols-1 md:grid-cols-2 gap-4 text-left relative overflow-hidden backdrop-blur">
+                    <div class="bg-slate-900/60 border-2 border-cyan-500/50 p-4 rounded-2xl grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-left relative overflow-hidden backdrop-blur">
                         <div class="absolute inset-0 bg-cyan-950/10 pointer-events-none"></div>
                         
                         <!-- Left Big Rank Display -->
-                        <div class="flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-slate-800 pb-4 md:pb-0">
-                            <span class="retro-font text-xs text-gray-500 uppercase tracking-widest">FINAL RANK</span>
-                            <div class="text-7xl md:text-8xl font-black retro-font my-2" id="results-rank">S</div>
-                            <span class="retro-font text-[10px] text-cyan-400 tracking-wider font-bold" id="results-song-title">SONG TITLE HERE</span>
+                        <div class="flex flex-col items-center justify-center border-b sm:border-b-0 sm:border-r border-slate-800 pb-3 sm:pb-0">
+                            <span class="retro-font text-[10px] text-gray-500 uppercase tracking-widest">FINAL RANK</span>
+                            <div class="text-6xl sm:text-8xl font-black retro-font my-1 sm:my-2" id="results-rank">S</div>
+                            <span class="retro-font text-[9px] sm:text-[10px] text-cyan-400 tracking-wider font-bold" id="results-song-title">SONG TITLE HERE</span>
                         </div>
 
                         <!-- Right Stats breakdown -->
-                        <div class="space-y-2 py-2 flex flex-col justify-center">
-                            <div class="flex justify-between items-center border-b border-slate-800/80 pb-1 text-sm">
+                        <div class="space-y-1.5 sm:space-y-2 py-1 flex flex-col justify-center text-xs">
+                            <div class="flex justify-between items-center border-b border-slate-800/80 pb-1">
                                 <span class="retro-font text-gray-400">TOTAL SCORE</span>
                                 <span class="retro-font text-cyan-400 font-bold" id="results-score">000,000</span>
                             </div>
-                            <div class="flex justify-between items-center border-b border-slate-800/80 pb-1 text-sm">
+                            <div class="flex justify-between items-center border-b border-slate-800/80 pb-1">
                                 <span class="retro-font text-yellow-400 font-semibold">PERFECT</span>
                                 <span class="retro-font font-bold" id="results-perfect">0</span>
                             </div>
-                            <div class="flex justify-between items-center border-b border-slate-800/80 pb-1 text-sm">
+                            <div class="flex justify-between items-center border-b border-slate-800/80 pb-1">
                                 <span class="retro-font text-green-400 font-semibold">GREAT</span>
                                 <span class="retro-font font-bold" id="results-great">0</span>
                             </div>
-                            <div class="flex justify-between items-center border-b border-slate-800/80 pb-1 text-sm">
+                            <div class="flex justify-between items-center border-b border-slate-800/80 pb-1">
                                 <span class="retro-font text-cyan-400 font-semibold">GOOD</span>
                                 <span class="retro-font font-bold" id="results-good">0</span>
                             </div>
-                            <div class="flex justify-between items-center border-b border-slate-800/80 pb-1 text-sm">
+                            <div class="flex justify-between items-center border-b border-slate-800/80 pb-1">
                                 <span class="retro-font text-red-500 font-semibold">MISS</span>
                                 <span class="retro-font font-bold" id="results-miss">0</span>
                             </div>
-                            <div class="flex justify-between items-center text-sm">
+                            <div class="flex justify-between items-center">
                                 <span class="retro-font text-pink-500 font-bold">MAX COMBO</span>
                                 <span class="retro-font font-bold text-pink-500" id="results-maxcombo">0</span>
                             </div>
@@ -370,12 +373,12 @@
                     </div>
 
                     <!-- Restart Actions -->
-                    <div class="flex flex-col sm:flex-row justify-center items-center gap-4">
-                        <button id="btn-results-retry" class="cursor-pointer w-full sm:w-auto bg-gradient-to-r from-pink-500 to-pink-600 text-white font-bold py-3 px-8 rounded-xl retro-font text-sm border-b-4 border-pink-900 hover:brightness-110 active:translate-y-[2px] shadow-[0_0_15px_rgba(255,0,127,0.4)] flex items-center justify-center gap-2">
+                    <div class="flex flex-col sm:flex-row justify-center items-center gap-3">
+                        <button id="btn-results-retry" class="cursor-pointer w-full sm:w-auto bg-gradient-to-r from-pink-500 to-pink-600 text-white font-bold py-2.5 px-6 rounded-xl retro-font text-xs border-b-4 border-pink-900 hover:brightness-110 active:translate-y-[2px] shadow-[0_0_15px_rgba(255,0,127,0.4)] flex items-center justify-center gap-2">
                             <i class="fas fa-redo"></i>
                             <span>STAGE RETRY</span>
                         </button>
-                        <button id="btn-results-menu" class="cursor-pointer w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-cyan-500/50 font-bold py-3 px-8 rounded-xl retro-font text-sm hover:brightness-110 flex items-center justify-center gap-2">
+                        <button id="btn-results-menu" class="cursor-pointer w-full sm:w-auto bg-slate-800 hover:bg-slate-700 text-cyan-400 border border-cyan-500/50 font-bold py-2.5 px-6 rounded-xl retro-font text-xs hover:brightness-110 flex items-center justify-center gap-2">
                             <i class="fas fa-home"></i>
                             <span>MUSIC SELECT</span>
                         </button>
@@ -385,16 +388,16 @@
 
             <!-- CUSTOM GAME OVER SCREEN OVERLAY -->
             <div id="overlay-gameover" class="absolute inset-0 z-40 hidden flex-col items-center justify-center bg-black/90 p-6 backdrop-blur-md">
-                <div class="text-center space-y-6 max-w-sm animate-bounce-slow">
-                    <div class="text-red-500 text-6xl"><i class="fas fa-skull-crossbones neon-text-pink"></i></div>
-                    <h2 class="arcade-font text-2xl md:text-3xl text-pink-500 neon-text-pink">GAME OVER</h2>
-                    <p class="text-gray-400 text-sm">폭발적인 비트를 견디지 못하고 라이프 게이지가 고갈되었습니다!</p>
-                    <div class="flex flex-col gap-3 pt-4">
-                        <button id="btn-gameover-retry" class="cursor-pointer bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg retro-font text-sm flex items-center justify-center gap-2">
+                <div class="text-center space-y-5 max-w-sm">
+                    <div class="text-red-500 text-5xl"><i class="fas fa-skull-crossbones neon-text-pink"></i></div>
+                    <h2 class="arcade-font text-xl sm:text-2xl text-pink-500 neon-text-pink">GAME OVER</h2>
+                    <p class="text-gray-400 text-xs sm:text-sm">폭발적인 비트를 견디지 못하고 라이프 게이지가 고갈되었습니다!</p>
+                    <div class="flex flex-col gap-2 pt-2">
+                        <button id="btn-gameover-retry" class="cursor-pointer bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 px-6 rounded-lg retro-font text-xs flex items-center justify-center gap-2">
                             <i class="fas fa-redo"></i>
                             <span>TRY AGAIN</span>
                         </button>
-                        <button id="btn-gameover-menu" class="cursor-pointer bg-slate-800 hover:bg-slate-700 text-gray-300 font-bold py-3 px-6 rounded-lg retro-font text-sm flex items-center justify-center gap-2">
+                        <button id="btn-gameover-menu" class="cursor-pointer bg-slate-800 hover:bg-slate-700 text-gray-300 font-bold py-2.5 px-6 rounded-lg retro-font text-xs flex items-center justify-center gap-2">
                             <i class="fas fa-list"></i>
                             <span>MUSIC SELECT</span>
                         </button>
@@ -403,79 +406,79 @@
             </div>
 
             <!-- HOW TO PLAY MODAL OVERLAY -->
-            <div id="overlay-help" class="absolute inset-0 z-50 hidden flex-col items-center justify-center bg-slate-950/95 p-6 backdrop-blur-sm">
-                <div class="bg-slate-900 border border-cyan-500/50 max-w-md w-full p-6 rounded-2xl relative">
-                    <button id="btn-close-help" class="absolute top-4 right-4 text-gray-500 hover:text-white cursor-pointer"><i class="fas fa-times text-xl"></i></button>
-                    <h3 class="arcade-font text-xs text-cyan-400 neon-text-cyan mb-4">HOW TO PLAY</h3>
+            <div id="overlay-help" class="absolute inset-0 z-50 hidden flex-col items-center justify-center bg-slate-950/95 p-4 sm:p-6 backdrop-blur-sm">
+                <div class="bg-slate-900 border border-cyan-500/50 max-w-md w-full p-5 sm:p-6 rounded-2xl relative">
+                    <button id="btn-close-help" class="absolute top-4 right-4 text-gray-500 hover:text-white cursor-pointer"><i class="fas fa-times text-lg"></i></button>
+                    <h3 class="arcade-font text-[10px] sm:text-xs text-cyan-400 neon-text-cyan mb-4">HOW TO PLAY</h3>
                     
-                    <div class="space-y-4 text-sm text-gray-300 text-left">
-                        <div class="flex gap-3">
-                            <div class="bg-slate-950 px-2 py-1 rounded border border-pink-500 text-pink-500 h-fit retro-font text-[10px] shrink-0">KEYBOARD</div>
+                    <div class="space-y-3.5 text-xs sm:text-sm text-gray-300 text-left">
+                        <div class="flex gap-2">
+                            <div class="bg-slate-950 px-2 py-0.5 rounded border border-pink-500 text-pink-500 h-fit retro-font text-[9px] shrink-0">KEYBOARD</div>
                             <div>
-                                <p class="font-bold text-white">키보드 방향키 혹은 D F J K</p>
-                                <p class="text-xs text-gray-400">← (Left/D), ↓ (Down/F), ↑ (Up/J), → (Right/K)</p>
+                                <p class="font-bold text-white text-xs sm:text-sm">방향키 또는 D F J K</p>
+                                <p class="text-[11px] text-gray-400">←(D), ↓(F), ↑(J), →(K)</p>
                             </div>
                         </div>
 
-                        <div class="flex gap-3">
-                            <div class="bg-slate-950 px-2 py-1 rounded border border-cyan-500 text-cyan-500 h-fit retro-font text-[10px] shrink-0">MOBILE</div>
+                        <div class="flex gap-2">
+                            <div class="bg-slate-950 px-2 py-0.5 rounded border border-cyan-500 text-cyan-500 h-fit retro-font text-[9px] shrink-0">MOBILE</div>
                             <div>
-                                <p class="font-bold text-white">모바일 터치 스크린 지원</p>
-                                <p class="text-xs text-gray-400">하단에 위치한 네온 발판 버튼을 타이밍에 맞게 탭하세요.</p>
+                                <p class="font-bold text-white text-xs sm:text-sm">모바일 터치 패드 지원</p>
+                                <p class="text-[11px] text-gray-400">하단 네온 버튼을 타이밍에 맞춰 탭하세요.</p>
                             </div>
                         </div>
 
-                        <div class="flex gap-3">
-                            <div class="bg-slate-950 px-2 py-1 rounded border border-yellow-500 text-yellow-500 h-fit retro-font text-[10px] shrink-0">JUDGE</div>
+                        <div class="flex gap-2">
+                            <div class="bg-slate-950 px-2 py-0.5 rounded border border-yellow-500 text-yellow-500 h-fit retro-font text-[9px] shrink-0">JUDGE</div>
                             <div>
-                                <p class="font-bold text-white">판정선 일치 타이밍</p>
-                                <p class="text-xs text-gray-400">올라오는 화살표가 상단 고정 가이드 화살표(판정선)와 정확히 겹칠 때 터치하세요! 정확할수록 점수와 그루브 게이지가 상승합니다.</p>
+                                <p class="font-bold text-white text-xs sm:text-sm">정확한 판정 타이밍</p>
+                                <p class="text-[11px] text-gray-400">올라오는 화살표가 상단 고정 가이드 화살표와 겹칠 때 발판을 누르세요!</p>
                             </div>
                         </div>
                     </div>
 
-                    <button id="btn-close-help-ok" class="cursor-pointer w-full mt-6 bg-cyan-500 text-black font-bold py-2 rounded-lg text-center retro-font text-sm">알겠습니다!</button>
+                    <button id="btn-close-help-ok" class="cursor-pointer w-full mt-5 sm:mt-6 bg-cyan-500 text-black font-extrabold py-2 rounded-lg text-center retro-font text-xs">알겠습니다!</button>
                 </div>
             </div>
             
         </div>
 
         <!-- MOBILE TOUCH PAD (At the bottom of the Cabinet Screen) -->
-        <div class="h-44 md:h-52 bg-slate-950 border-t-4 border-cyan-500 px-4 py-3 flex flex-col justify-center shrink-0 relative">
+        <div class="h-32 sm:h-44 md:h-48 bg-slate-950 border-t-4 border-cyan-500 px-3 py-2 flex flex-col justify-center shrink-0 relative">
             <div class="absolute inset-0 bg-gradient-to-t from-cyan-950/10 to-transparent pointer-events-none"></div>
             
-            <div class="text-[10px] retro-font text-cyan-400/80 text-center mb-2 tracking-widest hidden md:block">
+            <div class="text-[9px] retro-font text-cyan-400/80 text-center mb-1.5 tracking-widest hidden sm:block">
                 ARCADE FOOT CONTROLLER / MOBILE TOUCH PAD
             </div>
 
-            <!-- Touch Pad arrows layout -->
-            <div class="grid grid-cols-4 gap-3 h-full max-w-lg mx-auto w-full">
+            <!-- Touch Pad arrows layout (Safe-spacing and no-zoom controls) -->
+            <div class="grid grid-cols-4 gap-2 h-full max-w-lg mx-auto w-full">
                 <!-- Left Pad -->
-                <button data-key="Left" class="arrow-btn relative bg-slate-900 border-2 border-pink-500 rounded-xl flex flex-col items-center justify-center p-2 text-pink-500 shadow-[0_0_10px_rgba(255,0,127,0.15)] focus:outline-none cursor-pointer">
-                    <span class="absolute top-2 left-2 text-[10px] retro-font font-bold text-pink-500/50">D / ←</span>
-                    <i class="fas fa-arrow-left text-2xl md:text-3xl neon-text-pink"></i>
-                    <span class="text-[10px] retro-font font-bold mt-1 text-pink-400/80">LEFT</span>
+                <button data-key="Left" class="arrow-btn relative bg-slate-900 border-2 border-pink-500 rounded-xl flex flex-col items-center justify-center p-1 text-pink-500 shadow-[0_0_10px_rgba(255,0,127,0.15)] focus:outline-none cursor-pointer">
+                    <span class="absolute top-1 left-1.5 text-[8px] retro-font font-bold text-pink-500/50">D/←</span>
+                    <i class="fas fa-arrow-left text-xl sm:text-2xl md:text-3xl neon-text-pink"></i>
+                    <span class="text-[8px] sm:text-[10px] retro-font font-bold mt-0.5 text-pink-400/80">LEFT</span>
                 </button>
 
                 <!-- Down Pad -->
-                <button data-key="Down" class="arrow-btn relative bg-slate-900 border-2 border-cyan-500 rounded-xl flex flex-col items-center justify-center p-2 text-cyan-400 shadow-[0_0_10px_rgba(0,240,255,0.15)] focus:outline-none cursor-pointer">
-                    <span class="absolute top-2 left-2 text-[10px] retro-font font-bold text-cyan-500/50">F / ↓</span>
-                    <i class="fas fa-arrow-down text-2xl md:text-3xl neon-text-cyan"></i>
-                    <span class="text-[10px] retro-font font-bold mt-1 text-cyan-400/80">DOWN</span>
+                <button data-key="Down" class="arrow-btn relative bg-slate-900 border-2 border-cyan-500 rounded-xl flex flex-col items-center justify-center p-1 text-cyan-400 shadow-[0_0_10px_rgba(0,240,255,0.15)] focus:outline-none cursor-pointer">
+                    <span class="absolute top-1 left-1.5 text-[8px] retro-font font-bold text-cyan-500/50">F/↓</span>
+                    <i class="fas fa-arrow-down text-xl sm:text-2xl md:text-3xl neon-text-cyan"></i>
+                    <span class="text-[8px] sm:text-[10px] retro-font font-bold mt-0.5 text-cyan-400/80">DOWN</span>
                 </button>
 
                 <!-- Up Pad -->
-                <button data-key="Up" class="arrow-btn relative bg-slate-900 border-2 border-cyan-500 rounded-xl flex flex-col items-center justify-center p-2 text-cyan-400 shadow-[0_0_10px_rgba(0,240,255,0.15)] focus:outline-none cursor-pointer">
-                    <span class="absolute top-2 left-2 text-[10px] retro-font font-bold text-cyan-500/50">J / ↑</span>
-                    <i class="fas fa-arrow-up text-2xl md:text-3xl neon-text-cyan"></i>
-                    <span class="text-[10px] retro-font font-bold mt-1 text-cyan-400/80">UP</span>
+                <button data-key="Up" class="arrow-btn relative bg-slate-900 border-2 border-cyan-500 rounded-xl flex flex-col items-center justify-center p-1 text-cyan-400 shadow-[0_0_10px_rgba(0,240,255,0.15)] focus:outline-none cursor-pointer">
+                    <span class="absolute top-1 left-1.5 text-[8px] retro-font font-bold text-cyan-500/50">J/↑</span>
+                    <i class="fas fa-arrow-up text-xl sm:text-2xl md:text-3xl neon-text-cyan"></i>
+                    <span class="text-[8px] sm:text-[10px] retro-font font-bold mt-0.5 text-cyan-400/80">UP</span>
                 </button>
 
                 <!-- Right Pad -->
-                <button data-key="Right" class="arrow-btn relative bg-slate-900 border-2 border-pink-500 rounded-xl flex flex-col items-center justify-center p-2 text-pink-500 shadow-[0_0_10px_rgba(255,0,127,0.15)] focus:outline-none cursor-pointer">
-                    <span class="absolute top-2 left-2 text-[10px] retro-font font-bold text-pink-500/50">K / →</span>
-                    <i class="fas fa-arrow-right text-2xl md:text-3xl neon-text-pink"></i>
-                    <span class="text-[10px] retro-font font-bold mt-1 text-pink-400/80">RIGHT</span>
+                <button data-key="Right" class="arrow-btn relative bg-slate-900 border-2 border-pink-500 rounded-xl flex flex-col items-center justify-center p-1 text-pink-500 shadow-[0_0_10px_rgba(255,0,127,0.15)] focus:outline-none cursor-pointer">
+                    <span class="absolute top-1 left-1.5 text-[8px] retro-font font-bold text-pink-500/50">K/→</span>
+                    <i class="fas fa-arrow-right text-xl sm:text-2xl md:text-3xl neon-text-pink"></i>
+                    <span class="text-[8px] sm:text-[10px] retro-font font-bold mt-0.5 text-pink-400/80">RIGHT</span>
                 </button>
             </div>
         </div>
@@ -491,16 +494,12 @@
                 this.ctx = null;
                 this.masterVolume = null;
                 this.isMuted = false;
-                this.tempo = 135;
+                this.tempo = 142;
                 this.isPlaying = false;
                 this.scheduleAheadTime = 0.1; // 100ms lookahead
                 this.nextNoteTime = 0.0;
                 this.currentBeat = 0;
                 this.timerId = null;
-                
-                // Active synth sequences
-                this.bassSequence = [];
-                this.melodySequence = [];
             }
 
             init() {
@@ -508,7 +507,7 @@
                 const AudioContextClass = window.AudioContext || window.webkitAudioContext;
                 this.ctx = new AudioContextClass();
                 this.masterVolume = this.ctx.createGain();
-                this.masterVolume.gain.value = 0.3; // safe volume
+                this.masterVolume.gain.value = 0.3; // Safe master volume
                 this.masterVolume.connect(this.ctx.destination);
             }
 
@@ -523,7 +522,7 @@
                 this.tempo = bpm;
             }
 
-            // Enhanced punchier kick drum
+            // Punchy bass drum synthesizer
             playKick(time) {
                 if (!this.ctx) return;
                 const osc = this.ctx.createOscillator();
@@ -541,10 +540,10 @@
                 osc.stop(time + 0.28);
             }
 
+            // Noise-simulated vintage snare
             playSnare(time) {
                 if (!this.ctx) return;
-                // Generate simple retro snare using filtered white noise
-                const bufferSize = this.ctx.sampleRate * 0.2; // 200ms
+                const bufferSize = this.ctx.sampleRate * 0.2;
                 const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
                 const data = buffer.getChannelData(0);
                 for (let i = 0; i < bufferSize; i++) {
@@ -570,6 +569,7 @@
                 noise.stop(time + 0.2);
             }
 
+            // Fast closed hihat
             playHihat(time) {
                 if (!this.ctx) return;
                 const osc = this.ctx.createOscillator();
@@ -586,7 +586,7 @@
                 osc.stop(time + 0.05);
             }
 
-            // High energy open hihat for upbeat dancing rhythm
+            // Energy-pumping Open hi-hat
             playOpenHat(time) {
                 if (!this.ctx) return;
                 const bufferSize = this.ctx.sampleRate * 0.15;
@@ -613,6 +613,7 @@
                 noise.stop(time + 0.15);
             }
 
+            // Solid synthesized driving bass
             playBassNode(freq, time, duration) {
                 if (!this.ctx) return;
                 const osc = this.ctx.createOscillator();
@@ -629,6 +630,7 @@
                 osc.stop(time + duration);
             }
 
+            // Retro square-wave melodies
             playMelodyNode(freq, time, duration) {
                 if (!this.ctx || !freq) return;
                 const osc = this.ctx.createOscillator();
@@ -638,7 +640,6 @@
                 osc.type = 'square';
                 osc2.type = 'triangle';
                 
-                // De-tune second osc for richer arcade sound
                 osc.frequency.setValueAtTime(freq, time);
                 osc2.frequency.setValueAtTime(freq + 3, time);
 
@@ -655,7 +656,7 @@
                 osc2.stop(time + duration);
             }
 
-            // Fast high-pitch synthesizer arpeggio tones
+            // Arpeggiator synth for HARD mode excitement
             playArpeggioNode(freq, time, duration) {
                 if (!this.ctx || !freq) return;
                 const osc = this.ctx.createOscillator();
@@ -663,8 +664,6 @@
                 
                 osc.type = 'triangle';
                 osc.frequency.setValueAtTime(freq, time);
-                
-                // Classic chiptune frequency modulation
                 osc.frequency.linearRampToValueAtTime(freq * 1.5, time + duration);
 
                 gain.gain.setValueAtTime(0.08, time);
@@ -677,7 +676,6 @@
             }
 
             playHitFeedbackTone() {
-                // Happy sound when scoring Perfect
                 if (!this.ctx || this.isMuted) return;
                 const time = this.ctx.currentTime;
                 const osc = this.ctx.createOscillator();
@@ -696,7 +694,6 @@
             }
 
             playMissFeedbackTone() {
-                // Sad tone when missing
                 if (!this.ctx || this.isMuted) return;
                 const time = this.ctx.currentTime;
                 const osc = this.ctx.createOscillator();
@@ -725,17 +722,15 @@
             advanceBeat() {
                 const secondsPerBeat = 60.0 / this.tempo / 4; // 16th notes
                 this.nextNoteTime += secondsPerBeat;
-                this.currentBeat = (this.currentBeat + 1) % 64; // loop size 4 bars (64 16th notes)
+                this.currentBeat = (this.currentBeat + 1) % 64;
             }
 
             schedulePlay(step, time) {
-                // Continuous driving bassline patterns
                 const bassPattern = [
                     55, 55, 65.4, 65.4, 73.4, 73.4, 82.4, 82.4,
                     55, 55, 65.4, 65.4, 73.4, 73.4, 98.0, 82.4
                 ];
                 
-                // Upgraded ultra-dynamic lead sequences
                 const melodies = {
                     "NEO_TOKYO": [
                         440, 523, 587, 659, 587, 523, 440, 392,
@@ -751,7 +746,6 @@
                     ]
                 };
 
-                // Fast High-frequency chip arpeggio filler
                 const arpeggios = [
                     880, 1046, 1174, 1318, 1174, 1046, 880, 784,
                     587, 698, 784, 880, 784, 698, 587, 523
@@ -759,40 +753,40 @@
 
                 const currentSongMelody = (gameState.currentSongIndex === 0) ? melodies["NEO_TOKYO"] : melodies["SYNTH_WAVE"];
 
-                // 1. Kick Drum on beats (4/4 Beat)
+                // 1. Kick on beat
                 if (step % 4 === 0) {
                     this.playKick(time);
                 }
 
-                // 2. Snare on 4, 12 (standard pop snare beat)
+                // 2. Snare
                 if (step % 8 === 4) {
                     this.playSnare(time);
                 }
 
-                // 3. Upbeat Open Hi-Hat (highly energetic dancing elements!)
+                // 3. Upbeat Open hat
                 if (step % 4 === 2) {
                     this.playOpenHat(time);
                 }
 
-                // 4. Double-time closed hats on HARD mode
+                // 4. Closed hats
                 if (gameState.currentDifficulty === "HARD" || step % 2 === 1) {
                     this.playHihat(time);
                 }
 
-                // 5. Play Driving Bassline
+                // 5. Bassline
                 const bassFreq = bassPattern[Math.floor(step / 2) % bassPattern.length];
                 if (step % 2 === 0) {
-                    const duration = (step % 4 === 0) ? 0.08 : 0.16; // ducking envelope
+                    const duration = (step % 4 === 0) ? 0.08 : 0.16;
                     this.playBassNode(bassFreq, time, duration);
                 }
 
-                // 6. Play Melody Lead
+                // 6. Melody
                 const melodyFreq = currentSongMelody[step % currentSongMelody.length];
                 if (melodyFreq > 0) {
                     this.playMelodyNode(melodyFreq, time, 0.25);
                 }
 
-                // 7. Chippy Counter Arpeggiation on HARD mode (intensifies tempo/beat)
+                // 7. Dynamic fast arpeggio on HARD
                 if (gameState.currentDifficulty === "HARD" && step % 2 === 1) {
                     const arpFreq = arpeggios[step % arpeggios.length];
                     this.playArpeggioNode(arpFreq, time, 0.08);
@@ -827,9 +821,9 @@
         const SONGS = [
             {
                 title: "NEO TOKYO CRASH",
-                bpm: 142, // Energized BPM boost
+                bpm: 142,
                 genre: "RETRO SYNTHWAVE",
-                duration: 45, // seconds
+                duration: 45,
                 difficultyEasy: 3,
                 difficultyHard: 8,
                 color: "#ff007f",
@@ -837,7 +831,7 @@
             },
             {
                 title: "HYPER ELECTRA SPEED",
-                bpm: 160, // Turbo BPM speed!
+                bpm: 160,
                 genre: "FAST TECHNOCORE",
                 duration: 50,
                 difficultyEasy: 4,
@@ -847,7 +841,6 @@
             }
         ];
 
-        // Custom pseudorandom generator based on seed (to keep chart generated identical)
         function mulberry32(a) {
             return function() {
               let t = a += 0x6D2B79F5;
@@ -857,7 +850,6 @@
             }
         }
 
-        // Generate notes for the game dynamically based on seed and difficulty
         function generateChart(song, difficulty) {
             const random = mulberry32(song.seed + (difficulty === "HARD" ? 77 : 33));
             const bpm = song.bpm;
@@ -865,20 +857,15 @@
             const beatsTotal = (bpm / 60) * durationSec;
             
             const chart = [];
-            
-            // Interval configuration depending on difficulty
-            // Easy has fewer syncopated notes, hard has more frequent/double notes
             const stepChance = difficulty === "HARD" ? 0.75 : 0.45;
-            const stepInterval = difficulty === "HARD" ? 0.5 : 1.0; // 0.5 beat intervals (eighth-notes) vs 1.0 (quarter-notes)
+            const stepInterval = difficulty === "HARD" ? 0.5 : 1.0;
 
             for (let beat = 4.0; beat < beatsTotal - 4; beat += stepInterval) {
                 if (random() < stepChance) {
-                    // Decide arrow index (0: Left, 1: Down, 2: Up, 3: Right)
                     const arrowsToPlace = [];
                     const primaryArrow = Math.floor(random() * 4);
                     arrowsToPlace.push(primaryArrow);
 
-                    // Add double-arrow hops occasionally on HARD mode
                     if (difficulty === "HARD" && random() < 0.22) {
                         let secondaryArrow = Math.floor(random() * 4);
                         if (secondaryArrow !== primaryArrow) {
@@ -888,7 +875,7 @@
 
                     for (const colIndex of arrowsToPlace) {
                         chart.push({
-                            time: beat * (60.0 / bpm), // convert beat to exact seconds
+                            time: beat * (60.0 / bpm),
                             column: colIndex,
                             hit: false,
                             missed: false
@@ -897,7 +884,6 @@
                 }
             }
 
-            // Sort chart sequentially
             chart.sort((a, b) => a.time - b.time);
             return chart;
         }
@@ -913,12 +899,10 @@
             currentDifficulty: "EASY", // EASY, HARD
             isPlaying: false,
             
-            // Audio engine variables
             startTime: 0,
             pauseTime: 0,
             songDuration: 0,
             
-            // Score tracking
             score: 0,
             combo: 0,
             maxCombo: 0,
@@ -926,21 +910,16 @@
             greatCount: 0,
             goodCount: 0,
             missCount: 0,
-            lifeGauge: 100, // starts at 100%
+            lifeGauge: 100,
             
-            // Chart rendering state
             notes: [],
-            speed: 450, // falling pixels per second
-            receptorsY: 80, // Target line receptor coordinate at top
+            speed: 450,
+            receptorsY: 80, // Responsive baseline calculated in resizeCanvas
             
-            // Visual Particles List
             particles: [],
-            
-            // Visual feedback ratings list
             ratings: []
         };
 
-        // Window elements reference cache
         const screenStart = document.getElementById("screen-start");
         const screenSelect = document.getElementById("screen-select");
         const screenGame = document.getElementById("screen-game");
@@ -956,22 +935,21 @@
         /* ==========================================
            4. VISUAL RENDERING / CANVAS ENGINE
            ========================================== */
-        // Responsive resize scaling logic for canvas drawing
         function resizeCanvas() {
             const rect = ddrCanvas.parentElement.getBoundingClientRect();
             ddrCanvas.width = rect.width;
             ddrCanvas.height = rect.height;
+            // Responsive scaled receptor position suited for mobile heights
+            gameState.receptorsY = Math.max(50, Math.min(100, ddrCanvas.height * 0.15));
         }
 
-        // Setup Arrow Icons as local drawings on Canvas
         const arrowColors = {
-            0: { primary: "#ff007f", glow: "rgba(255, 0, 127, 0.7)", path: drawLeftArrow },  // Left: Pink
-            1: { primary: "#00f0ff", glow: "rgba(0, 240, 255, 0.7)", path: drawDownArrow },  // Down: Cyan
-            2: { primary: "#00f0ff", glow: "rgba(0, 240, 255, 0.7)", path: drawUpArrow },    // Up: Cyan
-            3: { primary: "#ff007f", glow: "rgba(255, 0, 127, 0.7)", path: drawRightArrow }  // Right: Pink
+            0: { primary: "#ff007f", glow: "rgba(255, 0, 127, 0.7)", path: drawLeftArrow },
+            1: { primary: "#00f0ff", glow: "rgba(0, 240, 255, 0.7)", path: drawDownArrow },
+            2: { primary: "#00f0ff", glow: "rgba(0, 240, 255, 0.7)", path: drawUpArrow },
+            3: { primary: "#ff007f", glow: "rgba(255, 0, 127, 0.7)", path: drawRightArrow }
         };
 
-        // Draw helper routines
         function drawLeftArrow(ctx, x, y, size, fill = true) {
             ctx.beginPath();
             ctx.moveTo(x + size/2, y - size/2);
@@ -1024,7 +1002,6 @@
             if (fill) ctx.fill(); else ctx.stroke();
         }
 
-        // Emit hit particles for juicy feedback
         function createExplosion(x, y, color) {
             for (let i = 0; i < 15; i++) {
                 gameState.particles.push({
@@ -1040,7 +1017,6 @@
             }
         }
 
-        // Trigger floating judgment text
         function triggerRating(text, color) {
             gameState.ratings.push({
                 text: text,
@@ -1050,13 +1026,11 @@
                 scale: 1.5
             });
 
-            // Keep only the 2 latest floating ratings to avoid clutter
             if (gameState.ratings.length > 2) {
                 gameState.ratings.shift();
             }
         }
 
-        // Key states for visual pad feedback in canvas
         const activeKeys = { Left: false, Down: false, Up: false, Right: false };
     </script>
 
@@ -1067,49 +1041,40 @@
         function gameLoop() {
             if (!gameState.isPlaying) return;
 
-            // Clear Canvas
             ctx2d.clearRect(0, 0, ddrCanvas.width, ddrCanvas.height);
 
             const now = audioSynth.ctx.currentTime;
             const elapsed = now - gameState.startTime;
 
-            // Update song timeline display
             updateSongProgress(elapsed);
 
-            // If song finishes, trigger cleared screen
             if (elapsed >= gameState.songDuration) {
                 endGame(true);
                 return;
             }
 
-            // Calculations for layout
             const width = ddrCanvas.width;
             const height = ddrCanvas.height;
             const columnWidth = width / 4;
             const arrowSize = Math.min(columnWidth * 0.35, 30);
 
-            // Draw Column Guide Lanes & Neon Rails
+            // Lanes
             for (let i = 0; i < 4; i++) {
                 const colX = columnWidth * i + columnWidth / 2;
-                
-                // Track lane backplate
                 ctx2d.fillStyle = 'rgba(15, 10, 30, 0.4)';
                 ctx2d.fillRect(columnWidth * i + 2, 0, columnWidth - 4, height);
 
-                // Side rail glow line
                 ctx2d.strokeStyle = 'rgba(255, 0, 127, 0.1)';
                 ctx2d.lineWidth = 1;
                 ctx2d.strokeRect(columnWidth * i, 0, columnWidth, height);
             }
 
-            // Draw Static RECEPTORS (Targets) at bottom (classic pump/ddr layout)
-            // Receptors Y placed at top 100px for DDR classic falling arrows style
+            // Target receptors at responsive height
             const targetY = gameState.receptorsY;
             for (let i = 0; i < 4; i++) {
                 const colX = columnWidth * i + columnWidth / 2;
                 const config = arrowColors[i];
 
-                // Glow style if button pressed
                 const isPressed = (i === 0 && activeKeys.Left) ||
                                   (i === 1 && activeKeys.Down) ||
                                   (i === 2 && activeKeys.Up) ||
@@ -1121,32 +1086,28 @@
                 ctx2d.strokeStyle = config.primary;
                 ctx2d.lineWidth = isPressed ? 4 : 2;
                 
-                // Filled or stroke outline
                 config.path(ctx2d, colX, targetY, arrowSize, isPressed);
                 ctx2d.restore();
             }
 
-            // Render Rising Arrows
+            // Rising notes (DDR classic upward scroll)
             ctx2d.save();
             for (let i = 0; i < gameState.notes.length; i++) {
                 const note = gameState.notes[i];
                 if (note.hit || note.missed) continue;
 
                 const colX = columnWidth * note.column + columnWidth / 2;
-                
-                // Arrow moves upwards from bottom (classic DDR)
-                // y_pos = Start from bottom + scroll distance based on time
                 const secondsLeft = note.time - elapsed;
+                
+                // Y Position: Starts off at bottom of lane, moves up towards targetY
                 const yPos = targetY + (secondsLeft * gameState.speed);
 
-                // Auto Miss Check if note passes beyond receptor line by too much
                 if (secondsLeft < -0.18) {
                     note.missed = true;
                     handleMiss();
                     continue;
                 }
 
-                // If within screen drawing limits, draw it!
                 if (yPos > -50 && yPos < height + 50) {
                     const config = arrowColors[note.column];
                     ctx2d.save();
@@ -1159,7 +1120,7 @@
             }
             ctx2d.restore();
 
-            // Render Particle Exploded Sparks
+            // Particles
             ctx2d.save();
             for (let i = gameState.particles.length - 1; i >= 0; i--) {
                 const p = gameState.particles[i];
@@ -1178,7 +1139,7 @@
             }
             ctx2d.restore();
 
-            // Draw Judgement floating text feedbacks
+            // Rating Floaters
             ctx2d.save();
             for (let i = gameState.ratings.length - 1; i >= 0; i--) {
                 const r = gameState.ratings[i];
@@ -1189,30 +1150,25 @@
                 } else {
                     ctx2d.globalAlpha = r.alpha;
                     ctx2d.fillStyle = r.color;
-                    ctx2d.font = 'bold 36px Orbitron';
+                    ctx2d.font = 'bold 32px Orbitron';
                     ctx2d.textAlign = 'center';
-                    
-                    // Shadow text for premium visibility
                     ctx2d.shadowBlur = 15;
                     ctx2d.shadowColor = r.color;
                     ctx2d.fillText(r.text, ddrCanvas.width / 2, r.y);
                     
-                    // Render current combo subtext under rating
                     if (gameState.combo > 1) {
                         ctx2d.fillStyle = '#ffffff';
                         ctx2d.shadowColor = '#ffffff';
-                        ctx2d.font = '900 24px Orbitron';
-                        ctx2d.fillText(`${gameState.combo} COMBO`, ddrCanvas.width / 2, r.y + 35);
+                        ctx2d.font = '900 20px Orbitron';
+                        ctx2d.fillText(`${gameState.combo} COMBO`, ddrCanvas.width / 2, r.y + 30);
                     }
                 }
             }
             ctx2d.restore();
 
-            // Next frame
             requestAnimationFrame(gameLoop);
         }
 
-        // Timeline conversion formatter helper
         function updateSongProgress(elapsed) {
             const pct = (elapsed / gameState.songDuration) * 100;
             document.getElementById("song-progress").style.width = `${Math.min(pct, 100)}%`;
@@ -1226,9 +1182,9 @@
 
     <script>
         /* ==========================================
-           6. INPUT & HIT DETECTION LOGIC
+           6. INPUT & HIT DETECTION LOGIC (MOBILE OPTIMIZED)
            ========================================== */
-        // Listen to global hardware keydown
+        // Keyboard inputs
         window.addEventListener('keydown', (e) => {
             if (gameState.currentScreen !== "GAME") return;
             
@@ -1257,22 +1213,22 @@
             }
         });
 
-        // Touch Input pads configuration
+        // Touch triggers (Ensured touch-action is entirely isolated to block browser zoom/scroll delay)
         document.querySelectorAll(".arrow-btn").forEach(btn => {
             const key = btn.getAttribute("data-key");
             
-            // Listen to touch events
             btn.addEventListener("touchstart", (e) => {
-                e.preventDefault();
+                e.preventDefault(); // Blocks ghost clicks & browser zooms
                 triggerArrowInput(key);
-            });
+            }, { passive: false });
+
             btn.addEventListener("touchend", (e) => {
                 e.preventDefault();
                 activeKeys[key] = false;
                 deactivateFootButtonUI(key);
-            });
+            }, { passive: false });
 
-            // Fallback to desktop clicks
+            // Desktop Mouse fallback
             btn.addEventListener("mousedown", (e) => {
                 e.preventDefault();
                 triggerArrowInput(key);
@@ -1284,7 +1240,6 @@
             });
         });
 
-        // Toggle state styling of foot controllers
         function activateFootButtonUI(key) {
             const btn = document.querySelector(`.arrow-btn[data-key="${key}"]`);
             if (btn) btn.classList.add("pressed", "bg-slate-800");
@@ -1300,20 +1255,15 @@
         /* ==========================================
            7. PRECISION RHYTHM CALCULATION
            ========================================== */
-        // Process arrow hit timing logic
         function triggerArrowInput(key) {
             if (gameState.currentScreen !== "GAME") return;
             
             activeKeys[key] = true;
             activateFootButtonUI(key);
 
-            // Column Mapping
             const colIndex = (key === "Left") ? 0 : (key === "Down") ? 1 : (key === "Up") ? 2 : 3;
-
-            // Fetch current playhead position
             const elapsed = audioSynth.ctx.currentTime - gameState.startTime;
             
-            // Find closest note in target column that hasn't been hit/missed
             let bestNote = null;
             let closestDelta = Infinity;
 
@@ -1321,7 +1271,6 @@
                 const note = gameState.notes[i];
                 if (note.column !== colIndex || note.hit || note.missed) continue;
 
-                // Delta distance in seconds
                 const delta = Math.abs(note.time - elapsed);
                 if (delta < closestDelta) {
                     closestDelta = delta;
@@ -1329,17 +1278,14 @@
                 }
             }
 
-            // Rhythm window classification thresholds (in seconds)
-            // Perfect: ±0.075s, Great: ±0.14s, Good: ±0.21s
+            // Precision window timings (Seconds)
             if (bestNote && closestDelta <= 0.22) {
                 bestNote.hit = true;
                 
-                // Visual coordinate calculations for particles
                 const columnWidth = ddrCanvas.width / 4;
                 const particleX = columnWidth * colIndex + columnWidth / 2;
                 const particleColor = arrowColors[colIndex].primary;
 
-                // Assign scoring rating
                 if (closestDelta <= 0.07) {
                     handleHit("PERFECT", particleX, particleColor);
                 } else if (closestDelta <= 0.14) {
@@ -1347,9 +1293,6 @@
                 } else {
                     handleHit("GOOD", particleX, particleColor);
                 }
-            } else {
-                // Ghost tapping / early misfire counts as normal miss only if player taps unnecessarily during gameplay
-                // We keep classic DDR rules: ghost taps don't break combo, but missing notes does!
             }
         }
 
@@ -1363,25 +1306,24 @@
                 pts = 1000;
                 gaugeAdd = 4;
                 judgeLabel = "PERFECT";
-                judgeColor = "#ffea00"; // Yellow neon
+                judgeColor = "#ffea00";
                 gameState.perfectCount++;
                 audioSynth.playHitFeedbackTone();
             } else if (grade === "GREAT") {
                 pts = 600;
                 gaugeAdd = 2;
                 judgeLabel = "GREAT";
-                judgeColor = "#39ff14"; // Green neon
+                judgeColor = "#39ff14";
                 gameState.greatCount++;
                 audioSynth.playHitFeedbackTone();
             } else {
                 pts = 300;
                 gaugeAdd = 0.5;
                 judgeLabel = "GOOD";
-                judgeColor = "#00f0ff"; // Cyan neon
+                judgeColor = "#00f0ff";
                 gameState.goodCount++;
             }
 
-            // Score Multiplier based on combo
             const comboBonus = Math.floor(gameState.combo / 10) * 100;
             gameState.score += pts + comboBonus;
             gameState.combo++;
@@ -1390,61 +1332,47 @@
                 gameState.maxCombo = gameState.combo;
             }
 
-            // Update Life Gauge
             gameState.lifeGauge = Math.min(100, gameState.lifeGauge + gaugeAdd);
-
-            // Create Spark Effects
             createExplosion(xPos, gameState.receptorsY, color);
-
-            // Pop Judgment
             triggerRating(judgeLabel, judgeColor);
 
-            // Cabinet screen physical feedback vibration on huge hits!
+            // Cabinet shockwave vibration on massive combos
             if (gameState.combo % 10 === 0 && gameState.combo > 0) {
                 const screen = document.getElementById("arcade-cabinet");
                 screen.classList.add("shake-effect");
                 setTimeout(() => screen.classList.remove("shake-effect"), 150);
             }
 
-            // Render stats text
             updateHudDisplay();
         }
 
         function handleMiss() {
             gameState.missCount++;
-            gameState.combo = 0; // reset multiplier
-            
-            // Large life gauge drop
+            gameState.combo = 0;
             gameState.lifeGauge = Math.max(0, gameState.lifeGauge - 8);
 
-            // Pop Floating text
             triggerRating("MISS", "#ff007f");
             audioSynth.playMissFeedbackTone();
-
             updateHudDisplay();
 
-            // Fail Stage Check
             if (gameState.lifeGauge <= 0) {
                 endGame(false);
             }
         }
 
-        // Live stats view updates
         function updateHudDisplay() {
             document.getElementById("hud-score").innerText = String(gameState.score).padStart(6, '0');
             document.getElementById("hud-maxcombo").innerText = gameState.maxCombo;
             document.getElementById("groove-gauge").style.width = `${gameState.lifeGauge}%`;
             document.getElementById("gauge-text").innerText = `${Math.ceil(gameState.lifeGauge)}%`;
 
-            // Adjust live healthbar colors
             const gauge = document.getElementById("groove-gauge");
             if (gameState.lifeGauge < 30) {
-                gauge.style.background = "#ff007f"; // Red warn
+                gauge.style.background = "#ff007f";
             } else {
                 gauge.style.background = "linear-gradient(to right, #ff007f, #9d00ff, #00f0ff)";
             }
 
-            // Counters panel updates
             document.getElementById("judge-perfect").innerText = gameState.perfectCount;
             document.getElementById("judge-great").innerText = gameState.greatCount;
             document.getElementById("judge-good").innerText = gameState.goodCount;
@@ -1456,18 +1384,15 @@
         /* ==========================================
            8. NAVIGATION & SCREEN CONTROLLER
            ========================================== */
-        // Change current UI section with elegant CSS swap
         function navigateScreen(target) {
             gameState.currentScreen = target;
 
-            // Hide everything
             screenStart.classList.add("hidden");
             screenSelect.classList.add("hidden");
             screenGame.classList.add("hidden");
             screenResults.classList.add("hidden");
             overlayGameOver.classList.add("hidden");
 
-            // Show active screen
             if (target === "START") {
                 screenStart.classList.remove("hidden");
             } else if (target === "SELECT") {
@@ -1482,7 +1407,6 @@
             }
         }
 
-        // Generate song choice items list
         function renderSongSelector() {
             const container = document.getElementById("song-list-container");
             container.innerHTML = "";
@@ -1492,7 +1416,7 @@
                 const neonColor = song.color;
                 
                 const card = document.createElement("div");
-                card.className = `cursor-pointer p-4 rounded-xl border-2 transition-all flex justify-between items-center ${
+                card.className = `cursor-pointer p-3 rounded-xl border-2 transition-all flex justify-between items-center ${
                     isActive 
                     ? `bg-slate-900 border-[${neonColor}] shadow-[0_0_15px_${neonColor}60]` 
                     : "bg-slate-950/50 border-slate-800 hover:border-slate-700"
@@ -1501,22 +1425,21 @@
 
                 card.innerHTML = `
                     <div class="space-y-1">
-                        <span class="retro-font text-[10px] font-bold tracking-widest px-2 py-0.5 rounded bg-black text-white" style="color: ${neonColor}">
+                        <span class="retro-font text-[9px] font-bold tracking-widest px-1.5 py-0.5 rounded bg-black text-white" style="color: ${neonColor}">
                             ${song.genre}
                         </span>
-                        <h3 class="retro-font text-base md:text-lg font-black text-white mt-1">${song.title}</h3>
-                        <div class="flex gap-4 text-xs text-gray-500">
+                        <h3 class="retro-font text-sm sm:text-base font-black text-white mt-1">${song.title}</h3>
+                        <div class="flex gap-3 text-[10px] text-gray-500">
                             <span>BPM: ${song.bpm}</span>
                             <span>DURATION: ${song.duration}s</span>
                         </div>
                     </div>
                     <div class="text-right flex flex-col items-end gap-1">
-                        <span class="arcade-font text-[10px]" style="color: ${neonColor}">LV.${gameState.currentDifficulty === 'EASY' ? song.difficultyEasy : song.difficultyHard}</span>
-                        ${isActive ? `<span class="text-xs text-white neon-text-green font-black retro-font"><i class="fas fa-chevron-right mr-1"></i> SELECTED</span>` : ""}
+                        <span class="arcade-font text-[9px]" style="color: ${neonColor}">LV.${gameState.currentDifficulty === 'EASY' ? song.difficultyEasy : song.difficultyHard}</span>
+                        ${isActive ? `<span class="text-[10px] text-white neon-text-green font-black retro-font"><i class="fas fa-chevron-right mr-1"></i> SELECTED</span>` : ""}
                     </div>
                 `;
 
-                // Handle select click
                 card.addEventListener("click", () => {
                     gameState.currentSongIndex = idx;
                     renderSongSelector();
@@ -1526,19 +1449,15 @@
             });
         }
 
-        // Prepare variables and bootstrap the core gameplay run
         function startGameSession() {
             const song = SONGS[gameState.currentSongIndex];
             
-            // Set Synth Speed and difficulty variables
             audioSynth.setTempo(song.bpm);
             gameState.songDuration = song.duration;
             gameState.speed = (gameState.currentDifficulty === "HARD") ? 550 : 380;
 
-            // Generate clean Chart Array
             gameState.notes = generateChart(song, gameState.currentDifficulty);
 
-            // Clear statistics
             gameState.score = 0;
             gameState.combo = 0;
             gameState.maxCombo = 0;
@@ -1550,42 +1469,31 @@
             gameState.particles = [];
             gameState.ratings = [];
 
-            // UI updates
             document.getElementById("game-song-title").innerText = song.title;
             updateHudDisplay();
 
-            // Transition stage screen
             navigateScreen("GAME");
             
-            // Fire off synth music loop & capture start marker
             gameState.isPlaying = true;
             audioSynth.start();
             gameState.startTime = audioSynth.ctx.currentTime;
 
-            // Trigger frame updates
             requestAnimationFrame(gameLoop);
         }
 
-        // Clean finish or Game-over failure sequence triggers
         function endGame(cleared) {
             gameState.isPlaying = false;
             audioSynth.stop();
 
             if (cleared) {
-                // Settle results visual layout
                 navigateScreen("RESULTS");
             } else {
-                // Show game-over layout overlay modal on top of gameplay screen
                 overlayGameOver.classList.remove("hidden");
             }
         }
 
-        // Render detailed scoring stats on results layout
         function renderResultsScreen() {
             const song = SONGS[gameState.currentSongIndex];
-            
-            // Final Rating Grade assessment
-            // S: 95% perfect hits, A: 80%, B: 65%, C: 50%, F: below
             const totalHits = gameState.perfectCount + gameState.greatCount + gameState.goodCount;
             const possibleMaxHits = gameState.notes.length;
             const accuracy = (totalHits / possibleMaxHits) * 100;
@@ -1609,7 +1517,6 @@
                 rankColor = "#ffea00";
             }
 
-            // Bind values to results screen elements
             document.getElementById("results-rank").innerText = rank;
             document.getElementById("results-rank").style.color = rankColor;
             document.getElementById("results-rank").style.textShadow = `0 0 20px ${rankColor}`;
@@ -1630,16 +1537,14 @@
            9. BOOTSTRAP INITIALIZERS & CLICKS
            ========================================== */
         window.onload = function() {
-            // Adjust canvas sizing
             resizeCanvas();
             window.addEventListener('resize', resizeCanvas);
 
-            // Mute / sound toggle binding
+            // Mute
             document.getElementById("mute-btn").addEventListener("click", () => {
                 const isMuted = !audioSynth.isMuted;
                 audioSynth.setMute(isMuted);
                 
-                // Icon toggle state
                 const icon = document.getElementById("mute-icon");
                 if (isMuted) {
                     icon.className = "fas fa-volume-mute";
@@ -1652,7 +1557,7 @@
                 }
             });
 
-            // Help Modal controllers
+            // Help Modal
             const helpOverlay = document.getElementById("overlay-help");
             document.getElementById("help-btn").addEventListener("click", () => {
                 helpOverlay.classList.remove("hidden");
@@ -1667,19 +1572,17 @@
                 helpOverlay.classList.remove("flex");
             });
 
-            // Start screen: Insert Coin triggers music select navigation
+            // Insert Coin
             document.getElementById("btn-insert-coin").addEventListener("click", () => {
-                // Initialize/Warmup Audio Synth context (Required for mobile Safari/Chrome rules)
                 audioSynth.init();
                 
-                // Decrement credits as a fun arcade visual decoration
                 let credits = parseInt(creditCountEl.innerText);
                 if (credits > 0) creditCountEl.innerText = credits - 1;
                 
                 navigateScreen("SELECT");
             });
 
-            // Enhanced Easy/Hard selection card controllers
+            // Difficulty selections
             const cardEasy = document.getElementById("card-diff-easy");
             const cardHard = document.getElementById("card-diff-hard");
             const displaySelectedDiff = document.getElementById("display-selected-diff");
@@ -1692,18 +1595,17 @@
                 if (diff === "EASY") {
                     cardEasy.classList.add("diff-easy-active");
                     cardHard.classList.remove("diff-hard-active");
-                    displaySelectedDiff.className = "retro-font text-sm font-black text-cyan-400 neon-text-cyan";
+                    displaySelectedDiff.className = "retro-font text-xs sm:text-sm font-black text-cyan-400 neon-text-cyan";
                     cabinet.style.boxShadow = "0 0 30px rgba(0, 240, 255, 0.35)";
                     cabinet.style.borderColor = "#00f0ff";
                 } else {
                     cardEasy.classList.remove("diff-easy-active");
                     cardHard.classList.add("diff-hard-active");
-                    displaySelectedDiff.className = "retro-font text-sm font-black text-pink-500 neon-text-pink animate-pulse";
+                    displaySelectedDiff.className = "retro-font text-xs sm:text-sm font-black text-pink-500 neon-text-pink animate-pulse";
                     cabinet.style.boxShadow = "0 0 40px rgba(255, 0, 127, 0.5)";
                     cabinet.style.borderColor = "#ff007f";
                 }
 
-                // Instant hardware-like tone feedback to confirm choice
                 if (audioSynth.ctx) {
                     audioSynth.playHitFeedbackTone();
                 }
@@ -1714,21 +1616,21 @@
             cardEasy.addEventListener("click", () => updateDifficultyUI("EASY"));
             cardHard.addEventListener("click", () => updateDifficultyUI("HARD"));
 
-            // Action triggers
+            // Start Session Action
             document.getElementById("btn-start-game").addEventListener("click", startGameSession);
             
-            // Add exit button handler to return to menu mid-game
+            // Mid-game Exit
             document.getElementById("btn-game-exit").addEventListener("click", () => {
                 gameState.isPlaying = false;
                 audioSynth.stop();
                 navigateScreen("SELECT");
             });
 
-            // Results screen buttons
+            // Results Screen retry
             document.getElementById("btn-results-retry").addEventListener("click", startGameSession);
             document.getElementById("btn-results-menu").addEventListener("click", () => navigateScreen("SELECT"));
 
-            // Game over screen buttons
+            // Game over retry
             document.getElementById("btn-gameover-retry").addEventListener("click", () => {
                 overlayGameOver.classList.add("hidden");
                 startGameSession();
