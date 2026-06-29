@@ -1,1 +1,1550 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>네온 디지털 피아노 시뮬레이션 게임</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Inter & Nanum Gothic) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Nanum Gothic', sans-serif;
+            background-color: #030712;
+            overflow-x: hidden;
+        }
+        /* Custom Glowing and Glassmorphism */
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.75);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glow-cyan {
+            box-shadow: 0 0 15px rgba(6, 182, 212, 0.5);
+        }
+        .glow-purple {
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.5);
+        }
+        .glow-active {
+            box-shadow: 0 0 25px rgba(236, 72, 153, 0.8), inset 0 0 10px rgba(236, 72, 153, 0.5);
+        }
+        /* Custom Key Styling to handle transitions */
+        .piano-key {
+            transition: background-color 0.1s ease, transform 0.05s ease, box-shadow 0.1s ease;
+        }
+        .piano-key:active {
+            transform: scaleY(0.97);
+        }
+        /* Hide scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="text-slate-100 flex flex-col min-h-screen select-none">
 
+<!-- Header Navigation -->
+<header class="glass-panel sticky top-0 z-50 px-6 py-4 flex flex-wrap justify-between items-center gap-4 shadow-lg border-b border-slate-800">
+    <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-gradient-to-tr from-cyan-500 to-purple-600 rounded-lg flex items-center justify-center text-white glow-cyan">
+            <i class="fa-solid fa-music text-xl"></i>
+        </div>
+        <div>
+            <h1 class="text-xl font-extrabold tracking-wider bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text text-transparent">NEON SYNTH PIANO</h1>
+            <p class="text-xs text-slate-400">다양한 소리의 시뮬레이터 & 리듬 게임</p>
+        </div>
+    </div>
+    
+    <!-- Audio Init Warning / Success Status -->
+    <div id="audio-status" class="flex items-center gap-2 px-3 py-1.5 bg-yellow-500/10 border border-yellow-500/30 rounded-full text-xs text-yellow-400 transition-all duration-300">
+        <span class="inline-block w-2.5 h-2.5 rounded-full bg-yellow-500 animate-pulse"></span>
+        <span id="audio-status-text">사운드를 시작하려면 화면을 클릭하세요</span>
+    </div>
+
+    <!-- Mode Selector -->
+    <div class="flex bg-slate-900 p-1 rounded-xl border border-slate-800">
+        <button id="btn-mode-free" onclick="switchMode('free')" class="px-4 py-2 text-xs font-bold rounded-lg transition-all bg-cyan-500/20 text-cyan-400 border border-cyan-500/30">
+            <i class="fa-solid fa-keyboard mr-1.5"></i> 자유 연주
+        </button>
+        <button id="btn-mode-game" onclick="switchMode('game')" class="px-4 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white">
+            <i class="fa-solid fa-gamepad mr-1.5"></i> 게임 모드
+        </button>
+        <button id="btn-mode-auto" onclick="switchMode('auto')" class="px-4 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white">
+            <i class="fa-solid fa-play-circle mr-1.5"></i> 자동 재생
+        </button>
+    </div>
+</header>
+
+<main class="flex-1 w-full max-w-7xl mx-auto px-4 py-6 flex flex-col gap-6">
+    
+    <!-- Top Dashboard: Left Controls, Right Display -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+        
+        <!-- Left: Control panel (4 Columns) -->
+        <section class="glass-panel lg:col-span-4 rounded-2xl p-5 flex flex-col gap-4 shadow-xl">
+            <div class="border-b border-slate-800 pb-3 flex justify-between items-center">
+                <h3 class="font-bold text-slate-300 flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-cyan-400"></i> 사운드 & 연주 설정
+                </h3>
+                <span id="sound-badge" class="px-2 py-0.5 rounded bg-purple-500/20 border border-purple-500/40 text-purple-300 text-[10px] font-mono">Polyphonic</span>
+            </div>
+
+            <!-- Instrument Select -->
+            <div>
+                <label class="block text-xs text-slate-400 mb-1.5 font-semibold">음색(악기) 선택</label>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="setInstrument('piano')" class="inst-btn py-2 px-3 text-xs font-medium rounded-lg border text-left flex items-center gap-2 transition-all bg-purple-500/20 text-purple-300 border-purple-500/50" id="inst-piano">
+                        <i class="fa-solid fa-cube"></i> 그랜드 피아노
+                    </button>
+                    <button onclick="setInstrument('epiano')" class="inst-btn py-2 px-3 text-xs font-medium rounded-lg border text-left flex items-center gap-2 transition-all bg-slate-900 border-slate-800 hover:bg-slate-850" id="inst-epiano">
+                        <i class="fa-solid fa-circle-dot"></i> 일렉트릭 피아노
+                    </button>
+                    <button onclick="setInstrument('guitar')" class="inst-btn py-2 px-3 text-xs font-medium rounded-lg border text-left flex items-center gap-2 transition-all bg-slate-900 border-slate-800 hover:bg-slate-850" id="inst-guitar">
+                        <i class="fa-solid fa-guitar"></i> 어쿠스틱 기타
+                    </button>
+                    <button onclick="setInstrument('strings')" class="inst-btn py-2 px-3 text-xs font-medium rounded-lg border text-left flex items-center gap-2 transition-all bg-slate-900 border-slate-800 hover:bg-slate-850" id="inst-strings">
+                        <i class="fa-solid fa-music"></i> 클래식 스트링
+                    </button>
+                </div>
+                <button onclick="setInstrument('organ')" class="inst-btn mt-2 w-full py-2 px-3 text-xs font-medium rounded-lg border text-left flex items-center justify-center gap-2 transition-all bg-slate-900 border-slate-800 hover:bg-slate-850" id="inst-organ">
+                    <i class="fa-solid fa-church"></i> 웅장한 파이프 오르간
+                </button>
+            </div>
+
+            <!-- Volume & Octave Controllers -->
+            <div class="grid grid-cols-2 gap-4 my-2">
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1.5 font-semibold">마스터 볼륨</label>
+                    <div class="flex items-center gap-2">
+                        <i class="fa-solid fa-volume-high text-xs text-slate-400"></i>
+                        <input id="volume-slider" type="range" min="0" max="1" step="0.05" value="0.7" oninput="updateVolume(this.value)" class="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-cyan-500">
+                        <span id="volume-val" class="text-xs font-mono text-slate-300 w-8 text-right">70%</span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs text-slate-400 mb-1.5 font-semibold">피아노 옥타브</label>
+                    <div class="flex items-center justify-between bg-slate-900 rounded-lg p-1 border border-slate-800">
+                        <button onclick="changeOctave(-1)" class="w-8 h-7 flex items-center justify-center text-xs bg-slate-800 hover:bg-slate-700 rounded text-slate-200 transition-colors"><i class="fa-solid fa-minus"></i></button>
+                        <span id="octave-display" class="text-xs font-mono font-bold text-cyan-400">Octave 4</span>
+                        <button onclick="changeOctave(1)" class="w-8 h-7 flex items-center justify-center text-xs bg-slate-800 hover:bg-slate-700 rounded text-slate-200 transition-colors"><i class="fa-solid fa-plus"></i></button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Additional Settings: Sustain Pedal & Metronome -->
+            <div class="flex items-center justify-between bg-slate-900/50 p-3 rounded-xl border border-slate-800/80">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-shoe-prints text-slate-400 text-sm"></i>
+                    <div>
+                        <div class="text-xs font-semibold text-slate-300">서스테인 페달 (Hold)</div>
+                        <div class="text-[10px] text-slate-500">키보드 [Space] 단축키 지원</div>
+                    </div>
+                </div>
+                <button id="btn-sustain" onclick="toggleSustain()" class="px-3 py-1 text-xs rounded-lg border border-slate-700 bg-slate-800 text-slate-400 font-bold transition-all">
+                    OFF
+                </button>
+            </div>
+
+            <!-- Song Selector for Play / Auto Modes -->
+            <div class="mt-1">
+                <label class="block text-xs text-slate-400 mb-1.5 font-semibold">곡 선택 (자동재생/게임용)</label>
+                <div class="relative">
+                    <select id="song-select" onchange="onSongChanged()" class="w-full py-2 px-3 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 focus:outline-none focus:ring-1 focus:ring-cyan-500 cursor-pointer">
+                        <option value="star">반짝반짝 작은 별 (Twinkle Twinkle Little Star)</option>
+                        <option value="elise">엘리제를 위하여 (Für Elise) - 베토벤</option>
+                        <option value="canon">캐논 변주곡 (Canon in D) - 파헬벨</option>
+                        <option value="grandpa">할아버지의 낡은 시계 (My Grandfather's Clock)</option>
+                        <option value="rainbow">오버 더 레인보우 (Over The Rainbow) - 오즈의 마법사</option>
+                        <option value="nocturne">쇼팽 야상곡 (Nocturne Op. 9 No. 2) - 쇼팽</option>
+                        <option value="spring">비발디 사계 '봄' (The Four Seasons "Spring") - 비발디</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- Right: Screen / Interactive Canvas Area (8 Columns) -->
+        <section class="glass-panel lg:col-span-8 rounded-2xl p-4 flex flex-col gap-3 min-h-[340px] relative overflow-hidden shadow-xl">
+            
+            <!-- Mode Header Displays -->
+            <div class="flex justify-between items-center px-2 py-1">
+                <!-- Mode Status Lights -->
+                <div class="flex items-center gap-2">
+                    <span id="mode-badge" class="px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold uppercase tracking-wider">
+                        FREE PLAY (자유 연주)
+                    </span>
+                    <span id="game-status-text" class="text-xs text-slate-400 italic hidden">노트가 다가올 때 타이밍 맞춰 연주하세요!</span>
+                </div>
+
+                <!-- Game Mode Panel (Score, HighScore, Combo) -->
+                <div id="game-hud" class="flex items-center gap-4 text-xs font-mono hidden">
+                    <div class="bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800 text-right">
+                        <span class="text-slate-500 block text-[9px] uppercase tracking-wider">HIGH SCORE</span>
+                        <span id="hud-highscore" class="text-yellow-400 font-bold">0</span>
+                    </div>
+                    <div class="bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800 text-right">
+                        <span class="text-slate-500 block text-[9px] uppercase tracking-wider">SCORE</span>
+                        <span id="hud-score" class="text-cyan-400 font-bold">00000</span>
+                    </div>
+                    <div class="bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800 text-center min-w-[50px]">
+                        <span class="text-slate-500 block text-[9px] uppercase tracking-wider">COMBO</span>
+                        <span id="hud-combo" class="text-purple-400 font-bold">0</span>
+                    </div>
+                </div>
+
+                <!-- Auto Play Controls -->
+                <div id="auto-play-controls" class="flex items-center gap-2 hidden">
+                    <button id="btn-song-play" onclick="toggleAutoPlay()" class="px-4 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg text-xs font-bold hover:shadow-lg hover:shadow-emerald-500/20 transition-all flex items-center gap-1.5">
+                        <i class="fa-solid fa-play"></i> 곡 시작
+                    </button>
+                    <button id="btn-song-stop" onclick="stopAutoPlay()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-xs font-bold transition-all">
+                        정지
+                    </button>
+                </div>
+            </div>
+
+            <!-- The Visualizer & Game Stream Canvas -->
+            <div class="relative flex-1 bg-slate-950/80 rounded-xl overflow-hidden border border-slate-900 flex flex-col items-center justify-center">
+                <canvas id="piano-canvas" class="w-full h-full block z-10"></canvas>
+                
+                <!-- On-Canvas Combo and hit message overlay (used in Game mode) -->
+                <div id="game-hit-overlay" class="absolute pointer-events-none z-20 text-center transform scale-0 opacity-0 transition-all duration-150">
+                    <div id="hit-feedback" class="text-2xl font-black tracking-widest text-cyan-400 filter drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]">PERFECT!</div>
+                    <div id="hit-combo-count" class="text-sm font-bold text-slate-300 mt-1">15 COMBO</div>
+                </div>
+
+                <!-- No-Audio User Interaction Prompt Overlay -->
+                <div id="audio-click-overlay" class="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/90 text-center p-6 cursor-pointer" onclick="initAudio()">
+                    <div class="w-16 h-16 bg-cyan-500/20 border border-cyan-400/30 text-cyan-400 rounded-full flex items-center justify-center mb-4 animate-bounce">
+                        <i class="fa-solid fa-volume-high text-2xl"></i>
+                    </div>
+                    <h4 class="text-lg font-bold text-white mb-2">오디오 시스템 활성화 필요</h4>
+                    <p class="text-sm text-slate-400 max-w-md">브라우저 보안상 재생을 시작하려면 화면의 아무곳이나 클릭해야 합니다. 이 영역을 탭하여 시작해보세요!</p>
+                </div>
+            </div>
+
+            <!-- Key Bindings Info Footer in Free mode -->
+            <div id="controls-hint" class="flex justify-between items-center px-1 text-[11px] text-slate-500">
+                <span><i class="fa-solid fa-circle-info mr-1"></i> 하단 건반의 표기된 키보드 알파벳(A~K 등)을 눌러 PC에서 실시간 연주가 가능합니다.</span>
+                <span>서스테인(Sustain): Space Bar</span>
+            </div>
+        </section>
+    </div>
+
+    <!-- PIANO KEYBOARD SECTION -->
+    <section class="glass-panel rounded-2xl p-4 shadow-xl flex flex-col gap-2 relative">
+        <div class="flex justify-between items-center border-b border-slate-800/80 pb-2 mb-1">
+            <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-cyan-500"></span>
+                <span class="text-xs font-bold text-slate-300">실시간 피아노 건반 (Virtual Keypad)</span>
+            </div>
+            <div class="flex gap-4 text-[10px] text-slate-500">
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded bg-white border border-slate-700"></span> 백건 (White Key): C4 ~ B5</span>
+                <span class="flex items-center gap-1"><span class="w-2 h-2 rounded bg-slate-950 border border-slate-700"></span> 흑건 (Black Key)</span>
+            </div>
+        </div>
+        
+        <!-- Piano Keyboard Wrapper (Scrollable for smaller screens) -->
+        <div class="overflow-x-auto w-full pb-2">
+            <!-- Piano Keys Container (We define width dynamically to maintain full aspect ratios) -->
+            <div class="relative mx-auto flex select-none min-w-[700px] h-48 max-w-full" id="piano-keyboard">
+                <!-- White Keys and Black Keys will be dynamically rendered to hook exact listener mapping -->
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer class="glass-panel text-center py-4 border-t border-slate-900 mt-auto text-xs text-slate-500">
+    <div class="max-w-7xl mx-auto px-4 flex justify-between items-center">
+        <div>&copy; 2026 Neon Digital Synth & Piano Hero. Built with Web Audio API.</div>
+        <div class="flex gap-4">
+            <span class="hover:text-cyan-400 transition-colors cursor-pointer"><i class="fa-solid fa-circle-question mr-1"></i> 사용 안내</span>
+            <span class="hover:text-cyan-400 transition-colors cursor-pointer"><i class="fa-solid fa-bug mr-1"></i> 오류 제보</span>
+        </div>
+    </div>
+</footer>
+
+<script>
+// --- CONSTANTS & CONFIGURATION ---
+const KEY_MAP = {
+    // White Keys mapping
+    'a': 'C4', 's': 'D4', 'd': 'E4', 'f': 'F4', 'g': 'G4', 'h': 'A4', 'j': 'B4',
+    'k': 'C5', 'l': 'D5', ';': 'E5', "'": 'F5', 'z': 'G5', 'x': 'A5', 'c': 'B5',
+    // Black Keys mapping
+    'w': 'C#4', 'e': 'D#4', 't': 'F#4', 'y': 'G#4', 'u': 'A#4',
+    'o': 'C#5', 'p': 'D#5', 'i': 'F#5', 'v': 'G#5', 'b': 'A#5'
+};
+
+const NOTE_FREQS = {
+    'C4': 261.63, 'C#4': 277.18, 'D4': 293.66, 'D#4': 311.13, 'E4': 329.63,
+    'F4': 349.23, 'F#4': 369.99, 'G4': 392.00, 'G#4': 415.30, 'A4': 440.00, 'A#4': 466.16, 'B4': 493.88,
+    'C5': 523.25, 'C#5': 554.37, 'D5': 587.33, 'D#5': 622.25, 'E5': 659.25,
+    'F5': 698.46, 'F#5': 739.99, 'G5': 783.99, 'G#5': 830.61, 'A5': 880.00, 'A#5': 932.33, 'B5': 987.77,
+    'C6': 1046.50
+};
+
+// Layout specification of white/black keys index (C4 to B5)
+const WHITE_NOTES = ['C4', 'D4', 'E4', 'F4', 'G4', 'A4', 'B4', 'C5', 'D5', 'E5', 'F5', 'G5', 'A5', 'B5'];
+const BLACK_NOTES = [
+    { note: 'C#4', leftIndex: 0 }, { note: 'D#4', leftIndex: 1 }, 
+    { note: 'F#4', leftIndex: 3 }, { note: 'G#4', leftIndex: 4 }, { note: 'A#4', leftIndex: 5 },
+    { note: 'C#5', leftIndex: 7 }, { note: 'D#5', leftIndex: 8 },
+    { note: 'F#5', leftIndex: 10 }, { note: 'G#5', leftIndex: 11 }, { note: 'A#5', leftIndex: 12 }
+];
+
+// Complete sound style settings
+let currentInstrument = 'piano'; // piano, epiano, retro, organ, pad
+let octaveOffset = 0; // -1, 0, +1 transposition
+let masterVolume = 0.7;
+let sustainPedal = false;
+
+// Audio context states
+let audioCtx = null;
+let masterGainNode = null;
+let analyserNode = null;
+const activeOscillators = {}; // Keep track of sounding keys
+
+// State machine for modes: 'free', 'game', 'auto'
+let currentMode = 'free'; 
+let highscore = parseInt(localStorage.getItem('piano_hero_highscore') || '0');
+
+const SONGS = {
+    star: [
+        { note: 'C4', time: 0, duration: 0.5 }, { note: 'C4', time: 0.6, duration: 0.5 },
+        { note: 'G4', time: 1.2, duration: 0.5 }, { note: 'G4', time: 1.8, duration: 0.5 },
+        { note: 'A4', time: 2.4, duration: 0.5 }, { note: 'A4', time: 3.0, duration: 0.5 },
+        { note: 'G4', time: 3.6, duration: 1.0 },
+
+        { note: 'F4', time: 4.8, duration: 0.5 }, { note: 'F4', time: 5.4, duration: 0.5 },
+        { note: 'E4', time: 6.0, duration: 0.5 }, { note: 'E4', time: 6.6, duration: 0.5 },
+        { note: 'D4', time: 7.2, duration: 0.5 }, { note: 'D4', time: 7.8, duration: 0.5 },
+        { note: 'C4', time: 8.4, duration: 1.0 },
+
+        { note: 'G4', time: 9.6, duration: 0.5 }, { note: 'G4', time: 10.2, duration: 0.5 },
+        { note: 'F4', time: 10.8, duration: 0.5 }, { note: 'F4', time: 11.4, duration: 0.5 },
+        { note: 'E4', time: 12.0, duration: 0.5 }, { note: 'E4', time: 12.6, duration: 0.5 },
+        { note: 'D4', time: 13.2, duration: 1.0 },
+
+        { note: 'G4', time: 14.4, duration: 0.5 }, { note: 'G4', time: 15.0, duration: 0.5 },
+        { note: 'F4', time: 15.6, duration: 0.5 }, { note: 'F4', time: 16.2, duration: 0.5 },
+        { note: 'E4', time: 16.8, duration: 0.5 }, { note: 'E4', time: 17.4, duration: 0.5 },
+        { note: 'D4', time: 18.0, duration: 1.0 },
+
+        { note: 'C4', time: 19.2, duration: 0.5 }, { note: 'C4', time: 19.8, duration: 0.5 },
+        { note: 'G4', time: 20.4, duration: 0.5 }, { note: 'G4', time: 21.0, duration: 0.5 },
+        { note: 'A4', time: 21.6, duration: 0.5 }, { note: 'A4', time: 22.2, duration: 0.5 },
+        { note: 'G4', time: 22.8, duration: 1.0 },
+
+        { note: 'F4', time: 24.0, duration: 0.5 }, { note: 'F4', time: 24.6, duration: 0.5 },
+        { note: 'E4', time: 25.2, duration: 0.5 }, { note: 'E4', time: 25.8, duration: 0.5 },
+        { note: 'D4', time: 26.4, duration: 0.5 }, { note: 'D4', time: 27.0, duration: 0.5 },
+        { note: 'C4', time: 27.6, duration: 1.5 }
+    ],
+    elise: [
+        { note: 'E5', time: 0.0, duration: 0.25 }, { note: 'D#5', time: 0.25, duration: 0.25 },
+        { note: 'E5', time: 0.5, duration: 0.25 }, { note: 'D#5', time: 0.75, duration: 0.25 },
+        { note: 'E5', time: 1.0, duration: 0.25 }, { note: 'B4', time: 1.25, duration: 0.25 },
+        { note: 'D5', time: 1.5, duration: 0.25 }, { note: 'C5', time: 1.75, duration: 0.25 },
+        { note: 'A4', time: 2.0, duration: 0.75 }, 
+        
+        { note: 'C4', time: 2.75, duration: 0.25 }, { note: 'E4', time: 3.0, duration: 0.25 },
+        { note: 'A4', time: 3.25, duration: 0.25 }, { note: 'B4', time: 3.5, duration: 0.75 },
+        
+        { note: 'E4', time: 4.25, duration: 0.25 }, { note: 'G#4', time: 4.5, duration: 0.25 },
+        { note: 'B4', time: 4.75, duration: 0.25 }, { note: 'C5', time: 5.0, duration: 0.75 },
+
+        { note: 'E4', time: 5.75, duration: 0.25 }, { note: 'E5', time: 6.0, duration: 0.25 },
+        { note: 'D#5', time: 6.25, duration: 0.25 }, { note: 'E5', time: 6.5, duration: 0.25 },
+        { note: 'D#5', time: 6.75, duration: 0.25 }, { note: 'E5', time: 7.0, duration: 0.25 },
+        { note: 'B4', time: 7.25, duration: 0.25 }, { note: 'D5', time: 7.5, duration: 0.25 },
+        { note: 'C5', time: 7.75, duration: 0.25 }, { note: 'A4', time: 8.0, duration: 0.75 },
+
+        { note: 'C4', time: 8.75, duration: 0.25 }, { note: 'E4', time: 9.0, duration: 0.25 },
+        { note: 'A4', time: 9.25, duration: 0.25 }, { note: 'B4', time: 9.5, duration: 0.75 },
+
+        { note: 'E4', time: 10.25, duration: 0.25 }, { note: 'C5', time: 10.5, duration: 0.25 },
+        { note: 'B4', time: 10.75, duration: 0.25 }, { note: 'A4', time: 11.0, duration: 1.0 }
+    ],
+    canon: [
+        { note: 'C5', time: 0.0, duration: 0.8 }, { note: 'E4', time: 0.0, duration: 0.8 },
+        { note: 'B4', time: 1.0, duration: 0.8 }, { note: 'D4', time: 1.0, duration: 0.8 },
+        { note: 'A4', time: 2.0, duration: 0.8 }, { note: 'C4', time: 2.0, duration: 0.8 },
+        { note: 'G4', time: 3.0, duration: 0.8 }, { note: 'B3', time: 3.0, duration: 0.8 },
+        
+        { note: 'F4', time: 4.0, duration: 0.8 }, { note: 'A3', time: 4.0, duration: 0.8 },
+        { note: 'E4', time: 5.0, duration: 0.8 }, { note: 'G3', time: 5.0, duration: 0.8 },
+        { note: 'F4', time: 6.0, duration: 0.8 }, { note: 'A3', time: 6.0, duration: 0.8 },
+        { note: 'G4', time: 7.0, duration: 0.8 }, { note: 'B3', time: 7.0, duration: 0.8 },
+
+        { note: 'E5', time: 8.0, duration: 0.4 }, { note: 'D5', time: 8.5, duration: 0.4 },
+        { note: 'C5', time: 9.0, duration: 0.4 }, { note: 'B4', time: 9.5, duration: 0.4 },
+        { note: 'A4', time: 10.0, duration: 0.4 }, { note: 'G4', time: 10.5, duration: 0.4 },
+        { note: 'A4', time: 11.0, duration: 0.4 }, { note: 'B4', time: 11.5, duration: 0.4 },
+        
+        { note: 'C5', time: 12.0, duration: 0.4 }, { note: 'B4', time: 12.5, duration: 0.4 },
+        { note: 'A4', time: 13.0, duration: 0.4 }, { note: 'G4', time: 13.5, duration: 0.4 },
+        { note: 'F4', time: 14.0, duration: 0.4 }, { note: 'E4', time: 14.5, duration: 0.4 },
+        { note: 'F4', time: 15.0, duration: 0.4 }, { note: 'G4', time: 15.5, duration: 0.4 }
+    ],
+    grandpa: [
+        { note: 'G4', time: 0.0, duration: 0.3 }, { note: 'A4', time: 0.4, duration: 0.3 },
+        { note: 'B4', time: 0.8, duration: 0.4 }, { note: 'C5', time: 1.2, duration: 0.4 },
+        { note: 'D5', time: 1.6, duration: 0.8 }, { note: 'B4', time: 2.4, duration: 0.4 },
+        { note: 'G4', time: 2.8, duration: 0.4 }, { note: 'A4', time: 3.2, duration: 0.4 },
+        { note: 'F4', time: 3.6, duration: 0.4 }, { note: 'G4', time: 4.0, duration: 0.8 },
+        
+        { note: 'E4', time: 4.8, duration: 0.4 }, { note: 'C4', time: 5.2, duration: 0.4 },
+        { note: 'D4', time: 5.6, duration: 0.8 }, { note: 'E4', time: 6.4, duration: 0.4 },
+        { note: 'F4', time: 6.8, duration: 0.4 }, { note: 'G4', time: 7.2, duration: 0.8 },
+        { note: 'C4', time: 8.0, duration: 1.2 }
+    ],
+    rainbow: [
+        { note: 'C4', time: 0.0, duration: 0.8 },
+        { note: 'C5', time: 1.0, duration: 0.8 },
+        { note: 'B4', time: 2.0, duration: 0.4 },
+        { note: 'G4', time: 2.5, duration: 0.4 },
+        { note: 'A4', time: 3.0, duration: 0.4 },
+        { note: 'B4', time: 3.5, duration: 0.4 },
+        { note: 'C5', time: 4.0, duration: 0.8 },
+        { note: 'C4', time: 5.0, duration: 0.8 },
+        { note: 'A4', time: 6.0, duration: 0.8 },
+        { note: 'G4', time: 7.0, duration: 1.2 },
+        { note: 'A4', time: 8.5, duration: 0.4 },
+        { note: 'F4', time: 9.0, duration: 0.4 },
+        { note: 'G4', time: 9.5, duration: 0.4 },
+        { note: 'A4', time: 10.0, duration: 0.4 },
+        { note: 'B4', time: 10.5, duration: 0.8 },
+        { note: 'G4', time: 11.5, duration: 0.8 },
+        { note: 'C4', time: 12.5, duration: 0.4 },
+        { note: 'D4', time: 13.0, duration: 0.4 },
+        { note: 'E4', time: 13.5, duration: 0.4 },
+        { note: 'F4', time: 14.0, duration: 0.4 },
+        { note: 'D4', time: 14.5, duration: 1.2 }
+    ],
+    nocturne: [
+        { note: 'G4', time: 0.0, duration: 0.4 },
+        { note: 'G5', time: 0.5, duration: 0.8 },
+        { note: 'F5', time: 1.5, duration: 0.3 },
+        { note: 'E5', time: 1.9, duration: 0.3 },
+        { note: 'D5', time: 2.3, duration: 0.3 },
+        { note: 'C5', time: 2.7, duration: 0.8 },
+        { note: 'B4', time: 3.7, duration: 0.4 },
+        { note: 'C5', time: 4.2, duration: 0.4 },
+        { note: 'D5', time: 4.7, duration: 0.4 },
+        { note: 'G4', time: 5.3, duration: 0.8 },
+        { note: 'E5', time: 6.3, duration: 0.8 },
+        { note: 'D5', time: 7.3, duration: 0.3 },
+        { note: 'C5', time: 7.7, duration: 0.3 },
+        { note: 'B4', time: 8.1, duration: 0.3 },
+        { note: 'A4', time: 8.5, duration: 0.8 },
+        { note: 'D5', time: 9.5, duration: 0.4 },
+        { note: 'C5', time: 10.0, duration: 0.4 },
+        { note: 'B4', time: 10.5, duration: 0.4 },
+        { note: 'A4', time: 11.0, duration: 0.8 },
+        { note: 'G4', time: 12.0, duration: 1.0 }
+    ],
+    spring: [
+        { note: 'E4', time: 0.0, duration: 0.3 },
+        { note: 'G#4', time: 0.4, duration: 0.3 },
+        { note: 'G#4', time: 0.8, duration: 0.3 },
+        { note: 'G#4', time: 1.2, duration: 0.3 },
+        { note: 'F#4', time: 1.6, duration: 0.3 },
+        { note: 'E4', time: 2.0, duration: 0.3 },
+        { note: 'B4', time: 2.4, duration: 0.6 },
+        { note: 'B4', time: 3.1, duration: 0.6 },
+        { note: 'A4', time: 3.8, duration: 0.3 },
+        { note: 'G#4', time: 4.2, duration: 0.3 },
+        { note: 'F#4', time: 4.6, duration: 0.3 },
+        { note: 'E5', time: 5.0, duration: 0.6 },
+        { note: 'B4', time: 5.7, duration: 0.6 },
+        { note: 'A4', time: 6.4, duration: 0.3 },
+        { note: 'G#4', time: 6.8, duration: 0.3 },
+        { note: 'F#4', time: 7.2, duration: 0.3 },
+        { note: 'E5', time: 7.6, duration: 0.6 },
+        { note: 'B4', time: 8.3, duration: 0.6 },
+        { note: 'A4', time: 9.0, duration: 0.3 },
+        { note: 'G#4', time: 9.4, duration: 0.3 },
+        { note: 'F#4', time: 9.8, duration: 0.3 },
+        { note: 'E4', time: 10.2, duration: 1.0 }
+    ]
+};
+
+// --- AUDIO SYNTHESIS & VOICE MANAGER ---
+function initAudio() {
+    if (audioCtx) return; // Already setup
+
+    try {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContextClass();
+        
+        masterGainNode = audioCtx.createGain();
+        masterGainNode.gain.setValueAtTime(masterVolume, audioCtx.currentTime);
+        
+        analyserNode = audioCtx.createAnalyser();
+        analyserNode.fftSize = 512;
+        
+        masterGainNode.connect(analyserNode);
+        analyserNode.connect(audioCtx.destination);
+        
+        // Hide initial interaction warning
+        document.getElementById('audio-click-overlay').classList.add('hidden');
+        
+        // Update Status bar
+        const statusEl = document.getElementById('audio-status');
+        statusEl.className = "flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-xs text-emerald-400";
+        document.getElementById('audio-status-text').textContent = "오디오 시스템 온라인 (Web Audio)";
+        statusEl.querySelector('span').className = "inline-block w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping";
+        
+        // Render physical keyboard representation
+        renderPianoKeyboard();
+        
+    } catch(e) {
+        console.error("Audio Context could not start:", e);
+    }
+}
+
+// Ensure audio context resumes safely on user actions
+document.addEventListener('click', () => {
+    if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+    }
+});
+
+function createVoice(noteName, targetTime = 0) {
+    if (!audioCtx) return null;
+    
+    // Safety check for valid pitch frequency
+    const freq = NOTE_FREQS[noteName];
+    if (!freq) return null;
+
+    // Apply active octave offset to free playing (except predefined sequences)
+    let finalFreq = freq;
+    if (targetTime === 0) {
+        if (octaveOffset === 1) finalFreq *= 2;
+        if (octaveOffset === -1) finalFreq /= 2;
+    }
+
+    const voiceNode = audioCtx.createGain();
+    voiceNode.gain.setValueAtTime(0, audioCtx.currentTime);
+    voiceNode.connect(masterGainNode);
+
+    const time = audioCtx.currentTime;
+    let oscillators = [];
+
+    switch(currentInstrument) {
+        // --- INSTRUMENT 1: Classic Grand Piano emulation ---
+        case 'piano': {
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            
+            // Combination of triangle (body) and sine (soft sustain)
+            osc1.type = 'triangle';
+            osc1.frequency.setValueAtTime(finalFreq, time);
+            
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(finalFreq * 2.003, time); // slightly detuned harmonic
+
+            // Filter for high frequency dampening
+            const biquadFilter = audioCtx.createBiquadFilter();
+            biquadFilter.type = 'lowpass';
+            biquadFilter.frequency.setValueAtTime(2000, time);
+            biquadFilter.Q.setValueAtTime(1, time);
+
+            osc1.connect(biquadFilter);
+            osc2.connect(biquadFilter);
+            biquadFilter.connect(voiceNode);
+
+            // Envelope decay structure
+            voiceNode.gain.linearRampToValueAtTime(0.65, time + 0.005);
+            voiceNode.gain.setTargetAtTime(0.15, time + 0.05, 0.15); // Fast initial decay
+            voiceNode.gain.setTargetAtTime(0.0, time + 0.35, 1.2); // Slow ringing sustain
+
+            oscillators.push(osc1, osc2, biquadFilter);
+            break;
+        }
+
+        // --- INSTRUMENT 2: Classic Electric Piano (FM chime tines sound) ---
+        case 'epiano': {
+            const carrier = audioCtx.createOscillator();
+            const modulator = audioCtx.createOscillator();
+            const modGain = audioCtx.createGain();
+
+            carrier.type = 'sine';
+            carrier.frequency.setValueAtTime(finalFreq, time);
+
+            modulator.type = 'sine';
+            modulator.frequency.setValueAtTime(finalFreq * 4, time); // Frequency ratio 4:1
+            modGain.gain.setValueAtTime(finalFreq * 0.8, time); // Mod index
+
+            modulator.connect(modGain);
+            modGain.connect(carrier.frequency);
+            carrier.connect(voiceNode);
+
+            // Tine envelope
+            voiceNode.gain.linearRampToValueAtTime(0.6, time + 0.003);
+            voiceNode.gain.setTargetAtTime(0.08, time + 0.04, 0.08); 
+            voiceNode.gain.setTargetAtTime(0.0, time + 0.25, 0.95);
+
+            // Modulator envelope decay to make metal click sound short
+            modGain.gain.setTargetAtTime(0.0, time + 0.01, 0.08);
+
+            oscillators.push(carrier, modulator, modGain);
+            break;
+        }
+
+        // --- INSTRUMENT 3: Acoustic Guitar Pluck Emulation ---
+        case 'guitar': {
+            const pluck = audioCtx.createOscillator();
+            pluck.type = 'triangle';
+            pluck.frequency.setValueAtTime(finalFreq, time);
+            pluck.frequency.exponentialRampToValueAtTime(finalFreq, time + 0.08);
+            
+            // Dynamic pluck attack ping
+            const ping = audioCtx.createOscillator();
+            ping.type = 'sine';
+            ping.frequency.setValueAtTime(finalFreq * 3.5, time);
+            
+            const pingGain = audioCtx.createGain();
+            pingGain.gain.setValueAtTime(0.12, time);
+            pingGain.gain.exponentialRampToValueAtTime(0.001, time + 0.03);
+            
+            ping.connect(pingGain);
+            pingGain.connect(voiceNode);
+
+            // Resonant body filter
+            const filter = audioCtx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(1400, time);
+            filter.frequency.exponentialRampToValueAtTime(350, time + 0.35);
+
+            pluck.connect(filter);
+            filter.connect(voiceNode);
+
+            // Guitar pluck envelope decay
+            voiceNode.gain.setValueAtTime(0, time);
+            voiceNode.gain.linearRampToValueAtTime(0.8, time + 0.004);
+            voiceNode.gain.exponentialRampToValueAtTime(0.06, time + 0.16);
+            voiceNode.gain.exponentialRampToValueAtTime(0.001, time + 1.1);
+
+            oscillators.push(pluck, ping, pingGain, filter);
+            break;
+        }
+
+        // --- INSTRUMENT 4: Classic String Violin Ensemble ---
+        case 'strings': {
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+
+            osc1.type = 'sawtooth';
+            osc1.frequency.setValueAtTime(finalFreq - 1.2, time);
+            
+            osc2.type = 'triangle';
+            osc2.frequency.setValueAtTime(finalFreq + 1.2, time);
+
+            // Natural bowing pitch vibrato (LFO)
+            const lfo = audioCtx.createOscillator();
+            const lfoGain = audioCtx.createGain();
+            lfo.frequency.setValueAtTime(5.8, time); // 5.8Hz Vibrato
+            lfoGain.gain.setValueAtTime(1.5, time);
+
+            lfo.connect(lfoGain);
+            lfoGain.connect(osc1.frequency);
+            lfoGain.connect(osc2.frequency);
+
+            const biquadFilter = audioCtx.createBiquadFilter();
+            biquadFilter.type = 'lowpass';
+            biquadFilter.frequency.setValueAtTime(1600, time);
+
+            osc1.connect(biquadFilter);
+            osc2.connect(biquadFilter);
+            biquadFilter.connect(voiceNode);
+
+            // Strings slow bow envelope
+            voiceNode.gain.setValueAtTime(0, time);
+            voiceNode.gain.linearRampToValueAtTime(0.45, time + 0.15); // Slow attack
+            voiceNode.gain.setTargetAtTime(0.22, time + 0.18, 0.4);
+
+            oscillators.push(osc1, osc2, lfo, lfoGain, biquadFilter);
+            break;
+        }
+
+        // --- INSTRUMENT 5: Pipe Organ additive synthesizer ---
+        case 'organ': {
+            const ranks = [0.5, 1.0, 1.5, 2.0];
+            const gains = [0.25, 0.35, 0.15, 0.1];
+
+            ranks.forEach((ratio, idx) => {
+                const osc = audioCtx.createOscillator();
+                osc.type = (idx === 1) ? 'sawtooth' : 'triangle';
+                osc.frequency.setValueAtTime(finalFreq * ratio, time);
+                
+                const rankGain = audioCtx.createGain();
+                rankGain.gain.setValueAtTime(gains[idx], time);
+                
+                osc.connect(rankGain);
+                rankGain.connect(voiceNode);
+                oscillators.push(osc, rankGain);
+            });
+
+            // Instant full attack, sustain stays constant
+            voiceNode.gain.linearRampToValueAtTime(0.5, time + 0.02);
+            voiceNode.gain.setTargetAtTime(0.3, time + 0.1, 0.8);
+            break;
+        }
+    }
+
+    // Start all configured oscillators
+    oscillators.forEach(node => {
+        if (node.start) node.start(time);
+    });
+
+    return {
+        voiceNode: voiceNode,
+        oscillators: oscillators,
+        startTime: time
+    };
+}
+
+function startNote(noteName) {
+    if (!audioCtx) initAudio();
+    if (!audioCtx) return;
+
+    // Release pre-existing note voice if still active
+    if (activeOscillators[noteName]) {
+        stopNote(noteName);
+    }
+
+    const voice = createVoice(noteName);
+    if (voice) {
+        activeOscillators[noteName] = voice;
+        // Visual updates on virtual keyboard elements
+        highlightPianoKey(noteName, true);
+        // Dispatch to game controller if active
+        if (currentMode === 'game') {
+            checkPlayerHit(noteName);
+        }
+    }
+}
+
+function stopNote(noteName) {
+    const voice = activeOscillators[noteName];
+    if (!voice) return;
+
+    const releaseTime = audioCtx.currentTime;
+    
+    // Apply sustain pedal prolongation
+    if (sustainPedal) {
+        // Schedule decay delayed to simulate pedal being held
+        voice.voiceNode.gain.setTargetAtTime(0, releaseTime + 0.4, 0.6);
+    } else {
+        // Sharp sound damping
+        voice.voiceNode.gain.setTargetAtTime(0, releaseTime, 0.05);
+    }
+
+    // Clean stop oscillators in the future to avoid audio crackling
+    setTimeout(() => {
+        voice.oscillators.forEach(node => {
+            try { if (node.stop) node.stop(); } catch(e) {}
+        });
+        voice.voiceNode.disconnect();
+    }, sustainPedal ? 2500 : 400);
+
+    delete activeOscillators[noteName];
+    highlightPianoKey(noteName, false);
+}
+
+// --- PIANO KEYBOARD DESIGN & INTERACTIVE EVENTS ---
+function renderPianoKeyboard() {
+    const container = document.getElementById('piano-keyboard');
+    container.innerHTML = ''; // Reset container
+
+    // Generate White Keys
+    WHITE_NOTES.forEach((note, index) => {
+        const key = document.createElement('div');
+        key.id = `key-${note}`;
+        key.className = "piano-key flex-1 bg-white border border-slate-300 rounded-b-lg shadow-md cursor-pointer flex flex-col justify-end pb-3 items-center text-slate-900 font-bold text-xs select-none hover:bg-slate-100 z-10 transition-colors";
+        
+        // Show Keyboard Bind key labels
+        const keyboardChar = Object.keys(KEY_MAP).find(k => KEY_MAP[k] === note);
+        key.innerHTML = `
+            <span class="text-slate-400 font-mono text-[9px] block uppercase mb-1">${note}</span>
+            <span class="px-1.5 py-0.5 bg-slate-100 rounded text-slate-500 font-mono text-[10px] uppercase shadow-sm border border-slate-200">${keyboardChar ? keyboardChar : ''}</span>
+        `;
+        
+        // Key down mouse/touch handlers
+        key.addEventListener('mousedown', (e) => { e.preventDefault(); startNote(note); });
+        key.addEventListener('mouseup', () => stopNote(note));
+        key.addEventListener('mouseleave', () => stopNote(note));
+        key.addEventListener('touchstart', (e) => { e.preventDefault(); startNote(note); });
+        key.addEventListener('touchend', () => stopNote(note));
+
+        container.appendChild(key);
+    });
+
+    // Generate Floating Black Keys overlap
+    BLACK_NOTES.forEach((blackNote) => {
+        const key = document.createElement('div');
+        key.id = `key-${blackNote.note}`;
+        // Position absolutely over the white notes
+        key.className = "piano-key absolute bg-slate-950 border border-slate-800 rounded-b-md shadow-lg cursor-pointer flex flex-col justify-end pb-3 items-center text-white font-semibold text-[10px] select-none hover:bg-slate-900 z-20 transition-colors";
+        
+        // Calculate horizontal percent offset based on leftIndex
+        const whiteKeyWidthPercent = 100 / WHITE_NOTES.length;
+        const leftPercent = (blackNote.leftIndex * whiteKeyWidthPercent) + (whiteKeyWidthPercent * 0.65);
+        key.style.left = `${leftPercent}%`;
+        key.style.width = `${whiteKeyWidthPercent * 0.7}%`;
+        key.style.height = '60%'; // Black keys are shorter
+
+        const keyboardChar = Object.keys(KEY_MAP).find(k => KEY_MAP[k] === blackNote.note);
+        key.innerHTML = `
+            <span class="text-slate-400 text-[8px] font-mono mb-1">${blackNote.note}</span>
+            <span class="px-1 py-0.2 bg-slate-800 rounded text-slate-300 font-mono text-[9px] uppercase border border-slate-700">${keyboardChar ? keyboardChar : ''}</span>
+        `;
+
+        key.addEventListener('mousedown', (e) => { e.preventDefault(); startNote(blackNote.note); });
+        key.addEventListener('mouseup', () => stopNote(blackNote.note));
+        key.addEventListener('mouseleave', () => stopNote(blackNote.note));
+        key.addEventListener('touchstart', (e) => { e.preventDefault(); startNote(blackNote.note); });
+        key.addEventListener('touchend', () => stopNote(blackNote.note));
+
+        container.appendChild(key);
+    });
+}
+
+// Initial draw placeholder keyboard to make layout presentable instantly
+renderPianoKeyboard();
+
+// Helper to highlight keyboard buttons
+function highlightPianoKey(note, isActive) {
+    const keyEl = document.getElementById(`key-${note}`);
+    if (!keyEl) return;
+
+    const isBlack = note.includes('#');
+
+    if (isActive) {
+        if (isBlack) {
+            keyEl.style.backgroundColor = '#ec4899'; // Hot Pink
+            keyEl.classList.add('glow-active');
+        } else {
+            keyEl.style.backgroundColor = '#ec4899';
+            keyEl.classList.add('glow-active');
+            keyEl.style.color = 'white';
+        }
+    } else {
+        // Reset to original styling
+        if (isBlack) {
+            keyEl.style.backgroundColor = '#020617';
+            keyEl.classList.remove('glow-active');
+        } else {
+            keyEl.style.backgroundColor = '#ffffff';
+            keyEl.classList.remove('glow-active');
+            keyEl.style.color = '#0f172a';
+        }
+    }
+}
+
+// Keyboard Listeners for PC playing mapping
+const pressedKeys = {};
+window.addEventListener('keydown', (e) => {
+    if (e.repeat) return;
+    const char = e.key.toLowerCase();
+    
+    // Space bar acts as sustain pedal
+    if (e.code === 'Space') {
+        e.preventDefault();
+        toggleSustain(true);
+        return;
+    }
+
+    if (KEY_MAP[char]) {
+        pressedKeys[char] = true;
+        startNote(KEY_MAP[char]);
+    }
+});
+
+window.addEventListener('keyup', (e) => {
+    const char = e.key.toLowerCase();
+    
+    if (e.code === 'Space') {
+        toggleSustain(false);
+        return;
+    }
+
+    if (KEY_MAP[char]) {
+        delete pressedKeys[char];
+        stopNote(KEY_MAP[char]);
+    }
+});
+
+function updateVolume(val) {
+    masterVolume = parseFloat(val);
+    document.getElementById('volume-val').textContent = `${Math.round(masterVolume * 100)}%`;
+    if (masterGainNode) {
+        masterGainNode.gain.setValueAtTime(masterVolume, audioCtx.currentTime);
+    }
+}
+
+function changeOctave(dir) {
+    octaveOffset += dir;
+    if (octaveOffset > 1) octaveOffset = 1;
+    if (octaveOffset < -1) octaveOffset = -1;
+    document.getElementById('octave-display').textContent = `Octave ${4 + octaveOffset}`;
+}
+
+function setInstrument(inst) {
+    currentInstrument = inst;
+    
+    // UI selection visual feedback
+    document.querySelectorAll('.inst-btn').forEach(btn => {
+        if (btn.id === 'inst-organ') {
+            btn.className = "inst-btn mt-2 w-full py-2 px-3 text-xs font-medium rounded-lg border text-left flex items-center justify-center gap-2 transition-all bg-slate-900 border-slate-800 hover:bg-slate-850";
+        } else {
+            btn.className = "inst-btn py-2 px-3 text-xs font-medium rounded-lg border text-left flex items-center gap-2 transition-all bg-slate-900 border-slate-800 hover:bg-slate-850";
+        }
+    });
+    
+    const activeBtn = document.getElementById(`inst-${inst}`);
+    if (activeBtn) {
+        if (inst === 'organ') {
+            activeBtn.className = "inst-btn mt-2 w-full py-2 px-3 text-xs font-medium rounded-lg border text-left flex items-center justify-center gap-2 transition-all bg-purple-500/20 text-purple-300 border-purple-500/50 glow-purple";
+        } else {
+            activeBtn.className = "inst-btn py-2 px-3 text-xs font-medium rounded-lg border text-left flex items-center gap-2 transition-all bg-purple-500/20 text-purple-300 border-purple-500/50 glow-purple";
+        }
+    }
+}
+
+function switchMode(mode) {
+    // Stop any active autoplay or game state safely
+    stopAutoPlay();
+    stopGameMode();
+
+    currentMode = mode;
+    
+    // UI elements config
+    const freeBtn = document.getElementById('btn-mode-free');
+    const gameBtn = document.getElementById('btn-mode-game');
+    const autoBtn = document.getElementById('btn-mode-auto');
+    const modeBadge = document.getElementById('mode-badge');
+    const gameHud = document.getElementById('game-hud');
+    const autoControls = document.getElementById('auto-play-controls');
+    const gameStatusText = document.getElementById('game-status-text');
+
+    // Reset default buttons style
+    [freeBtn, gameBtn, autoBtn].forEach(btn => {
+        btn.className = "px-4 py-2 text-xs font-bold rounded-lg transition-all text-slate-400 hover:text-white";
+    });
+
+    if (mode === 'free') {
+        freeBtn.className = "px-4 py-2 text-xs font-bold rounded-lg transition-all bg-cyan-500/20 text-cyan-400 border border-cyan-500/30";
+        modeBadge.className = "px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400 text-xs font-semibold uppercase tracking-wider";
+        modeBadge.textContent = "FREE PLAY (자유 연주)";
+        gameHud.classList.add('hidden');
+        autoControls.classList.add('hidden');
+        gameStatusText.classList.add('hidden');
+    } else if (mode === 'game') {
+        gameBtn.className = "px-4 py-2 text-xs font-bold rounded-lg transition-all bg-purple-500/20 text-purple-400 border border-purple-500/30";
+        modeBadge.className = "px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/30 text-purple-400 text-xs font-semibold uppercase tracking-wider";
+        modeBadge.textContent = "GAME MODE (노트 연주)";
+        gameHud.classList.remove('hidden');
+        autoControls.classList.add('hidden');
+        gameStatusText.classList.remove('hidden');
+        
+        initGameMode();
+    } else if (mode === 'auto') {
+        autoBtn.className = "px-4 py-2 text-xs font-bold rounded-lg transition-all bg-emerald-500/20 text-emerald-400 border border-emerald-500/30";
+        modeBadge.className = "px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-semibold uppercase tracking-wider";
+        modeBadge.textContent = "AUTO PLAY (자동 감상)";
+        gameHud.classList.add('hidden');
+        autoControls.classList.remove('hidden');
+        gameStatusText.classList.add('hidden');
+    }
+}
+
+// --- VISUALIZER & GAME RENDERING ENGINE ---
+const canvas = document.getElementById('piano-canvas');
+const ctx = canvas.getContext('2d');
+
+let animationFrameId = null;
+
+// Handle canvas resizing
+function resizeCanvas() {
+    const parent = canvas.parentElement;
+    canvas.width = parent.clientWidth * window.devicePixelRatio;
+    canvas.height = parent.clientHeight * window.devicePixelRatio;
+    ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// Game mode note state variables
+let gameActive = false;
+let gameStartTime = 0;
+let gameNotes = [];
+let gameScore = 0;
+let gameCombo = 0;
+let totalHits = 0;
+
+// Auto play state variables
+let isAutoPlaying = false;
+let autoPlayStartTime = 0;
+let autoPlayNotes = [];
+let nextAutoPlayIndex = 0;
+let activeAutoNotesTrack = {};
+
+// Visualizer background particles
+const waveBars = 32;
+const waveData = new Array(waveBars).fill(0);
+
+function renderLoop() {
+    const width = canvas.width / window.devicePixelRatio;
+    const height = canvas.height / window.devicePixelRatio;
+    
+    // Clear canvas
+    ctx.fillStyle = '#030712';
+    ctx.fillRect(0, 0, width, height);
+    
+    // Render specific graphics depending on mode
+    if (currentMode === 'free') {
+        renderFreeVisuals(width, height);
+    } else if (currentMode === 'game') {
+        renderGameVisuals(width, height);
+    } else if (currentMode === 'auto') {
+        renderAutoVisuals(width, height);
+    }
+    
+    animationFrameId = requestAnimationFrame(renderLoop);
+}
+
+// Start visual loop instantly on load
+window.onload = function() {
+    renderLoop();
+};
+
+function renderFreeVisuals(width, height) {
+    // Read audio frequency analyser if active
+    let dataArray = null;
+    if (analyserNode) {
+        const bufferLength = analyserNode.frequencyBinCount;
+        dataArray = new Uint8Array(bufferLength);
+        analyserNode.getByteFrequencyData(dataArray);
+    }
+
+    // Grid design backdrop
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.02)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < width; i += 40) {
+        ctx.beginPath();
+        ctx.moveTo(i, 0);
+        ctx.lineTo(i, height);
+        ctx.stroke();
+    }
+    for (let i = 0; i < height; i += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, i);
+        ctx.lineTo(width, i);
+        ctx.stroke();
+    }
+
+    // Centered Audio Circle visualizer
+    const cx = width / 2;
+    const cy = height / 2;
+    let averageAmplitude = 0;
+
+    if (dataArray) {
+        let sum = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+            sum += dataArray[i];
+        }
+        averageAmplitude = sum / dataArray.length;
+    }
+
+    // Reactive glow ring
+    const baseRadius = 60 + averageAmplitude * 0.4;
+    ctx.beginPath();
+    ctx.arc(cx, cy, baseRadius, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(6, 182, 212, 0.15)';
+    ctx.lineWidth = 20;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(cx, cy, baseRadius - 10, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(168, 85, 247, 0.3)';
+    ctx.lineWidth = 5;
+    ctx.stroke();
+
+    // Sound Waveform Bars
+    if (dataArray) {
+        const barWidth = 4;
+        const totalBars = 48;
+        const gap = 3;
+        const startX = cx - ((totalBars * (barWidth + gap)) / 2);
+
+        for (let i = 0; i < totalBars; i++) {
+            // Read array data mapped
+            const dataIndex = Math.floor((i / totalBars) * (dataArray.length * 0.4));
+            const amplitude = dataArray[dataIndex] || 0;
+            const barHeight = (amplitude / 255) * 100 + 4;
+
+            const x = startX + i * (barWidth + gap);
+            const y = cy - barHeight / 2;
+
+            // Gradient bar
+            const gradient = ctx.createLinearGradient(x, y, x, y + barHeight);
+            gradient.addColorStop(0, '#06b6d4'); // Cyan
+            gradient.addColorStop(0.5, '#ec4899'); // Pink
+            gradient.addColorStop(1, '#a855f7'); // Purple
+
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.roundRect(x, y, barWidth, barHeight, 2);
+            ctx.fill();
+        }
+    } else {
+        // Flat line default instruction text
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.font = 'bold 12px "Inter"';
+        ctx.textAlign = 'center';
+        ctx.fillText('건반을 누르면 리얼타임 오디오 파동이 시각화됩니다', cx, cy + 5);
+    }
+}
+
+// Track the active notes in Game mode
+function initGameMode() {
+    const selectedSongKey = document.getElementById('song-select').value;
+    const songNotes = SONGS[selectedSongKey];
+    
+    gameNotes = songNotes.map(n => ({
+        ...n,
+        spawned: false,
+        hit: false,
+        y: -100, // Starts off-screen
+        x: calculateNoteX(n.note)
+    }));
+
+    gameScore = 0;
+    gameCombo = 0;
+    totalHits = 0; // Reset total hits correctly
+    gameActive = true;
+    gameStartTime = Date.now();
+    
+    document.getElementById('hud-score').textContent = "00000";
+    document.getElementById('hud-combo').textContent = "0";
+    document.getElementById('hud-highscore').textContent = highscore;
+}
+
+function stopGameMode() {
+    gameActive = false;
+    // Clear active keys
+    Object.keys(activeOscillators).forEach(note => stopNote(note));
+}
+
+function calculateNoteX(noteName) {
+    const pureNote = noteName.replace('#', '');
+    const index = WHITE_NOTES.indexOf(pureNote);
+    if (index === -1) return 50;
+    
+    return index;
+}
+
+function renderGameVisuals(width, height) {
+    if (!gameActive) return; // Guard against running rendering logic or ending checks when game is inactive!
+
+    const keyLineY = height - 50; // The target line where keys are pressed
+    const laneWidth = width / WHITE_NOTES.length;
+    const noteSpeed = 2.5; // Pixels per frame
+
+    // 1. Draw key lanes guidelines
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.03)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= WHITE_NOTES.length; i++) {
+        ctx.beginPath();
+        ctx.moveTo(i * laneWidth, 0);
+        ctx.lineTo(i * laneWidth, keyLineY + 15);
+        ctx.stroke();
+    }
+
+    // 2. Draw Hit target line
+    ctx.strokeStyle = 'rgba(6, 182, 212, 0.4)';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(0, keyLineY);
+    ctx.lineTo(width, keyLineY);
+    ctx.stroke();
+
+    // Target lane glow
+    ctx.fillStyle = 'rgba(6, 182, 212, 0.03)';
+    ctx.fillRect(0, keyLineY - 10, width, 20);
+
+    // 3. Process and draw falling notes
+    const elapsedTimeSec = (Date.now() - gameStartTime) / 1000;
+    const spawnAdvanceSec = 3.0; // Seconds in advance notes appear from top
+
+    gameNotes.forEach(note => {
+        // Calculate Y position based on its scheduled play time vs current elapsed time
+        const timeDiff = note.time - elapsedTimeSec;
+        
+        // This note's y coordinate
+        note.y = keyLineY - (timeDiff * noteSpeed * 60); // 60fps scale factor
+
+        // Note height mapped from duration
+        const noteHeight = Math.max(20, note.duration * noteSpeed * 60);
+
+        // Render only if on canvas screen area
+        if (note.y > -200 && note.y < height && !note.hit) {
+            const xCoord = note.x * laneWidth + (laneWidth * 0.1);
+            const wCoord = laneWidth * 0.8;
+
+            // Draw note capsule with gradients
+            const isBlack = note.note.includes('#');
+            const gradient = ctx.createLinearGradient(xCoord, note.y, xCoord, note.y + noteHeight);
+            
+            if (isBlack) {
+                gradient.addColorStop(0, '#f43f5e'); // Soft Rose
+                gradient.addColorStop(1, '#9f1239');
+                ctx.strokeStyle = '#f43f5e';
+            } else {
+                gradient.addColorStop(0, '#a855f7'); // Purple
+                gradient.addColorStop(1, '#5b21b6');
+                ctx.strokeStyle = '#c084fc';
+            }
+
+            ctx.fillStyle = gradient;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.roundRect(xCoord, note.y, wCoord, noteHeight, 6);
+            ctx.fill();
+            ctx.stroke();
+
+            // Label text inside note block
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 9px "Inter"';
+            ctx.textAlign = 'center';
+            ctx.fillText(note.note, xCoord + wCoord/2, note.y + noteHeight/2 + 3);
+        }
+
+        // Automatic miss detector (passed keyLine without hit)
+        if (note.y > keyLineY + 20 && !note.hit) {
+            note.hit = true; // Mark resolved so it stops drawing
+            triggerFeedback('MISS', 0);
+        }
+    });
+
+    // Handle song ending sequence check
+    const lastNote = gameNotes[gameNotes.length - 1];
+    if (lastNote && lastNote.y > height) {
+        // Game complete!
+        finishGame();
+    }
+}
+
+function checkPlayerHit(playerNote) {
+    if (!gameActive) return;
+
+    const height = canvas.height / window.devicePixelRatio;
+    const keyLineY = height - 50;
+    
+    // Find the closest un-hit note matching this pitch
+    let closestNote = null;
+    let minDiff = Infinity;
+
+    gameNotes.forEach(note => {
+        if (note.note === playerNote && !note.hit) {
+            const diff = Math.abs(note.y - keyLineY);
+            if (diff < minDiff) {
+                minDiff = diff;
+                closestNote = note;
+            }
+        }
+    });
+
+    if (closestNote) {
+        // Threshold validations for accuracy rankings
+        if (minDiff < 18) {
+            closestNote.hit = true;
+            triggerFeedback('PERFECT!', 100);
+        } else if (minDiff < 35) {
+            closestNote.hit = true;
+            triggerFeedback('GREAT', 70);
+        } else if (minDiff < 55) {
+            closestNote.hit = true;
+            triggerFeedback('GOOD', 40);
+        }
+    }
+}
+
+function triggerFeedback(type, scoreValue) {
+    const feedbackEl = document.getElementById('hit-feedback');
+    const comboEl = document.getElementById('hit-combo-count');
+    const overlay = document.getElementById('game-hit-overlay');
+
+    if (scoreValue > 0) {
+        gameScore += scoreValue + (gameCombo * 5); // Combo bonus score
+        gameCombo++;
+        totalHits++;
+        
+        // Update highscore
+        if (gameScore > highscore) {
+            highscore = gameScore;
+            localStorage.setItem('piano_hero_highscore', highscore);
+            document.getElementById('hud-highscore').textContent = highscore;
+        }
+
+        // Style perfect combo vs basic hits
+        feedbackEl.textContent = type;
+        if (type === 'PERFECT!') {
+            feedbackEl.className = "text-2xl font-black tracking-widest text-cyan-400 filter drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]";
+        } else {
+            feedbackEl.className = "text-xl font-extrabold tracking-wider text-purple-400";
+        }
+        
+        comboEl.textContent = `${gameCombo} COMBO`;
+        comboEl.classList.remove('hidden');
+    } else {
+        // Miss state
+        gameCombo = 0;
+        feedbackEl.textContent = "MISS!";
+        feedbackEl.className = "text-xl font-bold tracking-wider text-rose-500";
+        comboEl.classList.add('hidden');
+    }
+
+    // Dynamic HUD update
+    document.getElementById('hud-score').textContent = String(gameScore).padStart(5, '0');
+    document.getElementById('hud-combo').textContent = gameCombo;
+
+    // Trigger on-screen animation pop
+    overlay.classList.remove('scale-0', 'opacity-0');
+    overlay.classList.add('scale-100', 'opacity-100');
+    
+    // Auto clear feedback after 500ms
+    clearTimeout(overlay.timeoutId);
+    overlay.timeoutId = setTimeout(() => {
+        overlay.classList.remove('scale-100', 'opacity-100');
+        overlay.classList.add('scale-0', 'opacity-0');
+    }, 600);
+}
+
+function finishGame() {
+    gameActive = false;
+    
+    // Create detailed modal notification dynamically instead of basic window alert
+    const modal = document.createElement('div');
+    modal.className = "fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/95 p-6 animate-fade-in";
+    modal.innerHTML = `
+        <div class="glass-panel max-w-md w-full p-8 rounded-3xl text-center border border-slate-800 glow-purple flex flex-col items-center">
+            <div class="w-20 h-20 bg-purple-500/20 text-purple-400 border border-purple-400/30 rounded-full flex items-center justify-center text-3xl mb-4">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+            <h2 class="text-2xl font-black text-transparent bg-gradient-to-r from-cyan-400 to-purple-400 bg-clip-text mb-2">게임 연주 종료!</h2>
+            <p class="text-sm text-slate-400 mb-6">수고하셨습니다! 훌륭한 시뮬레이션 결과입니다.</p>
+            
+            <div class="w-full bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col gap-3 mb-6">
+                <div class="flex justify-between text-xs"><span class="text-slate-500">최종 점수:</span> <span class="font-bold text-cyan-400 font-mono">${gameScore} 점</span></div>
+                <div class="flex justify-between text-xs"><span class="text-slate-500">최대 하이 점수:</span> <span class="font-bold text-yellow-400 font-mono">${highscore} 점</span></div>
+                <div class="flex justify-between text-xs"><span class="text-slate-500">총 연주 타수:</span> <span class="font-bold text-slate-300 font-mono">${totalHits} 회</span></div>
+            </div>
+
+            <button onclick="closeResultModal(this)" class="w-full py-3 bg-gradient-to-r from-cyan-500 to-purple-600 rounded-xl font-bold text-white text-sm hover:opacity-90 transition-opacity">
+                다시 시작하기
+            </button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+}
+
+function closeResultModal(btn) {
+    btn.parentElement.parentElement.remove();
+    initGameMode();
+}
+
+function onSongChanged() {
+    if (currentMode === 'game') {
+        initGameMode();
+    } else if (currentMode === 'auto') {
+        stopAutoPlay();
+    }
+}
+
+function toggleAutoPlay() {
+    if (!audioCtx) initAudio();
+    if (!audioCtx) return;
+
+    if (isAutoPlaying) {
+        stopAutoPlay();
+        return;
+    }
+
+    const selectedSongKey = document.getElementById('song-select').value;
+    autoPlayNotes = SONGS[selectedSongKey];
+    nextAutoPlayIndex = 0;
+    isAutoPlaying = true;
+    autoPlayStartTime = audioCtx.currentTime;
+
+    // Change Play button state
+    const btnPlay = document.getElementById('btn-song-play');
+    btnPlay.className = "px-4 py-1.5 bg-gradient-to-r from-amber-500 to-red-600 text-white rounded-lg text-xs font-bold hover:shadow-lg hover:shadow-red-500/20 transition-all flex items-center gap-1.5";
+    btnPlay.innerHTML = `<i class="fa-solid fa-pause"></i> 재생중`;
+
+    // Active scheduling watch loop
+    scheduleAutoPlayNotes();
+}
+
+function stopAutoPlay() {
+    isAutoPlaying = false;
+    
+    // Reset Play button state
+    const btnPlay = document.getElementById('btn-song-play');
+    if (btnPlay) {
+        btnPlay.className = "px-4 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg text-xs font-bold hover:shadow-lg hover:shadow-emerald-500/20 transition-all flex items-center gap-1.5";
+        btnPlay.innerHTML = `<i class="fa-solid fa-play"></i> 곡 시작`;
+    }
+
+    // Stop all sounding keys
+    Object.keys(activeOscillators).forEach(note => stopNote(note));
+}
+
+function scheduleAutoPlayNotes() {
+    if (!isAutoPlaying || !audioCtx) return;
+
+    const lookAheadTime = 0.1; // Check notes starting within next 100ms
+    const elapsed = audioCtx.currentTime - autoPlayStartTime;
+
+    while (nextAutoPlayIndex < autoPlayNotes.length) {
+        const note = autoPlayNotes[nextAutoPlayIndex];
+        
+        // If note is within the scheduling window
+        if (note.time <= elapsed + lookAheadTime) {
+            // Precise trigger timing
+            const delay = Math.max(0, note.time - elapsed);
+            const absoluteTriggerTime = audioCtx.currentTime + delay;
+
+            // Trigger sound voice
+            setTimeout(() => {
+                if (!isAutoPlaying) return;
+                
+                // Sound synthesized note
+                const voice = createVoice(note.note);
+                if (voice) {
+                    activeOscillators[note.note] = voice;
+                    highlightPianoKey(note.note, true);
+                    
+                    // Register dynamic visualization falling note representation
+                    activeAutoNotesTrack[note.note] = {
+                        note: note.note,
+                        active: true
+                    };
+
+                    // Auto scheduling release duration
+                    setTimeout(() => {
+                        stopNote(note.note);
+                        if (activeAutoNotesTrack[note.note]) {
+                            activeAutoNotesTrack[note.note].active = false;
+                        }
+                    }, note.duration * 1000);
+                }
+            }, delay * 1000);
+
+            nextAutoPlayIndex++;
+        } else {
+            break; // No more notes fit in current 100ms slice
+        }
+    }
+
+    // Check if song has finished
+    if (nextAutoPlayIndex >= autoPlayNotes.length) {
+        // Song is done after the last note's duration
+        const lastNote = autoPlayNotes[autoPlayNotes.length - 1];
+        const endWait = (lastNote.time + lastNote.duration - elapsed) * 1000;
+        setTimeout(() => {
+            if (isAutoPlaying) stopAutoPlay();
+        }, Math.max(500, endWait));
+    } else {
+        // Loop polling checker
+        setTimeout(scheduleAutoPlayNotes, 25);
+    }
+}
+
+function renderAutoVisuals(width, height) {
+    const laneWidth = width / WHITE_NOTES.length;
+    const cy = height / 2;
+
+    // Draw active vertical neon pillars for keys being automatically played
+    WHITE_NOTES.forEach((note, index) => {
+        const isNotePlaying = Object.keys(activeOscillators).some(n => n.replace('#', '') === note);
+        if (isNotePlaying) {
+            const x = index * laneWidth;
+            
+            // Draw neon beam glow
+            const gradient = ctx.createLinearGradient(x, 0, x, height);
+            gradient.addColorStop(0, 'rgba(6, 182, 212, 0)');
+            gradient.addColorStop(0.8, 'rgba(6, 182, 212, 0.12)');
+            gradient.addColorStop(1, 'rgba(6, 182, 212, 0.4)');
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(x, 0, laneWidth, height);
+        }
+    });
+
+    // Horizontal audio waveform analyzer representation
+    let dataArray = null;
+    if (analyserNode) {
+        const bufferLength = analyserNode.frequencyBinCount;
+        dataArray = new Uint8Array(bufferLength);
+        analyserNode.getByteTimeDomainData(dataArray);
+    }
+
+    if (dataArray) {
+        ctx.strokeStyle = '#38bdf8'; // Glowing neon blue
+        ctx.lineWidth = 3.5;
+        ctx.shadowColor = '#06b6d4';
+        ctx.shadowBlur = 12;
+        ctx.beginPath();
+
+        const sliceWidth = width / dataArray.length;
+        let x = 0;
+
+        for (let i = 0; i < dataArray.length; i++) {
+            const v = dataArray[i] / 128.0;
+            const y = v * cy;
+
+            if (i === 0) {
+                ctx.moveTo(x, y);
+            } else {
+                ctx.lineTo(x, y);
+            }
+
+            x += sliceWidth;
+        }
+
+        ctx.lineTo(width, cy);
+        ctx.stroke();
+        
+        // Reset shadow config
+        ctx.shadowBlur = 0;
+    }
+
+    // Text instructions
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.font = 'bold 13px "Inter"';
+    ctx.textAlign = 'center';
+    if (!isAutoPlaying) {
+        ctx.fillText('우측 상단의 "곡 시작" 버튼을 눌러 아름다운 클래식 연주를 감상해 보세요', width / 2, height - 30);
+    } else {
+        ctx.fillText('컴퓨터가 편안한 사운드로 자동 재생 중입니다...', width / 2, height - 30);
+    }
+}
+</script>
+</body>
+</html>
