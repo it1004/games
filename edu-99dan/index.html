@@ -1,1 +1,1210 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>구구단 마스터 🎮 - 신나는 구구단 공부방</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nanum Gothic', sans-serif;
+            background-color: #f8fafc;
+        }
+        .kids-font {
+            font-family: 'Gaegu', cursive;
+        }
+        @keyframes bounce-slow {
+            0%, 100% { transform: translateY(-5%); }
+            50% { transform: translateY(0); }
+        }
+        .animate-bounce-slow {
+            animation: bounce-slow 2s infinite;
+        }
+        @keyframes pop-in {
+            0% { transform: scale(0.8); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop-in {
+            animation: pop-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 via-purple-50 to-pink-50 min-h-screen text-slate-800 antialiased selection:bg-purple-200">
 
+    <div class="max-w-4xl mx-auto px-4 py-6 md:py-10">
+        <header class="text-center mb-8 animate-pop-in">
+            <div class="inline-flex items-center gap-3 bg-white px-6 py-2.5 rounded-full shadow-md border border-purple-100 mb-4 hover:scale-105 transition duration-300">
+                <span class="text-3xl animate-bounce-slow">✨</span>
+                <span class="kids-font text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-500">신나는 배움 놀이터</span>
+                <span class="text-3xl animate-bounce-slow">✨</span>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-black text-slate-900 tracking-tight flex justify-center items-center gap-2">
+                <span class="kids-font text-purple-600">구구단</span>
+                <span class="text-pink-500 kids-font">마스터!</span>
+                <span class="text-3xl md:text-4xl">🎮</span>
+            </h1>
+            <p class="text-slate-500 mt-2 text-sm md:text-base">원리를 이해하고 게임으로 재미있게 마스터하는 똑똑한 구구단 공부방</p>
+        </header>
+
+        <nav class="grid grid-cols-4 gap-2 mb-8 bg-white p-2 rounded-2xl shadow-md border border-slate-100">
+            <button onclick="switchTab('study')" id="tab-study" class="nav-tab py-3 px-2 md:px-4 rounded-xl text-center font-bold text-sm md:text-base flex flex-col md:flex-row items-center justify-center gap-2 transition-all duration-300 bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-md">
+                <i class="fa-solid fa-graduation-cap text-lg"></i>
+                <span>개념 학습</span>
+            </button>
+            <button onclick="switchTab('practice')" id="tab-practice" class="nav-tab py-3 px-2 md:px-4 rounded-xl text-center font-bold text-sm md:text-base flex flex-col md:flex-row items-center justify-center gap-2 transition-all duration-300 text-slate-600 hover:bg-slate-50">
+                <i class="fa-solid fa-square-check text-lg"></i>
+                <span>일일 연습</span>
+            </button>
+            <button onclick="switchTab('game')" id="tab-game" class="nav-tab py-3 px-2 md:px-4 rounded-xl text-center font-bold text-sm md:text-base flex flex-col md:flex-row items-center justify-center gap-2 transition-all duration-300 text-slate-600 hover:bg-slate-50">
+                <i class="fa-solid fa-circle-play text-lg animate-pulse text-pink-500"></i>
+                <span>스피드 도전</span>
+            </button>
+            <button onclick="switchTab('stats')" id="tab-stats" class="nav-tab py-3 px-2 md:px-4 rounded-xl text-center font-bold text-sm md:text-base flex flex-col md:flex-row items-center justify-center gap-2 transition-all duration-300 text-slate-600 hover:bg-slate-50">
+                <i class="fa-solid fa-chart-line text-lg"></i>
+                <span>성적&오답</span>
+            </button>
+        </nav>
+
+        <main id="app-content" class="bg-white rounded-3xl p-6 md:p-8 shadow-xl border border-slate-100 min-h-[500px] flex flex-col justify-between">
+            
+            <!-- Dynamic Content gets loaded here via JavaScript -->
+            <div id="screen-container" class="w-full h-full"></div>
+
+        </main>
+        
+        <footer class="text-center mt-8 text-slate-400 text-xs">
+            <p>© 2026 구구단 마스터. All Rights Reserved. 즐겁게 학습하고 멋진 수학 왕이 되세요!</p>
+        </footer>
+    </div>
+
+    <div id="custom-modal" class="fixed inset-0 bg-slate-900/50 flex items-center justify-center z-50 p-4 hidden">
+        <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-slate-100 scale-95 opacity-0 transition-all duration-300 ease-out transform" id="modal-card">
+            <div class="text-center">
+                <div class="w-16 h-16 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-3xl mx-auto mb-4" id="modal-icon">
+                    💡
+                </div>
+                <h3 class="text-xl font-bold text-slate-900 mb-2" id="modal-title">알림</h3>
+                <p class="text-slate-600 text-sm mb-6" id="modal-message">내용</p>
+                <button onclick="closeModal()" class="w-full bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-bold py-3 px-4 rounded-xl shadow-md hover:from-purple-600 hover:to-indigo-600 transition duration-300">
+                    확인했습니다
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State variables
+        let currentTab = 'study';
+        let currentStudyRange = 9; // Max table range (9, 12, or 19)
+        let selectedStudyStep = 2; // Selected multiplication step (e.g. 2 dan)
+        let selectedVisualCard = null; // Currently highlighted visual equation
+        
+        // Practice mode state
+        let practiceSelectedSteps = [2, 3, 4, 5, 6, 7, 8, 9];
+        let practiceQuestions = [];
+        let currentPracticeIndex = 0;
+        let practiceScore = 0;
+        let practiceTotalQuestions = 10;
+        let practiceOptions = [];
+
+        // Game mode state
+        let gameStatus = 'idle'; // idle, playing, gameover
+        let gameTimer = null;
+        let gameTimeLeft = 30; // 30 seconds limit
+        let gameScore = 0;
+        let gameCombo = 0;
+        let gameMaxCombo = 0;
+        let gameLives = 3;
+        let gameCurrentQuestion = { num1: 2, num2: 3, answer: 6 };
+        let gameOptions = [];
+        let highScores = JSON.parse(localStorage.getItem('gugudan_high_scores')) || { '9': 0, '12': 0, '19': 0 };
+
+        // Statistics state
+        let statsData = JSON.parse(localStorage.getItem('gugudan_stats')) || {
+            correct: {},
+            incorrect: {},
+            wrongList: [] // list of incorrect formulas
+        };
+
+        const playSound = (type) => {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                
+                const playTone = (freq, waveType, duration, delay) => {
+                    const osc = ctx.createOscillator();
+                    const gainNode = ctx.createGain();
+                    osc.connect(gainNode);
+                    gainNode.connect(ctx.destination);
+                    
+                    osc.type = waveType;
+                    osc.frequency.setValueAtTime(freq, ctx.currentTime + delay);
+                    gainNode.gain.setValueAtTime(0.12, ctx.currentTime + delay);
+                    gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + delay + duration);
+                    
+                    osc.start(ctx.currentTime + delay);
+                    osc.stop(ctx.currentTime + delay + duration);
+                };
+
+                if (type === 'correct') {
+                    // Quick happy notes (C5 -> E5 -> G5)
+                    playTone(523.25, 'triangle', 0.1, 0);
+                    playTone(659.25, 'triangle', 0.1, 0.08);
+                    playTone(783.99, 'triangle', 0.18, 0.16);
+                } else if (type === 'incorrect') {
+                    // Short low buzzer (F3 -> C3)
+                    playTone(174.61, 'sawtooth', 0.15, 0);
+                    playTone(130.81, 'sawtooth', 0.2, 0.1);
+                } else if (type === 'click') {
+                    // Soft light sound
+                    playTone(587.33, 'sine', 0.05, 0);
+                } else if (type === 'gameover') {
+                    // Melancholic ending scale
+                    playTone(493.88, 'sine', 0.15, 0);
+                    playTone(440.00, 'sine', 0.15, 0.15);
+                    playTone(349.23, 'sine', 0.15, 0.3);
+                    playTone(261.63, 'sine', 0.35, 0.45);
+                } else if (type === 'victory') {
+                    // Celebration fan-fare
+                    playTone(523.25, 'triangle', 0.1, 0);
+                    playTone(659.25, 'triangle', 0.1, 0.1);
+                    playTone(783.99, 'triangle', 0.1, 0.2);
+                    playTone(1046.50, 'triangle', 0.25, 0.3);
+                }
+            } catch (e) {
+                console.warn('Audio Context error or not initialized.', e);
+            }
+        };
+
+        const showModal = (title, message, icon = '💡') => {
+            const modal = document.getElementById('custom-modal');
+            const card = document.getElementById('modal-card');
+            document.getElementById('modal-title').innerText = title;
+            document.getElementById('modal-message').innerText = message;
+            document.getElementById('modal-icon').innerText = icon;
+
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                card.classList.remove('scale-95', 'opacity-0');
+                card.classList.add('scale-100', 'opacity-100');
+            }, 50);
+        };
+
+        const closeModal = () => {
+            const modal = document.getElementById('custom-modal');
+            const card = document.getElementById('modal-card');
+            card.classList.remove('scale-100', 'opacity-100');
+            card.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+            }, 300);
+            playSound('click');
+        };
+
+        const switchTab = (tabName) => {
+            playSound('click');
+            // Clean up game states
+            if (currentTab === 'game' && gameTimer) {
+                clearInterval(gameTimer);
+                gameStatus = 'idle';
+            }
+
+            currentTab = tabName;
+            
+            // Update Tab UI styles
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.className = "nav-tab py-3 px-2 md:px-4 rounded-xl text-center font-bold text-sm md:text-base flex flex-col md:flex-row items-center justify-center gap-2 transition-all duration-300 text-slate-600 hover:bg-slate-50";
+            });
+
+            const activeTabButton = document.getElementById(`tab-${tabName}`);
+            activeTabButton.className = "nav-tab py-3 px-2 md:px-4 rounded-xl text-center font-bold text-sm md:text-base flex flex-col md:flex-row items-center justify-center gap-2 transition-all duration-300 bg-gradient-to-r from-purple-500 to-indigo-500 text-white shadow-md";
+
+            renderScreen();
+        };
+
+        const renderScreen = () => {
+            const container = document.getElementById('screen-container');
+            
+            if (currentTab === 'study') {
+                renderStudyScreen(container);
+            } else if (currentTab === 'practice') {
+                renderPracticeScreen(container);
+            } else if (currentTab === 'game') {
+                renderGameScreen(container);
+            } else if (currentTab === 'stats') {
+                renderStatsScreen(container);
+            }
+        };
+
+        const renderStudyScreen = (container) => {
+            let limit = currentStudyRange;
+            let optionsHtml = '';
+            
+            // Generate Range selector tab buttons
+            const rangeOptions = [9, 12, 19];
+            let rangeSelectorHtml = rangeOptions.map(r => `
+                <button onclick="setStudyRange(${r})" class="px-4 py-2 font-bold text-sm rounded-lg transition-all ${currentStudyRange === r ? 'bg-purple-600 text-white shadow-md' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}">
+                    ${r === 9 ? '기본 구구단 (9단)' : r === 12 ? '똑똑이 (12단)' : '천재 수학자 (19단)'}
+                </button>
+            `).join('');
+
+            // Steps Buttons (2단, 3단...)
+            let stepsHtml = '';
+            for (let i = 2; i <= limit; i++) {
+                stepsHtml += `
+                    <button onclick="selectStudyStep(${i})" class="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center rounded-2xl font-black text-lg transition duration-300 ${selectedStudyStep === i ? 'bg-gradient-to-br from-purple-500 to-indigo-500 text-white shadow-lg scale-110 ring-4 ring-purple-200' : 'bg-white border-2 border-slate-100 text-slate-700 hover:border-purple-300 hover:text-purple-600 shadow-sm'}">
+                        ${i}단
+                    </button>
+                `;
+            }
+
+            // Calculations list in active step
+            let mathRowsHtml = '';
+            const subMax = currentStudyRange === 19 ? 19 : 9; // Show standard 1 to 9 multiplier, or up to 19 if in 19dan mode
+            for (let i = 1; i <= subMax; i++) {
+                const stepResult = selectedStudyStep * i;
+                const activeCardClass = (selectedVisualCard === i) ? 'ring-4 ring-pink-400 bg-pink-50 border-pink-200 scale-[1.03]' : 'bg-white border-slate-100 hover:border-purple-200 hover:bg-purple-50/50';
+                mathRowsHtml += `
+                    <div onclick="selectVisualFormula(${i})" class="flex items-center justify-between p-4 border-2 rounded-2xl cursor-pointer transition-all duration-300 shadow-sm ${activeCardClass}">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl md:text-2xl font-black text-slate-800 kids-font">${selectedStudyStep}</span>
+                            <span class="text-slate-400 font-bold">×</span>
+                            <span class="text-xl md:text-2xl font-black text-slate-800 kids-font">${i}</span>
+                            <span class="text-slate-400 font-bold">=</span>
+                        </div>
+                        <span class="text-2xl md:text-3xl font-black text-purple-600 kids-font">${stepResult}</span>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = `
+                <div class="flex flex-col gap-6 animate-pop-in">
+                    <!-- Top section selector -->
+                    <div class="flex flex-col md:flex-row justify-between items-center gap-4 bg-purple-50/60 p-4 rounded-2xl border border-purple-100">
+                        <span class="font-bold text-purple-800 flex items-center gap-2">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i> 공부할 단수를 골라보세요!
+                        </span>
+                        <div class="flex flex-wrap gap-2">
+                            ${rangeSelectorHtml}
+                        </div>
+                    </div>
+
+                    <!-- Steps Selector -->
+                    <div class="flex flex-wrap gap-2 md:gap-3 py-2 justify-center">
+                        ${stepsHtml}
+                    </div>
+
+                    <!-- Layout splitting formulas list and concept visualizer -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 items-start mt-4">
+                        <!-- Formula List -->
+                        <div class="flex flex-col gap-3">
+                            <h3 class="font-bold text-slate-800 flex items-center gap-2 px-1">
+                                <span class="bg-purple-100 text-purple-600 w-6 h-6 rounded-full inline-flex items-center justify-center text-xs">📖</span>
+                                ${selectedStudyStep}단 정복하기 (터치해서 원리 보기)
+                            </h3>
+                            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-2.5 max-h-[460px] overflow-y-auto custom-scrollbar pr-1">
+                                ${mathRowsHtml}
+                            </div>
+                        </div>
+
+                        <!-- Conceptual visualizer card -->
+                        <div class="bg-gradient-to-br from-indigo-50/50 to-purple-50/50 rounded-3xl p-6 border border-indigo-100/60 sticky top-6">
+                            <div class="text-center mb-4">
+                                <span class="text-xs bg-indigo-100 text-indigo-700 font-extrabold px-3 py-1 rounded-full uppercase tracking-wider">개념 비주얼라이저</span>
+                                <h4 class="text-xl font-bold text-slate-800 mt-2">나눗셈과 곱셈의 원리</h4>
+                                <p class="text-xs text-slate-500 mt-1">이모지 상자들로 배움을 눈으로 확인하세요!</p>
+                            </div>
+                            
+                            <div id="visualizer-content" class="min-h-[220px] flex flex-col justify-center items-center bg-white rounded-2xl p-6 border border-slate-100 shadow-inner">
+                                <!-- Visualizer internal content rendered separately -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            // Auto-select first index visual helper if none selected
+            if (!selectedVisualCard) {
+                selectVisualFormula(1);
+            } else {
+                updateStudyVisualizer();
+            }
+        };
+
+        const setStudyRange = (r) => {
+            playSound('click');
+            currentStudyRange = r;
+            selectedStudyStep = 2; // reset
+            selectedVisualCard = 1;
+            renderScreen();
+        };
+
+        const selectStudyStep = (step) => {
+            playSound('click');
+            selectedStudyStep = step;
+            selectedVisualCard = 1;
+            renderScreen();
+        };
+
+        const selectVisualFormula = (num) => {
+            playSound('click');
+            selectedVisualCard = num;
+            
+            // Re-render just the list selection active state to be optimized
+            const elements = document.getElementById('screen-container').querySelectorAll('.grid > div');
+            renderScreen(); // Simple re-draw of entire state keeps visual sync perfect
+        };
+
+        const updateStudyVisualizer = () => {
+            const visualizer = document.getElementById('visualizer-content');
+            if (!visualizer) return;
+
+            const n1 = selectedStudyStep;
+            const n2 = selectedVisualCard;
+            const result = n1 * n2;
+
+            // Generate boxes structure represent rows * cols
+            let blocksHtml = '';
+            
+            // Limit representation rendering if indices are ridiculously huge (like in 19dan, to prevent layout crash)
+            const isLarge = (n1 * n2 > 40);
+            const emojis = ['🍎', '⭐️', '👾', '🎨', '🧩', '🍭', '🍕', '🚀', '🍔', '🍦'];
+            const randomEmoji = emojis[n1 % emojis.length];
+
+            if (isLarge) {
+                // Simplified block view for large numbers
+                blocksHtml = `
+                    <div class="text-center">
+                        <div class="grid grid-cols-5 gap-2 max-w-[280px] justify-center mx-auto max-h-[200px] overflow-y-auto p-2">
+                            ${Array(result).fill(0).map(() => `<span class="text-lg md:text-xl transform hover:scale-125 transition duration-200 cursor-pointer">${randomEmoji}</span>`).join('')}
+                        </div>
+                        <p class="text-xs text-slate-400 mt-3">${randomEmoji}가 총 ${result}개 있어요!</p>
+                    </div>
+                `;
+            } else {
+                // Grouped view
+                let groups = '';
+                for (let g = 0; g < n2; g++) {
+                    let items = '';
+                    for (let item = 0; item < n1; item++) {
+                        items += `<span class="text-lg animate-bounce-slow" style="animation-delay: ${item * 0.1}s">${randomEmoji}</span>`;
+                    }
+                    groups += `
+                        <div class="flex flex-col items-center justify-center p-2.5 bg-purple-50/80 rounded-xl border border-purple-200/50 shadow-sm relative">
+                            <div class="grid grid-cols-2 gap-1">${items}</div>
+                            <span class="absolute -top-2 -right-2 bg-purple-600 text-white text-[9px] w-4 h-4 rounded-full flex items-center justify-center font-bold">${n1}</span>
+                        </div>
+                    `;
+                }
+
+                blocksHtml = `
+                    <div class="flex flex-col items-center gap-4">
+                        <div class="flex flex-wrap gap-3 justify-center max-w-[320px]">
+                            ${groups}
+                        </div>
+                        <div class="text-sm font-bold text-slate-600 mt-1">
+                            ${n1}개씩 묶음이 <span class="text-pink-500 font-extrabold text-lg">${n2}개</span> 있어요
+                        </div>
+                    </div>
+                `;
+            }
+
+            visualizer.innerHTML = `
+                <div class="w-full text-center">
+                    <div class="mb-4">
+                        <span class="kids-font text-3xl font-black text-indigo-600">${n1}</span>
+                        <span class="text-slate-400 font-bold mx-2">×</span>
+                        <span class="kids-font text-3xl font-black text-indigo-600">${n2}</span>
+                        <span class="text-slate-400 font-bold mx-2">=</span>
+                        <span class="kids-font text-4xl font-black text-pink-500 animate-pulse underline decoration-wavy decoration-indigo-200 decoration-3">${result}</span>
+                    </div>
+                    <div class="w-full border-t border-slate-100 my-4"></div>
+                    ${blocksHtml}
+                </div>
+            `;
+        };
+
+        const renderPracticeScreen = (container) => {
+            // First screen: Settings configuration for Practice
+            if (practiceQuestions.length === 0) {
+                let optionsCheckboxes = '';
+                for (let i = 2; i <= 9; i++) {
+                    const isChecked = practiceSelectedSteps.includes(i) ? 'checked' : '';
+                    optionsCheckboxes += `
+                        <label class="flex items-center justify-between p-3 border-2 rounded-2xl cursor-pointer hover:bg-slate-50 hover:border-purple-300 transition duration-200 ${practiceSelectedSteps.includes(i) ? 'border-purple-500 bg-purple-50/30' : 'border-slate-100'}">
+                            <span class="font-extrabold text-slate-700 kids-font text-lg">${i}단</span>
+                            <input type="checkbox" value="${i}" ${isChecked} onchange="togglePracticeStep(${i})" class="w-5 h-5 text-purple-600 border-slate-300 rounded focus:ring-purple-500">
+                        </label>
+                    `;
+                }
+
+                container.innerHTML = `
+                    <div class="max-w-xl mx-auto flex flex-col gap-6 animate-pop-in">
+                        <div class="text-center">
+                            <span class="text-3xl">📝</span>
+                            <h3 class="text-2xl font-black text-slate-800 mt-2">일일 연습 세팅</h3>
+                            <p class="text-sm text-slate-500 mt-1">오늘 마스터하고 싶은 구구단 범위를 골라보세요!</p>
+                        </div>
+
+                        <div class="border border-slate-100 bg-white rounded-3xl p-5 shadow-sm">
+                            <h4 class="font-bold text-slate-800 mb-4 flex justify-between items-center">
+                                <span>연습 단수 선택 (복수 선택 가능)</span>
+                                <span class="text-xs text-purple-600 font-medium cursor-pointer hover:underline" onclick="selectAllPractice(true)">모두 선택</span>
+                            </h4>
+                            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                                ${optionsCheckboxes}
+                            </div>
+
+                            <div class="mt-6">
+                                <h4 class="font-bold text-slate-800 mb-2">총 문항 수</h4>
+                                <div class="grid grid-cols-3 gap-2">
+                                    ${[5, 10, 20].map(n => `
+                                        <button onclick="setPracticeTotal(${n})" class="py-2.5 font-bold rounded-xl border-2 transition ${practiceTotalQuestions === n ? 'bg-purple-600 border-purple-600 text-white shadow-md' : 'border-slate-100 text-slate-600 hover:bg-slate-50'}">
+                                            ${n}문제
+                                        </button>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+
+                        <button onclick="startPractice()" class="w-full bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white font-extrabold py-4 rounded-2xl shadow-lg shadow-purple-200 hover:scale-[1.01] transition-all duration-300 text-lg flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-play"></i> 연습 시작하기!
+                        </button>
+                    </div>
+                `;
+            } else {
+                // Active Practice Question screen
+                const currentQuestion = practiceQuestions[currentPracticeIndex];
+                const progressPercentage = ((currentPracticeIndex) / practiceTotalQuestions) * 100;
+
+                let optionsButtonHtml = practiceOptions.map((opt, idx) => `
+                    <button onclick="submitPracticeAnswer(${opt})" class="w-full text-left p-4 rounded-2xl border-2 border-slate-100 hover:border-purple-300 hover:bg-purple-50/50 transition duration-200 flex items-center justify-between font-extrabold text-slate-700 hover:text-purple-700 shadow-sm hover:scale-[1.01] transform group">
+                        <span class="flex items-center gap-3">
+                            <span class="bg-slate-100 group-hover:bg-purple-100 text-slate-500 group-hover:text-purple-600 w-8 h-8 rounded-full inline-flex items-center justify-center text-sm font-black transition">${idx + 1}</span>
+                            <span class="text-lg md:text-xl font-black text-slate-800">${opt}</span>
+                        </span>
+                        <i class="fa-regular fa-circle-play text-slate-300 group-hover:text-purple-500 transition text-lg"></i>
+                    </button>
+                `).join('');
+
+                container.innerHTML = `
+                    <div class="max-w-xl mx-auto flex flex-col gap-6 animate-pop-in">
+                        <!-- Practice top bar header -->
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-full font-bold">연습 모드</span>
+                            <span class="font-bold text-slate-600">진행도: ${currentPracticeIndex + 1} / ${practiceTotalQuestions}</span>
+                        </div>
+
+                        <!-- Progress Bar wrapper -->
+                        <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden shadow-inner">
+                            <div class="bg-gradient-to-r from-purple-500 to-indigo-500 h-full transition-all duration-300" style="width: ${progressPercentage}%"></div>
+                        </div>
+
+                        <!-- Card Question Display -->
+                        <div class="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-3xl p-8 text-center border border-indigo-100 shadow-md">
+                            <div class="kids-font text-5xl font-black text-indigo-900 tracking-wider inline-flex items-center justify-center gap-4">
+                                <span>${currentQuestion.num1}</span>
+                                <span class="text-indigo-300 text-3xl">×</span>
+                                <span>${currentQuestion.num2}</span>
+                                <span class="text-indigo-300 text-3xl font-light">=</span>
+                                <span class="text-slate-300">?</span>
+                            </div>
+                        </div>
+
+                        <!-- Interactive Multiple Choice options -->
+                        <div class="flex flex-col gap-3">
+                            ${optionsButtonHtml}
+                        </div>
+
+                        <div class="flex justify-between items-center mt-2">
+                            <button onclick="exitPractice()" class="text-slate-400 font-bold hover:text-rose-500 transition flex items-center gap-2 text-sm">
+                                <i class="fa-solid fa-arrow-left"></i> 그만하기
+                            </button>
+                            <span class="text-xs text-slate-400 font-medium">정답을 탭하면 자동으로 다음 문제로 넘어가요!</span>
+                        </div>
+                    </div>
+                `;
+            }
+        };
+
+        const togglePracticeStep = (step) => {
+            playSound('click');
+            const idx = practiceSelectedSteps.indexOf(step);
+            if (idx > -1) {
+                if (practiceSelectedSteps.length > 1) {
+                    practiceSelectedSteps.splice(idx, 1);
+                } else {
+                    showModal('어이쿠!', '최소한 하나의 구구단 단수는 선택하셔야 합니다.', '⚠️');
+                }
+            } else {
+                practiceSelectedSteps.push(step);
+            }
+            renderScreen();
+        };
+
+        const selectAllPractice = (val) => {
+            playSound('click');
+            practiceSelectedSteps = [2, 3, 4, 5, 6, 7, 8, 9];
+            renderScreen();
+        };
+
+        const setPracticeTotal = (total) => {
+            playSound('click');
+            practiceTotalQuestions = total;
+            renderScreen();
+        };
+
+        const startPractice = () => {
+            if (practiceSelectedSteps.length === 0) {
+                showModal('잠깐만요!', '공부할 단수를 하나 이상 선택해 주세요!', '💡');
+                return;
+            }
+            playSound('click');
+
+            // Generate practice questions
+            practiceQuestions = [];
+            for (let i = 0; i < practiceTotalQuestions; i++) {
+                // Pick random step from chosen ones
+                const randomStep = practiceSelectedSteps[Math.floor(Math.random() * practiceSelectedSteps.length)];
+                // Pick random multiplier (1 to 9)
+                const multiplier = Math.floor(Math.random() * 9) + 1;
+                practiceQuestions.push({
+                    num1: randomStep,
+                    num2: multiplier,
+                    answer: randomStep * multiplier
+                });
+            }
+
+            currentPracticeIndex = 0;
+            practiceScore = 0;
+            preparePracticeOptions();
+            renderScreen();
+        };
+
+        const preparePracticeOptions = () => {
+            const currentQ = practiceQuestions[currentPracticeIndex];
+            const choices = new Set();
+            choices.add(currentQ.answer);
+
+            // Populate unique distraction answers
+            while (choices.size < 4) {
+                // Produce smart distractors in multiplication proximity
+                const offset = Math.floor(Math.random() * 5) - 2; // -2 to 2 offset
+                let distractor = currentQ.answer + (offset * currentQ.num1);
+                if (distractor <= 0 || distractor === currentQ.answer) {
+                    distractor = currentQ.num1 * (Math.floor(Math.random() * 9) + 1);
+                }
+                choices.add(distractor);
+            }
+
+            practiceOptions = Array.from(choices).sort((a, b) => a - b);
+        };
+
+        const submitPracticeAnswer = (userAnswer) => {
+            const currentQ = practiceQuestions[currentPracticeIndex];
+            const isCorrect = (userAnswer === currentQ.answer);
+
+            // Record Statistics (using LocalStorage helper)
+            recordStat(currentQ.num1, currentQ.num2, isCorrect);
+
+            if (isCorrect) {
+                playSound('correct');
+                practiceScore++;
+            } else {
+                playSound('incorrect');
+            }
+
+            // Move forward
+            currentPracticeIndex++;
+            if (currentPracticeIndex < practiceTotalQuestions) {
+                preparePracticeOptions();
+                renderScreen();
+            } else {
+                // Complete practice, show final score card
+                renderPracticeResult();
+            }
+        };
+
+        const exitPractice = () => {
+            playSound('click');
+            practiceQuestions = [];
+            currentPracticeIndex = 0;
+            practiceScore = 0;
+            renderScreen();
+        };
+
+        const renderPracticeResult = () => {
+            const container = document.getElementById('screen-container');
+            const scorePercent = Math.round((practiceScore / practiceTotalQuestions) * 100);
+            
+            let message = '';
+            let mascot = '';
+            if (scorePercent === 100) {
+                message = '구구단 왕이 나타났다! 완벽해요!';
+                mascot = '👑';
+                setTimeout(() => triggerConfetti(), 100);
+                playSound('victory');
+            } else if (scorePercent >= 80) {
+                message = '와우! 진짜 훌륭한 실력이에요!';
+                mascot = '🌟';
+                playSound('victory');
+            } else if (scorePercent >= 50) {
+                message = '열심히 연습해서 조금만 더 나아져 보아요!';
+                mascot = '👍';
+            } else {
+                message = '원리 공부를 조금 더 하고 다시 도전해봐요!';
+                mascot = '📚';
+            }
+
+            container.innerHTML = `
+                <div class="max-w-xl mx-auto text-center flex flex-col gap-6 animate-pop-in">
+                    <div>
+                        <span class="text-6xl">${mascot}</span>
+                        <h3 class="text-3xl font-black text-slate-800 mt-4 kids-font">연습 완료!</h3>
+                        <p class="text-slate-500 mt-1">${message}</p>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-3xl p-6 border border-indigo-100 shadow-sm">
+                        <div class="grid grid-cols-2 gap-4 divide-x divide-indigo-100">
+                            <div>
+                                <span class="text-xs text-slate-400 block font-bold">맞힌 문제</span>
+                                <span class="text-3xl font-black text-purple-600">${practiceScore} <span class="text-sm font-medium text-slate-500">/ ${practiceTotalQuestions}</span></span>
+                            </div>
+                            <div>
+                                <span class="text-xs text-slate-400 block font-bold">정답률</span>
+                                <span class="text-3xl font-black text-indigo-600">${scorePercent}%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button onclick="exitPractice()" class="flex-1 bg-white border-2 border-slate-200 text-slate-600 font-extrabold py-3.5 rounded-2xl shadow-sm hover:bg-slate-50 transition duration-300">
+                            한번 더 세팅하기
+                        </button>
+                        <button onclick="switchTab('study')" class="flex-1 bg-gradient-to-r from-purple-500 to-indigo-500 text-white font-extrabold py-3.5 rounded-2xl shadow-lg hover:from-purple-600 hover:to-indigo-600 transition duration-300">
+                            개념 더 공부하기
+                        </button>
+                    </div>
+                </div>
+            `;
+            // Reset state
+            practiceQuestions = [];
+        };
+
+        const renderGameScreen = (container) => {
+            if (gameStatus === 'idle') {
+                container.innerHTML = `
+                    <div class="max-w-md mx-auto text-center flex flex-col gap-6 animate-pop-in py-4">
+                        <div class="relative inline-block mx-auto">
+                            <span class="text-6xl animate-bounce-slow inline-block">⏱️</span>
+                            <span class="absolute -top-1 -right-2 text-2xl">⚡</span>
+                        </div>
+                        <div>
+                            <h3 class="text-3xl font-black text-slate-800 kids-font">스피드 구구단 도전!</h3>
+                            <p class="text-slate-500 text-sm mt-1">30초 동안 가장 많은 문제를 맞혀 최고의 콤보와 점수를 획득해 보세요!</p>
+                        </div>
+
+                        <!-- Choose Difficulty / Table limit -->
+                        <div class="bg-purple-50/60 border border-purple-100 p-5 rounded-3xl text-left">
+                            <h4 class="font-bold text-slate-800 text-sm mb-3 text-center">도전할 구구단 난이도</h4>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button id="game-range-9" onclick="setGameRange(9)" class="py-2.5 px-2 font-bold text-xs rounded-xl border-2 transition bg-white text-purple-600 border-purple-300 shadow-sm">
+                                    기본 (9단)
+                                </button>
+                                <button id="game-range-12" onclick="setGameRange(12)" class="py-2.5 px-2 font-bold text-xs rounded-xl border-2 transition border-slate-100 text-slate-600 hover:bg-white">
+                                    마스터 (12단)
+                                </button>
+                                <button id="game-range-19" onclick="setGameRange(19)" class="py-2.5 px-2 font-bold text-xs rounded-xl border-2 transition border-slate-100 text-slate-600 hover:bg-white">
+                                    천재 (19단)
+                                </button>
+                            </div>
+                            
+                            <div class="mt-4 border-t border-purple-100 pt-3 text-center">
+                                <span class="text-xs text-slate-500">역대 최고 기록: <span class="font-black text-pink-500 text-sm" id="high-score-display">${highScores[currentStudyRange]}점</span></span>
+                            </div>
+                        </div>
+
+                        <button onclick="startGame()" class="w-full bg-gradient-to-r from-pink-500 to-purple-500 hover:from-pink-600 hover:to-purple-600 text-white font-extrabold py-4 rounded-2xl shadow-xl shadow-pink-100 hover:scale-[1.01] transition-all duration-300 text-lg flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-bolt"></i> 스피드 도전 시작!
+                        </button>
+                    </div>
+                `;
+                setGameRange(currentStudyRange); // update UI classes
+            } else if (gameStatus === 'playing') {
+                // Active Game Render Loop
+                const livesHearts = Array(3).fill(0).map((_, idx) => `
+                    <i class="fa-solid fa-heart text-2xl transition duration-300 ${idx < gameLives ? 'text-rose-500 animate-pulse' : 'text-slate-200'}"></i>
+                `).join('');
+
+                const optionsHtml = gameOptions.map((opt, idx) => `
+                    <button onclick="submitGameAnswer(${opt})" class="w-full p-4 rounded-2xl bg-white border-2 border-slate-100 hover:border-pink-300 hover:bg-pink-50/20 font-black text-xl text-slate-700 hover:text-pink-600 transition shadow-sm hover:scale-[1.01] transform">
+                        ${opt}
+                    </button>
+                `).join('');
+
+                container.innerHTML = `
+                    <div class="max-w-xl mx-auto flex flex-col gap-5 animate-pop-in">
+                        <!-- Top status line -->
+                        <div class="flex justify-between items-center bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                            <div class="flex items-center gap-1.5">
+                                ${livesHearts}
+                            </div>
+                            <div class="text-right">
+                                <span class="text-xs text-slate-400 font-bold block">나의 점수</span>
+                                <span class="text-xl font-black text-purple-600">${gameScore}점</span>
+                            </div>
+                        </div>
+
+                        <!-- Time limit indicator bar -->
+                        <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden shadow-inner">
+                            <div id="game-timer-bar" class="bg-gradient-to-r from-pink-500 via-purple-500 to-indigo-500 h-full transition-all duration-300" style="width: 100%"></div>
+                        </div>
+
+                        <!-- Game Score, Timer detail elements -->
+                        <div class="flex justify-between items-center text-sm px-1">
+                            <span class="font-bold text-pink-500">콤보: ${gameCombo} 콤보</span>
+                            <span class="font-extrabold text-slate-700 flex items-center gap-1">
+                                <i class="fa-regular fa-clock animate-spin"></i> 남은시간: <span id="game-timer-text" class="text-lg text-rose-500 font-black">${gameTimeLeft}</span>초
+                            </span>
+                        </div>
+
+                        <!-- Active Formula Card -->
+                        <div class="bg-gradient-to-tr from-pink-500 to-purple-600 rounded-3xl p-10 text-center shadow-xl relative overflow-hidden">
+                            <!-- Background accent circles -->
+                            <div class="absolute w-24 h-24 bg-white/10 rounded-full -top-6 -left-6"></div>
+                            <div class="absolute w-32 h-32 bg-white/10 rounded-full -bottom-10 -right-10"></div>
+                            
+                            <div class="relative z-10 text-white flex flex-col items-center">
+                                ${gameCombo >= 3 ? `<span class="bg-white/20 text-white font-extrabold text-xs px-3 py-1 rounded-full animate-bounce mb-3">🔥 ${gameCombo} COMBO! 🔥</span>` : ''}
+                                <div class="kids-font text-6xl font-black tracking-widest flex items-center justify-center gap-4">
+                                    <span>${gameCurrentQuestion.num1}</span>
+                                    <span class="text-pink-200">×</span>
+                                    <span>${gameCurrentQuestion.num2}</span>
+                                    <span class="text-pink-200 font-light">=</span>
+                                    <span class="text-pink-100">?</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Game multi-choice answers grid -->
+                        <div class="grid grid-cols-2 gap-3 mt-2">
+                            ${optionsHtml}
+                        </div>
+                    </div>
+                `;
+            } else if (gameStatus === 'gameover') {
+                renderGameOverScreen(container);
+            }
+        };
+
+        const setGameRange = (r) => {
+            playSound('click');
+            currentStudyRange = r;
+            
+            // Toggle active classes in setup menu
+            const ranges = [9, 12, 19];
+            ranges.forEach(range => {
+                const btn = document.getElementById(`game-range-${range}`);
+                if (btn) {
+                    if (range === r) {
+                        btn.className = "py-2.5 px-2 font-bold text-xs rounded-xl border-2 transition bg-purple-600 text-white border-purple-600 shadow-sm";
+                    } else {
+                        btn.className = "py-2.5 px-2 font-bold text-xs rounded-xl border-2 transition border-slate-100 text-slate-600 hover:bg-white";
+                    }
+                }
+            });
+
+            const highScoreDisplay = document.getElementById('high-score-display');
+            if (highScoreDisplay) {
+                highScoreDisplay.innerText = `${highScores[r] || 0}점`;
+            }
+        };
+
+        const startGame = () => {
+            playSound('click');
+            gameStatus = 'playing';
+            gameScore = 0;
+            gameCombo = 0;
+            gameMaxCombo = 0;
+            gameLives = 3;
+            gameTimeLeft = 30;
+
+            generateGameQuestion();
+            renderScreen();
+
+            // Set running timer interval
+            if (gameTimer) clearInterval(gameTimer);
+            gameTimer = setInterval(() => {
+                gameTimeLeft--;
+                const timerText = document.getElementById('game-timer-text');
+                const timerBar = document.getElementById('game-timer-bar');
+                
+                if (timerText) timerText.innerText = gameTimeLeft;
+                if (timerBar) {
+                    const pct = (gameTimeLeft / 30) * 100;
+                    timerBar.style.width = `${pct}%`;
+                }
+
+                if (gameTimeLeft <= 0) {
+                    endGame();
+                }
+            }, 1000);
+        };
+
+        const generateGameQuestion = () => {
+            // Pick rand values depending on current table range constraint
+            const num1 = Math.floor(Math.random() * (currentStudyRange - 1)) + 2; // from 2 to limit
+            const num2 = Math.floor(Math.random() * 9) + 1; // standard multipliers 1 to 9
+            const answer = num1 * num2;
+
+            gameCurrentQuestion = { num1, num2, answer };
+
+            // Produce options
+            const choices = new Set();
+            choices.add(answer);
+
+            while (choices.size < 4) {
+                // Produce smart distractors
+                const offset = Math.floor(Math.random() * 5) - 2;
+                let distractor = answer + (offset * num1);
+                if (distractor <= 0 || distractor === answer) {
+                    distractor = num1 * (Math.floor(Math.random() * 9) + 1);
+                }
+                choices.add(distractor);
+            }
+
+            // Shuffle choice options
+            gameOptions = Array.from(choices).sort(() => Math.random() - 0.5);
+        };
+
+        const submitGameAnswer = (userAnswer) => {
+            if (gameStatus !== 'playing') return;
+
+            const isCorrect = (userAnswer === gameCurrentQuestion.answer);
+            recordStat(gameCurrentQuestion.num1, gameCurrentQuestion.num2, isCorrect);
+
+            if (isCorrect) {
+                playSound('correct');
+                // Scoring algorithm featuring combo multipliers!
+                gameCombo++;
+                if (gameCombo > gameMaxCombo) gameMaxCombo = gameCombo;
+
+                const basePoints = 10;
+                const comboBonus = Math.floor(gameCombo / 3) * 5; // +5 points bonus for every 3 combos
+                gameScore += (basePoints + comboBonus);
+
+                // Add small timer bonus (up to 2 seconds max)
+                gameTimeLeft = Math.min(30, gameTimeLeft + 1);
+            } else {
+                playSound('incorrect');
+                gameCombo = 0; // reset combo
+                gameLives--;
+                
+                // Trigger quick warning shake effect on timer or hearts wrapper if wanted
+                if (gameLives <= 0) {
+                    endGame();
+                    return;
+                }
+            }
+
+            generateGameQuestion();
+            renderScreen();
+        };
+
+        const endGame = () => {
+            if (gameTimer) clearInterval(gameTimer);
+            gameStatus = 'gameover';
+            playSound('gameover');
+
+            // Save High Score
+            const previousHighScore = highScores[currentStudyRange] || 0;
+            let isNewHighScore = false;
+            if (gameScore > previousHighScore) {
+                highScores[currentStudyRange] = gameScore;
+                localStorage.setItem('gugudan_high_scores', JSON.stringify(highScores));
+                isNewHighScore = true;
+                setTimeout(() => triggerConfetti(), 150);
+            }
+
+            renderScreen();
+        };
+
+        const renderGameOverScreen = (container) => {
+            const isNewHigh = (gameScore > (JSON.parse(localStorage.getItem('gugudan_high_scores'))?.[currentStudyRange] || 0));
+
+            container.innerHTML = `
+                <div class="max-w-md mx-auto text-center flex flex-col gap-6 animate-pop-in py-2">
+                    <div>
+                        <span class="text-6xl">${gameScore >= 150 ? '🏆' : '🏁'}</span>
+                        <h3 class="text-3xl font-black text-slate-800 mt-3 kids-font">도전 종료!</h3>
+                        <p class="text-slate-500 text-sm mt-1">멋진 승부를 펼쳤습니다!</p>
+                    </div>
+
+                    <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-3xl p-6 border border-indigo-100 shadow-sm relative">
+                        ${isNewHigh ? `
+                            <span class="absolute -top-3 left-1/2 transform -translate-x-1/2 bg-gradient-to-r from-amber-500 to-yellow-500 text-white font-black text-xs px-4 py-1 rounded-full shadow-md animate-bounce">
+                                🎉 NEW HIGH SCORE!
+                            </span>
+                        ` : ''}
+                        
+                        <div class="grid grid-cols-2 gap-4 divide-x divide-indigo-100 mt-2">
+                            <div>
+                                <span class="text-xs text-slate-400 block font-bold">최종 점수</span>
+                                <span class="text-3xl font-black text-purple-600">${gameScore}점</span>
+                            </div>
+                            <div>
+                                <span class="text-xs text-slate-400 block font-bold">최대 콤보</span>
+                                <span class="text-3xl font-black text-pink-500">${gameMaxCombo} 콤보</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-3">
+                        <button onclick="restartGame()" class="flex-1 bg-gradient-to-r from-pink-500 to-purple-500 text-white font-extrabold py-3.5 rounded-2xl shadow-lg hover:scale-[1.01] transition duration-300">
+                            다시 도전하기
+                        </button>
+                        <button onclick="exitGame()" class="flex-1 bg-white border-2 border-slate-200 text-slate-600 font-extrabold py-3.5 rounded-2xl shadow-sm hover:bg-slate-50 transition duration-300">
+                            나가기
+                        </button>
+                    </div>
+                </div>
+            `;
+        };
+
+        const restartGame = () => {
+            gameStatus = 'idle';
+            startGame();
+        };
+
+        const exitGame = () => {
+            playSound('click');
+            gameStatus = 'idle';
+            renderScreen();
+        };
+
+        const renderStatsScreen = (container) => {
+            // Generate progress status bars for each dan step
+            let statsItemsHtml = '';
+            for (let i = 2; i <= 9; i++) {
+                const stepCorrect = statsData.correct[i] || 0;
+                const stepIncorrect = statsData.incorrect[i] || 0;
+                const totalSolved = stepCorrect + stepIncorrect;
+                
+                let successPercent = 0;
+                let ratingLabel = '학습 전 📚';
+                let colorClass = 'bg-slate-300';
+
+                if (totalSolved > 0) {
+                    successPercent = Math.round((stepCorrect / totalSolved) * 100);
+                    if (successPercent >= 90) {
+                        ratingLabel = '마스터! 👑';
+                        colorClass = 'bg-gradient-to-r from-emerald-400 to-teal-500';
+                    } else if (successPercent >= 70) {
+                        ratingLabel = '참 잘해요 🌟';
+                        colorClass = 'bg-gradient-to-r from-blue-400 to-indigo-500';
+                    } else if (successPercent >= 40) {
+                        ratingLabel = '노력중 이에요 👍';
+                        colorClass = 'bg-gradient-to-r from-amber-400 to-orange-500';
+                    } else {
+                        ratingLabel = '더 연습해요 💪';
+                        colorClass = 'bg-gradient-to-r from-rose-400 to-red-500';
+                    }
+                }
+
+                statsItemsHtml += `
+                    <div class="p-4 bg-slate-50 border border-slate-100 rounded-2xl flex flex-col gap-2 shadow-sm">
+                        <div class="flex justify-between items-center">
+                            <span class="font-extrabold text-slate-800 kids-font text-lg">${i}단</span>
+                            <span class="text-xs font-bold text-slate-500">${ratingLabel} (${successPercent}%)</span>
+                        </div>
+                        <div class="w-full bg-slate-200 rounded-full h-3 overflow-hidden shadow-inner">
+                            <div class="${colorClass} h-full transition-all duration-300" style="width: ${successPercent}%"></div>
+                        </div>
+                        <div class="flex justify-between text-[10px] text-slate-400">
+                            <span>해결한 총 문제: ${totalSolved}개</span>
+                            <span>맞힌 수: ${stepCorrect} / 틀린 수: ${stepIncorrect}</span>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Generate Wrong Answers Review List (오답 노트)
+            let wrongQuestionsHtml = '';
+            if (statsData.wrongList && statsData.wrongList.length > 0) {
+                // Keep only top 8 unique wrong questions for compact review list
+                const list = statsData.wrongList.slice(-8); // Get latest 8 wrong formulas
+                
+                wrongQuestionsHtml = list.map((item, index) => `
+                    <div class="flex justify-between items-center p-3 bg-rose-50/50 hover:bg-rose-50 border border-rose-100 rounded-xl transition duration-200">
+                        <div class="flex items-center gap-3">
+                            <span class="bg-rose-100 text-rose-600 text-[10px] font-black w-5 h-5 rounded-full flex items-center justify-center">${index + 1}</span>
+                            <span class="kids-font font-black text-slate-800 text-lg">${item.num1} × ${item.num2} = ?</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <button onclick="retryWrongQuestion(${item.num1}, ${item.num2}, ${index})" class="px-3.5 py-1.5 text-xs font-bold text-white bg-gradient-to-r from-rose-500 to-pink-500 rounded-lg hover:from-rose-600 hover:to-pink-600 shadow-sm transition">
+                                다시 풀기
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                wrongQuestionsHtml = `
+                    <div class="text-center p-8 border-2 border-dashed border-slate-100 rounded-2xl">
+                        <span class="text-4xl">🎉</span>
+                        <h5 class="font-bold text-slate-600 mt-2">오답 노트가 텅 비었어요!</h5>
+                        <p class="text-xs text-slate-400 mt-1">모든 문제를 다 맞혔거나 아직 풀지 않았어요.</p>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = `
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 animate-pop-in">
+                    <!-- Progress Grid -->
+                    <div>
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-chart-line text-purple-500"></i> 단수별 마스터 진행율
+                            </h3>
+                            <button onclick="resetStats()" class="text-xs text-slate-400 hover:text-rose-500 font-bold transition">기록 초기화</button>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-1 gap-3 max-h-[460px] overflow-y-auto custom-scrollbar pr-1">
+                            ${statsItemsHtml}
+                        </div>
+                    </div>
+
+                    <!-- Incorrect Notes Grid -->
+                    <div>
+                        <div class="mb-4">
+                            <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                                <i class="fa-solid fa-triangle-exclamation text-rose-500"></i> 똑똑 오답 노트 (복습 공간)
+                            </h3>
+                            <p class="text-xs text-slate-400 mt-1">최근에 오답이 있었던 문제들입니다. 완벽하게 학습해 봐요!</p>
+                        </div>
+                        <div class="flex flex-col gap-2.5 max-h-[460px] overflow-y-auto custom-scrollbar pr-1">
+                            ${wrongQuestionsHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        const recordStat = (num1, num2, isCorrect) => {
+            // Log core stats per step
+            if (!statsData.correct[num1]) statsData.correct[num1] = 0;
+            if (!statsData.incorrect[num1]) statsData.incorrect[num1] = 0;
+
+            if (isCorrect) {
+                statsData.correct[num1]++;
+                // If it exists in wrongList, remove it to show mastery progression
+                statsData.wrongList = statsData.wrongList.filter(item => !(item.num1 === num1 && item.num2 === num2));
+            } else {
+                statsData.incorrect[num1]++;
+                // Add to wrong list if not already logged
+                const alreadyExists = statsData.wrongList.some(item => item.num1 === num1 && item.num2 === num2);
+                if (!alreadyExists) {
+                    statsData.wrongList.push({ num1, num2 });
+                }
+            }
+
+            localStorage.setItem('gugudan_stats', JSON.stringify(statsData));
+        };
+
+        const retryWrongQuestion = (num1, num2, index) => {
+            playSound('click');
+            const result = num1 * num2;
+            
+            // Generate basic choices
+            const choices = new Set();
+            choices.add(result);
+            while (choices.size < 4) {
+                const offset = Math.floor(Math.random() * 5) - 2;
+                let distractor = result + (offset * num1);
+                if (distractor <= 0 || distractor === result) {
+                    distractor = num1 * (Math.floor(Math.random() * 9) + 1);
+                }
+                choices.add(distractor);
+            }
+            const opts = Array.from(choices).sort(() => Math.random() - 0.5);
+
+            // Dynamically overlay a small puzzle modal
+            const optionsButtons = opts.map(o => `
+                <button onclick="submitRetryAnswer(${num1}, ${num2}, ${o}, ${index})" class="p-3 font-bold border rounded-xl hover:bg-slate-50 transition">${o}</button>
+            `).join('');
+
+            const overlay = document.createElement('div');
+            overlay.id = 'retry-overlay';
+            overlay.className = "fixed inset-0 bg-slate-900/40 flex items-center justify-center z-50 p-4";
+            overlay.innerHTML = `
+                <div class="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl animate-pop-in text-center">
+                    <span class="text-3xl">🔥</span>
+                    <h3 class="text-lg font-bold text-slate-800 mt-2 mb-4">다시 도전: ${num1} × ${num2}</h3>
+                    <div class="grid grid-cols-2 gap-2.5 mb-5">
+                        ${optionsButtons}
+                    </div>
+                    <button onclick="closeRetryOverlay()" class="text-sm font-semibold text-slate-400 hover:text-slate-600 transition">창 닫기</button>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+        };
+
+        const submitRetryAnswer = (num1, num2, answer, listIndex) => {
+            const isCorrect = (num1 * num2 === answer);
+            const overlay = document.getElementById('retry-overlay');
+            if (overlay) overlay.remove();
+
+            if (isCorrect) {
+                playSound('correct');
+                // Remove from wrongList
+                statsData.wrongList.splice(listIndex, 1);
+                statsData.correct[num1] = (statsData.correct[num1] || 0) + 1;
+                localStorage.setItem('gugudan_stats', JSON.stringify(statsData));
+                showModal('정답입니다!', '오답 노트에서 이 문제가 사라졌어요! 대단합니다.', '🎉');
+            } else {
+                playSound('incorrect');
+                showModal('어이쿠, 아쉬워요!', '다음에 다시 차근차근 확인해 봐요!', '💪');
+            }
+            renderScreen();
+        };
+
+        const closeRetryOverlay = () => {
+            playSound('click');
+            const overlay = document.getElementById('retry-overlay');
+            if (overlay) overlay.remove();
+        };
+
+        const resetStats = () => {
+            playSound('click');
+            statsData = { correct: {}, incorrect: {}, wrongList: [] };
+            localStorage.setItem('gugudan_stats', JSON.stringify(statsData));
+            showModal('초기화 완료', '모든 누적 성적표 데이터와 오답 기록이 청소되었습니다.', '🧹');
+            renderScreen();
+        };
+
+        const triggerConfetti = () => {
+            confetti({
+                particleCount: 120,
+                spread: 70,
+                origin: { y: 0.6 },
+                colors: ['#a855f7', '#ec4899', '#6366f1', '#3b82f6', '#f59e0b']
+            });
+        };
+
+        window.onload = function() {
+            renderScreen();
+        };
+    </script>
+</body>
+</html>
