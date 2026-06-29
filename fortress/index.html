@@ -1,1 +1,1947 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>추억의 포트리스 2D - Ultra Edition</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Orbitron for Sci-Fi numbers -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <!-- Pretendard Webfont for Ultimate Readability -->
+    <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+    <!-- Tone.js for Retro Sound Effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
 
+    <style>
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", sans-serif;
+            background-color: #030712;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .font-retro {
+            font-family: 'Orbitron', sans-serif;
+        }
+        /* Custom Scanline Effect for CRT Retro Feel */
+        .crt::after {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.12) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.02), rgba(0, 255, 0, 0.01), rgba(0, 255, 0, 0.02));
+            aspect-ratio: 5/3;
+            z-index: 10;
+            background-size: 100% 4px, 6px 100%;
+            pointer-events: none;
+        }
+        /* Custom styled range slider to prevent browser default inconsistencies */
+        input[type="range"]::-webkit-slider-thumb {
+            background: #f43f5e;
+            border: 2px solid #ffffff;
+            border-radius: 9999px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            -webkit-appearance: none;
+            box-shadow: 0 0 10px #f43f5e;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-100 flex flex-col items-center justify-between p-3 md:p-6 bg-radial-at-t from-slate-950 via-slate-900 to-black">
+
+<header class="w-full max-w-5xl flex flex-col md:flex-row justify-between items-center gap-4 mb-4 border-b border-slate-800 pb-4">
+    <div class="flex items-center gap-3">
+        <div class="bg-gradient-to-br from-red-600 to-orange-500 p-2.5 rounded-xl shadow-lg shadow-red-900/40 animate-pulse">
+            <i class="fa-solid fa-fire text-2xl text-white"></i>
+        </div>
+        <div>
+            <h1 class="text-3xl md:text-4xl font-extrabold tracking-wider bg-clip-text text-transparent bg-gradient-to-r from-red-500 via-orange-400 to-yellow-300">
+                FORTRESS 2D ULTRA
+            </h1>
+            <p class="text-xs text-slate-300 font-retro tracking-widest uppercase font-bold">The Legend of Artillery Tactical Action</p>
+        </div>
+    </div>
+    
+    <!-- Game Control Status/Settings with increased readability -->
+    <div class="flex flex-wrap items-center justify-center gap-2 bg-slate-900 border-2 border-slate-700 px-4 py-2 rounded-xl shadow-lg">
+        <!-- BGM Toggle -->
+        <button id="bgmToggleBtn" onclick="toggleBGM()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 transition duration-200 text-sm font-bold text-white">
+            <i class="fa-solid fa-music text-emerald-400" id="bgmIcon"></i>
+            <span>배경음악 ON</span>
+        </button>
+        <!-- Sound Effect Toggle -->
+        <button id="sfxToggleBtn" onclick="toggleSFX()" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 transition duration-200 text-sm font-bold text-white">
+            <i class="fa-solid fa-volume-high text-yellow-400" id="sfxIcon"></i>
+            <span>효과음 ON</span>
+        </button>
+        <!-- Help Button -->
+        <button onclick="toggleHelpModal(true)" class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-600 transition duration-200 text-sm font-bold text-sky-300">
+            <i class="fa-solid fa-circle-question"></i>
+            <span>조작법</span>
+        </button>
+        <!-- Forfeit/Exit Button (Shown only when match is active) -->
+        <button id="exitToLobbyBtn" onclick="confirmExitToLobby()" class="hidden flex items-center gap-2 px-3 py-1.5 rounded-lg bg-red-950/80 hover:bg-red-900 border-2 border-red-700 transition duration-200 text-sm font-bold text-red-200">
+            <i class="fa-solid fa-door-open"></i>
+            <span>기권 / 메인으로</span>
+        </button>
+    </div>
+</header>
+
+<main class="w-full max-w-5xl flex-1 flex flex-col items-center justify-center gap-6 relative">
+    
+    <!-- 1. LOBBY SCREEN CONTAINER (Completely isolated to prevent overlap) -->
+    <div id="lobbyScreen" class="w-full bg-slate-900/95 border-2 border-slate-700 rounded-2xl flex flex-col items-center justify-center p-6 md:p-10 shadow-2xl backdrop-blur-md">
+        <div class="max-w-2xl w-full text-center flex flex-col items-center gap-6">
+            <div class="space-y-3">
+                <span class="text-orange-400 font-retro font-black text-sm tracking-widest px-4 py-1.5 bg-orange-950/80 border border-orange-700/80 rounded-full shadow-inner">
+                    BATTLE CRUCIBLE
+                </span>
+                <h2 class="text-4xl md:text-5xl font-black text-white mt-2 drop-shadow-md">게임 대기실</h2>
+                <p class="text-slate-200 text-base font-medium">전술 모드와 난이도, 강력한 중장갑 탱크를 선택하고 참전하십시오!</p>
+            </div>
+
+            <!-- Game Mode Settings -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
+                <button id="modeSingleBtn" onclick="setGameMode('single')" class="p-5 rounded-xl border-2 border-orange-500 bg-orange-950/40 text-left transition duration-300 transform hover:scale-[1.01] flex items-center justify-between shadow-lg shadow-orange-950/40">
+                    <div>
+                        <h3 class="text-xl font-extrabold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-microchip text-orange-400 animate-pulse"></i> 싱글 플레이 (vs AI 알파포)
+                        </h3>
+                        <p class="text-xs text-slate-300 font-medium mt-1 leading-relaxed">예측 사격 궤적을 연산하는 AI와 대결합니다.</p>
+                    </div>
+                    <i class="fa-solid fa-circle-check text-orange-500 text-2xl"></i>
+                </button>
+
+                <button id="modeMultiBtn" onclick="setGameMode('multi')" class="p-5 rounded-xl border border-slate-700 bg-slate-800/40 text-left transition duration-300 transform hover:scale-[1.01] flex items-center justify-between hover:border-slate-500 hover:bg-slate-800/60">
+                    <div>
+                        <h3 class="text-xl font-extrabold text-slate-200 flex items-center gap-2" id="multiTitle">
+                            <i class="fa-solid fa-user-group text-sky-400"></i> 2인 로컬 대전 (1vs1)
+                        </h3>
+                        <p class="text-xs text-slate-300 font-medium mt-1 leading-relaxed">하나의 키보드로 한 턴씩 번갈아 가며 실력을 겨룹니다.</p>
+                    </div>
+                    <i class="fa-solid fa-circle-check text-slate-700 text-2xl" id="multiCheckIcon"></i>
+                </button>
+            </div>
+
+            <!-- AI Difficulty Level Selector -->
+            <div id="difficultySection" class="w-full bg-slate-950 p-5 rounded-2xl border border-slate-850">
+                <h3 class="text-lg font-bold text-left mb-4 text-slate-200 flex items-center gap-2 border-b border-slate-800 pb-2">
+                    <i class="fa-solid fa-gauge-high text-indigo-400"></i> AI 알파포 전술 난이도 설정 (싱글모드 전용)
+                </h3>
+                <div class="grid grid-cols-3 gap-3">
+                    <button id="diff-easy" onclick="setDifficulty('easy')" class="py-3.5 rounded-xl border border-slate-800 bg-slate-900/40 text-sm font-bold text-slate-400 hover:text-white hover:bg-slate-800/50 transition duration-150">
+                        하 (쉬움)
+                    </button>
+                    <button id="diff-normal" onclick="setDifficulty('normal')" class="py-3.5 rounded-xl border-2 border-amber-500 bg-amber-950/20 text-sm font-black text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.2)] transition duration-150">
+                        중 (보통)
+                    </button>
+                    <button id="diff-hard" onclick="setDifficulty('hard')" class="py-3.5 rounded-xl border border-slate-800 bg-slate-900/40 text-sm font-bold text-slate-400 hover:text-white hover:bg-slate-800/50 transition duration-150">
+                        상 (어려움)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Tank Selection Grid -->
+            <div class="w-full bg-slate-950 p-5 rounded-2xl border border-slate-850">
+                <h3 class="text-lg font-bold text-left mb-4 text-slate-200 flex items-center gap-2 border-b border-slate-800 pb-2">
+                    <i class="fa-solid fa-truck-monster text-amber-400"></i> 플레이어 1 탱크 무장 선택
+                </h3>
+                <div class="grid grid-cols-3 gap-3">
+                    <!-- Cannon Tank -->
+                    <div id="tankBtn-cannon" onclick="selectTank(0, 'cannon')" class="p-4 rounded-xl border-2 border-orange-500 bg-orange-950/30 cursor-pointer transition duration-200 hover:bg-slate-800/50 flex flex-col items-center shadow">
+                        <div class="text-4xl mb-2 filter drop-shadow-[0_0_8px_#ea580c]">💣</div>
+                        <span class="font-extrabold text-sm text-white">캐논 탱크</span>
+                        <span class="text-[10px] text-orange-300 mt-1 font-bold text-center">고폭 분쇄탄 / 넓은 피격구</span>
+                    </div>
+                    <!-- Multi Tank -->
+                    <div id="tankBtn-multi" onclick="selectTank(0, 'multi')" class="p-4 rounded-xl border border-slate-800 bg-slate-900/40 cursor-pointer transition duration-200 hover:bg-slate-850 flex flex-col items-center shadow">
+                        <div class="text-4xl mb-2 filter drop-shadow-[0_0_8px_#38bdf8]">🚀</div>
+                        <span class="font-extrabold text-sm text-slate-200">멀티 탱크</span>
+                        <span class="text-[10px] text-sky-300 mt-1 font-bold text-center">3연장 미사일 / 화력 분산</span>
+                    </div>
+                    <!-- Super Tank -->
+                    <div id="tankBtn-super" onclick="selectTank(0, 'super')" class="p-4 rounded-xl border border-slate-800 bg-slate-900/40 cursor-pointer transition duration-200 hover:bg-slate-850 flex flex-col items-center shadow">
+                        <div class="text-4xl mb-2 filter drop-shadow-[0_0_8px_#facc15]">👑</div>
+                        <span class="font-extrabold text-sm text-slate-200">슈퍼 탱크</span>
+                        <span class="text-[10px] text-yellow-300 mt-1 font-bold text-center">삼중 유도 탄환 / 초강력 화력</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Start Game Button -->
+            <button onclick="startGame()" class="w-full py-5 bg-gradient-to-r from-red-600 via-orange-500 to-yellow-500 hover:from-red-500 hover:to-orange-400 text-white font-black text-2xl rounded-2xl shadow-xl shadow-orange-950/50 transform transition active:scale-95 duration-100 flex items-center justify-center gap-3">
+                <i class="fa-solid fa-gamepad text-3xl"></i> MATCH START (전장 입장)
+            </button>
+        </div>
+    </div>
+
+    <!-- 2. GAME SCREEN CONTAINER (Hidden by default, holds game canvas & controls) -->
+    <div id="gameScreen" class="w-full flex flex-col gap-5 hidden">
+        
+        <!-- The Game Canvas Container -->
+        <div class="w-full relative rounded-2xl border-4 border-slate-700 bg-slate-950 shadow-2xl overflow-hidden crt max-w-[1000px]">
+            
+            <!-- Wind HUD Overlay -->
+            <div class="absolute top-4 left-1/2 -translate-x-1/2 z-20 flex items-center gap-4 bg-slate-950/95 border-2 border-teal-500/50 px-5 py-2.5 rounded-full shadow-2xl pointer-events-none">
+                <span class="text-xs font-bold text-slate-200 tracking-widest font-retro">WIND DIRECTION</span>
+                <div class="flex items-center gap-2">
+                    <!-- Wind direction arrow -->
+                    <i id="windArrow" class="fa-solid fa-circle-arrow-right text-xl text-teal-400 transition-transform duration-500"></i>
+                    <span id="windText" class="font-retro font-black text-teal-300 text-base">0.0 m/s</span>
+                </div>
+            </div>
+
+            <!-- Timer & Round Status HUD Overlay -->
+            <div class="absolute top-4 left-4 z-20 bg-slate-950/95 border-2 border-red-500/50 px-4 py-2.5 rounded-xl shadow-2xl font-retro flex items-center gap-3 pointer-events-none">
+                <div id="turnTimerCircle" class="w-9 h-9 rounded-full border-2 border-red-500 flex items-center justify-center text-base font-black text-red-400 bg-red-950/30">20</div>
+                <div>
+                    <span id="turnLabel" class="text-sm font-black text-white uppercase block tracking-wider">PLAYER 1 TURN</span>
+                    <span id="statusIndicator" class="text-[10px] text-green-400 uppercase tracking-widest block font-extrabold">READY TO SHOOT</span>
+                </div>
+            </div>
+
+            <!-- Active Item Status HUD -->
+            <div class="absolute top-4 right-4 z-20 bg-slate-950/95 border-2 border-emerald-500/50 px-4 py-2.5 rounded-xl shadow-2xl flex flex-col items-end pointer-events-none">
+                <span class="text-[10px] font-retro font-bold text-slate-300 tracking-widest">ACTIVE WEAPON</span>
+                <span id="activeItemLabel" class="text-sm font-retro font-black text-emerald-400 animate-pulse">NORMAL AMMO</span>
+            </div>
+
+            <!-- Canvas -->
+            <canvas id="gameCanvas" width="1000" height="600" class="w-full h-auto block bg-slate-950"></canvas>
+        </div>
+
+        <!-- Dashboard: Items & Fire Controls -->
+        <div class="w-full flex flex-col md:flex-row gap-4">
+            <!-- Item Inventory -->
+            <div class="flex-1 bg-slate-900/95 p-5 rounded-2xl border-2 border-slate-700 flex flex-col justify-between shadow-xl">
+                <div class="flex justify-between items-center mb-3">
+                    <h4 class="font-extrabold text-white text-base flex items-center gap-2">
+                        <i class="fa-solid fa-cube text-emerald-400"></i> 전술 고유 아이템 (턴당 각 1회 사용 가능)
+                    </h4>
+                    <span class="text-xs text-yellow-300 font-bold bg-slate-950 px-2 py-0.5 rounded border border-slate-800">단축키: 1, 2, 3</span>
+                </div>
+                <div class="grid grid-cols-3 gap-3">
+                    <!-- Item 1: Double Shot -->
+                    <button id="item-double" onclick="useItem('double')" class="p-3 bg-slate-800 hover:bg-emerald-950/40 border-2 border-slate-700 hover:border-emerald-500 rounded-xl flex flex-col items-center justify-center transition duration-200 group">
+                        <span class="text-2xl group-hover:scale-110 transition duration-100">🔥✖2</span>
+                        <span class="font-black text-sm text-white mt-1">더블 샷 (1)</span>
+                        <span class="text-[11px] text-slate-300 mt-0.5 font-medium">연속 2회 발사</span>
+                    </button>
+                    <!-- Item 2: Teleport -->
+                    <button id="item-teleport" onclick="useItem('teleport')" class="p-3 bg-slate-800 hover:bg-emerald-950/40 border-2 border-slate-700 hover:border-emerald-500 rounded-xl flex flex-col items-center justify-center transition duration-200 group">
+                        <span class="text-2xl group-hover:scale-110 transition duration-100">🌀</span>
+                        <span class="font-black text-sm text-white mt-1">텔레포트 (2)</span>
+                        <span class="text-[11px] text-slate-300 mt-0.5 font-medium">탄착 지점 이동</span>
+                    </button>
+                    <!-- Item 3: Direct Heal -->
+                    <button id="item-heal" onclick="useItem('heal')" class="p-3 bg-slate-800 hover:bg-emerald-950/40 border-2 border-slate-700 hover:border-emerald-500 rounded-xl flex flex-col items-center justify-center transition duration-200 group">
+                        <span class="text-2xl group-hover:scale-110 transition duration-100">💚</span>
+                        <span class="font-black text-sm text-white mt-1">구급 킷 (3)</span>
+                        <span class="text-[11px] text-slate-300 mt-0.5 font-medium">체력 +40 즉시 회복</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Angle & Power Control Panel -->
+            <div class="flex-1 bg-slate-900/95 p-5 rounded-2xl border-2 border-slate-700 flex flex-col justify-between shadow-xl">
+                <div class="flex justify-between items-center mb-2">
+                    <h4 class="font-extrabold text-white text-base flex items-center gap-2">
+                        <i class="fa-solid fa-microscope text-orange-400"></i> 격발 사격 통제 시스템
+                    </h4>
+                    <span class="text-xs text-yellow-300 font-retro font-black bg-slate-950 px-2 py-0.5 rounded border border-slate-800" id="anglePowerDisplay">ANGLE: 45° | POWER: 0%</span>
+                </div>
+                
+                <div class="flex items-center gap-4 my-2">
+                    <!-- Angle Gauge Knob / Slider -->
+                    <div class="flex-1 flex flex-col gap-1.5">
+                        <label class="text-xs text-slate-300 font-bold flex justify-between">
+                            <span>포신 각도 조절 (▲▼ 화살표)</span>
+                            <span id="angleValue" class="text-orange-400 font-retro font-black text-sm">45°</span>
+                        </label>
+                        <input type="range" id="angleSlider" min="0" max="180" value="45" oninput="updateAngleSlider(this.value)" class="w-full h-2.5 bg-slate-950 rounded-lg appearance-none cursor-pointer border border-slate-800">
+                    </div>
+                    
+                    <!-- Power Gauge Indicator -->
+                    <div class="w-2/3 flex flex-col gap-1.5">
+                        <label class="text-xs text-slate-300 font-bold flex justify-between">
+                            <span>사격 힘 조절 (SPACE바 홀드)</span>
+                            <span id="powerValue" class="text-red-400 font-retro font-black text-sm">0%</span>
+                        </label>
+                        <div class="w-full h-5 bg-slate-950 rounded-full overflow-hidden border-2 border-slate-800 relative">
+                            <div id="powerProgressBar" class="h-full bg-gradient-to-r from-yellow-500 via-orange-500 to-red-600 w-0 transition-all duration-75"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mobile & Desktop Action Fire Button -->
+                <button id="fireButton" 
+                        onmousedown="startPowerCharge()" 
+                        onmouseup="releasePowerCharge()"
+                        ontouchstart="startPowerCharge(event)"
+                        ontouchend="releasePowerCharge(event)"
+                        class="w-full mt-2 py-3 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-extrabold text-base md:text-lg rounded-xl shadow-lg border-b-4 border-red-800 transition duration-150 transform active:translate-y-0.5 active:border-b-0 select-none">
+                    <i class="fa-solid fa-fire-flame-curved mr-2 text-xl"></i> [스페이스바] 길게 눌렀다 떼어 발사
+                </button>
+            </div>
+        </div>
+
+        <!-- Mobile Virtual Arrow Keys for movement and angle -->
+        <div class="w-full flex justify-center gap-4 p-2 md:hidden">
+            <button onmousedown="simulateKey('ArrowLeft', true)" onmouseup="simulateKey('ArrowLeft', false)" ontouchstart="simulateKey('ArrowLeft', true)" ontouchend="simulateKey('ArrowLeft', false)" class="w-16 h-12 bg-slate-800 border border-slate-600 active:bg-slate-700 text-white rounded-xl flex items-center justify-center text-xl shadow-lg"><i class="fa-solid fa-arrow-left"></i></button>
+            <button onmousedown="simulateKey('ArrowRight', true)" onmouseup="simulateKey('ArrowRight', false)" ontouchstart="simulateKey('ArrowRight', true)" ontouchend="simulateKey('ArrowRight', false)" class="w-16 h-12 bg-slate-800 border border-slate-600 active:bg-slate-700 text-white rounded-xl flex items-center justify-center text-xl shadow-lg"><i class="fa-solid fa-arrow-right"></i></button>
+            <div class="w-2"></div>
+            <button onmousedown="simulateKey('ArrowUp', true)" onmouseup="simulateKey('ArrowUp', false)" ontouchstart="simulateKey('ArrowUp', true)" ontouchend="simulateKey('ArrowUp', false)" class="w-16 h-12 bg-slate-800 border border-slate-600 active:bg-slate-700 text-white rounded-xl flex items-center justify-center text-xl shadow-lg"><i class="fa-solid fa-arrow-up"></i></button>
+            <button onmousedown="simulateKey('ArrowDown', true)" onmouseup="simulateKey('ArrowDown', false)" ontouchstart="simulateKey('ArrowDown', true)" ontouchend="simulateKey('ArrowDown', false)" class="w-16 h-12 bg-slate-800 border border-slate-600 active:bg-slate-700 text-white rounded-xl flex items-center justify-center text-xl shadow-lg"><i class="fa-solid fa-arrow-down"></i></button>
+        </div>
+
+        <!-- LOG Console for game feed -->
+        <div class="w-full bg-slate-950 rounded-xl p-3.5 border-2 border-slate-800 flex flex-col gap-1 max-h-[120px] overflow-y-auto shadow-inner" id="gameLog">
+            <div class="text-xs text-yellow-400 font-bold">[전술 작전 보고] 시스템 연동 성공. 탱크 모델과 공격 방식을 선택해 참전해 주세요.</div>
+        </div>
+    </div>
+</main>
+
+<!-- Modal: Game Over Screen -->
+<div id="gameOverModal" class="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center hidden p-4">
+    <div class="bg-gradient-to-b from-slate-900 to-slate-950 border-2 border-slate-700 max-w-md w-full rounded-3xl p-8 text-center shadow-2xl relative overflow-hidden">
+        <div class="absolute -top-12 -left-12 w-32 h-32 bg-red-600/10 rounded-full blur-2xl"></div>
+        <div class="absolute -bottom-12 -right-12 w-32 h-32 bg-yellow-600/10 rounded-full blur-2xl"></div>
+        
+        <i class="fa-solid fa-trophy text-6xl text-yellow-400 mb-4 animate-bounce"></i>
+        <h2 class="text-4xl font-extrabold text-white mb-2">BATTLE ENDED</h2>
+        <p class="text-xl font-bold text-slate-100 mb-6" id="winnerLabel">플레이어 1 승리!</p>
+
+        <div class="bg-slate-950 rounded-2xl p-5 border border-slate-800 mb-6 text-left space-y-3 font-retro text-sm">
+            <div class="flex justify-between">
+                <span class="text-slate-400 font-bold">전투 시간 (Match Time):</span>
+                <span id="statTime" class="text-white font-black">00:00</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-slate-400 font-bold">총 격발 수 (Total Turns):</span>
+                <span id="statTurns" class="text-white font-black">0</span>
+            </div>
+        </div>
+
+        <div class="flex flex-col gap-2.5">
+            <button onclick="restartGame()" class="w-full py-3.5 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-500 hover:to-orange-500 text-white font-bold rounded-xl shadow-lg transition">
+                재경기 (Rematch)
+            </button>
+            <button onclick="goToLobby()" class="w-full py-3.5 bg-slate-800 hover:bg-slate-750 text-slate-100 font-bold border border-slate-600 rounded-xl transition">
+                로비로 돌아가기
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Help Guide -->
+<div id="helpModal" class="fixed inset-0 z-50 bg-black/90 backdrop-blur-sm flex items-center justify-center hidden p-4">
+    <div class="bg-slate-900 border-2 border-slate-600 max-w-lg w-full rounded-2xl p-6 shadow-2xl">
+        <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-2">
+            <h3 class="text-2xl font-extrabold text-white flex items-center gap-2">
+                <i class="fa-solid fa-circle-info text-sky-400"></i> 포트리스 전술 조작법 안내
+            </h3>
+            <button onclick="toggleHelpModal(false)" class="text-slate-300 hover:text-white text-2xl">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+        <div class="space-y-4 text-slate-200">
+            <div>
+                <h4 class="font-extrabold text-white text-base mb-1.5 flex items-center gap-2">
+                    <i class="fa-solid fa-keyboard text-yellow-400"></i> 키보드 통제 매뉴얼
+                </h4>
+                <ul class="list-disc pl-5 space-y-2 text-sm text-slate-300 font-medium">
+                    <li><kbd class="px-2 py-0.5 bg-slate-950 border-2 border-slate-700 rounded text-yellow-300 font-bold">◀</kbd> <kbd class="px-2 py-0.5 bg-slate-950 border-2 border-slate-700 rounded text-yellow-300 font-bold">▶</kbd> : <strong>좌우 탱크 이동</strong> (지반 경사면을 따라 미끄러집니다)</li>
+                    <li><kbd class="px-2 py-0.5 bg-slate-950 border-2 border-slate-700 rounded text-yellow-300 font-bold">▲</kbd> <kbd class="px-2 py-0.5 bg-slate-950 border-2 border-slate-700 rounded text-yellow-300 font-bold">▼</kbd> : <strong>대포 사격 각도 조준</strong> (하늘 방향으로 시원하게 들려 조준됩니다)</li>
+                    <li><kbd class="px-5 py-0.5 bg-slate-950 border-2 border-slate-700 rounded text-yellow-300 font-bold">Spacebar</kbd> : <strong>게이지 가압</strong> (누르고 있을 때 게이지가 채워지며, 떼는 순간 발사됩니다)</li>
+                    <li><kbd class="px-2 py-0.5 bg-slate-950 border-2 border-slate-700 rounded text-yellow-300 font-bold">1</kbd>, <kbd class="px-2 py-0.5 bg-slate-950 border-2 border-slate-700 rounded text-yellow-300 font-bold">2</kbd>, <kbd class="px-2 py-0.5 bg-slate-950 border-2 border-slate-700 rounded text-yellow-300 font-bold">3</kbd> : <strong>전술 지원 아이템 즉시 장착/사용</strong></li>
+                </ul>
+            </div>
+            <div class="border-t border-slate-800 pt-3">
+                <h4 class="font-extrabold text-white text-base mb-1">🌤️ 점선 예측 가이드 안내</h4>
+                <p class="text-sm text-slate-300 font-medium leading-relaxed">
+                    바람의 세기와 중력을 미리 계산해 주는 **실시간 점선 예측선**이 표시되어 누구나 손쉽게 정밀 사격의 타격 쾌감을 느낄 수 있습니다.
+                </p>
+            </div>
+            <div class="border-t border-slate-800 pt-3">
+                <h4 class="font-extrabold text-red-400 text-base mb-1 flex items-center gap-1.5">
+                    <i class="fa-solid fa-triangle-exclamation"></i> 주의: 번지 아웃 (Bungee)
+                </h4>
+                <p class="text-sm text-slate-300 font-medium leading-relaxed">
+                    대포 폭파 충격으로 지반이 계속 파괴되어 탱크가 맵 바닥 화면 아래 절벽으로 추락하면 남은 체력에 상관없이 즉시 패배합니다!
+                </p>
+            </div>
+        </div>
+        <button onclick="toggleHelpModal(false)" class="w-full mt-6 py-3 bg-sky-600 hover:bg-sky-500 text-white font-bold rounded-xl transition">
+            기밀 조작 숙지 완료
+        </button>
+    </div>
+</div>
+
+<!-- Modal: Custom Quit/Exit Confirmation -->
+<div id="exitConfirmModal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden p-4">
+    <div class="bg-slate-900 border-2 border-slate-700 max-w-sm w-full rounded-2xl p-6 shadow-2xl text-center">
+        <i class="fa-solid fa-triangle-exclamation text-5xl text-red-500 mb-4 animate-pulse"></i>
+        <h3 class="text-xl font-extrabold text-white mb-2">게임 기권</h3>
+        <p class="text-sm text-slate-300 mb-6 leading-relaxed">
+            현재 진행 중인 매치를 기권하고<br>대기실 로비로 완전히 돌아가시겠습니까?
+        </p>
+        <div class="flex gap-3">
+            <button onclick="closeExitModal()" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-750 text-white font-bold rounded-xl transition text-sm">
+                계속 플레이
+            </button>
+            <button onclick="forceExitToLobby()" class="flex-1 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl transition text-sm">
+                기권 및 퇴장
+            </button>
+        </div>
+    </div>
+</div>
+
+<footer class="w-full max-w-5xl mt-5 text-center text-xs text-slate-400 border-t border-slate-900 pt-4 flex flex-col md:flex-row justify-between items-center gap-2">
+    <span>© 2026 Retro Fortress 2D Ultra Edition.</span>
+    <span class="flex items-center gap-1 font-bold text-slate-300"><i class="fa-solid fa-shield-halved text-orange-500 animate-pulse"></i> 오리지널 포트리스 감성의 고해상도 완벽 복원판</span>
+</footer>
+
+<script>
+// Tone.js Sound Synth configuration
+let audioCtxInitialized = false;
+let sfxEnabled = true;
+let bgmInterval = null;
+let isPlayingBGM = false;
+
+// Initialize Audio Context and synths
+function initAudio() {
+    if (audioCtxInitialized) return;
+    try {
+        Tone.start();
+        audioCtxInitialized = true;
+    } catch(e) {
+        console.warn("Audio init failed: ", e);
+    }
+}
+
+function playSound(type) {
+    if (!sfxEnabled) return;
+    initAudio();
+    try {
+        const now = Tone.now();
+        if (type === 'fire') {
+            const synth = new Tone.MonoSynth({
+                oscillator: { type: "sawtooth" },
+                filter: { Q: 2, type: "lowpass", frequency: 1200 },
+                envelope: { attack: 0.01, decay: 0.15, sustain: 0.1, release: 0.1 }
+            }).toDestination();
+            synth.triggerAttackRelease("A2", "8n", now);
+            synth.frequency.rampTo("C1", 0.15);
+        } else if (type === 'explosion') {
+            const noise = new Tone.Noise("pink").start();
+            const filter = new Tone.Filter({
+                type: "lowpass",
+                frequency: 600,
+                rolloff: -24
+            }).toDestination();
+            noise.connect(filter);
+            setTimeout(() => { noise.stop(); filter.dispose(); }, 400);
+        } else if (type === 'hit') {
+            const synth = new Tone.MetalSynth({
+                frequency: 180,
+                resonance: 1200
+            }).toDestination();
+            synth.triggerAttackRelease("G2", "16n");
+        } else if (type === 'bungee') {
+            const synth = new Tone.MembraneSynth().toDestination();
+            synth.triggerAttackRelease("C1", "2n");
+        } else if (type === 'item') {
+            const synth = new Tone.PolySynth().toDestination();
+            synth.volume.value = -6;
+            synth.triggerAttackRelease(["C4", "G4", "C5"], "8n");
+        } else if (type === 'heal') {
+            const synth = new Tone.Synth({
+                oscillator: { type: "sine" }
+            }).toDestination();
+            synth.triggerAttackRelease("E4", "8n", now);
+            synth.triggerAttackRelease("G4", "8n", now + 0.1);
+            synth.triggerAttackRelease("C5", "4n", now + 0.2);
+        }
+    } catch (e) {
+        console.warn("Sound error:", e);
+    }
+}
+
+// BGM Loop with beautiful arpeggio chord progression
+function startRetroBGM() {
+    if (isPlayingBGM) return;
+    initAudio();
+    try {
+        const pSynth = new Tone.PolySynth().toDestination();
+        pSynth.volume.value = -22;
+
+        const seq = [
+            ["C3", "G3", "C4", "E4"],
+            ["C3", "G3", "C4", "E4"],
+            ["A2", "E3", "A3", "C4"],
+            ["A2", "E3", "A3", "C4"],
+            ["F2", "C3", "F3", "A3"],
+            ["G2", "D3", "G3", "B3"]
+        ];
+        let step = 0;
+
+        bgmInterval = setInterval(() => {
+            if (sfxEnabled) {
+                pSynth.triggerAttackRelease(seq[step % seq.length], "4n");
+                step++;
+            }
+        }, 600);
+        isPlayingBGM = true;
+    } catch (e) {
+        console.warn(e);
+    }
+}
+
+function stopRetroBGM() {
+    if (bgmInterval) {
+        clearInterval(bgmInterval);
+        isPlayingBGM = false;
+    }
+}
+
+function toggleBGM() {
+    const btn = document.getElementById("bgmToggleBtn");
+    const icon = document.getElementById("bgmIcon");
+    if (isPlayingBGM) {
+        stopRetroBGM();
+        icon.className = "fa-solid fa-music text-slate-500";
+        btn.querySelector("span").innerText = "배경음악 OFF";
+    } else {
+        startRetroBGM();
+        icon.className = "fa-solid fa-music text-emerald-400";
+        btn.querySelector("span").innerText = "배경음악 ON";
+    }
+}
+
+function toggleSFX() {
+    sfxEnabled = !sfxEnabled;
+    const btn = document.getElementById("sfxToggleBtn");
+    const icon = document.getElementById("sfxIcon");
+    if (sfxEnabled) {
+        icon.className = "fa-solid fa-volume-high text-yellow-400";
+        btn.querySelector("span").innerText = "효과음 ON";
+    } else {
+        icon.className = "fa-solid fa-volume-xmark text-slate-500";
+        btn.querySelector("span").innerText = "효과음 OFF";
+    }
+}
+
+// Canvas Core Configuration
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+const WIDTH = 1000;
+const HEIGHT = 600;
+
+// Dynamic Simulation States
+let gameMode = 'single';
+let aiDifficulty = 'normal'; // 'easy' | 'normal' | 'hard'
+let isGameRunning = false;
+let currentTurn = 0; 
+let players = [];
+let projectiles = [];
+let particles = [];
+let floatingTexts = []; // Floating dynamic damage texts
+let terrainHeights = [];
+let windSpeed = 0.0; // Wind velocity
+let turnTimer = 20;
+let turnInterval = null;
+let gameStartTime = 0;
+let totalTurns = 0;
+
+// State Machine for Firing Control to prevent turns switching in-between animation frames
+let currentGameState = 'aiming'; // 'aiming' | 'firing' | 'resolving'
+let isDoubleShotPending = false; // Double shot state guard to prevent skipping turn
+
+// Control Values
+let powerCharging = false;
+let currentPower = 0;
+let powerDirection = 2.2; 
+let keyState = {};
+let activeVirtualKeys = {};
+
+// Selected Types
+let selectedTankTypes = ['cannon', 'multi'];
+
+// Tactical Tank Profiles
+const TANK_PROFILES = {
+    cannon: {
+        name: "캐논 탱크",
+        emoji: "💣",
+        color: "#f97316",
+        hp: 100,
+        weight: 1.0,
+        explosionRadius: 45,
+        damage: 40,
+        description: "전통적인 철갑 고폭탄으로 주변 넓은 공간의 지반을 파괴합니다."
+    },
+    multi: {
+        name: "멀티 탱크",
+        emoji: "🚀",
+        color: "#38bdf8",
+        hp: 110,
+        weight: 0.85,
+        explosionRadius: 26,
+        damage: 18, 
+        description: "3연장 고속 연쇄 미사일로 타겟 부근에 정밀 분산 피해를 입힙니다."
+    },
+    super: {
+        name: "슈퍼 탱크",
+        emoji: "👑",
+        color: "#facc15",
+        hp: 130,
+        weight: 1.15,
+        explosionRadius: 35,
+        damage: 26, 
+        description: "에너지 코어가 극도로 압축되어 삼중 유도 광성탄을 가동합니다."
+    }
+};
+
+// Create beautiful rolling destructive landscape
+function generateTerrain() {
+    terrainHeights = [];
+    const scale1 = Math.random() * 0.003 + 0.002;
+    const scale2 = Math.random() * 0.008 + 0.005;
+    const baseHeight = 440;
+    
+    // Smooth valley structure in center
+    const valleyCenter = WIDTH / 2 + (Math.random() * 120 - 60);
+    const valleyWidth = Math.random() * 180 + 120;
+
+    for (let x = 0; x < WIDTH; x++) {
+        let h = baseHeight + Math.sin(x * scale1) * 90 + Math.cos(x * scale2) * 30;
+        
+        // Carve natural canyon valley
+        if (x > valleyCenter - valleyWidth && x < valleyCenter + valleyWidth) {
+            const distance = Math.abs(x - valleyCenter);
+            const ratio = Math.cos((distance / valleyWidth) * (Math.PI / 2));
+            h += ratio * 70; // Depth offset
+        }
+        
+        terrainHeights[x] = Math.min(HEIGHT - 45, Math.max(240, h));
+    }
+}
+
+// Carve custom circular craters from terrain explosions
+function carveTerrain(cx, cy, radius) {
+    cx = Math.round(cx);
+    cy = Math.round(cy);
+    
+    for (let x = Math.max(0, cx - radius); x < Math.min(WIDTH, cx + radius); x++) {
+        const dx = x - cx;
+        const dy = Math.sqrt(radius * radius - dx * dx);
+        
+        const limitLowerY = cy + dy;
+        if (terrainHeights[x] < limitLowerY) {
+            terrainHeights[x] = Math.max(terrainHeights[x], limitLowerY);
+        }
+    }
+}
+
+// Draw realistic futuristic tanks
+function drawTanks(ctx, p) {
+    const isCurrentActive = isGameRunning && players[currentTurn].id === p.id && currentGameState === 'aiming';
+    
+    ctx.save();
+    
+    // Ambient Highlight indicator under active player
+    if (isCurrentActive) {
+        ctx.strokeStyle = "rgba(253, 224, 71, 0.5)";
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 6]);
+        ctx.beginPath();
+        ctx.arc(p.x, p.y - 12, 38 + Math.sin(Date.now() * 0.006) * 4, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    // 1. Draw treads (Infinite wheel track rolling animation)
+    const treadY = p.y - 4;
+    const treadWidth = 44;
+    const treadHeight = 8;
+    ctx.fillStyle = "#1e293b";
+    ctx.beginPath();
+    ctx.roundRect(p.x - treadWidth/2, treadY, treadWidth, treadHeight, 4);
+    ctx.fill();
+    ctx.strokeStyle = "#64748b";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Animated rotating gears inside the wheels track
+    ctx.fillStyle = "#94a3b8";
+    const wheelCount = 5;
+    const rotationOffset = (p.x * 0.3) % (Math.PI * 2); // Rotate as it physically rolls left/right
+    for (let i = 0; i < wheelCount; i++) {
+        const wx = p.x - treadWidth/2 + 6 + i * 8.5;
+        const wy = treadY + treadHeight/2;
+        
+        ctx.save();
+        ctx.translate(wx, wy);
+        ctx.rotate(rotationOffset);
+        
+        ctx.beginPath();
+        ctx.arc(0, 0, 3, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Draw gears spoke
+        ctx.strokeStyle = "#0f172a";
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(0, -3); ctx.lineTo(0, 3);
+        ctx.moveTo(-3, 0); ctx.lineTo(3, 0);
+        ctx.stroke();
+        
+        ctx.restore();
+    }
+
+    // 2. Draw Armor Hull Chassis Core
+    ctx.fillStyle = p.color;
+    ctx.beginPath();
+    ctx.moveTo(p.x - 18, p.y - 5);
+    ctx.lineTo(p.x + 18, p.y - 5);
+    ctx.lineTo(p.x + 14, p.y - 16);
+    ctx.lineTo(p.x - 14, p.y - 16);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // High fidelity glass canopy reflections
+    ctx.fillStyle = "rgba(255, 255, 255, 0.2)";
+    ctx.beginPath();
+    ctx.moveTo(p.x - 10, p.y - 16);
+    ctx.lineTo(p.x + 10, p.y - 16);
+    ctx.lineTo(p.x + 6, p.y - 25);
+    ctx.lineTo(p.x - 6, p.y - 25);
+    ctx.closePath();
+    ctx.fill();
+
+    // Pulsing Core Core reactor crystal
+    const pulseGlow = Math.abs(Math.sin(Date.now() * 0.005));
+    ctx.fillStyle = p.type === 'cannon' ? `rgba(249, 115, 22, ${0.4 + pulseGlow * 0.6})` : 
+                    p.type === 'multi' ? `rgba(56, 189, 248, ${0.4 + pulseGlow * 0.6})` : 
+                    `rgba(250, 204, 21, ${0.4 + pulseGlow * 0.6})`;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y - 12, 5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 3. Draw Heavy Cannon Barrel (Supports recoil kickback animation)
+    const angleRad = (p.angle * Math.PI) / 180;
+    
+    let currentKick = 0;
+    if (p.kickbackFrames && p.kickbackFrames > 0) {
+        currentKick = p.kickbackFrames * 2.0; 
+        p.kickbackFrames--;
+    }
+    
+    const standardBarrelLen = p.type === 'super' ? 30 : 25;
+    const actualBarrelLen = standardBarrelLen - currentKick;
+    
+    // Barrel direction logic
+    const bx = p.x + Math.cos(angleRad) * actualBarrelLen;
+    const by = p.y - 15 - Math.sin(angleRad) * actualBarrelLen;
+
+    ctx.strokeStyle = "#cbd5e1";
+    ctx.lineWidth = p.type === 'super' ? 7 : p.type === 'cannon' ? 5.5 : 4;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(p.x, p.y - 15);
+    ctx.lineTo(bx, by);
+    ctx.stroke();
+
+    // Muzzle flash guard at tip
+    ctx.fillStyle = "#475569";
+    ctx.save();
+    ctx.translate(bx, by);
+    ctx.rotate(angleRad);
+    ctx.fillRect(-2, -4, 4, 8);
+    ctx.restore();
+
+    // Super Tank custom aesthetic shields
+    if (p.type === 'super') {
+        ctx.fillStyle = "#facc15";
+        ctx.beginPath();
+        ctx.moveTo(p.x - 6, p.y - 16);
+        ctx.lineTo(p.x - 14, p.y - 25);
+        ctx.lineTo(p.x - 7, p.y - 25);
+        ctx.closePath();
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.moveTo(p.x + 6, p.y - 16);
+        ctx.lineTo(p.x + 14, p.y - 25);
+        ctx.lineTo(p.x + 7, p.y - 25);
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    ctx.restore();
+
+    // 4. DRAW PLACED FLOATING HUD LABELS (Never overlaps - positioned precisely 65px above center)
+    const hudCenterY = p.y - 65;
+
+    ctx.save();
+    
+    // Backdrop background pill card with bright borders
+    ctx.fillStyle = isCurrentActive ? "rgba(3, 7, 18, 0.95)" : "rgba(3, 7, 18, 0.8)";
+    ctx.strokeStyle = isCurrentActive ? p.color : "rgba(148, 163, 184, 0.6)";
+    ctx.lineWidth = isCurrentActive ? 2.5 : 1.5;
+    
+    const labelWidth = 115;
+    const labelHeight = 34;
+    ctx.beginPath();
+    ctx.roundRect(p.x - labelWidth/2, hudCenterY - labelHeight/2, labelWidth, labelHeight, 8);
+    ctx.fill();
+    ctx.stroke();
+
+    // Draw HP scale indicators inside the badge pill
+    const hpBarWidth = 95;
+    const hpBarHeight = 6;
+    const hpBarX = p.x - hpBarWidth / 2;
+    const hpBarY = hudCenterY + 5;
+    
+    ctx.fillStyle = "#1e293b";
+    ctx.fillRect(hpBarX, hpBarY, hpBarWidth, hpBarHeight);
+    
+    const hpPercent = p.hp / p.maxHp;
+    ctx.fillStyle = hpPercent > 0.4 ? "#10b981" : "#f43f5e";
+    ctx.fillRect(hpBarX, hpBarY, hpBarWidth * hpPercent, hpBarHeight);
+
+    // Draw Owner Identity & Emoji (Highly readable through Noto Sans / Pretendard with outline stroke)
+    const statusText = `${p.name} [${TANK_PROFILES[p.type].emoji}]`;
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "bold 12px Pretendard, sans-serif";
+    ctx.textAlign = "center";
+    
+    // Black outline stroke to prevent low-contrast blurring
+    ctx.strokeStyle = "rgba(0, 0, 0, 0.8)";
+    ctx.lineWidth = 3.5;
+    ctx.strokeText(statusText, p.x, hudCenterY - 4);
+    ctx.fillText(statusText, p.x, hudCenterY - 4);
+
+    ctx.restore();
+}
+
+// Spawning floating combat damages (+40, -15 HP)
+function spawnFloatingText(x, y, text, color) {
+    floatingTexts.push({
+        x: x,
+        y: y,
+        text: text,
+        color: color,
+        vy: -1.0,
+        alpha: 1.0,
+        life: 60 
+    });
+}
+
+// Particle effects generator
+function createExplosionParticles(x, y, color, count, customSpeed = 3.5) {
+    for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const velocity = Math.random() * customSpeed + 1.2;
+        particles.push({
+            x: x,
+            y: y,
+            vx: Math.cos(angle) * velocity,
+            vy: Math.sin(angle) * velocity,
+            color: color,
+            radius: Math.random() * 4.5 + 2.5,
+            life: 1.0,
+            decay: Math.random() * 0.03 + 0.015
+        });
+    }
+}
+
+// Handle artillery impacts on players/terrain
+function triggerTargetExplosion(ex, ey, projectile) {
+    const profile = TANK_PROFILES[projectile.type] || TANK_PROFILES.cannon;
+    let radius = profile.explosionRadius;
+    let baseDamage = profile.damage;
+    
+    playSound('explosion');
+
+    // Teleport items logic
+    if (projectile.itemEffect === 'teleport') {
+        const ownerTank = players[projectile.owner];
+        ownerTank.x = Math.max(30, Math.min(WIDTH - 30, Math.round(ex)));
+        ownerTank.y = terrainHeights[ownerTank.x];
+        
+        // Spawn portal flash particles
+        createExplosionParticles(ownerTank.x, ownerTank.y - 12, "#c084fc", 40, 2.5);
+        spawnFloatingText(ownerTank.x, ownerTank.y - 75, "WARPED!", "#c084fc");
+        addLog(`🌀 [전술워프] ${ownerTank.name}님이 차원이동 아이템을 이용해 즉각 탄착 좌표로 워프했습니다.`);
+        return;
+    }
+
+    // Carve land terrain dynamically
+    carveTerrain(ex, ey, radius);
+
+    // Blast damage calculation
+    players.forEach(p => {
+        if (!p.alive) return;
+        
+        const dist = Math.sqrt(Math.pow(p.x - ex, 2) + Math.pow(p.y - ey, 2));
+        const impactLimit = radius + 20;
+        
+        if (dist < impactLimit) {
+            const proximityRatio = 1 - (dist / impactLimit);
+            const calculatedDmg = Math.round(baseDamage * proximityRatio);
+            
+            p.hp = Math.max(0, p.hp - calculatedDmg);
+            
+            // Critical indicator styling
+            spawnFloatingText(p.x, p.y - 85, `-${calculatedDmg} HP`, "#f43f5e");
+            addLog(`💥 [피격] ${p.name}님이 탄환 충격파에 휩쓸려 ${calculatedDmg} 피해를 입었습니다.`);
+            
+            screenShake = 16; 
+
+            if (p.hp <= 0) {
+                p.alive = false;
+                createExplosionParticles(p.x, p.y - 12, "#f43f5e", 55, 6);
+                spawnFloatingText(p.x, p.y - 95, "ELIMINATED", "#f43f5e");
+                addLog(`💀 [파괴] ${p.name}님이 격파당해 전장의 이슬로 사라졌습니다.`);
+            } else {
+                playSound('hit');
+                createExplosionParticles(p.x, p.y - 12, "#fb923c", 22);
+            }
+        }
+    });
+
+    // Splendid debris clouds
+    createExplosionParticles(ex, ey, "#f97316", 25, 4.5); // Orange flames
+    createExplosionParticles(ex, ey, "#64748b", 20, 3.0); // Gray smoke cloud
+    
+    checkGameOver();
+}
+
+// Predictive ballistic dotted lines (Compensates Wind + Gravity perfectly)
+function drawPredictiveTrajectory(ctx, player) {
+    if (player.isAI || currentGameState !== 'aiming') return;
+    
+    const angleRad = (player.angle * Math.PI) / 180;
+    
+    // Shows current charge power or fallbacks to standard 50% power for aiming reference
+    const activePower = powerCharging ? currentPower : 50; 
+    const initialVelocity = activePower * 0.18;
+    
+    const spawnX = player.x + Math.cos(angleRad) * 24;
+    const spawnY = player.y - 15 - Math.sin(angleRad) * 24;
+
+    let simX = spawnX;
+    let simY = spawnY;
+    let simVx = Math.cos(angleRad) * initialVelocity;
+    let simVy = -Math.sin(angleRad) * initialVelocity;
+    
+    ctx.save();
+    ctx.strokeStyle = "rgba(253, 224, 71, 0.6)"; 
+    ctx.lineWidth = 3;
+    ctx.setLineDash([3, 8]);
+    
+    ctx.beginPath();
+    ctx.moveTo(simX, simY);
+
+    const simulationSteps = 65;
+    for (let step = 0; step < simulationSteps; step++) {
+        const profile = TANK_PROFILES[player.type] || TANK_PROFILES.cannon;
+        simVy += 0.12 * profile.weight;
+        simVx += windSpeed * 0.003;
+
+        simX += simVx;
+        simY += simVy;
+
+        ctx.lineTo(simX, simY);
+
+        if (simX < 0 || simX >= WIDTH || simY > HEIGHT) break;
+        const tx = Math.round(simX);
+        if (tx >= 0 && tx < WIDTH && simY >= terrainHeights[tx]) {
+            // Draw end prediction explosion circle
+            ctx.stroke();
+            ctx.restore();
+            
+            ctx.save();
+            ctx.strokeStyle = "rgba(244, 63, 94, 0.7)";
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([2, 4]);
+            ctx.beginPath();
+            ctx.arc(simX, simY, profile.explosionRadius, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+            return;
+        }
+    }
+    
+    ctx.stroke();
+    ctx.restore();
+}
+
+// Run system ticks
+function updatePhysics() {
+    // 1. Projectiles motion update
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+        const p = projectiles[i];
+        
+        p.trail.push({ x: p.x, y: p.y });
+        if (p.trail.length > 25) p.trail.shift();
+
+        const profile = TANK_PROFILES[p.type] || TANK_PROFILES.cannon;
+        p.vy += 0.12 * profile.weight;
+        p.vx += windSpeed * 0.003;
+
+        p.x += p.vx;
+        p.y += p.vy;
+
+        // Particle trail
+        if (Math.random() > 0.4) {
+            particles.push({
+                x: p.x,
+                y: p.y,
+                vx: (Math.random() - 0.5) * 0.6,
+                vy: (Math.random() - 0.5) * 0.6,
+                color: "rgba(241, 245, 249, 0.3)",
+                radius: Math.random() * 3.5 + 1.5,
+                life: 0.8,
+                decay: 0.05
+            });
+        }
+
+        // Horizontal map bounds falloffs
+        if (p.x < 0 || p.x >= WIDTH || p.y > HEIGHT) {
+            projectiles.splice(i, 1);
+            continue;
+        }
+
+        // Hit terrain
+        const tx = Math.round(p.x);
+        if (tx >= 0 && tx < WIDTH && p.y >= terrainHeights[tx]) {
+            triggerTargetExplosion(p.x, terrainHeights[tx], p);
+            projectiles.splice(i, 1);
+            continue;
+        }
+
+        // Hit active tanks directly
+        let registeredCollision = false;
+        for (let j = 0; j < players.length; j++) {
+            const tank = players[j];
+            if (!tank.alive) continue;
+            
+            const sqDist = Math.pow(p.x - tank.x, 2) + Math.pow(p.y - (tank.y - 12), 2);
+            if (sqDist < Math.pow(24, 2)) {
+                triggerTargetExplosion(p.x, p.y, p);
+                registeredCollision = true;
+                break;
+            }
+        }
+        if (registeredCollision) {
+            projectiles.splice(i, 1);
+        }
+    }
+
+    // 2. Exploding debris simulation
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const pt = particles[i];
+        pt.x += pt.vx;
+        pt.y += pt.vy;
+        pt.life -= pt.decay;
+        if (pt.life <= 0) {
+            particles.splice(i, 1);
+        }
+    }
+
+    // 3. Floating combat damages font tracking
+    for (let i = floatingTexts.length - 1; i >= 0; i--) {
+        const ft = floatingTexts[i];
+        ft.y += ft.vy;
+        ft.life--;
+        ft.alpha = Math.max(0, ft.life / 60);
+        if (ft.life <= 0) {
+            floatingTexts.splice(i, 1);
+        }
+    }
+
+    // 4. Gravity drops for tanks
+    players.forEach(p => {
+        if (!p.alive) return;
+        
+        const tx = Math.round(p.x);
+        if (tx >= 0 && tx < WIDTH) {
+            const surfaceLimitY = terrainHeights[tx];
+            if (p.y < surfaceLimitY) {
+                p.y += 3.5; // Gravity pull
+                if (p.y > surfaceLimitY) p.y = surfaceLimitY;
+            } else if (p.y > surfaceLimitY) {
+                p.y = surfaceLimitY;
+            }
+        }
+
+        // Bungee vertical falloffs
+        if (p.y >= HEIGHT - 15) {
+            p.alive = false;
+            p.hp = 0;
+            playSound('bungee');
+            spawnFloatingText(p.x, HEIGHT - 50, "BUNGEE OUT!", "#ef4444");
+            addLog(`💀 [번지사] ${p.name}님이 지반 소실 절벽 깊은 심연으로 떨어져 완파되셨습니다.`);
+            checkGameOver();
+        }
+    });
+
+    // 5. TURN STATE MACHINE CONTROLLER (Safely swaps turns *only* when bullets and double shots settle)
+    if (isGameRunning && currentGameState === 'firing') {
+        if (projectiles.length === 0 && particles.length === 0 && !isDoubleShotPending) {
+            currentGameState = 'resolving';
+            setTimeout(() => {
+                if (isGameRunning) {
+                    currentGameState = 'aiming';
+                    changeTurn();
+                }
+            }, 700);
+        }
+    }
+}
+
+// Ready initial match profiles
+function initPlayers() {
+    players = [
+        {
+            id: 0,
+            name: "플레이어 1",
+            type: selectedTankTypes[0],
+            x: 220,
+            y: 0,
+            angle: 45,
+            power: 0,
+            hp: TANK_PROFILES[selectedTankTypes[0]].hp,
+            maxHp: TANK_PROFILES[selectedTankTypes[0]].hp,
+            color: TANK_PROFILES[selectedTankTypes[0]].color,
+            alive: true,
+            isAI: false,
+            items: { double: 1, teleport: 1, heal: 1 },
+            activeItem: null,
+            kickbackFrames: 0
+        },
+        {
+            id: 1,
+            name: gameMode === 'single' ? "알파포 (AI)" : "플레이어 2",
+            type: gameMode === 'single' ? 'cannon' : selectedTankTypes[1],
+            x: 780,
+            y: 0,
+            angle: 135,
+            power: 0,
+            hp: gameMode === 'single' ? 100 : TANK_PROFILES[selectedTankTypes[1]].hp,
+            maxHp: gameMode === 'single' ? 100 : TANK_PROFILES[selectedTankTypes[1]].hp,
+            color: gameMode === 'single' ? "#f43f5e" : TANK_PROFILES[selectedTankTypes[1]].color,
+            alive: true,
+            isAI: gameMode === 'single',
+            items: { double: 1, teleport: 1, heal: 1 },
+            activeItem: null,
+            kickbackFrames: 0
+        }
+    ];
+
+    players.forEach(p => {
+        p.x = Math.round(p.x);
+        p.y = terrainHeights[p.x];
+    });
+
+    document.getElementById("angleSlider").value = players[0].angle;
+    document.getElementById("angleValue").innerText = `${players[0].angle}°`;
+}
+
+// Support items use handler
+function useItem(itemType) {
+    if (!isGameRunning || currentGameState !== 'aiming') return;
+    
+    const activePlayer = players[currentTurn];
+    if (activePlayer.isAI) return;
+    
+    if (activePlayer.items[itemType] > 0) {
+        activePlayer.items[itemType]--;
+        
+        if (itemType === 'heal') {
+            playSound('heal');
+            activePlayer.hp = Math.min(activePlayer.maxHp, activePlayer.hp + 40);
+            createExplosionParticles(activePlayer.x, activePlayer.y - 12, "#10b981", 25, 2.0);
+            spawnFloatingText(activePlayer.x, activePlayer.y - 80, "+40 HP", "#10b981");
+            addLog(`💚 [회복] ${activePlayer.name}님이 구급 치료제 키트를 복용해 체력 +40을 채웠습니다.`);
+        } else {
+            playSound('item');
+            activePlayer.activeItem = itemType;
+            document.getElementById("activeItemLabel").innerText = itemType === 'double' ? "🔥 DOUBLE SHOT" : "🌀 WARP TELEPORT";
+            addLog(`⚡ [장전] ${activePlayer.name}님이 특수 무기 [${itemType === 'double' ? '더블 샷' : '텔레포트'}]를 격발 대기실에 배치했습니다.`);
+        }
+        
+        // Hide/gray out buttons if fully depleted
+        if (activePlayer.items[itemType] === 0) {
+            document.getElementById(`item-${itemType}`).classList.add("opacity-30", "cursor-not-allowed");
+        }
+    } else {
+        addLog(`❌ [경고] 사용할 수 있는 전술 아이템 재고 수량이 남아있지 않습니다.`);
+    }
+}
+
+// Fire projectiles
+function fireProjectile(player) {
+    if (!isGameRunning) return;
+    
+    playSound('fire');
+    player.kickbackFrames = 6; // Recoil shock kick
+    
+    const angleRad = (player.angle * Math.PI) / 180;
+    const speedScaler = (player.power * 0.18);
+
+    const spawnX = player.x + Math.cos(angleRad) * 24;
+    const spawnY = player.y - 15 - Math.sin(angleRad) * 24;
+
+    const standardSpec = {
+        owner: player.id,
+        x: spawnX,
+        y: spawnY,
+        vx: Math.cos(angleRad) * speedScaler,
+        vy: -Math.sin(angleRad) * speedScaler,
+        radius: 6,
+        type: player.type,
+        itemEffect: player.activeItem,
+        trail: []
+    };
+
+    // Tank Type Special Actions
+    if (player.type === 'multi') {
+        for (let i = -1; i <= 1; i++) {
+            const spreadAngle = angleRad + (i * 0.11);
+            projectiles.push({
+                ...standardSpec,
+                vx: Math.cos(spreadAngle) * speedScaler,
+                vy: -Math.sin(spreadAngle) * speedScaler,
+                radius: 4.5,
+                isSecondary: true
+            });
+        }
+    } else if (player.type === 'super') {
+        projectiles.push({ ...standardSpec, radius: 5 });
+        setTimeout(() => {
+            if (isGameRunning && player.alive) {
+                playSound('fire');
+                player.kickbackFrames = 5;
+                projectiles.push({ ...standardSpec, radius: 5 });
+            }
+        }, 180);
+        setTimeout(() => {
+            if (isGameRunning && player.alive) {
+                playSound('fire');
+                player.kickbackFrames = 5;
+                projectiles.push({ ...standardSpec, radius: 5 });
+            }
+        }, 360);
+    } else {
+        projectiles.push(standardSpec);
+    }
+
+    // Double shot multi fire delay
+    if (player.activeItem === 'double') {
+        isDoubleShotPending = true;
+        setTimeout(() => {
+            if (isGameRunning && player.alive) {
+                addLog(`🔥 [연격] 더블샷이 발동하여 추가 포격이 진행됩니다!`);
+                fireProjectile({ ...player, activeItem: null });
+                isDoubleShotPending = false;
+            } else {
+                isDoubleShotPending = false;
+            }
+        }, 550);
+    }
+
+    player.activeItem = null;
+    document.getElementById("activeItemLabel").innerText = "NORMAL AMMO";
+}
+
+// Keys bind
+window.addEventListener('keydown', (e) => {
+    keyState[e.key] = true;
+    
+    if (isGameRunning) {
+        if (e.key === '1') useItem('double');
+        if (e.key === '2') useItem('teleport');
+        if (e.key === '3') useItem('heal');
+        
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+            e.preventDefault(); 
+        }
+    }
+});
+
+window.addEventListener('keyup', (e) => {
+    keyState[e.key] = false;
+});
+
+// Space hold firing charge
+window.addEventListener('keydown', (e) => {
+    if (e.key === ' ' && isGameRunning && !powerCharging && currentGameState === 'aiming') {
+        startPowerCharge();
+    }
+});
+
+window.addEventListener('keyup', (e) => {
+    if (e.key === ' ' && isGameRunning && powerCharging) {
+        releasePowerCharge();
+    }
+});
+
+function startPowerCharge(e) {
+    if (e) e.preventDefault();
+    if (!isGameRunning || currentGameState !== 'aiming' || players[currentTurn].isAI) return;
+    
+    powerCharging = true;
+    currentPower = 0;
+    powerDirection = 2.2; 
+}
+
+function releasePowerCharge(e) {
+    if (e) e.preventDefault();
+    if (!powerCharging) return;
+    
+    powerCharging = false;
+    players[currentTurn].power = Math.round(currentPower);
+    
+    addLog(`🚀 [격발] ${players[currentTurn].name}님이 화력 ${players[currentTurn].power}% 세기로 가공할 발사 압력을 발동했습니다.`);
+    
+    fireProjectile(players[currentTurn]);
+    currentGameState = 'firing'; 
+    
+    currentPower = 0;
+    document.getElementById("powerProgressBar").style.width = "0%";
+    document.getElementById("powerValue").innerText = "0%";
+}
+
+// Helper to simulate a single projectile trajectory for AI tactical calculations
+function simulateTrajectoryForAI(angle, power, ai, target) {
+    const angleRad = (angle * Math.PI) / 180;
+    const profile = TANK_PROFILES[ai.type] || TANK_PROFILES.cannon;
+    const weight = profile.weight;
+    
+    const spawnX = ai.x + Math.cos(angleRad) * 24;
+    const spawnY = ai.y - 15 - Math.sin(angleRad) * 24;
+    
+    let simX = spawnX;
+    let simY = spawnY;
+    let simVx = Math.cos(angleRad) * (power * 0.18);
+    let simVy = -Math.sin(angleRad) * (power * 0.18);
+    
+    let closestDist = Infinity;
+    
+    // Step-by-step ballistic simulator (Runs in split milliseconds in background)
+    for (let step = 0; step < 180; step++) {
+        simVy += 0.12 * weight;
+        simVx += parseFloat(windSpeed) * 0.003;
+        simX += simVx;
+        simY += simVy;
+        
+        // Measure real-time distance to the opponent's core center
+        const dist = Math.sqrt(Math.pow(simX - target.x, 2) + Math.pow(simY - (target.y - 12), 2));
+        if (dist < closestDist) {
+            closestDist = dist;
+        }
+        
+        // Out of boundary detection
+        if (simX < 0 || simX >= WIDTH || simY > HEIGHT) break;
+        const tx = Math.round(simX);
+        if (tx >= 0 && tx < WIDTH && simY >= terrainHeights[tx]) {
+            // Evaluate impact-to-opponent distance at landscape landing
+            const impactDist = Math.sqrt(Math.pow(simX - target.x, 2) + Math.pow(simY - target.y, 2));
+            if (impactDist < closestDist) closestDist = impactDist;
+            break;
+        }
+    }
+    return closestDist;
+}
+
+// AI tactical search engine: Simulates scenario matrix in real-time to locate the perfect trajectory parameters
+function findAIShot(ai, target) {
+    const dx = target.x - ai.x;
+    let candidateAngles = [];
+    
+    if (dx < 0) {
+        // Target is left: select high, mid-high, and flat angle candidates
+        candidateAngles = [115, 125, 140, 155];
+    } else {
+        // Target is right
+        candidateAngles = [65, 55, 40, 25];
+    }
+    
+    let bestAngle = candidateAngles[0];
+    let bestPower = 50;
+    let bestScore = Infinity;
+    
+    // Multi-scenario matrix search
+    for (let angle of candidateAngles) {
+        for (let power = 20; power <= 95; power += 1) {
+            const score = simulateTrajectoryForAI(angle, power, ai, target);
+            if (score < bestScore) {
+                bestScore = score;
+                bestAngle = angle;
+                bestPower = power;
+            }
+        }
+    }
+    return { angle: bestAngle, power: bestPower };
+}
+
+// AI firing mechanics using high-performance search simulations
+function performAITacticalTurn() {
+    const ai = players[1];
+    const target = players[0];
+    
+    if (!ai.alive || !target.alive) return;
+    
+    addLog(`🤖 알파포 AI가 전술 탄도 시뮬레이션 가동 중...`);
+
+    // 1. Strategic item usage based on current health status & difficulty
+    if (aiDifficulty === 'hard' && ai.hp < 45 && ai.items.heal > 0) {
+        ai.items.heal--;
+        ai.hp = Math.min(ai.maxHp, ai.hp + 40);
+        createExplosionParticles(ai.x, ai.y - 12, "#10b981", 25, 2.0);
+        spawnFloatingText(ai.x, ai.y - 80, "+40 HP", "#10b981");
+        addLog(`💚 [회복] 알파포(AI)가 자가 긴급 복구 키트를 작동하여 체력을 +40 회복했습니다.`);
+        playSound('heal');
+    } else if ((aiDifficulty === 'hard' || (aiDifficulty === 'normal' && Math.random() > 0.4)) && ai.items.double > 0 && Math.random() > 0.6) {
+        ai.items.double--;
+        ai.activeItem = 'double';
+        addLog(`⚡ [장전] 알파포(AI)가 강력한 연속 포격을 가하는 [더블 샷] 전술 파츠를 적용했습니다!`);
+        playSound('item');
+    }
+
+    // 2. Perform optimal trajectory pathfinding simulation
+    const optimalShot = findAIShot(ai, target);
+    
+    // 3. Inject realistic variance based on selected difficulty
+    let angleError = 0;
+    let powerError = 0;
+    
+    if (aiDifficulty === 'easy') {
+        // Beginner level error margins
+        angleError = (Math.random() * 24 - 12);
+        powerError = (Math.random() * 20 - 10);
+        addLog(`🤖 알파포(AI): "시스템 조준선 불안정. 오차 제어 범위 한계 도달."`);
+    } else if (aiDifficulty === 'normal') {
+        // Intermediate level error margins
+        angleError = (Math.random() * 8 - 4);
+        powerError = (Math.random() * 8 - 4);
+        addLog(`🤖 알파포(AI): "바람 및 기압 밀도 동기화 완료. 유효 반경 조준 개시."`);
+    } else if (aiDifficulty === 'hard') {
+        // Advanced/Master level sniper margins
+        angleError = (Math.random() * 2.0 - 1.0);
+        powerError = (Math.random() * 1.5 - 0.75);
+        addLog(`🤖 알파포(AI): "초정밀 센서 조준 100% 동기화 완료. 무조건 유효 타격 판정입니다."`);
+    }
+    
+    let targetAngle = Math.max(0, Math.min(180, Math.round(optimalShot.angle + angleError)));
+    let targetPower = Math.max(15, Math.min(100, Math.round(optimalShot.power + powerError)));
+
+    // 4. Smooth barrel positioning animation for visual realism
+    let currentAI_Ang = ai.angle;
+    let frames = 25;
+    let tick = 0;
+    
+    const movingInterval = setInterval(() => {
+        ai.angle = Math.round(currentAI_Ang + ((targetAngle - currentAI_Ang) * (tick / frames)));
+        tick++;
+        
+        if (tick >= frames) {
+            clearInterval(movingInterval);
+            ai.angle = targetAngle;
+            ai.power = targetPower;
+            
+            setTimeout(() => {
+                if (isGameRunning) {
+                    fireProjectile(ai);
+                    currentGameState = 'firing';
+                }
+            }, 600);
+        }
+    }, 30);
+}
+
+// Wind speed randomizer
+function randomizeWind() {
+    windSpeed = (Math.random() * 10 - 5).toFixed(1);
+    const arrow = document.getElementById("windArrow");
+    const windLabel = document.getElementById("windText");
+    
+    if (windSpeed >= 0) {
+        arrow.style.transform = "rotate(0deg)";
+        arrow.className = "fa-solid fa-circle-arrow-right text-xl text-teal-400 transition-transform duration-500";
+    } else {
+        arrow.style.transform = "rotate(180deg)";
+        arrow.className = "fa-solid fa-circle-arrow-right text-xl text-teal-400 transition-transform duration-500";
+    }
+    windLabel.innerText = `${Math.abs(windSpeed)} m/s`;
+}
+
+// 20 seconds Turn timer
+function startTurnTimer() {
+    clearInterval(turnInterval);
+    turnTimer = 20;
+    
+    document.getElementById("turnTimerCircle").innerText = turnTimer;
+    document.getElementById("turnTimerCircle").style.borderColor = "#10b981";
+    document.getElementById("statusIndicator").innerText = "READY TO SHOOT";
+    document.getElementById("statusIndicator").className = "text-[10px] text-green-400 uppercase tracking-widest block font-bold";
+    
+    const activePlayer = players[currentTurn];
+    const uiLabel = document.getElementById("turnLabel");
+    uiLabel.innerText = `${activePlayer.name}의 차례`;
+    
+    turnInterval = setInterval(() => {
+        if (!isGameRunning || currentGameState !== 'aiming') return;
+
+        turnTimer--;
+        document.getElementById("turnTimerCircle").innerText = turnTimer;
+        
+        if (turnTimer <= 5) {
+            document.getElementById("turnTimerCircle").style.borderColor = "#f43f5e";
+            document.getElementById("statusIndicator").innerText = "TIMEOUT CRITICAL";
+            document.getElementById("statusIndicator").className = "text-[10px] text-red-500 uppercase tracking-widest block font-bold animate-pulse";
+        }
+
+        if (turnTimer <= 0) {
+            clearInterval(turnInterval);
+            addLog(`⏳ 제한시간 20초가 초과되어 포격 권한이 상대방에게 패스됩니다.`);
+            changeTurn();
+        }
+    }, 1000);
+}
+
+function changeTurn() {
+    if (!isGameRunning) return;
+    
+    currentTurn = currentTurn === 0 ? 1 : 0;
+    totalTurns++;
+    
+    randomizeWind();
+    startTurnTimer();
+
+    if (players[currentTurn].isAI && players[currentTurn].alive) {
+        document.getElementById("fireButton").disabled = true;
+        setTimeout(() => {
+            if (isGameRunning) {
+                performAITacticalTurn();
+            }
+        }, 1200);
+    } else {
+        document.getElementById("fireButton").disabled = false;
+        
+        document.getElementById("angleSlider").value = players[currentTurn].angle;
+        document.getElementById("angleValue").innerText = `${players[currentTurn].angle}°`;
+    }
+}
+
+function setGameMode(mode) {
+    gameMode = mode;
+    const singleBtn = document.getElementById("modeSingleBtn");
+    const multiBtn = document.getElementById("modeMultiBtn");
+    const multiTitle = document.getElementById("multiTitle");
+    const multiCheck = document.getElementById("multiCheckIcon");
+    const diffSection = document.getElementById("difficultySection");
+    
+    if (mode === 'single') {
+        singleBtn.className = "p-5 rounded-xl border-2 border-orange-500 bg-orange-950/40 text-left transition duration-300 transform hover:scale-[1.01] flex items-center justify-between shadow-lg shadow-orange-950/40";
+        multiBtn.className = "p-5 rounded-xl border border-slate-700 bg-slate-800/40 text-left transition duration-300 transform hover:scale-[1.01] flex items-center justify-between hover:border-slate-500 hover:bg-slate-800/60";
+        multiCheck.classList.add("text-slate-700");
+        multiCheck.classList.remove("text-sky-400");
+        diffSection.classList.remove("hidden"); // Show difficulty in single mode
+    } else {
+        singleBtn.className = "p-5 rounded-xl border border-slate-700 bg-slate-800/40 text-left transition duration-300 transform hover:scale-[1.01] flex items-center justify-between hover:border-slate-500 hover:bg-slate-800/60";
+        multiBtn.className = "p-5 rounded-xl border-2 border-sky-500 bg-sky-950/40 text-left transition duration-300 transform hover:scale-[1.01] flex items-center justify-between shadow-lg shadow-sky-950/40";
+        multiCheck.classList.add("text-sky-400");
+        multiCheck.classList.remove("text-slate-700");
+        diffSection.classList.add("hidden"); // Hide difficulty in multi local mode
+    }
+}
+
+// Set AI Difficulty
+function setDifficulty(level) {
+    aiDifficulty = level;
+    
+    const dEasy = document.getElementById("diff-easy");
+    const dNormal = document.getElementById("diff-normal");
+    const dHard = document.getElementById("diff-hard");
+
+    // Clear previous selection layouts
+    [dEasy, dNormal, dHard].forEach(btn => {
+        btn.className = "py-3.5 rounded-xl border border-slate-800 bg-slate-900/40 text-sm font-bold text-slate-400 hover:text-white hover:bg-slate-800/50 transition duration-150";
+    });
+
+    // Apply active highlight colors based on selection
+    if (level === 'easy') {
+        dEasy.className = "py-3.5 rounded-xl border-2 border-green-500 bg-green-950/20 text-sm font-black text-green-300 shadow-[0_0_12px_rgba(34,197,94,0.2)] transition duration-150";
+        addLog("⚙️ [설정] AI 전술 난이도가 '하 (쉬움)'으로 설정되었습니다.");
+    } else if (level === 'normal') {
+        dNormal.className = "py-3.5 rounded-xl border-2 border-amber-500 bg-amber-950/20 text-sm font-black text-amber-300 shadow-[0_0_12px_rgba(245,158,11,0.2)] transition duration-150";
+        addLog("⚙️ [설정] AI 전술 난이도가 '중 (보통)'으로 설정되었습니다.");
+    } else if (level === 'hard') {
+        dHard.className = "py-3.5 rounded-xl border-2 border-red-500 bg-red-950/20 text-sm font-black text-red-300 shadow-[0_0_12px_rgba(239,68,68,0.2)] transition duration-150";
+        addLog("⚙️ [설정] AI 전술 난이도가 '상 (어려움)'으로 설정되었습니다.");
+    }
+    playSound('item');
+}
+
+function selectTank(playerIndex, tankType) {
+    selectedTankTypes[playerIndex] = tankType;
+    
+    ['cannon', 'multi', 'super'].forEach(t => {
+        const card = document.getElementById(`tankBtn-${t}`);
+        if (t === tankType) {
+            card.className = "p-4 rounded-xl border-2 border-orange-500 bg-orange-950/30 cursor-pointer transition duration-200 hover:bg-slate-800/50 flex flex-col items-center shadow";
+        } else {
+            card.className = "p-4 rounded-xl border border-slate-800 bg-slate-900/40 cursor-pointer transition duration-200 hover:bg-slate-850 flex flex-col items-center shadow";
+        }
+    });
+    
+    playSound('item');
+    addLog(`🛡️ [정비완료] 플레이어 1이 중무장 격납고에서 [${TANK_PROFILES[tankType].name}]을 격발 배정했습니다.`);
+}
+
+function updateAngleSlider(val) {
+    if (!isGameRunning || currentGameState !== 'aiming' || players[currentTurn].isAI) return;
+    players[currentTurn].angle = parseInt(val);
+    document.getElementById("angleValue").innerText = `${val}°`;
+}
+
+function simulateKey(key, state) {
+    keyState[key] = state;
+}
+
+function addLog(text) {
+    const logContainer = document.getElementById("gameLog");
+    const item = document.createElement("div");
+    item.className = "text-xs font-semibold text-slate-100 leading-relaxed border-l-2 border-slate-600 pl-2.5 py-0.5";
+    item.innerText = text;
+    logContainer.appendChild(item);
+    logContainer.scrollTop = logContainer.scrollHeight;
+}
+
+// Game over states
+function checkGameOver() {
+    let aliveCount = players.filter(p => p.alive).length;
+    if (aliveCount <= 1) {
+        isGameRunning = false;
+        clearInterval(turnInterval);
+        document.getElementById("exitToLobbyBtn").classList.add("hidden");
+        
+        const winner = players.find(p => p.alive);
+        const winnerName = winner ? winner.name : "무승부 (동반 낙하)";
+        
+        const runtime = Math.floor((Date.now() - gameStartTime) / 1000);
+        const mm = Math.floor(runtime / 60);
+        const ss = (runtime % 60).toString().padStart(2, '0');
+        
+        document.getElementById("winnerLabel").innerText = winner ? `${winnerName} 대승!` : "동반 낙사로 승자 없는 안타까운 무승부!";
+        document.getElementById("statTime").innerText = `${mm}:${ss}`;
+        document.getElementById("statTurns").innerText = totalTurns;
+        
+        setTimeout(() => {
+            document.getElementById("gameOverModal").classList.remove("hidden");
+        }, 1100);
+    }
+}
+
+// Exit Confirmation Modal Functions
+function confirmExitToLobby() {
+    if (!isGameRunning) return;
+    document.getElementById("exitConfirmModal").classList.remove("hidden");
+}
+
+function closeExitModal() {
+    document.getElementById("exitConfirmModal").classList.add("hidden");
+}
+
+function forceExitToLobby() {
+    document.getElementById("exitConfirmModal").classList.add("hidden");
+    addLog("🚪 [작전기권] 플레이어가 경기를 중단하고 로비로 기권 퇴장했습니다.");
+    goToLobby();
+}
+
+function restartGame() {
+    document.getElementById("gameOverModal").classList.add("hidden");
+    startGame();
+}
+
+function goToLobby() {
+    document.getElementById("gameOverModal").classList.add("hidden");
+    document.getElementById("exitConfirmModal").classList.add("hidden");
+    // Show Lobby, Hide Game completely to prevent any overlaps
+    document.getElementById("lobbyScreen").classList.remove("hidden");
+    document.getElementById("gameScreen").classList.add("hidden");
+    document.getElementById("exitToLobbyBtn").classList.add("hidden");
+    isGameRunning = false;
+    clearInterval(turnInterval);
+    stopRetroBGM();
+}
+
+function toggleHelpModal(show) {
+    const modal = document.getElementById("helpModal");
+    if (show) modal.classList.remove("hidden");
+    else modal.classList.add("hidden");
+}
+
+function startGame() {
+    initAudio();
+    // Hide Lobby, Show Game layout
+    document.getElementById("lobbyScreen").classList.add("hidden");
+    document.getElementById("gameScreen").classList.remove("hidden");
+    document.getElementById("exitToLobbyBtn").classList.remove("hidden");
+    
+    generateTerrain();
+    initPlayers();
+    
+    isGameRunning = true;
+    currentTurn = 0;
+    totalTurns = 1;
+    currentGameState = 'aiming';
+    gameStartTime = Date.now();
+    
+    randomizeWind();
+    startTurnTimer();
+
+    ['double', 'teleport', 'heal'].forEach(t => {
+        document.getElementById(`item-${t}`).classList.remove("opacity-30", "cursor-not-allowed");
+    });
+
+    addLog(`⚔️ [전투 개시] 맵과 군사 배정이 완적 적용되었습니다. 바람 속도 ${Math.abs(windSpeed)}m/s`);
+    startRetroBGM();
+}
+
+let screenShake = 0;
+
+function draw() {
+    let sx = 0, sy = 0;
+    if (screenShake > 0) {
+        sx = (Math.random() - 0.5) * screenShake;
+        sy = (Math.random() - 0.5) * screenShake;
+        screenShake *= 0.88;
+        if (screenShake < 0.4) screenShake = 0;
+    }
+
+    ctx.save();
+    ctx.translate(sx, sy);
+
+    // 1. Futuristic Space Sky Gradient
+    const gradient = ctx.createLinearGradient(0, 0, 0, HEIGHT);
+    gradient.addColorStop(0, "#020617");
+    gradient.addColorStop(0.6, "#0f172a");
+    gradient.addColorStop(1, "#030712");
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, WIDTH, HEIGHT);
+
+    // Subtle alignment net grid lines
+    ctx.strokeStyle = "rgba(148, 163, 184, 0.03)";
+    ctx.lineWidth = 1;
+    for (let c = 0; c < WIDTH; c += 40) {
+        ctx.beginPath();
+        ctx.moveTo(c, 0); ctx.lineTo(c, HEIGHT);
+        ctx.stroke();
+    }
+    for (let r = 0; r < HEIGHT; r += 40) {
+        ctx.beginPath();
+        ctx.moveTo(0, r); ctx.lineTo(WIDTH, r);
+        ctx.stroke();
+    }
+
+    // Static micro star points
+    ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
+    for (let s = 0; s < 40; s++) {
+        const starX = (s * 419) % WIDTH;
+        const starY = (s * 821) % (HEIGHT - 220);
+        ctx.fillRect(starX, starY, 1.5, 1.5);
+    }
+
+    // 2. Destructible Terrains Draw
+    // Deep Core soils
+    ctx.fillStyle = "#0f172a"; 
+    ctx.beginPath();
+    ctx.moveTo(0, HEIGHT);
+    for (let x = 0; x < WIDTH; x++) {
+        ctx.lineTo(x, terrainHeights[x]);
+    }
+    ctx.lineTo(WIDTH, HEIGHT);
+    ctx.closePath();
+    ctx.fill();
+
+    // Secondary rock layer
+    ctx.fillStyle = "#1e293b";
+    ctx.beginPath();
+    ctx.moveTo(0, HEIGHT);
+    for (let x = 0; x < WIDTH; x++) {
+        ctx.lineTo(x, terrainHeights[x] + 4);
+    }
+    ctx.lineTo(WIDTH, HEIGHT);
+    ctx.closePath();
+    ctx.fill();
+
+    // Brilliant Neon Mountain grass lining
+    ctx.strokeStyle = "#10b981"; 
+    ctx.shadowColor = "#10b981";
+    ctx.shadowBlur = 4;
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    for (let x = 0; x < WIDTH; x++) {
+        if (x === 0) ctx.moveTo(x, terrainHeights[x]);
+        else ctx.lineTo(x, terrainHeights[x]);
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0; // reset glows
+
+    // 3. Aim prediction trajectory paths
+    if (isGameRunning) {
+        drawPredictiveTrajectory(ctx, players[currentTurn]);
+    }
+
+    // 4. Draw active players
+    players.forEach(p => {
+        if (p.alive) {
+            drawTanks(ctx, p);
+        }
+    });
+
+    // 5. Draw active bullet specs
+    projectiles.forEach(p => {
+        ctx.save();
+        ctx.strokeStyle = p.itemEffect === 'teleport' ? "rgba(168, 85, 247, 0.5)" : "rgba(244, 63, 94, 0.5)";
+        ctx.lineWidth = p.radius * 1.5;
+        ctx.beginPath();
+        p.trail.forEach((t, index) => {
+            if (index === 0) ctx.moveTo(t.x, t.y);
+            else ctx.lineTo(t.x, t.y);
+        });
+        ctx.stroke();
+
+        ctx.fillStyle = p.itemEffect === 'teleport' ? "#c084fc" : "#ef4444";
+        ctx.shadowColor = ctx.fillStyle;
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    });
+
+    // 6. Draw particle clouds
+    particles.forEach(pt => {
+        ctx.save();
+        ctx.fillStyle = pt.color;
+        ctx.globalAlpha = pt.life;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, pt.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    });
+
+    // 7. Floating Combat damages text with crisp black borders
+    floatingTexts.forEach(ft => {
+        ctx.save();
+        ctx.globalAlpha = ft.alpha;
+        ctx.font = "bold 15px Pretendard, Orbitron, sans-serif";
+        ctx.textAlign = "center";
+        
+        // Solid black stroke outline guarantees absolute text legibility on all layers
+        ctx.strokeStyle = "rgba(3, 7, 18, 0.95)";
+        ctx.lineWidth = 4;
+        ctx.strokeText(ft.text, ft.x, ft.y);
+        
+        ctx.fillStyle = ft.color;
+        ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.restore();
+    });
+
+    ctx.restore();
+}
+
+function gameLoop() {
+    if (isGameRunning && currentGameState === 'aiming') {
+        const p = players[currentTurn];
+        
+        if (!p.isAI) {
+            // Horizontal driving controls
+            if (keyState['ArrowLeft'] || activeVirtualKeys['ArrowLeft']) {
+                p.x = Math.max(25, p.x - 1.8);
+                p.y = terrainHeights[Math.round(p.x)];
+            }
+            if (keyState['ArrowRight'] || activeVirtualKeys['ArrowRight']) {
+                p.x = Math.min(WIDTH - 25, p.x + 1.8);
+                p.y = terrainHeights[Math.round(p.x)];
+            }
+            
+            // INTUITIVE BINDINGS: Up arrow (▲) raises barrel towards zenith (90 degrees)
+            // Down arrow (▼) lowers barrel towards horizon (0 or 180 degrees)
+            if (keyState['ArrowUp'] || activeVirtualKeys['ArrowUp']) {
+                if (p.angle < 90) {
+                    p.angle = Math.min(90, p.angle + 1.0);
+                } else if (p.angle > 90) {
+                    p.angle = Math.max(90, p.angle - 1.0);
+                }
+                document.getElementById("angleSlider").value = p.angle;
+                document.getElementById("angleValue").innerText = `${p.angle}°`;
+            }
+            
+            if (keyState['ArrowDown'] || activeVirtualKeys['ArrowDown']) {
+                if (p.angle <= 90) {
+                    p.angle = Math.max(0, p.angle - 1.0);
+                } else if (p.angle > 90) {
+                    p.angle = Math.min(180, p.angle + 1.0);
+                }
+                document.getElementById("angleSlider").value = p.angle;
+                document.getElementById("angleValue").innerText = `${p.angle}°`;
+            }
+        }
+    }
+
+    // Power pressure build-ups on spacebar hold
+    if (powerCharging) {
+        currentPower += powerDirection;
+        if (currentPower >= 100) {
+            currentPower = 100;
+            powerDirection = -2.2; 
+        } else if (currentPower <= 0) {
+            currentPower = 0;
+            powerDirection = 2.2; 
+        }
+        document.getElementById("powerProgressBar").style.width = `${currentPower}%`;
+        document.getElementById("powerValue").innerText = `${Math.round(currentPower)}%`;
+        
+        document.getElementById("anglePowerDisplay").innerText = `ANGLE: ${players[currentTurn].angle}° | POWER: ${Math.round(currentPower)}%`;
+    }
+
+    updatePhysics();
+    draw();
+
+    requestAnimationFrame(gameLoop);
+}
+
+// Mouse scroll wheel support for adjustments
+canvas.addEventListener('wheel', (e) => {
+    if (!isGameRunning || currentGameState !== 'aiming' || players[currentTurn].isAI) return;
+    e.preventDefault();
+    
+    const p = players[currentTurn];
+    if (e.deltaY < 0) {
+        if (p.angle < 180) p.angle = Math.min(180, p.angle + 1);
+    } else {
+        if (p.angle > 0) p.angle = Math.max(0, p.angle - 1);
+    }
+    document.getElementById("angleSlider").value = p.angle;
+    document.getElementById("angleValue").innerText = `${p.angle}°`;
+}, { passive: false });
+
+window.onload = function() {
+    requestAnimationFrame(gameLoop);
+};
+</script>
+</body>
+</html>
