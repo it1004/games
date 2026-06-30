@@ -234,6 +234,17 @@
     </div>
 
     <script>
+        // 전역 선택 범위 조회 시 발생할 수 있는 IndexSizeError 예방 패치 (iframe 및 크롬 번역 확장 프로그램 에러 대응)
+        (function() {
+            const originalGetRangeAt = Selection.prototype.getRangeAt;
+            Selection.prototype.getRangeAt = function(index) {
+                if (index < 0 || index >= this.rangeCount) {
+                    return document.createRange(); // 에러를 던지는 대신 안전한 더미 Range 객체 반환
+                }
+                return originalGetRangeAt.apply(this, arguments);
+            };
+        })();
+
         // DOM 엘리먼트 캐싱
         const inputText = document.getElementById('inputText');
         const charWithSpace = document.getElementById('charWithSpace');
@@ -337,16 +348,58 @@
         }
 
         function copyToClipboard(text) {
+            // 1. 최신 Clipboard API 우선 시도 (선택 이벤트를 발생시키지 않아 가장 안전함)
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text)
+                    .then(() => {
+                        showToast("성공적으로 복사되었습니다!");
+                    })
+                    .catch(() => {
+                        // iframe 환경의 권한 거부 문제 등으로 실패 시 fallback 실행
+                        fallbackCopyToClipboard(text);
+                    });
+            } else {
+                fallbackCopyToClipboard(text);
+            }
+        }
+
+        function fallbackCopyToClipboard(text) {
             const textArea = document.createElement("textarea");
             textArea.value = text;
+            
+            // 화면 밖 배치 및 가시성 차단
+            textArea.style.position = 'fixed';
+            textArea.style.top = '0';
+            textArea.style.left = '0';
+            textArea.style.opacity = '0';
+            textArea.style.pointerEvents = 'none';
             document.body.appendChild(textArea);
+            
+            // 기존 선택 영역 백업
+            const selection = window.getSelection();
+            const originalRanges = [];
+            for (let i = 0; i < selection.rangeCount; i++) {
+                originalRanges.push(selection.getRangeAt(i));
+            }
+            
+            textArea.focus();
             textArea.select();
+            
             try {
-                document.execCommand('copy');
-                showToast("성공적으로 복사되었습니다!");
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showToast("성공적으로 복사되었습니다!");
+                } else {
+                    showToast("복사 중 에러가 발생했습니다.");
+                }
             } catch (err) {
                 showToast("복사 중 에러가 발생했습니다.");
             }
+            
+            // 임시 노드를 삭제하기 전에 기존 선택 영역 원상 복구하여 getRangeAt() 오류 사전 예방
+            selection.removeAllRanges();
+            originalRanges.forEach(range => selection.addRange(range));
+            
             document.body.removeChild(textArea);
         }
 
