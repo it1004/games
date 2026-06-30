@@ -1,1 +1,871 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>기억력 카드 뒤집기 마스터</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome (for icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter & Do Hyeon -->
+    <link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Canvas Confetti CDN for Win animation -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
+    <style>
+        body {
+            font-family: 'Inter', 'Do Hyeon', sans-serif;
+            background: radial-gradient(circle at center, #1e1b4b 0%, #0f172a 100%);
+        }
+        
+        /* 3D Card Flip Styles */
+        .card-container {
+            perspective: 1000px;
+        }
+        
+        .card-inner {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            text-align: center;
+            transition: transform 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform-style: preserve-3d;
+            cursor: pointer;
+        }
+
+        .card-container:active .card-inner {
+            transform: scale(0.95);
+            transition: transform 0.1s;
+        }
+
+        .card-inner.flipped {
+            transform: rotateY(180deg);
+        }
+
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            border-radius: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Front represents the symbol (revealed) */
+        .card-front {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border: 2px solid #818cf8;
+            transform: rotateY(180deg);
+        }
+
+        /* Back represents the hidden pattern */
+        .card-back {
+            background: linear-gradient(135deg, #4f46e5 0%, #312e81 100%);
+            border: 2px solid #6366f1;
+        }
+
+        /* Matched animation pulse */
+        @keyframes successPulse {
+            0%, 100% { transform: scale(1) rotateY(180deg); border-color: #818cf8; }
+            50% { transform: scale(1.08) rotateY(180deg); border-color: #34d399; box-shadow: 0 0 20px rgba(52, 211, 153, 0.6); }
+        }
+
+        .matched .card-front {
+            animation: successPulse 0.5s ease-out;
+            border-color: #10b981;
+            background: linear-gradient(135deg, #064e3b 0%, #022c22 100%);
+        }
+
+        /* Card Pattern Background */
+        .card-back::after {
+            content: '?';
+            font-family: 'Do Hyeon', sans-serif;
+            font-size: 2.5rem;
+            color: rgba(255, 255, 255, 0.2);
+            text-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #312e81;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4f46e5;
+        }
+    </style>
+</head>
+<body class="text-white min-h-screen flex flex-col justify-between overflow-x-hidden pb-8">
+
+    <!-- Navigation / Header Bar -->
+    <header class="w-full max-w-6xl mx-auto px-4 pt-6 pb-2">
+        <div class="flex flex-col md:flex-row items-center justify-between gap-4 bg-slate-900/60 backdrop-blur-md p-4 md:p-6 rounded-2xl border border-slate-800 shadow-2xl">
+            <!-- Brand Logo -->
+            <div class="flex items-center gap-3">
+                <div class="bg-indigo-600 p-2.5 rounded-xl text-white shadow-lg shadow-indigo-500/30 animate-pulse">
+                    <i class="fa-solid fa-brain text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold tracking-tight bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+                        기억력 카드 뒤집기
+                    </h1>
+                    <p class="text-xs text-slate-400">Memory Card Match Master</p>
+                </div>
+            </div>
+
+            <!-- Global Control Buttons -->
+            <div class="flex flex-wrap items-center gap-3">
+                <!-- Sound Toggle -->
+                <button id="soundBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-4 py-2 rounded-xl border border-slate-700 flex items-center gap-2 transition-all active:scale-95" aria-label="음소거 전환">
+                    <i class="fa-solid fa-volume-high text-lg text-indigo-400" id="soundIcon"></i>
+                    <span class="text-sm font-semibold hidden sm:inline" id="soundText">소리 켬</span>
+                </button>
+                <!-- How to Play Button -->
+                <button id="helpBtn" class="bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-4 py-2 rounded-xl border border-slate-700 flex items-center gap-2 transition-all active:scale-95">
+                    <i class="fa-solid fa-circle-question text-lg text-amber-400"></i>
+                    <span class="text-sm font-semibold hidden sm:inline">방법</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Game Area -->
+    <main class="w-full max-w-6xl mx-auto px-4 flex-grow flex flex-col lg:flex-row gap-6 mt-4 items-stretch">
+        
+        <!-- Left Side: Control & Configuration Panel -->
+        <section class="w-full lg:w-1/3 flex flex-col gap-4">
+            
+            <!-- Real-time Stats Panel -->
+            <div class="bg-slate-900/80 backdrop-blur-md p-5 rounded-2xl border border-slate-800 shadow-xl flex flex-col gap-4">
+                <h3 class="text-lg font-semibold text-indigo-300 flex items-center gap-2 pb-2 border-b border-slate-800">
+                    <i class="fa-solid fa-chart-simple"></i> 실시간 상태
+                </h3>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <!-- Timer -->
+                    <div class="bg-slate-800/50 p-3.5 rounded-xl border border-slate-700/50 flex flex-col items-center">
+                        <span class="text-xs text-slate-400 font-medium">시간 (Time)</span>
+                        <span id="timerVal" class="text-2xl font-bold text-indigo-400 font-mono mt-1">00:00</span>
+                    </div>
+                    <!-- Moves Count -->
+                    <div class="bg-slate-800/50 p-3.5 rounded-xl border border-slate-700/50 flex flex-col items-center">
+                        <span class="text-xs text-slate-400 font-medium">뒤집은 횟수</span>
+                        <span id="movesVal" class="text-2xl font-bold text-purple-400 font-mono mt-1">0</span>
+                    </div>
+                    <!-- Current Score -->
+                    <div class="bg-slate-800/50 p-3.5 rounded-xl border border-slate-700/50 flex flex-col items-center">
+                        <span class="text-xs text-slate-400 font-medium">점수 (Score)</span>
+                        <span id="scoreVal" class="text-2xl font-bold text-emerald-400 font-mono mt-1">0</span>
+                    </div>
+                    <!-- High Score -->
+                    <div class="bg-slate-800/50 p-3.5 rounded-xl border border-slate-700/50 flex flex-col items-center">
+                        <span class="text-xs text-slate-400 font-medium">최고 점수</span>
+                        <span id="highScoreVal" class="text-2xl font-bold text-amber-400 font-mono mt-1">0</span>
+                    </div>
+                </div>
+
+                <!-- Match Progress Bar -->
+                <div class="mt-2">
+                    <div class="flex justify-between text-xs font-semibold text-slate-400 mb-1">
+                        <span>매칭 진행도</span>
+                        <span id="progressPercent">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                        <div id="progressBar" class="bg-gradient-to-r from-indigo-500 to-emerald-400 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Settings Panel -->
+            <div class="bg-slate-900/80 backdrop-blur-md p-5 rounded-2xl border border-slate-800 shadow-xl flex flex-col gap-4 flex-grow justify-between">
+                <div>
+                    <h3 class="text-lg font-semibold text-indigo-300 flex items-center gap-2 pb-2 border-b border-slate-800 mb-4">
+                        <i class="fa-solid fa-gears"></i> 게임 설정
+                    </h3>
+
+                    <!-- Theme Selection -->
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold text-slate-400 mb-2">카드 테마</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button class="theme-btn active bg-indigo-600/30 text-indigo-200 border border-indigo-500 py-2.5 px-3 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-1.5 hover:bg-indigo-600/20" data-theme="animals">
+                                🐶 <span class="text-xs sm:text-sm">동물</span>
+                            </button>
+                            <button class="theme-btn bg-slate-800 text-slate-300 border border-slate-700 py-2.5 px-3 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-1.5 hover:bg-slate-700" data-theme="food">
+                                🍕 <span class="text-xs sm:text-sm">음식</span>
+                            </button>
+                            <button class="theme-btn bg-slate-800 text-slate-300 border border-slate-700 py-2.5 px-3 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-1.5 hover:bg-slate-700" data-theme="space">
+                                🚀 <span class="text-xs sm:text-sm">우주</span>
+                            </button>
+                            <button class="theme-btn bg-slate-800 text-slate-300 border border-slate-700 py-2.5 px-3 rounded-xl font-medium text-sm transition-all flex items-center justify-center gap-1.5 hover:bg-slate-700" data-theme="sports">
+                                ⚽ <span class="text-xs sm:text-sm">스포츠</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Difficulty Selection -->
+                    <div class="mb-5">
+                        <label class="block text-sm font-semibold text-slate-400 mb-2">난이도</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button class="diff-btn bg-slate-800 text-slate-300 border border-slate-700 py-2 rounded-xl font-medium text-xs sm:text-sm transition-all hover:bg-slate-700" data-diff="easy">
+                                쉬움 (12장)
+                            </button>
+                            <button class="diff-btn active bg-indigo-600/30 text-indigo-200 border border-indigo-500 py-2 rounded-xl font-medium text-xs sm:text-sm transition-all hover:bg-indigo-600/20" data-diff="medium">
+                                보통 (16장)
+                            </button>
+                            <button class="diff-btn bg-slate-800 text-slate-300 border border-slate-700 py-2 rounded-xl font-medium text-xs sm:text-sm transition-all hover:bg-slate-700" data-diff="hard">
+                                어려움 (24장)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Strategic Buttons -->
+                <div class="flex flex-col gap-2.5 pt-4 border-t border-slate-800/80">
+                    <!-- Hint Button -->
+                    <button id="hintBtn" class="w-full bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-amber-500/10 hover:shadow-amber-500/20 transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+                        <span>마법 힌트 사용하기 (<span id="hintCount">3</span>회 남음)</span>
+                    </button>
+                    <!-- Restart Game -->
+                    <button id="resetBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg shadow-indigo-600/20 transition-all hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-rotate-right text-lg"></i>
+                        <span>새로 시작하기</span>
+                    </button>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- Right Side: Game Board Container -->
+        <section class="w-full lg:w-2/3 flex flex-col bg-slate-900/40 backdrop-blur-md p-4 sm:p-6 rounded-3xl border border-slate-800/80 shadow-2xl justify-center items-center min-h-[450px] lg:min-h-0">
+            <!-- Game Grid (dynamically sized) -->
+            <div id="gameGrid" class="grid w-full gap-3 max-w-[550px] aspect-[4/3] transition-all duration-300">
+                <!-- Javascript will inject cards here -->
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="text-center text-xs text-slate-500 mt-6 px-4">
+        &copy; 2026 Memory Card Master. 모든 권리 보유. | Made with Visual Excellence & Responsive Layout
+    </footer>
+
+    <!-- Victory Modal (Hidden by default) -->
+    <div id="victoryModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center opacity-0 pointer-events-none transition-all duration-500 z-50 p-4">
+        <div class="bg-gradient-to-b from-slate-900 to-indigo-950 p-8 rounded-3xl border border-indigo-500/40 shadow-2xl max-w-md w-full text-center relative overflow-hidden transform scale-90 transition-transform duration-500">
+            <!-- Decorative particles/light -->
+            <div class="absolute -top-10 -left-10 w-32 h-32 bg-purple-500/20 rounded-full blur-2xl"></div>
+            <div class="absolute -bottom-10 -right-10 w-32 h-32 bg-indigo-500/20 rounded-full blur-2xl"></div>
+            
+            <!-- Icon/Award -->
+            <div class="relative inline-block mb-4">
+                <div class="bg-amber-500 text-slate-950 w-20 h-20 rounded-full flex items-center justify-center text-4xl shadow-lg shadow-amber-500/30 animate-bounce mx-auto">
+                    🏆
+                </div>
+            </div>
+
+            <!-- Title -->
+            <h2 class="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-400 mb-2">
+                미션 성공!
+            </h2>
+            <p class="text-indigo-200 text-sm mb-6">당신의 기억력은 정말 경이롭습니다!</p>
+
+            <!-- Stats -->
+            <div class="bg-slate-950/60 p-4 rounded-2xl border border-indigo-500/10 mb-6 flex flex-col gap-2.5">
+                <div class="flex justify-between items-center text-sm px-2">
+                    <span class="text-slate-400 font-medium">소요 시간</span>
+                    <span id="modalTime" class="text-white font-bold font-mono text-base">00:00</span>
+                </div>
+                <div class="flex justify-between items-center text-sm px-2">
+                    <span class="text-slate-400 font-medium">뒤집은 횟수 (Moves)</span>
+                    <span id="modalMoves" class="text-white font-bold font-mono text-base">0</span>
+                </div>
+                <div class="flex justify-between items-center text-sm px-2">
+                    <span class="text-slate-400 font-medium">최종 획득 점수</span>
+                    <span id="modalScore" class="text-emerald-400 font-extrabold font-mono text-lg">0</span>
+                </div>
+                <div id="newHighScoreAlert" class="hidden mt-1.5 py-1 px-2.5 bg-amber-500/20 text-amber-300 font-semibold text-xs rounded-lg animate-pulse border border-amber-500/30">
+                    🎉 최고 기록 달성! 🎉
+                </div>
+            </div>
+
+            <!-- Buttons -->
+            <div class="flex flex-col gap-3">
+                <button id="modalPlayAgainBtn" class="w-full bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 font-extrabold py-3.5 px-6 rounded-xl shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/30 transition-all active:scale-95 text-lg">
+                    다시 한 번 도전하기
+                </button>
+                <button id="modalCloseBtn" class="w-full bg-slate-800 hover:bg-slate-750 text-slate-300 py-2.5 px-6 rounded-xl text-sm transition-all">
+                    결과창 닫기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help Modal (Hidden by default) -->
+    <div id="helpModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center opacity-0 pointer-events-none transition-all duration-300 z-50 p-4">
+        <div class="bg-slate-900 p-6 sm:p-8 rounded-3xl border border-slate-800 max-w-md w-full relative">
+            <h3 class="text-xl font-bold text-indigo-400 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-circle-question text-amber-400"></i> 기억력 카드 뒤집기 규칙
+            </h3>
+            <ul class="text-slate-300 text-sm space-y-3 list-decimal list-inside pl-1 mb-6 leading-relaxed">
+                <li>카드를 뒤집어 같은 무늬를 가진 두 개의 카드를 맞추면 됩니다.</li>
+                <li>두 카드가 <b class="text-emerald-400">일치</b>하면 카드가 열린 채 유지되며, <b class="text-emerald-400">보너스 점수</b>를 받습니다.</li>
+                <li>두 카드가 <b class="text-rose-400">불일치</b>하면 다시 뒤집히고, 미약한 <b class="text-rose-400">점수 패널티</b>가 부과됩니다.</li>
+                <li><b class="text-amber-400">마법 힌트</b>를 사용하면 짧은 시간 전체 카드를 들여다볼 수 있으나 한 게임에 단 <b>3번</b>만 쓸 수 있습니다.</li>
+                <li>연속으로 빠르게 카드를 매치하면 높은 점수를 얻습니다!</li>
+            </ul>
+            <button id="closeHelpBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-3 px-6 rounded-xl transition-all">
+                이해했습니다!
+            </button>
+        </div>
+    </div>
+
+    <!-- Script Section -->
+    <script>
+        // Web Audio API Sound Generator for retro/premium SFX
+        const SoundSystem = (() => {
+            let audioCtx = null;
+            let soundEnabled = true;
+
+            const initCtx = () => {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume();
+                }
+            };
+
+            const playSound = (freqs, type = 'sine', duration = 0.1, delay = 0) => {
+                if (!soundEnabled) return;
+                try {
+                    initCtx();
+                    const osc = audioCtx.createOscillator();
+                    const gain = audioCtx.createGain();
+
+                    osc.type = type;
+                    osc.connect(gain);
+                    gain.connect(audioCtx.destination);
+
+                    const now = audioCtx.currentTime;
+                    
+                    // Single frequency or sequence
+                    if (Array.isArray(freqs)) {
+                        freqs.forEach((f, idx) => {
+                            osc.frequency.setValueAtTime(f, now + delay + (idx * 0.08));
+                        });
+                    } else {
+                        osc.frequency.setValueAtTime(freqs, now + delay);
+                    }
+
+                    gain.gain.setValueAtTime(0.15, now + delay);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + delay + duration);
+
+                    osc.start(now + delay);
+                    osc.stop(now + delay + duration);
+                } catch (e) {
+                    console.warn("Audio Context Error: ", e);
+                }
+            };
+
+            return {
+                toggle: () => {
+                    soundEnabled = !soundEnabled;
+                    return soundEnabled;
+                },
+                isEnabled: () => soundEnabled,
+                flip: () => playSound([300, 450], 'sine', 0.15),
+                match: () => {
+                    playSound(523.25, 'triangle', 0.2); // C5
+                    playSound(659.25, 'triangle', 0.2, 0.05); // E5
+                    playSound(783.99, 'triangle', 0.3, 0.1); // G5
+                },
+                mismatch: () => {
+                    playSound([220, 180, 150], 'sawtooth', 0.25);
+                },
+                win: () => {
+                    playSound(523.25, 'sine', 0.2); // C5
+                    playSound(659.25, 'sine', 0.2, 0.1); // E5
+                    playSound(783.99, 'sine', 0.2, 0.2); // G5
+                    playSound(1046.50, 'sine', 0.4, 0.3); // C6
+                },
+                click: () => playSound(400, 'sine', 0.05)
+            };
+        })();
+
+        // Game Themes Emojis Source Data
+        const THEMES = {
+            animals: ['🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮'],
+            food: ['🍕', '🍔', '🍟', '🌭', '🍿', '🍩', '🍪', '🎂', '🍫', '🍬', '🍦', '🍓'],
+            space: ['🚀', '🛸', '🪐', '🌌', '☄️', '👽', '🤖', '🛰️', '🌟', '🌙', '☀️', '🌍'],
+            sports: ['⚽', '🏀', '🏈', '⚾', '🎾', '🏐', '🎱', '🏓', '🏸', '🏹', ' Skate ', '🛹']
+        };
+
+        // Difficulty Grid Configurations
+        const CONFIG = {
+            easy: { rows: 3, cols: 4, pairs: 6 },
+            medium: { rows: 4, cols: 4, pairs: 8 },
+            hard: { rows: 4, cols: 6, pairs: 12 }
+        };
+
+        // Core Game States
+        let currentTheme = 'animals';
+        let currentDiff = 'medium';
+        let deck = [];
+        let flippedCards = [];
+        let moves = 0;
+        let score = 0;
+        let matches = 0;
+        let isLockBoard = false;
+        let hintCount = 3;
+        
+        // Timer elements
+        let timerId = null;
+        let timeElapsed = 0; // in seconds
+        let gameStarted = false;
+
+        // High Score
+        let highScoreKey = 'card_game_high_score_medium';
+        let highScore = localStorage.getItem(highScoreKey) ? parseInt(localStorage.getItem(highScoreKey)) : 0;
+
+        // Dom Elements
+        const gameGrid = document.getElementById('gameGrid');
+        const timerVal = document.getElementById('timerVal');
+        const movesVal = document.getElementById('movesVal');
+        const scoreVal = document.getElementById('scoreVal');
+        const highScoreVal = document.getElementById('highScoreVal');
+        const progressPercent = document.getElementById('progressPercent');
+        const progressBar = document.getElementById('progressBar');
+        const hintBtn = document.getElementById('hintBtn');
+        const hintCountSpan = document.getElementById('hintCount');
+        const resetBtn = document.getElementById('resetBtn');
+        const victoryModal = document.getElementById('victoryModal');
+        const newHighScoreAlert = document.getElementById('newHighScoreAlert');
+        const modalPlayAgainBtn = document.getElementById('modalPlayAgainBtn');
+        const modalCloseBtn = document.getElementById('modalCloseBtn');
+        const modalTime = document.getElementById('modalTime');
+        const modalMoves = document.getElementById('modalMoves');
+        const modalScore = document.getElementById('modalScore');
+
+        const helpBtn = document.getElementById('helpBtn');
+        const helpModal = document.getElementById('helpModal');
+        const closeHelpBtn = document.getElementById('closeHelpBtn');
+
+        const soundBtn = document.getElementById('soundBtn');
+        const soundIcon = document.getElementById('soundIcon');
+        const soundText = document.getElementById('soundText');
+
+        // Utility: Fisher-Yates Shuffle Algorithm
+        function shuffle(array) {
+            let currentIndex = array.length, randomIndex;
+            while (currentIndex !== 0) {
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex--;
+                [array[currentIndex], array[randomIndex]] = [array[randomIndex], array[currentIndex]];
+            }
+            return array;
+        }
+
+        // Initialize and setup High Score display
+        function updateHighScoreDisplay() {
+            highScoreKey = `card_game_high_score_${currentDiff}`;
+            highScore = localStorage.getItem(highScoreKey) ? parseInt(localStorage.getItem(highScoreKey)) : 0;
+            highScoreVal.textContent = highScore;
+        }
+
+        // Generate Game Board Deck
+        function initDeck() {
+            const config = CONFIG[currentDiff];
+            const activeEmojis = THEMES[currentTheme].slice(0, config.pairs);
+            
+            // Duplicate pairs to make cards matching set
+            const duplicated = [...activeEmojis, ...activeEmojis];
+            
+            // Map deck structures
+            deck = duplicated.map((symbol, idx) => ({
+                id: idx,
+                symbol: symbol,
+                isFlipped: false,
+                isMatched: false
+            }));
+
+            // Shuffle cards
+            shuffle(deck);
+        }
+
+        // Render deck into the gameGrid with grid classes
+        function renderBoard() {
+            const config = CONFIG[currentDiff];
+            
+            // Set dynamic CSS Grid templates
+            gameGrid.className = `grid w-full gap-3 max-w-[550px] aspect-[4/3] transition-all duration-300`;
+            
+            if (currentDiff === 'easy') {
+                gameGrid.classList.add('grid-cols-4');
+            } else if (currentDiff === 'medium') {
+                gameGrid.classList.add('grid-cols-4');
+            } else if (currentDiff === 'hard') {
+                gameGrid.classList.add('grid-cols-6');
+            }
+
+            gameGrid.innerHTML = '';
+
+            deck.forEach((card, idx) => {
+                const cardContainer = document.createElement('div');
+                cardContainer.className = 'card-container relative w-full h-full';
+                cardContainer.dataset.index = idx;
+
+                const cardInner = document.createElement('div');
+                cardInner.className = 'card-inner w-full h-full';
+                cardInner.id = `card-${idx}`;
+
+                const cardFront = document.createElement('div');
+                cardFront.className = 'card-front text-3xl sm:text-4xl md:text-5xl select-none';
+                cardFront.innerHTML = `<span>${card.symbol}</span>`;
+
+                const cardBack = document.createElement('div');
+                cardBack.className = 'card-back';
+
+                cardInner.appendChild(cardFront);
+                cardInner.appendChild(cardBack);
+                cardContainer.appendChild(cardInner);
+                
+                // Add event listeners
+                cardContainer.addEventListener('click', () => onCardClicked(idx));
+                cardContainer.addEventListener('touchstart', (e) => {
+                    // Optimized mobile tapping speed
+                    if (!isLockBoard) {
+                        e.preventDefault();
+                        onCardClicked(idx);
+                    }
+                }, { passive: false });
+
+                gameGrid.appendChild(cardContainer);
+            });
+        }
+
+        // Handle Card Tapping Action
+        function onCardClicked(index) {
+            const card = deck[index];
+            const cardEl = document.getElementById(`card-${index}`);
+
+            // Skip conditions
+            if (isLockBoard || card.isFlipped || card.isMatched) return;
+
+            // Start timer on first tap
+            if (!gameStarted) {
+                startTimer();
+                gameStarted = true;
+            }
+
+            // Flip visual & logical state
+            SoundSystem.flip();
+            card.isFlipped = true;
+            cardEl.classList.add('flipped');
+            flippedCards.push(index);
+
+            // Double card matching verification
+            if (flippedCards.length === 2) {
+                moves++;
+                movesVal.textContent = moves;
+                checkMatch();
+            }
+        }
+
+        // Validate two flipped cards match
+        function checkMatch() {
+            isLockBoard = true;
+            const [firstIdx, secondIdx] = flippedCards;
+            const card1 = deck[firstIdx];
+            const card2 = deck[secondIdx];
+
+            const card1El = document.getElementById(`card-${firstIdx}`);
+            const card2El = document.getElementById(`card-${secondIdx}`);
+
+            if (card1.symbol === card2.symbol) {
+                // MATCH SUCCESSFUL
+                matches++;
+                card1.isMatched = true;
+                card2.isMatched = true;
+                
+                setTimeout(() => {
+                    SoundSystem.match();
+                    
+                    // Add success classes
+                    card1El.parentElement.classList.add('matched');
+                    card2El.parentElement.classList.add('matched');
+
+                    // Score calculation with bonus for continuous moves
+                    const scoreBonus = Math.max(10, 150 - (moves * 1.5));
+                    score += Math.round(scoreBonus);
+                    scoreVal.textContent = score;
+
+                    // Reset selected container pointers
+                    flippedCards = [];
+                    isLockBoard = false;
+
+                    // Update dynamic visual stats
+                    updateProgress();
+
+                    // Check win state
+                    if (matches === CONFIG[currentDiff].pairs) {
+                        endGame();
+                    }
+                }, 400);
+
+            } else {
+                // MATCH FAILURE
+                setTimeout(() => {
+                    SoundSystem.mismatch();
+                    
+                    // Negative score penalty (minimal)
+                    score = Math.max(0, score - 15);
+                    scoreVal.textContent = score;
+
+                    // Re-flip card animation back
+                    card1El.classList.remove('flipped');
+                    card2El.classList.remove('flipped');
+
+                    card1.isFlipped = false;
+                    card2.isFlipped = false;
+
+                    flippedCards = [];
+                    isLockBoard = false;
+                }, 1000);
+            }
+        }
+
+        // Dynamic match process calculation
+        function updateProgress() {
+            const totalPairs = CONFIG[currentDiff].pairs;
+            const percentage = Math.round((matches / totalPairs) * 100);
+            progressPercent.textContent = `${percentage}%`;
+            progressBar.style.width = `${percentage}%`;
+        }
+
+        // Magic hint reveals all cards for 1.2 seconds
+        function useMagicHint() {
+            if (hintCount <= 0 || isLockBoard || !gameStarted) return;
+            
+            isLockBoard = true;
+            hintCount--;
+            hintCountSpan.textContent = hintCount;
+            if (hintCount === 0) {
+                hintBtn.disabled = true;
+                hintBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            }
+
+            SoundSystem.click();
+
+            // Unveil every single cards not yet matched
+            deck.forEach((card, idx) => {
+                if (!card.isFlipped && !card.isMatched) {
+                    document.getElementById(`card-${idx}`).classList.add('flipped');
+                }
+            });
+
+            // Fast hiding sequence
+            setTimeout(() => {
+                deck.forEach((card, idx) => {
+                    if (!card.isFlipped && !card.isMatched) {
+                        document.getElementById(`card-${idx}`).classList.remove('flipped');
+                    }
+                });
+                isLockBoard = false;
+            }, 1200);
+        }
+
+        // Timer Execution Controls
+        function startTimer() {
+            clearInterval(timerId);
+            timeElapsed = 0;
+            timerId = setInterval(() => {
+                timeElapsed++;
+                const mins = String(Math.floor(timeElapsed / 60)).padStart(2, '0');
+                const secs = String(timeElapsed % 60).padStart(2, '0');
+                timerVal.textContent = `${mins}:${secs}`;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerId);
+        }
+
+        // Conclude Game Sequence
+        function endGame() {
+            stopTimer();
+            SoundSystem.win();
+
+            // Store high score inside local database
+            let isNewHighScore = false;
+            if (score > highScore) {
+                localStorage.setItem(highScoreKey, score);
+                highScore = score;
+                highScoreVal.textContent = score;
+                isNewHighScore = true;
+            }
+
+            // Pop Confetti Firework Effect
+            const duration = 3 * 1000;
+            const animationEnd = Date.now() + duration;
+            const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 100 };
+
+            function randomInRange(min, max) {
+              return Math.random() * (max - min) + min;
+            }
+
+            const interval = setInterval(function() {
+              const timeLeft = animationEnd - Date.now();
+
+              if (timeLeft <= 0) {
+                return clearInterval(interval);
+              }
+
+              const particleCount = 50 * (timeLeft / duration);
+              // since particles fall down, animate a bit higher than random
+              confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.1, 0.3), y: Math.random() - 0.2 } });
+              confetti({ ...defaults, particleCount, origin: { x: randomInRange(0.7, 0.9), y: Math.random() - 0.2 } });
+            }, 250);
+
+            // Populate Modal Statistics data
+            const mins = String(Math.floor(timeElapsed / 60)).padStart(2, '0');
+            const secs = String(timeElapsed % 60).padStart(2, '0');
+            modalTime.textContent = `${mins}:${secs}`;
+            modalMoves.textContent = moves;
+            modalScore.textContent = score;
+
+            if (isNewHighScore) {
+                newHighScoreAlert.classList.remove('hidden');
+            } else {
+                newHighScoreAlert.classList.add('hidden');
+            }
+
+            // Fade-in Modal Layout Animation
+            setTimeout(() => {
+                victoryModal.classList.remove('opacity-0', 'pointer-events-none');
+                victoryModal.firstElementChild.classList.remove('scale-90');
+                victoryModal.firstElementChild.classList.add('scale-100');
+            }, 800);
+        }
+
+        // Resets configurations & rebuilds board
+        function resetGame() {
+            stopTimer();
+            gameStarted = false;
+            moves = 0;
+            score = 0;
+            matches = 0;
+            isLockBoard = false;
+            flippedCards = [];
+            timeElapsed = 0;
+            
+            // Limit Hints base
+            hintCount = 3;
+            hintCountSpan.textContent = hintCount;
+            hintBtn.disabled = false;
+            hintBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+            timerVal.textContent = "00:00";
+            movesVal.textContent = "0";
+            scoreVal.textContent = "0";
+            updateProgress();
+            updateHighScoreDisplay();
+
+            // Visual Card Generation
+            initDeck();
+            renderBoard();
+        }
+
+        // Configuration Switch Action Handlers
+        document.querySelectorAll('.theme-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const targetBtn = e.currentTarget;
+                document.querySelectorAll('.theme-btn').forEach(b => b.classList.remove('active', 'bg-indigo-600/30', 'text-indigo-200', 'border-indigo-500'));
+                document.querySelectorAll('.theme-btn').forEach(b => b.classList.add('bg-slate-800', 'text-slate-300', 'border-slate-700'));
+                
+                targetBtn.classList.add('active', 'bg-indigo-600/30', 'text-indigo-200', 'border-indigo-500');
+                targetBtn.classList.remove('bg-slate-800', 'text-slate-300', 'border-slate-700');
+                
+                currentTheme = targetBtn.dataset.theme;
+                SoundSystem.click();
+                resetGame();
+            });
+        });
+
+        document.querySelectorAll('.diff-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const targetBtn = e.currentTarget;
+                document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active', 'bg-indigo-600/30', 'text-indigo-200', 'border-indigo-500'));
+                document.querySelectorAll('.diff-btn').forEach(b => b.classList.add('bg-slate-800', 'text-slate-300', 'border-slate-700'));
+                
+                targetBtn.classList.add('active', 'bg-indigo-600/30', 'text-indigo-200', 'border-indigo-500');
+                targetBtn.classList.remove('bg-slate-800', 'text-slate-300', 'border-slate-700');
+                
+                currentDiff = targetBtn.dataset.diff;
+                SoundSystem.click();
+                resetGame();
+            });
+        });
+
+        // Triggering Core Action Buttons
+        hintBtn.addEventListener('click', useMagicHint);
+        resetBtn.addEventListener('click', () => { SoundSystem.click(); resetGame(); });
+
+        // Modals Toggling Functions
+        modalCloseBtn.addEventListener('click', () => {
+            SoundSystem.click();
+            victoryModal.classList.add('opacity-0', 'pointer-events-none');
+            victoryModal.firstElementChild.classList.remove('scale-100');
+            victoryModal.firstElementChild.classList.add('scale-90');
+        });
+
+        modalPlayAgainBtn.addEventListener('click', () => {
+            SoundSystem.click();
+            victoryModal.classList.add('opacity-0', 'pointer-events-none');
+            victoryModal.firstElementChild.classList.remove('scale-100');
+            victoryModal.firstElementChild.classList.add('scale-90');
+            resetGame();
+        });
+
+        // Toggle Rules Modal
+        helpBtn.addEventListener('click', () => {
+            SoundSystem.click();
+            helpModal.classList.remove('opacity-0', 'pointer-events-none');
+        });
+
+        closeHelpBtn.addEventListener('click', () => {
+            SoundSystem.click();
+            helpModal.classList.add('opacity-0', 'pointer-events-none');
+        });
+
+        // Audio System On/Off Toggle
+        soundBtn.addEventListener('click', () => {
+            const enabled = SoundSystem.toggle();
+            if (enabled) {
+                soundIcon.className = 'fa-solid fa-volume-high text-lg text-indigo-400';
+                soundText.textContent = '소리 켬';
+            } else {
+                soundIcon.className = 'fa-solid fa-volume-xmark text-lg text-rose-400';
+                soundText.textContent = '소리 끔';
+            }
+        });
+
+        // Start Up Initialization On Load
+        window.onload = () => {
+            resetGame();
+        };
+    </script>
+</body>
+</html>
