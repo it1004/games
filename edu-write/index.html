@@ -1,1 +1,661 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>텍스트 마스터 - AI 맞춤법 & 번역 에디터</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Pretendard', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800">
 
+    <!-- 네비게이션 바 -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <div class="bg-indigo-600 text-white p-2 rounded-lg">
+                    <i class="fa-solid fa-wand-magic-sparkles text-xl"></i>
+                </div>
+                <span class="text-xl font-bold bg-gradient-to-r from-indigo-600 to-violet-600 bg-clip-text text-transparent">글쓰기 도우미 AI</span>
+            </div>
+            <div class="text-xs text-slate-500 font-medium">
+                <span class="bg-indigo-50 text-indigo-700 px-2.5 py-1 rounded-full border border-indigo-100">All-in-One AI v1.0</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- 메인 컨텐츠 영역 -->
+    <main class="max-w-6xl mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- 왼쪽: 입력 영역 & 글자 수 세기 (7컬럼) -->
+            <div class="lg:col-span-7 space-y-6">
+                <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm relative">
+                    <div class="flex justify-between items-center mb-4">
+                        <label for="inputText" class="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                            <i class="fa-solid fa-pen text-indigo-500"></i> 원본 텍스트 입력
+                        </label>
+                        <div class="flex gap-2">
+                            <button onclick="clearText()" class="text-xs text-slate-400 hover:text-slate-600 flex items-center gap-1 transition-colors">
+                                <i class="fa-solid fa-trash-can"></i> 비우기
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 텍스트 입력창 -->
+                    <textarea id="inputText" rows="10" 
+                        class="w-full p-4 border border-slate-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none resize-none text-slate-700 placeholder-slate-400 transition-all leading-relaxed"
+                        placeholder="이곳에 텍스트를 입력하거나 붙여넣으세요. 실시간 글자수 계산과 인공지능 기반 맞춤법, 띄어쓰기, 오타 검사, 스타일 변환, 번역을 한 번에 실행해 보세요!"></textarea>
+                    
+                    <!-- 실시간 글자 수 세기 대시보드 -->
+                    <div class="grid grid-cols-3 gap-3 mt-4 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                        <div class="text-center py-2 bg-white rounded-lg border border-slate-100 shadow-sm">
+                            <p class="text-xs text-slate-400 font-medium mb-1">공백 포함</p>
+                            <p id="charWithSpace" class="text-lg font-bold text-slate-800">0</p>
+                        </div>
+                        <div class="text-center py-2 bg-white rounded-lg border border-slate-100 shadow-sm">
+                            <p class="text-xs text-slate-400 font-medium mb-1">공백 제외</p>
+                            <p id="charWithoutSpace" class="text-lg font-bold text-slate-800">0</p>
+                        </div>
+                        <div class="text-center py-2 bg-white rounded-lg border border-slate-100 shadow-sm">
+                            <p class="text-xs text-slate-400 font-medium mb-1">단어 수</p>
+                            <p id="wordCount" class="text-lg font-bold text-indigo-600">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 기능 실행 버튼 그룹 -->
+                <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm">
+                    <h3 class="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                        <i class="fa-solid fa-gears text-indigo-500"></i> 스마트 AI 기능 실행
+                    </h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                        <button onclick="runSpellCheck()" id="btnSpell" class="flex flex-col items-center justify-center p-4 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 rounded-xl text-indigo-700 transition-all group disabled:opacity-50">
+                            <i id="iconSpell" class="fa-solid fa-spell-check text-2xl mb-2 group-hover:scale-110 transition-transform"></i>
+                            <span class="text-xs font-bold">맞춤법 & 띄어쓰기</span>
+                        </button>
+                        <button onclick="translateToEnglish()" id="btnTranslate" class="flex flex-col items-center justify-center p-4 bg-emerald-50 hover:bg-emerald-100 border border-emerald-100 rounded-xl text-emerald-700 transition-all group disabled:opacity-50">
+                            <i id="iconTranslate" class="fa-solid fa-language text-2xl mb-2 group-hover:scale-110 transition-transform"></i>
+                            <span class="text-xs font-bold">AI 영어 번역</span>
+                        </button>
+                        <button onclick="openStyleModal()" id="btnStyle" class="col-span-2 sm:col-span-1 flex flex-col items-center justify-center p-4 bg-amber-50 hover:bg-amber-100 border border-amber-100 rounded-xl text-amber-700 transition-all group">
+                            <i class="fa-solid fa-wand-magic-sparkles text-2xl mb-2 group-hover:scale-110 transition-transform"></i>
+                            <span class="text-xs font-bold">AI 스타일 변환</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 오른쪽: 결과 및 변환 대시보드 (5컬럼) -->
+            <div class="lg:col-span-5 space-y-6">
+                <!-- 결과 표시창 -->
+                <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col h-full min-h-[420px]">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                            <i class="fa-solid fa-square-poll-horizontal text-indigo-500"></i> 처리 결과
+                        </h3>
+                        <!-- 결과 텍스트 복사 버튼 -->
+                        <button onclick="copyResultText()" class="text-xs text-indigo-600 hover:text-indigo-800 flex items-center gap-1 font-semibold transition-colors">
+                            <i class="fa-solid fa-copy"></i> 결과 복사
+                        </button>
+                    </div>
+
+                    <!-- 결과 내용 영역 -->
+                    <div class="flex-grow flex flex-col">
+                        <!-- 기본 안내 상태 -->
+                        <div id="resultPlaceholder" class="flex-grow flex flex-col items-center justify-center text-center p-8 text-slate-400 border-2 border-dashed border-slate-100 rounded-xl">
+                            <i class="fa-solid fa-comment-slash text-4xl mb-3 text-slate-300"></i>
+                            <p class="text-sm font-medium">원하는 AI 기능을 실행하면<br>여기에 실시간 분석 결과가 표시됩니다.</p>
+                        </div>
+
+                        <!-- 로딩 화면 -->
+                        <div id="loadingIndicator" class="hidden flex-grow flex flex-col items-center justify-center text-center p-8 text-indigo-500 rounded-xl">
+                            <i class="fa-solid fa-circle-notch fa-spin text-4xl mb-4"></i>
+                            <p class="text-sm font-semibold text-slate-700">AI가 텍스트를 정밀 분석하고 있습니다...</p>
+                            <p class="text-xs text-slate-400 mt-1">잠시만 기다려 주세요.</p>
+                        </div>
+
+                        <!-- 텍스트 변환 결과창 (기본 숨김) -->
+                        <div id="resultTextContainer" class="hidden flex-grow flex flex-col">
+                            <div id="resultBadge" class="self-start text-[11px] font-bold px-2 py-0.5 rounded mb-3"></div>
+                            <div id="resultContent" class="flex-grow p-4 bg-slate-50 border border-slate-200 rounded-xl text-slate-700 text-sm leading-relaxed whitespace-pre-wrap overflow-y-auto max-h-[300px]"></div>
+                        </div>
+
+                        <!-- 맞춤법 검사 결과창 (기본 숨김) -->
+                        <div id="spellResultContainer" class="hidden flex-grow flex flex-col space-y-4">
+                            <div class="flex items-center justify-between text-xs text-slate-400 border-b pb-2">
+                                <span id="spellSummary" class="text-rose-500 font-semibold"></span>
+                                <button onclick="applyAllSpellCorrections()" class="text-indigo-600 hover:underline font-bold">모두 수정하기</button>
+                            </div>
+                            <div id="spellCardList" class="space-y-3 overflow-y-auto max-h-[320px] pr-1">
+                                <!-- 맞춤법 카드 동적 삽입 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- 스타일 변환 바텀시트 / 모달 -->
+    <div id="styleModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white w-full sm:max-w-lg rounded-t-2xl sm:rounded-2xl shadow-xl overflow-hidden transform translate-y-full sm:translate-y-0 sm:scale-95 transition-transform duration-300">
+            <!-- 모달 헤더 -->
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <h3 class="font-bold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles text-amber-500"></i> AI 글 스타일 변환기
+                </h3>
+                <button onclick="closeStyleModal()" class="text-slate-400 hover:text-slate-600">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <!-- 모달 바디 -->
+            <div class="p-6 space-y-4">
+                <p class="text-xs text-slate-500 font-medium">입력한 글을 원하는 상황에 맞춰 다양한 스타일로 즉시 다듬어 드립니다.</p>
+                
+                <div class="grid grid-cols-1 gap-2.5">
+                    <!-- 공손한 스타일 -->
+                    <button onclick="transformStyle('polite')" class="flex items-center justify-between p-3.5 border border-slate-200 rounded-xl hover:border-indigo-500 hover:bg-indigo-50/30 text-left transition-all">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">🙇‍♂️</span>
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-800">공손하고 격식있는 스타일</h4>
+                                <p class="text-xs text-slate-400">비즈니스 메일이나 정중한 대화에 알맞습니다.</p>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-slate-300 text-xs"></i>
+                    </button>
+
+                    <!-- 친근한 스타일 -->
+                    <button onclick="transformStyle('friendly')" class="flex items-center justify-between p-3.5 border border-slate-200 rounded-xl hover:border-indigo-500 hover:bg-indigo-50/30 text-left transition-all">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">😊</span>
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-800">친근하고 다정한 스타일</h4>
+                                <p class="text-xs text-slate-400">이웃, 동료, 친구에게 건네는 일상 대화 톤입니다.</p>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-slate-300 text-xs"></i>
+                    </button>
+
+                    <!-- SNS 스타일 -->
+                    <button onclick="transformStyle('sns')" class="flex items-center justify-between p-3.5 border border-slate-200 rounded-xl hover:border-indigo-500 hover:bg-indigo-50/30 text-left transition-all">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">📱</span>
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-800">SNS 감성 트렌디 스타일</h4>
+                                <p class="text-xs text-slate-400">블로그, 인스타, 피드용 줄바꿈과 태그가 적용됩니다.</p>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-slate-300 text-xs"></i>
+                    </button>
+
+                    <!-- 이모지 가득 스타일 -->
+                    <button onclick="transformStyle('emoji')" class="flex items-center justify-between p-3.5 border border-slate-200 rounded-xl hover:border-indigo-500 hover:bg-indigo-50/30 text-left transition-all">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">✨</span>
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-800">이모지 가득 발랄한 스타일</h4>
+                                <p class="text-xs text-slate-400">귀엽고 화려하게 문장 곳곳에 이모지를 넣습니다.</p>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-slate-300 text-xs"></i>
+                    </button>
+
+                    <!-- 경상도 사투리 스타일 -->
+                    <button onclick="transformStyle('dialect')" class="flex items-center justify-between p-3.5 border border-slate-200 rounded-xl hover:border-indigo-500 hover:bg-indigo-50/30 text-left transition-all">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">📢</span>
+                            <div>
+                                <h4 class="text-sm font-bold text-slate-800">정겨운 경상도 사투리 스타일</h4>
+                                <p class="text-xs text-slate-400">"맞나?", "~했나?" 정감 가는 부산·대구 톤으로 변환합니다.</p>
+                            </div>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-slate-300 text-xs"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 알림 레이어 -->
+    <div id="toast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-slate-900 text-white text-xs font-medium px-5 py-3 rounded-xl shadow-lg flex items-center gap-2 opacity-0 pointer-events-none transition-all duration-300 z-50">
+        <i class="fa-solid fa-circle-check text-emerald-400"></i>
+        <span id="toastMessage">복사되었습니다.</span>
+    </div>
+
+    <script>
+        // DOM 엘리먼트 캐싱
+        const inputText = document.getElementById('inputText');
+        const charWithSpace = document.getElementById('charWithSpace');
+        const charWithoutSpace = document.getElementById('charWithoutSpace');
+        const wordCount = document.getElementById('wordCount');
+
+        const resultPlaceholder = document.getElementById('resultPlaceholder');
+        const loadingIndicator = document.getElementById('loadingIndicator');
+        const resultTextContainer = document.getElementById('resultTextContainer');
+        const resultBadge = document.getElementById('resultBadge');
+        const resultContent = document.getElementById('resultContent');
+
+        const spellResultContainer = document.getElementById('spellResultContainer');
+        const spellSummary = document.getElementById('spellSummary');
+        const spellCardList = document.getElementById('spellCardList');
+
+        const styleModal = document.getElementById('styleModal');
+        const styleModalContent = styleModal.querySelector('div');
+
+        // 실시간 글자수 계산 이벤트 리스너
+        inputText.addEventListener('input', calculateCounts);
+
+        function calculateCounts() {
+            const text = inputText.value;
+            charWithSpace.innerText = text.length.toLocaleString();
+            const textWithoutSpace = text.replace(/\s/g, '');
+            charWithoutSpace.innerText = textWithoutSpace.length.toLocaleString();
+            const trimmed = text.trim();
+            const words = trimmed === "" ? 0 : trimmed.split(/\s+/).length;
+            wordCount.innerText = words.toLocaleString();
+        }
+
+        // 텍스트 비우기
+        function clearText() {
+            inputText.value = '';
+            calculateCounts();
+            resetResultView();
+            showToast("입력창이 비워졌습니다.");
+        }
+
+        // 결과창 뷰 초기화
+        function resetResultView() {
+            resultPlaceholder.classList.remove('hidden');
+            loadingIndicator.classList.add('hidden');
+            resultTextContainer.classList.add('hidden');
+            spellResultContainer.classList.add('hidden');
+        }
+
+        // 로딩 활성화
+        function showLoading() {
+            resultPlaceholder.classList.add('hidden');
+            resultTextContainer.classList.add('hidden');
+            spellResultContainer.classList.add('hidden');
+            loadingIndicator.classList.remove('hidden');
+        }
+
+        // 특정 분석 결과 활성화
+        function showTextResult(title, content, themeClass) {
+            loadingIndicator.classList.add('hidden');
+            resultPlaceholder.classList.add('hidden');
+            resultTextContainer.classList.remove('hidden');
+            
+            resultBadge.innerText = title;
+            resultBadge.className = `self-start text-[11px] font-bold px-2 py-0.5 rounded mb-3 ${themeClass}`;
+            resultContent.innerText = content;
+        }
+
+        // 토스트 알림창
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').innerText = message;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100');
+            setTimeout(() => {
+                toast.classList.remove('opacity-100');
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 2500);
+        }
+
+        // 복사하기 기능
+        function copyResultText() {
+            let targetText = "";
+            if (!resultTextContainer.classList.contains('hidden')) {
+                targetText = resultContent.innerText;
+            } else if (!spellResultContainer.classList.contains('hidden')) {
+                targetText = inputText.value;
+                showToast("현재 에디터의 텍스트가 복사되었습니다.");
+                copyToClipboard(targetText);
+                return;
+            } else {
+                showToast("복사할 결과가 없습니다.");
+                return;
+            }
+
+            if (!targetText) {
+                showToast("복사할 결과가 비어있습니다.");
+                return;
+            }
+
+            copyToClipboard(targetText);
+        }
+
+        function copyToClipboard(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showToast("성공적으로 복사되었습니다!");
+            } catch (err) {
+                showToast("복사 중 에러가 발생했습니다.");
+            }
+            document.body.removeChild(textArea);
+        }
+
+        // 스타일 모달 열기/닫기
+        function openStyleModal() {
+            if (!inputText.value.trim()) {
+                showToast("먼저 변환할 텍스트를 입력해주세요!");
+                return;
+            }
+            styleModal.classList.remove('pointer-events-none', 'opacity-0');
+            styleModal.classList.add('opacity-100');
+            styleModalContent.classList.remove('translate-y-full', 'sm:scale-95');
+            styleModalContent.classList.add('translate-y-0', 'sm:scale-100');
+        }
+
+        function closeStyleModal() {
+            styleModal.classList.remove('opacity-100');
+            styleModal.classList.add('opacity-0', 'pointer-events-none');
+            styleModalContent.classList.remove('translate-y-0', 'sm:scale-100');
+            styleModalContent.classList.add('translate-y-full', 'sm:scale-95');
+        }
+
+        /* ----------------------------------------------------
+           Gemini Core Connection Module
+           ---------------------------------------------------- */
+        async function callGemini(systemPrompt, userQuery, responseJsonSchema = null) {
+            const apiKey = ""; // Canvas 환경에서 자동 주입됨
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+            
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                }
+            };
+
+            if (responseJsonSchema) {
+                payload.generationConfig = {
+                    responseMimeType: "application/json",
+                    responseSchema: responseJsonSchema
+                };
+            }
+
+            let delay = 1000;
+            // 지수 백오프 기반 재시도
+            for (let i = 0; i < 3; i++) {
+                try {
+                    const response = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    
+                    if (!response.ok) {
+                        throw new Error(`API Error: ${response.status}`);
+                    }
+                    
+                    const result = await response.json();
+                    return result.candidates?.[0]?.content?.parts?.[0]?.text;
+                } catch (e) {
+                    if (i === 2) throw e;
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    delay *= 2;
+                }
+            }
+        }
+
+        /* ----------------------------------------------------
+           기능 1: AI 맞춤법 & 띄어쓰기 검사기
+           ---------------------------------------------------- */
+        let currentSpellIssues = [];
+
+        async function runSpellCheck() {
+            const text = inputText.value.trim();
+            if (!text) {
+                showToast("먼저 맞춤법을 검사할 텍스트를 입력해주세요!");
+                return;
+            }
+
+            showLoading();
+            currentSpellIssues = [];
+
+            const systemPrompt = `너는 한국어 교열 및 교정 전문가야. 입력된 한국어 텍스트에 대해 '오타', '맞춤법 오류', '잘못된 띄어쓰기', '잘못된 문맥 표현'을 검출해줘.
+너는 정확히 JSON 배열 형식으로만 응답해야 해. 각 객체는 다음 요소를 포함해야 해:
+- "bad": 원래 텍스트의 잘못된 부분 (문맥상 어긋난 부분 포함, 반드시 원본 텍스트에 존재하는 하위 문자열이어야 함)
+- "good": 올바르게 수정된 부분
+- "desc": 오류 원인 및 맞춤법 규정에 대한 친절하고 쉬운 한글 설명.
+
+오류가 전혀 없는 완벽한 텍스트라면 빈 배열 '[]'을 반환해줘.`;
+
+            const jsonSchema = {
+                type: "ARRAY",
+                items: {
+                    type: "OBJECT",
+                    properties: {
+                        "bad": { "type": "STRING" },
+                        "good": { "type": "STRING" },
+                        "desc": { "type": "STRING" }
+                    },
+                    "propertyOrdering": ["bad", "good", "desc"]
+                }
+            };
+
+            try {
+                const responseText = await callGemini(systemPrompt, text, jsonSchema);
+                currentSpellIssues = JSON.parse(responseText || "[]");
+                
+                loadingIndicator.classList.add('hidden');
+                spellResultContainer.classList.remove('hidden');
+
+                if (currentSpellIssues.length === 0) {
+                    spellSummary.innerHTML = `<span class="text-emerald-600 font-semibold"><i class="fa-solid fa-circle-check"></i> 완벽합니다!</span>`;
+                    spellCardList.innerHTML = `
+                        <div class="p-6 text-center text-slate-500 bg-emerald-50/50 rounded-xl border border-emerald-100 animate-fade-in">
+                            <span class="text-3xl mb-2 block">🎉</span>
+                            <p class="text-sm font-semibold text-emerald-800">오류가 발견되지 않았습니다.</p>
+                            <p class="text-xs text-emerald-600/70 mt-1">글자 띄어쓰기와 맞춤법이 매우 완벽한 상태입니다!</p>
+                        </div>
+                    `;
+                } else {
+                    spellSummary.innerHTML = `<span class="text-rose-500 font-bold"><i class="fa-solid fa-triangle-exclamation"></i> 총 ${currentSpellIssues.length}건의 교정 추천</span>`;
+                    
+                    let cardsHtml = "";
+                    currentSpellIssues.forEach((issue, idx) => {
+                        cardsHtml += `
+                            <div id="card-${idx}" class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm relative hover:border-indigo-400 transition-all">
+                                <div class="flex flex-wrap items-center gap-2 text-xs mb-2">
+                                    <span class="bg-rose-100 text-rose-700 font-bold px-2 py-0.5 rounded line-through">${escapeHtml(issue.bad)}</span>
+                                    <i class="fa-solid fa-arrow-right text-slate-300"></i>
+                                    <span class="bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded">${escapeHtml(issue.good)}</span>
+                                </div>
+                                <p class="text-xs text-slate-500 leading-relaxed mb-3">${escapeHtml(issue.desc)}</p>
+                                <button onclick="correctSpell(${idx})" class="w-full py-1.5 bg-slate-100 hover:bg-indigo-600 hover:text-white rounded-lg text-xs font-bold text-slate-600 transition-all">
+                                    적용하기
+                                </button>
+                            </div>
+                        `;
+                    });
+                    spellCardList.innerHTML = cardsHtml;
+                }
+            } catch (err) {
+                console.error(err);
+                showTextResult("에러 발생 ❌", "맞춤법 분석 도중 네트워크 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.", "bg-rose-100 text-rose-800");
+            }
+        }
+
+        // HTML Escape 헬퍼 함수
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // 단건 맞춤법 수정 적용
+        function correctSpell(idx) {
+            const issue = currentSpellIssues[idx];
+            if (!issue) return;
+
+            const text = inputText.value;
+            // 정규식을 활용해 문맥상 일치하는 최초 한 개 대체
+            const corrected = text.replace(issue.bad, issue.good);
+            
+            inputText.value = corrected;
+            calculateCounts();
+            
+            // 적용된 항목 필터링 및 리스트 갱신
+            currentSpellIssues.splice(idx, 1);
+            
+            const card = document.getElementById(`card-${idx}`);
+            if (card) {
+                card.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    renderUpdatedIssues();
+                }, 200);
+            }
+            showToast(`교정이 완료되었습니다!`);
+        }
+
+        // 수정 리스트 재렌더링
+        function renderUpdatedIssues() {
+            if (currentSpellIssues.length === 0) {
+                spellSummary.innerHTML = `<span class="text-emerald-600 font-semibold"><i class="fa-solid fa-circle-check"></i> 모두 수정됨</span>`;
+                spellCardList.innerHTML = `
+                    <div class="p-6 text-center text-slate-500 bg-emerald-50/50 rounded-xl border border-emerald-100">
+                        <span class="text-3xl mb-2 block">🎉</span>
+                        <p class="text-sm font-semibold text-emerald-800">모든 오류를 교정하였습니다!</p>
+                    </div>
+                `;
+            } else {
+                spellSummary.innerHTML = `<span class="text-rose-500 font-bold"><i class="fa-solid fa-triangle-exclamation"></i> 총 ${currentSpellIssues.length}건의 교정 추천</span>`;
+                let cardsHtml = "";
+                currentSpellIssues.forEach((issue, idx) => {
+                    cardsHtml += `
+                        <div id="card-${idx}" class="bg-white border border-slate-200 rounded-xl p-4 shadow-sm relative hover:border-indigo-400 transition-all">
+                            <div class="flex flex-wrap items-center gap-2 text-xs mb-2">
+                                <span class="bg-rose-100 text-rose-700 font-bold px-2 py-0.5 rounded line-through">${escapeHtml(issue.bad)}</span>
+                                <i class="fa-solid fa-arrow-right text-slate-300"></i>
+                                <span class="bg-emerald-100 text-emerald-700 font-bold px-2 py-0.5 rounded">${escapeHtml(issue.good)}</span>
+                            </div>
+                            <p class="text-xs text-slate-500 leading-relaxed mb-3">${escapeHtml(issue.desc)}</p>
+                            <button onclick="correctSpell(${idx})" class="w-full py-1.5 bg-slate-100 hover:bg-indigo-600 hover:text-white rounded-lg text-xs font-bold text-slate-600 transition-all">
+                                적용하기
+                            </button>
+                        </div>
+                    `;
+                });
+                spellCardList.innerHTML = cardsHtml;
+            }
+        }
+
+        // 전체 맞춤법 일괄 교정
+        function applyAllSpellCorrections() {
+            if (currentSpellIssues.length === 0) {
+                showToast("교정할 맞춤법 항목이 없습니다.");
+                return;
+            }
+
+            let text = inputText.value;
+            currentSpellIssues.forEach(issue => {
+                text = text.replace(issue.bad, issue.good);
+            });
+
+            inputText.value = text;
+            calculateCounts();
+            currentSpellIssues = [];
+            renderUpdatedIssues();
+            showToast("모든 요소를 일괄 자동 교정했습니다.");
+        }
+
+
+        /* ----------------------------------------------------
+           기능 2: 고성능 AI 영어 번역기
+           ---------------------------------------------------- */
+        async function translateToEnglish() {
+            const text = inputText.value.trim();
+            if (!text) {
+                showToast("번역할 한국어 텍스트를 입력해주세요!");
+                return;
+            }
+
+            showLoading();
+
+            const systemPrompt = `너는 고전 및 현대 문학, 비즈니스, 구어체 모두에 통달한 세계 일류 수준의 한영 번역가야.
+사용자가 입력하는 한글 텍스트의 맥락, 어휘적 깊이, 감정을 그대로 영어로 자연스럽고 유창하게 번역해줘.
+인사말이나 여담(예: "Here is your translation") 등은 일절 제외하고 오직 번역된 '영어 텍스트 결과물'만 직접 출력해야 해.`;
+
+            try {
+                const translated = await callGemini(systemPrompt, text);
+                showTextResult("AI 한영 번역 완료 🇺🇸", translated.trim(), "bg-emerald-100 text-emerald-800 border border-emerald-200");
+                showToast("영어로 깔끔하게 번역되었습니다.");
+            } catch (err) {
+                console.error(err);
+                showTextResult("에러 발생 ❌", "번역 통신 도중 일시적인 네트워크 문제가 발생했습니다.", "bg-rose-100 text-rose-800");
+            }
+        }
+
+
+        /* ----------------------------------------------------
+           기능 3: AI 글 스타일 변환기
+           ---------------------------------------------------- */
+        async function transformStyle(styleType) {
+            const text = inputText.value.trim();
+            if (!text) {
+                showToast("변환할 내용이 비어있습니다.");
+                closeStyleModal();
+                return;
+            }
+
+            showLoading();
+            closeStyleModal();
+
+            let styleDesc = "";
+            let title = "";
+            let themeClass = "";
+
+            if (styleType === 'polite') {
+                title = "공손하고 정중한 스타일 🙇‍♂️";
+                themeClass = "bg-indigo-100 text-indigo-800 border border-indigo-200";
+                styleDesc = "정중하고 품격 있는 격식체 말투 (~하였습니다, ~입니다 체로 구성된 정갈한 비즈니스 이메일이나 격조 높은 편지 스타일)";
+            } else if (styleType === 'friendly') {
+                title = "친근하고 다정한 스타일 😊";
+                themeClass = "bg-emerald-100 text-emerald-800 border border-emerald-200";
+                styleDesc = "친근하고 상냥한 이웃, 혹은 절친한 동료 말투 (~해요, ~했답니다 스타일의 다정한 어조와 따뜻함 가득한 마무리 멘트 추가)";
+            } else if (styleType === 'sns') {
+                title = "SNS 감성 피드 스타일 📱";
+                themeClass = "bg-pink-100 text-pink-800 border border-pink-200";
+                styleDesc = "인스타그램, 스레드, 블로그 업로드용 트렌디하고 세련된 스타일 (줄바꿈이 잦고 감각적인 분위기를 자아내며 맨 아래 필수적으로 세련된 해시태그 5~6개 추가)";
+            } else if (styleType === 'emoji') {
+                title = "이모지 가득 발랄한 스타일 🦄";
+                themeClass = "bg-amber-100 text-amber-800 border border-amber-200";
+                styleDesc = "문장마다 다채롭고 귀여운 하트, 스파클 등의 이모티콘을 듬뿍 추가하여 생기 있고 발랄하며 장난기 어린 친근한 어조의 스타일";
+            } else if (styleType === 'dialect') {
+                title = "경상도 사투리 스타일 📢";
+                themeClass = "bg-cyan-100 text-cyan-800 border border-cyan-200";
+                styleDesc = "자연스러운 억양과 구어를 완벽하게 반영한 정겨운 경상도 사투리 스타일 (예: '맞나?', '했다 카이', '묵었나?' 등을 활용하여 어색하지 않은 부산/대구 지역민 어투)";
+            }
+
+            const systemPrompt = `너는 아주 섬세한 언어 스타일리스트야. 사용자가 주는 본문을 분석해서 문맥의 주요 의미를 해치지 않고, 지시한 스타일에 어울리게 어휘와 종결어미를 통째로 창의적으로 변환해줘.
+원문과 비교했을 때 매우 자연스럽고, 변환된 톤앤매너가 확실히 드러나야 해.
+설명이나 추가 코멘트 없이 변환된 '결과 글'만 직접 답변으로 출력해줘.
+변환할 타겟 스타일: ${styleDesc}`;
+
+            try {
+                const transformedText = await callGemini(systemPrompt, text);
+                showTextResult(title, transformedText.trim(), themeClass);
+                showToast(`${title} 변환 완료!`);
+            } catch (err) {
+                console.error(err);
+                showTextResult("에러 발생 ❌", "스타일 변환 중 API 요청에 실패했습니다.", "bg-rose-100 text-rose-800");
+            }
+        }
+    </script>
+</body>
+</html>
