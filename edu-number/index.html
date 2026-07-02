@@ -1,1 +1,936 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>신나는 숫자 놀이터 🎈</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons for Playful UI -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts for Kids friendly style -->
+    <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Gaegu', 'Nanum Gothic', sans-serif;
+            background: radial-gradient(circle, #fffdeb 0%, #e3fcfc 100%);
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .bouncy-btn {
+            transition: transform 0.1s ease, box-shadow 0.1s ease;
+        }
+        .bouncy-btn:active {
+            transform: scale(0.92);
+        }
+        .rainbow-text {
+            background-image: linear-gradient(to right, #ef4444, #f97316, #eab308, #22c55e, #3b82f6, #6366f1, #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        /* Confetti Canvas overlay */
+        #confetti-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between p-4 overflow-x-hidden">
 
+    <!-- Confetti Canvas for Celebrations -->
+    <canvas id="confetti-canvas"></canvas>
+
+    <!-- Top Bar -->
+    <header class="w-full max-w-lg flex justify-between items-center py-2 px-4 bg-white/80 backdrop-blur-md rounded-full shadow-lg border-2 border-pink-200 z-10">
+        <button onclick="goHome()" class="text-2xl text-pink-500 hover:scale-110 transition bouncy-btn flex items-center gap-1 font-bold">
+            <span class="text-3xl">🏠</span> 홈으로
+        </button>
+        <div id="sound-toggle-btn" onclick="toggleSound()" class="cursor-pointer text-2xl text-blue-500 hover:scale-110 transition bouncy-btn">
+            🔊 소리 켜짐
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="w-full max-w-lg my-auto py-6 flex flex-col items-center justify-center min-h-[70vh] relative z-10">
+        
+        <!-- ================= HOME SCREEN ================= -->
+        <section id="screen-home" class="w-full flex flex-col items-center gap-6 py-4">
+            <div class="text-center animate-bounce duration-1000">
+                <span class="text-6xl">🎈</span>
+                <h1 class="text-5xl font-bold mt-2 tracking-wide rainbow-text drop-shadow">신나는 숫자 놀이터</h1>
+                <p class="text-2xl text-amber-600 mt-1 font-semibold">1부터 10까지 재미있게 배워요!</p>
+            </div>
+
+            <!-- Home Navigation Cards (Sino-Korean Button Removed) -->
+            <div class="w-full flex flex-col gap-4 mt-4 px-2">
+                <button onclick="startStudy('native')" class="w-full bg-gradient-to-r from-orange-300 to-amber-400 hover:from-orange-400 hover:to-amber-500 text-orange-950 border-4 border-orange-400 text-3xl font-extrabold py-5 rounded-3xl shadow-xl hover:shadow-2xl transition transform hover:-translate-y-1 bouncy-btn flex flex-col items-center gap-1">
+                    <span>🍎 숫자 공부방</span>
+                    <span class="text-base font-medium text-orange-900 opacity-90">1~10까지 이어서 공부해요</span>
+                </button>
+
+                <button onclick="startQuiz()" class="w-full bg-gradient-to-r from-emerald-300 to-teal-300 hover:from-emerald-400 hover:to-teal-400 text-teal-900 border-4 border-teal-400 text-3xl font-extrabold py-5 rounded-3xl shadow-xl hover:shadow-2xl transition transform hover:-translate-y-1 bouncy-btn flex flex-col items-center gap-1">
+                    <span>🎮 신나는 퀴즈방</span>
+                    <span class="text-base font-medium text-teal-800 opacity-90">맞추기 놀이로 칭찬 스티커 모으기</span>
+                </button>
+
+                <button onclick="startTrace()" class="w-full bg-gradient-to-r from-pink-300 to-rose-300 hover:from-pink-400 hover:to-rose-400 text-rose-900 border-4 border-rose-400 text-3xl font-extrabold py-5 rounded-3xl shadow-xl hover:shadow-2xl transition transform hover:-translate-y-1 bouncy-btn flex flex-col items-center gap-1">
+                    <span>✏️ 숫자 따라쓰기</span>
+                    <span class="text-base font-medium text-rose-800 opacity-90">알록달록 무지개 펜으로 그리기</span>
+                </button>
+            </div>
+                        
+        </section>
+
+        <!-- ================= STUDY SCREEN ================= -->
+        <section id="screen-study" class="w-full hidden flex-col items-center gap-6">
+            <!-- Indicator Top -->
+            <div class="w-full flex justify-between items-center px-4">
+                <span class="text-xl text-amber-800 font-bold bg-amber-100 px-4 py-1.5 rounded-full shadow-inner flex items-center gap-1.5">
+                    💡 <span id="study-title-text">공부방</span> <span id="study-progress-text" class="text-pink-600">1 / 10</span>
+                </span>
+                <div class="flex gap-1" id="study-pagination-dots">
+                    <!-- Dots generated in JS -->
+                </div>
+            </div>
+
+            <!-- Main Interactive Card -->
+            <div class="w-full bg-white rounded-[3rem] p-6 shadow-2xl border-8 border-yellow-200 flex flex-col items-center relative overflow-hidden min-h-[380px]">
+                <!-- Huge Number -->
+                <div id="study-big-number" onclick="speakCurrentNumber()" class="text-9xl font-black text-rose-500 drop-shadow cursor-pointer transition transform active:scale-125 select-none hover:rotate-3">
+                    1
+                </div>
+
+                <!-- Speak Help Text -->
+                <p class="text-gray-400 text-sm mb-4 flex items-center gap-1 cursor-pointer" onclick="speakCurrentNumber()">
+                    <i class="fa-solid fa-volume-high animate-bounce"></i> 숫자를 터치하면 목소리가 나와요!
+                </p>
+
+                <!-- Sino / Native Words Containers (Now Native Only) -->
+                <div class="w-full mt-2">
+                    <!-- Native Korean (하나, 둘, 셋) Only -->
+                    <button onclick="speakNative()" class="w-full bg-yellow-50 hover:bg-yellow-100 border-4 border-yellow-400 hover:border-yellow-500 rounded-3xl py-6 px-4 flex flex-col items-center justify-center shadow-lg bouncy-btn scale-105 transition-all duration-300 animate-pulse">
+                        <span class="text-sm font-bold text-orange-500 mb-1">우리말 이름</span>
+                        <span id="study-word-native" class="text-5xl font-extrabold text-orange-700">하나</span>
+                        <span class="text-xs text-orange-400 mt-2">🔊 들어보기</span>
+                    </button>
+                </div>
+
+                <!-- Interactive Item Visualizer -->
+                <div class="mt-8 w-full border-t-2 border-dashed border-gray-100 pt-6">
+                    <p class="text-center text-xl text-gray-600 font-bold mb-3 flex justify-center items-center gap-2">
+                        <span>🍎 모두 몇 개일까요?</span>
+                        <span id="items-count-indicator" class="bg-pink-100 text-pink-600 px-3 py-0.5 rounded-full text-base">1개</span>
+                    </p>
+                    <div id="study-items-grid" class="flex flex-wrap justify-center items-center gap-3 min-h-[70px] px-2">
+                        <!-- Emojis dynamically loaded -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Navigation Buttons -->
+            <div class="w-full flex justify-between gap-4 mt-2 px-2">
+                <button onclick="prevStudy()" class="flex-1 bg-sky-400 hover:bg-sky-500 text-white border-b-8 border-sky-600 text-3xl font-extrabold py-4 px-6 rounded-2xl shadow-lg bouncy-btn flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-arrow-left"></i> 이전으로
+                </button>
+                <button onclick="nextStudy()" class="flex-1 bg-rose-400 hover:bg-rose-500 text-white border-b-8 border-rose-600 text-3xl font-extrabold py-4 px-6 rounded-2xl shadow-lg bouncy-btn flex items-center justify-center gap-2">
+                    다음으로 <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </section>
+
+        <!-- ================= QUIZ SCREEN ================= -->
+        <section id="screen-quiz" class="w-full hidden flex-col items-center gap-4">
+            <!-- Progress / Score -->
+            <div class="w-full flex justify-between items-center px-4">
+                <span id="quiz-question-number" class="text-xl text-teal-800 font-extrabold bg-teal-100 px-4 py-1.5 rounded-full shadow-inner">
+                    문제 1 / 5
+                </span>
+                <span id="quiz-score" class="text-xl font-bold text-amber-600 flex items-center gap-1">
+                    ⭐ 스티커: <span id="quiz-score-val" class="font-extrabold text-2xl">0</span>개
+                </span>
+            </div>
+
+            <!-- Question Box -->
+            <div class="w-full bg-white rounded-[3rem] p-6 shadow-2xl border-8 border-teal-200 flex flex-col items-center min-h-[220px] justify-center text-center">
+                <!-- Speaker / Audio Prompt button -->
+                <button onclick="readQuestion()" class="mb-2 bg-teal-50 hover:bg-teal-100 text-teal-600 px-4 py-1.5 rounded-full text-sm font-bold flex items-center gap-2 bouncy-btn shadow-sm">
+                    <i class="fa-solid fa-volume-high"></i> 문제 다시 듣기
+                </button>
+                <h2 id="quiz-question-text" class="text-3xl font-extrabold text-teal-900 mt-2 leading-snug">
+                    숫자 1은 어떤 소리가 날까요?
+                </h2>
+                <!-- Special illustration space -->
+                <div id="quiz-question-illustration" class="mt-4 flex flex-wrap justify-center gap-2 min-h-[50px]">
+                    <!-- Emojis populated dynamically -->
+                </div>
+            </div>
+
+            <!-- Answer Options (Grid) -->
+            <div id="quiz-options-container" class="grid grid-cols-2 gap-4 w-full px-2 mt-2">
+                <!-- 4 Interactive Option Buttons populated via JS -->
+            </div>
+
+            <!-- Feedback Alert (Modal-like card) -->
+            <div id="quiz-feedback" class="hidden fixed inset-x-4 bottom-24 bg-white border-4 border-yellow-400 rounded-3xl p-6 shadow-2xl flex flex-col items-center justify-center text-center z-50 animate-bounce">
+                <span id="feedback-emoji" class="text-6xl mb-2">🎉</span>
+                <h3 id="feedback-title" class="text-3xl font-black text-amber-800">참 잘했어요!</h3>
+                <p id="feedback-subtitle" class="text-xl text-amber-600 font-semibold mt-1">대단해, 대단해!</p>
+                <button onclick="dismissFeedback()" class="mt-4 bg-amber-400 hover:bg-amber-500 text-white font-extrabold text-2xl px-8 py-2.5 rounded-2xl shadow-md bouncy-btn">
+                    다음 문제로 Go! 🚀
+                </button>
+            </div>
+        </section>
+
+        <!-- ================= QUIZ RESULT SCREEN ================= -->
+        <section id="screen-result" class="w-full hidden flex-col items-center gap-6">
+            <div class="w-full bg-white rounded-[3rem] p-8 shadow-2xl border-8 border-purple-200 flex flex-col items-center text-center">
+                <span class="text-8xl mb-4 animate-bounce">🏆</span>
+                <h2 class="text-5xl font-black text-purple-900">모두 맞췄어요!</h2>
+                <p class="text-2xl text-purple-600 font-semibold mt-2">최고의 숫자 박사님이네요!</p>
+
+                <!-- Stickers Display -->
+                <div class="mt-6 p-4 bg-purple-50 rounded-2xl border-2 border-dashed border-purple-300 w-full">
+                    <p class="text-lg text-purple-800 font-bold mb-2">획득한 참 잘했어요 스티커!</p>
+                    <div id="result-stickers" class="flex flex-wrap justify-center gap-2 text-4xl py-2">
+                        <!-- Stickers loop -->
+                    </div>
+                </div>
+
+                <div class="mt-6 flex flex-col gap-3 w-full">
+                    <button onclick="startQuiz()" class="bg-emerald-400 hover:bg-emerald-500 text-white border-b-8 border-emerald-600 text-2xl font-extrabold py-4 rounded-2xl shadow-md bouncy-btn">
+                        🎮 한 번 더 퀴즈 풀기
+                    </button>
+                    <button onclick="goHome()" class="bg-gray-400 hover:bg-gray-500 text-white border-b-8 border-gray-600 text-2xl font-extrabold py-4 rounded-2xl shadow-md bouncy-btn">
+                        🏠 홈으로 돌아가기
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- ================= TRACE SCREEN (DRAWING) ================= -->
+        <section id="screen-trace" class="w-full hidden flex-col items-center gap-4">
+            <div class="w-full flex justify-between items-center px-4">
+                <span class="text-xl text-rose-800 font-bold bg-rose-100 px-4 py-1.5 rounded-full shadow-inner">
+                    ✏️ 숫자 따라 쓰기: <span id="trace-current-num">1</span>
+                </span>
+                <!-- Color Selector Buttons -->
+                <div class="flex gap-1.5">
+                    <button onclick="setTraceColor('#f43f5e')" class="w-8 h-8 rounded-full bg-rose-500 border-2 border-white shadow bouncy-btn" title="분홍색"></button>
+                    <button onclick="setTraceColor('#3b82f6')" class="w-8 h-8 rounded-full bg-blue-500 border-2 border-white shadow bouncy-btn" title="파랑색"></button>
+                    <button onclick="setTraceColor('#10b981')" class="w-8 h-8 rounded-full bg-emerald-500 border-2 border-white shadow bouncy-btn" title="초록색"></button>
+                    <button onclick="setTraceColor('rainbow')" class="w-8 h-8 rounded-full bg-gradient-to-tr from-rose-500 via-yellow-500 to-emerald-500 border-2 border-white shadow bouncy-btn" title="무지개"></button>
+                </div>
+            </div>
+
+            <!-- Canvas Container -->
+            <div class="w-full bg-white rounded-[3rem] p-4 shadow-2xl border-8 border-rose-200 flex flex-col items-center relative overflow-hidden">
+                <div class="relative w-full aspect-square bg-slate-50 border-4 border-dashed border-slate-200 rounded-[2rem] overflow-hidden shadow-inner">
+                    <!-- Canvas Element -->
+                    <canvas id="trace-canvas" class="absolute inset-0 w-full h-full cursor-pointer z-10"></canvas>
+                </div>
+                
+                <p class="text-slate-400 text-sm mt-3 flex items-center gap-1">
+                    <span class="text-base">👆</span> 점선을 따라 마우스나 손가락으로 숫자를 그려보세요!
+                </p>
+            </div>
+
+            <!-- Navigation and utility tools -->
+            <div class="w-full grid grid-cols-3 gap-3 px-2 mt-2">
+                <button onclick="prevTrace()" class="bg-sky-400 hover:bg-sky-500 text-white border-b-6 border-sky-600 text-xl font-bold py-3.5 rounded-2xl shadow bouncy-btn flex items-center justify-center gap-1">
+                    ◀ 이전 숫자
+                </button>
+                <button onclick="clearTrace()" class="bg-amber-400 hover:bg-amber-500 text-slate-900 border-b-6 border-amber-600 text-xl font-bold py-3.5 rounded-2xl shadow bouncy-btn flex items-center justify-center gap-1">
+                    🧹 지우기
+                </button>
+                <button onclick="nextTrace()" class="bg-rose-400 hover:bg-rose-500 text-white border-b-6 border-rose-600 text-xl font-bold py-3.5 rounded-2xl shadow bouncy-btn flex items-center justify-center gap-1">
+                    다음 숫자 ▶
+                </button>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer Character -->
+    <footer class="w-full text-center py-2 text-slate-400 font-semibold flex items-center justify-center gap-2">
+        <!-- span>🦁 야호! 재미있는 숫자 공부 놀이</span -->
+    </footer>
+
+    <!-- Audio Synthesis Utility & Engine -->
+    <script>
+        // Number Database (Native focused)
+        const numberData = [
+            { num: 1, sino: "일", native: "하나", emoji: "🍎", name: "사과" },
+            { num: 2, sino: "이", native: "둘",  emoji: "🍌", name: "바나나" },
+            { num: 3, sino: "삼", native: "셋",  emoji: "🍓", name: "딸기" },
+            { num: 4, sino: "사", native: "넷",  emoji: "🍊", name: "오렌지" },
+            { num: 5, sino: "오", native: "다섯", emoji: "🍉", name: "수박" },
+            { num: 6, sino: "육", native: "여섯", emoji: "🍇", name: "포도" },
+            { num: 7, sino: "칠", native: "일곱", emoji: "🍒", name: "체리" },
+            { num: 8, sino: "팔", native: "여덟", emoji: "🍬", name: "사탕" },
+            { num: 9, sino: "구", native: "아홉", emoji: "🎈", name: "풍선" },
+            { num: 10, sino: "십", native: "열",   emoji: "⭐", name: "반짝이는 별" }
+        ];
+
+        // State variables
+        let soundEnabled = true;
+        let currentScreen = "home";
+        let studyIndex = 0; // index of numberData (0-9)
+        let studyMode = "native"; // default only "native" (하나, 둘, 셋)
+        let traceIndex = 0; // tracing current index (0-9)
+        
+        // Quiz state
+        let quizCurrentQuestion = 0;
+        let quizScore = 0;
+        let quizQuestions = [];
+        let activeQuizQuestion = null;
+
+        // Tracing canvas variables
+        let canvas, ctx;
+        let isDrawing = false;
+        let lastX = 0;
+        let lastY = 0;
+        let traceColor = "#f43f5e"; // default Rose-500
+        let traceRainbowHue = 0;
+
+        // Sound Engine (Web Audio API)
+        let audioCtx;
+        function initAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        // Web Audio API custom cute synthesizer sounds for feedback
+        function playSoundChime(success = true) {
+            if (!soundEnabled) return;
+            initAudioContext();
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            const osc1 = audioCtx.createOscillator();
+            const osc2 = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+
+            osc1.connect(gain);
+            osc2.connect(gain);
+            gain.connect(audioCtx.destination);
+
+            const now = audioCtx.currentTime;
+
+            if (success) {
+                // Happy high chime
+                osc1.type = "sine";
+                osc2.type = "triangle";
+                osc1.frequency.setValueAtTime(523.25, now); // C5
+                osc1.frequency.exponentialRampToValueAtTime(880, now + 0.15); // A5
+                osc1.frequency.exponentialRampToValueAtTime(1046.50, now + 0.3); // C6
+
+                osc2.frequency.setValueAtTime(261.63, now); // C4
+                osc2.frequency.exponentialRampToValueAtTime(440, now + 0.15); // A4
+                osc2.frequency.exponentialRampToValueAtTime(523.25, now + 0.3); // C5
+
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.3, now + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+
+                osc1.start(now);
+                osc2.start(now);
+                osc1.stop(now + 0.6);
+                osc2.stop(now + 0.6);
+            } else {
+                // Sad simple slide down
+                osc1.type = "sawtooth";
+                osc1.frequency.setValueAtTime(220, now); // A3
+                osc1.frequency.exponentialRampToValueAtTime(110, now + 0.3); // A2
+
+                gain.gain.setValueAtTime(0, now);
+                gain.gain.linearRampToValueAtTime(0.2, now + 0.05);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+                osc1.start(now);
+                osc1.stop(now + 0.45);
+            }
+        }
+
+        // Standard Text to Speech using window.speechSynthesis
+        function speak(text) {
+            if (!soundEnabled) return;
+            if ('speechSynthesis' in window) {
+                // Cancel active speech to avoid overlaps
+                window.speechSynthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'ko-KR';
+                utterance.rate = 0.85; // Natural child-friendly speed
+                utterance.pitch = 1.25; // Slightly cute and high pitched
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // Home Navigation
+        function goHome() {
+            setScreen("home");
+            speak("신나는 숫자 놀이터에서 공부할 준비 되었나요?");
+        }
+
+        function setScreen(screenName) {
+            currentScreen = screenName;
+            
+            // Hide all screens
+            document.getElementById("screen-home").classList.add("hidden");
+            document.getElementById("screen-study").classList.add("hidden");
+            document.getElementById("screen-quiz").classList.add("hidden");
+            document.getElementById("screen-result").classList.add("hidden");
+            document.getElementById("screen-trace").classList.add("hidden");
+
+            // Show current screen
+            if (screenName === "home") {
+                document.getElementById("screen-home").classList.remove("hidden");
+            } else if (screenName === "study") {
+                document.getElementById("screen-study").classList.remove("hidden");
+            } else if (screenName === "quiz") {
+                document.getElementById("screen-quiz").classList.remove("hidden");
+            } else if (screenName === "result") {
+                document.getElementById("screen-result").classList.remove("hidden");
+            } else if (screenName === "trace") {
+                document.getElementById("screen-trace").classList.remove("hidden");
+                // Resize and draw canvas background template
+                setTimeout(initTraceCanvas, 100);
+            }
+        }
+
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const btn = document.getElementById("sound-toggle-btn");
+            if (soundEnabled) {
+                btn.innerHTML = "🔊 소리 켜짐";
+                btn.classList.remove("text-gray-400");
+                btn.classList.add("text-blue-500");
+                initAudioContext();
+                speak("소리가 켜졌어요! 최고!");
+            } else {
+                btn.innerHTML = "🔇 소리 꺼짐";
+                btn.classList.remove("text-blue-500");
+                btn.classList.add("text-gray-400");
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                }
+            }
+        }
+
+        // ================= STUDY MODE LOGIC =================
+        function startStudy(mode = 'native') {
+            studyIndex = 0;
+            studyMode = mode;
+            setScreen("study");
+            loadStudyNumber();
+        }
+
+        function loadStudyNumber() {
+            const data = numberData[studyIndex];
+            
+            // Set Text
+            document.getElementById("study-big-number").innerText = data.num;
+            document.getElementById("study-word-native").innerText = data.native;
+            document.getElementById("items-count-indicator").innerText = `${data.native} 개`;
+            document.getElementById("study-progress-text").innerText = `${studyIndex + 1} / 10`;
+
+            // Update Header Title depending on chosen mode
+            const titleText = document.getElementById("study-title-text");
+            titleText.innerText = "하나·둘·셋 공부방";
+
+            // Setup Interactive counting items
+            const grid = document.getElementById("study-items-grid");
+            grid.innerHTML = "";
+            for (let i = 0; i < data.num; i++) {
+                const item = document.createElement("div");
+                item.className = "text-5xl cursor-pointer hover:scale-125 active:scale-90 transition transform duration-150 inline-block p-1 filter drop-shadow select-none hover:rotate-6";
+                item.innerText = data.emoji;
+                // Speak counting index when single item is clicked
+                item.onclick = (e) => {
+                    e.stopPropagation();
+                    // Play dynamic bounce animation
+                    item.classList.add("animate-bounce");
+                    setTimeout(() => item.classList.remove("animate-bounce"), 800);
+                    
+                    // Count only native words
+                    const nativeWords = ["하나", "둘", "셋", "넷", "다섯", "여섯", "일곱", "여덟", "아홉", "열"];
+                    speak(nativeWords[i]);
+                };
+                grid.appendChild(item);
+            }
+
+            // Generate pagination dots
+            const dotsContainer = document.getElementById("study-pagination-dots");
+            dotsContainer.innerHTML = "";
+            for (let i = 0; i < 10; i++) {
+                const dot = document.createElement("div");
+                dot.className = `w-3 h-3 rounded-full transition-all duration-300 ${i === studyIndex ? "bg-rose-500 w-6" : "bg-gray-300"}`;
+                dotsContainer.appendChild(dot);
+            }
+
+            // Speak on load
+            speakCurrentNumber();
+        }
+
+        // Speaks current number matching the selected Mode
+        function speakCurrentNumber() {
+            const data = numberData[studyIndex];
+            speak(`${data.num}! ${data.native}!`);
+        }
+
+        function speakNative() {
+            const data = numberData[studyIndex];
+            speak(data.native);
+        }
+
+        function nextStudy() {
+            if (studyIndex < 9) {
+                studyIndex++;
+                loadStudyNumber();
+            } else {
+                // Done study 1 to 10!
+                celebrateWin();
+                speak("우와! 하나부터 열까지 공부를 멋지게 마쳤어요! 최고예요!");
+                // Go back home after celebration
+                setTimeout(() => {
+                    goHome();
+                }, 2500);
+            }
+        }
+
+        function prevStudy() {
+            if (studyIndex > 0) {
+                studyIndex--;
+                loadStudyNumber();
+            } else {
+                goHome();
+            }
+        }
+
+
+        // ================= QUIZ MODE LOGIC =================
+        function startQuiz() {
+            quizCurrentQuestion = 0;
+            quizScore = 0;
+            document.getElementById("quiz-score-val").innerText = quizScore;
+            
+            // Generate a random set of 5 questions
+            quizQuestions = generateQuizQuestions();
+            setScreen("quiz");
+            loadQuizQuestion();
+        }
+
+        // Generate quiz questions focusing only on native numbers & Arabic numbers (No Sino-Korean)
+        function generateQuizQuestions() {
+            const questions = [];
+            const numbers = [...numberData];
+            // Shuffle numbers
+            numbers.sort(() => Math.random() - 0.5);
+
+            for (let i = 0; i < 5; i++) {
+                const target = numbers[i];
+                // Types:
+                // 0: Look at number, click Native word (우리말)
+                // 1: Look at Native word, click Arabic number
+                // 2: Count Emojis and choose correct Arabic number
+                const type = Math.floor(Math.random() * 3);
+                
+                let qText = "";
+                let choices = [];
+                let correctIndex = 0;
+
+                if (type === 0) {
+                    qText = `숫자 "${target.num}"의 우리말 이름은 무엇일까요?`;
+                    const distractors = numberData
+                        .filter(n => n.num !== target.num)
+                        .sort(() => Math.random() - 0.5)
+                        .slice(0, 3)
+                        .map(n => n.native);
+                    choices = [target.native, ...distractors].sort(() => Math.random() - 0.5);
+                    correctIndex = choices.indexOf(target.native);
+                } else if (type === 1) {
+                    qText = `"${target.native}"은 어떤 숫자일까요?`;
+                    const distractors = numberData
+                        .filter(n => n.num !== target.num)
+                        .sort(() => Math.random() - 0.5)
+                        .slice(0, 3)
+                        .map(n => n.num);
+                    choices = [target.num, ...distractors].sort(() => Math.random() - 0.5);
+                    correctIndex = choices.indexOf(target.num);
+                } else {
+                    qText = `화면에 있는 귀여운 ${target.name}(은)는 몇 개일까요?`;
+                    const distractors = numberData
+                        .filter(n => n.num !== target.num)
+                        .sort(() => Math.random() - 0.5)
+                        .slice(0, 3)
+                        .map(n => n.num);
+                    choices = [target.num, ...distractors].sort(() => Math.random() - 0.5);
+                    correctIndex = choices.indexOf(target.num);
+                }
+
+                questions.push({
+                    type,
+                    target,
+                    questionText: qText,
+                    choices,
+                    correctIndex,
+                    answer: choices[correctIndex]
+                });
+            }
+            return questions;
+        }
+
+        function loadQuizQuestion() {
+            activeQuizQuestion = quizQuestions[quizCurrentQuestion];
+            document.getElementById("quiz-question-number").innerText = `문제 ${quizCurrentQuestion + 1} / 5`;
+            document.getElementById("quiz-question-text").innerText = activeQuizQuestion.questionText;
+
+            // Illustration container (for item counting type 2)
+            const illusContainer = document.getElementById("quiz-question-illustration");
+            illusContainer.innerHTML = "";
+            if (activeQuizQuestion.type === 2) {
+                // Show the target emoji N times
+                const num = activeQuizQuestion.target.num;
+                const emoji = activeQuizQuestion.target.emoji;
+                for (let i = 0; i < num; i++) {
+                    const span = document.createElement("span");
+                    span.className = "text-4xl animate-bounce filter drop-shadow inline-block select-none hover:scale-110";
+                    span.innerText = emoji;
+                    span.style.animationDelay = `${i * 0.1}s`;
+                    illusContainer.appendChild(span);
+                }
+            } else {
+                // Show a giant question mark or a fun animal
+                const decoration = ["🦁", "🐰", "🐼", "🐻", "🦄"][quizCurrentQuestion % 5];
+                const span = document.createElement("span");
+                span.className = "text-5xl animate-pulse select-none";
+                span.innerText = decoration;
+                illusContainer.appendChild(span);
+            }
+
+            // Options Container
+            const optsContainer = document.getElementById("quiz-options-container");
+            optsContainer.innerHTML = "";
+
+            const bgColors = ["bg-rose-100 border-rose-300 hover:bg-rose-200 text-rose-800",
+                               "bg-sky-100 border-sky-300 hover:bg-sky-200 text-sky-800",
+                               "bg-amber-100 border-amber-300 hover:bg-amber-200 text-amber-800",
+                               "bg-purple-100 border-purple-300 hover:bg-purple-200 text-purple-800"];
+
+            activeQuizQuestion.choices.forEach((choice, idx) => {
+                const button = document.createElement("button");
+                button.className = `w-full ${bgColors[idx % 4]} border-4 rounded-3xl py-6 text-3xl font-extrabold shadow-md transition bouncy-btn`;
+                button.innerText = choice;
+                button.onclick = () => submitAnswer(idx);
+                optsContainer.appendChild(button);
+            });
+
+            readQuestion();
+        }
+
+        function readQuestion() {
+            if (activeQuizQuestion) {
+                speak(activeQuizQuestion.questionText);
+            }
+        }
+
+        function submitAnswer(idx) {
+            const isCorrect = (idx === activeQuizQuestion.correctIndex);
+            
+            const feedbackBox = document.getElementById("quiz-feedback");
+            const fEmoji = document.getElementById("feedback-emoji");
+            const fTitle = document.getElementById("feedback-title");
+            const fSubtitle = document.getElementById("feedback-subtitle");
+
+            if (isCorrect) {
+                playSoundChime(true);
+                celebrateWin();
+                
+                quizScore++;
+                document.getElementById("quiz-score-val").innerText = quizScore;
+
+                fEmoji.innerText = "🎉";
+                fTitle.innerText = "정답이에요! 참 잘했어요!";
+                fSubtitle.innerText = "대단해, 대단해! 다음 문제도 힘차게 풀어보자!";
+                
+                // Read Success speech
+                const cheer = ["우와, 대단해!", "정답이에요! 참 잘했어요!", "멋져요 멋져!", "우와 천재인데?", "최고예요!"][Math.floor(Math.random() * 5)];
+                speak(`${cheer} 정답은 ${activeQuizQuestion.answer}입니다!`);
+            } else {
+                playSoundChime(false);
+                fEmoji.innerText = "💡";
+                fTitle.innerText = "조금만 더 힘내봐요!";
+                fSubtitle.innerText = `다시 한 번 생각해보면 맞출 수 있어요!`;
+                
+                speak(`아쉬워요! 다시 한번 찾아볼까요?`);
+            }
+
+            feedbackBox.classList.remove("hidden");
+        }
+
+        function dismissFeedback() {
+            document.getElementById("quiz-feedback").classList.add("hidden");
+            
+            // Go to next question or complete
+            if (quizCurrentQuestion < 4) {
+                quizCurrentQuestion++;
+                loadQuizQuestion();
+            } else {
+                // Done with all 5 quiz questions!
+                showQuizResult();
+            }
+        }
+
+        function showQuizResult() {
+            setScreen("result");
+            speak(`퀴즈 완성! 스티커 ${quizScore}개를 모두 모았어요! 축하해요!`);
+            celebrateWin();
+
+            const stickersContainer = document.getElementById("result-stickers");
+            stickersContainer.innerHTML = "";
+            for (let i = 0; i < quizScore; i++) {
+                const sticker = document.createElement("span");
+                sticker.className = "animate-bounce inline-block text-5xl";
+                sticker.innerText = "⭐";
+                sticker.style.animationDelay = `${i * 0.15}s`;
+                stickersContainer.appendChild(sticker);
+            }
+        }
+
+
+        // ================= TRACING MODE LOGIC =================
+        function startTrace() {
+            traceIndex = 0;
+            setScreen("trace");
+        }
+
+        function setTraceColor(color) {
+            traceColor = color;
+            playSoundChime(true);
+        }
+
+        function initTraceCanvas() {
+            canvas = document.getElementById("trace-canvas");
+            ctx = canvas.getContext("2d");
+
+            const rect = canvas.getBoundingClientRect();
+            canvas.width = rect.width * 2; // High-resolution support
+            canvas.height = rect.height * 2;
+            canvas.style.width = "100%";
+            canvas.style.height = "100%";
+            ctx.scale(2, 2);
+
+            drawTraceTemplate();
+
+            // Support Mouse Inputs
+            canvas.addEventListener("mousedown", startDrawing);
+            canvas.addEventListener("mousemove", draw);
+            canvas.addEventListener("mouseup", stopDrawing);
+            canvas.addEventListener("mouseout", stopDrawing);
+
+            // Support Touch Inputs
+            canvas.addEventListener("touchstart", (e) => {
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent("mousedown", {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                canvas.dispatchEvent(mouseEvent);
+            }, { passive: true });
+
+            canvas.addEventListener("touchmove", (e) => {
+                const touch = e.touches[0];
+                const mouseEvent = new MouseEvent("mousemove", {
+                    clientX: touch.clientX,
+                    clientY: touch.clientY
+                });
+                canvas.dispatchEvent(mouseEvent);
+            }, { passive: true });
+
+            canvas.addEventListener("touchend", () => {
+                const mouseEvent = new MouseEvent("mouseup", {});
+                canvas.dispatchEvent(mouseEvent);
+            }, { passive: true });
+        }
+
+        function drawTraceTemplate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const num = numberData[traceIndex].num;
+            document.getElementById("trace-current-num").innerText = num;
+
+            speak(`${num}을 따라 써보세요!`);
+
+            const width = canvas.width / 2;
+            const height = canvas.height / 2;
+
+            // Draw guidelines
+            ctx.strokeStyle = "#e2e8f0";
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.moveTo(width / 2, 0); ctx.lineTo(width / 2, height);
+            ctx.moveTo(0, height / 2); ctx.lineTo(width, height / 2);
+            ctx.stroke();
+
+            // Draw template text to draw over
+            ctx.setLineDash([]);
+            ctx.fillStyle = "#cbd5e1"; 
+            ctx.font = "bold 230px 'Gaegu', sans-serif";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(num, width / 2, height / 2 + 15);
+        }
+
+        function startDrawing(e) {
+            isDrawing = true;
+            const pos = getPos(e);
+            lastX = pos.x;
+            lastY = pos.y;
+        }
+
+        function draw(e) {
+            if (!isDrawing) return;
+            const pos = getPos(e);
+
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(pos.x, pos.y);
+
+            ctx.lineJoin = "round";
+            ctx.lineCap = "round";
+            ctx.lineWidth = 16;
+
+            if (traceColor === "rainbow") {
+                ctx.strokeStyle = `hsl(${traceRainbowHue}, 90%, 65%)`;
+                traceRainbowHue = (traceRainbowHue + 5) % 360;
+            } else {
+                ctx.strokeStyle = traceColor;
+            }
+
+            ctx.stroke();
+
+            lastX = pos.x;
+            lastY = pos.y;
+        }
+
+        function stopDrawing() {
+            isDrawing = false;
+        }
+
+        function getPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        function clearTrace() {
+            playSoundChime(true);
+            drawTraceTemplate();
+        }
+
+        function nextTrace() {
+            if (traceIndex < 9) {
+                traceIndex++;
+                drawTraceTemplate();
+            } else {
+                celebrateWin();
+                speak("모든 숫자를 아주 멋지게 그렸어요!");
+                goHome();
+            }
+        }
+
+        function prevTrace() {
+            if (traceIndex > 0) {
+                traceIndex--;
+                drawTraceTemplate();
+            } else {
+                goHome();
+            }
+        }
+
+
+        // ================= CONFETTI CELEBRATION ENGINE =================
+        const confettiCanvas = document.getElementById("confetti-canvas");
+        const confettiCtx = confettiCanvas.getContext("2d");
+        let confettiArray = [];
+        let animationFrameId;
+
+        class ConfettiParticle {
+            constructor() {
+                this.x = Math.random() * confettiCanvas.width;
+                this.y = Math.random() * -confettiCanvas.height - 10;
+                this.size = Math.random() * 8 + 6;
+                this.speedX = Math.random() * 3 - 1.5;
+                this.speedY = Math.random() * 5 + 3;
+                this.color = `hsl(${Math.random() * 360}, 90%, 65%)`;
+                this.rotation = Math.random() * 360;
+                this.rotationSpeed = Math.random() * 10 - 5;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.rotation += this.rotationSpeed;
+            }
+            draw() {
+                confettiCtx.save();
+                confettiCtx.translate(this.x, this.y);
+                confettiCtx.rotate((this.rotation * Math.PI) / 180);
+                confettiCtx.fillStyle = this.color;
+                confettiCtx.fillRect(-this.size/2, -this.size/2, this.size, this.size);
+                confettiCtx.restore();
+            }
+        }
+
+        function celebrateWin() {
+            confettiCanvas.width = window.innerWidth;
+            confettiCanvas.height = window.innerHeight;
+            confettiArray = [];
+            for (let i = 0; i < 100; i++) {
+                confettiArray.push(new ConfettiParticle());
+            }
+            
+            cancelAnimationFrame(animationFrameId);
+            animateConfetti();
+        }
+
+        function animateConfetti() {
+            confettiCtx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+            let active = false;
+            confettiArray.forEach(p => {
+                p.update();
+                p.draw();
+                if (p.y < confettiCanvas.height) {
+                    active = true;
+                }
+            });
+            if (active) {
+                animationFrameId = requestAnimationFrame(animateConfetti);
+            }
+        }
+
+        // Initialize App
+        window.onload = function() {
+            goHome();
+            
+            window.addEventListener("resize", () => {
+                if (currentScreen === "trace") {
+                    initTraceCanvas();
+                }
+            });
+        }
+    </script>
+</body>
+</html>
