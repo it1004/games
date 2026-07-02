@@ -1,1 +1,801 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>우당탕탕 두더지 잡기!</title>
+    <!-- Tailwind CSS for modern responsive layout -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Tone.js for high-quality synthesizer sound effects -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Font Awesome for modern rich icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Poor Story for cute game vibe, Inter for UI text -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Poor+Story&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .game-title {
+            font-family: 'Poor Story', system-ui, sans-serif;
+        }
+        /* Custom animations for mole pop up/down */
+        .mole-container {
+            perspective: 1000px;
+        }
+        .mole {
+            transform: translateY(100%);
+            transition: transform 0.15s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .mole.active {
+            transform: translateY(0%);
+        }
+        /* Whack screen shake animation */
+        @keyframes shake {
+            0%, 100% { transform: translate(0, 0); }
+            10%, 30%, 50%, 70%, 90% { transform: translate(-4px, -2px); }
+            20%, 40%, 60%, 80% { transform: translate(4px, 2px); }
+        }
+        .shake {
+            animation: shake 0.3s ease-in-out;
+        }
+        /* Sparkle effect on hits */
+        .hit-particle {
+            position: absolute;
+            pointer-events: none;
+            animation: explode 0.6s cubic-bezier(0.1, 0.8, 0.3, 1) forwards;
+        }
+        @keyframes explode {
+            0% {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(var(--x), var(--y)) scale(0);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 text-white min-h-screen flex flex-col items-center justify-between p-4 overflow-x-hidden select-none">
 
+    <!-- Header UI -->
+    <header class="w-full max-w-md flex justify-between items-center py-2 px-4 bg-white/10 backdrop-blur-md rounded-2xl border border-white/10 shadow-lg">
+        <div class="flex items-center gap-2">
+            <span class="text-2xl">🏆</span>
+            <div>
+                <p class="text-[10px] text-purple-300 uppercase tracking-wider font-bold">최고 기록</p>
+                <p id="high-score" class="font-extrabold text-lg text-yellow-300">0000</p>
+            </div>
+        </div>
+        <h1 class="game-title text-3xl font-extrabold bg-gradient-to-r from-yellow-300 via-pink-400 to-red-400 bg-clip-text text-transparent drop-shadow">우당탕 두더지</h1>
+        <div class="flex items-center gap-2">
+            <!-- Mute/Unmute audio trigger -->
+            <button id="audio-toggle" class="p-2.5 rounded-xl bg-purple-700/50 hover:bg-purple-600 transition duration-200 text-white text-sm focus:outline-none">
+                <i id="audio-icon" class="fas fa-volume-up"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- MAIN INTERACTIVE BOARD AND MENU CONTAINER -->
+    <main class="w-full max-w-md flex-1 flex flex-col justify-center items-center my-4 relative">
+        
+        <!-- Main Start Screen -->
+        <div id="start-screen" class="w-full bg-white/10 backdrop-blur-md border border-white/10 rounded-3xl p-6 text-center shadow-2xl flex flex-col gap-6 transform transition-all duration-300 scale-100 z-10">
+            <div>
+                <div class="text-6xl mb-4 animate-bounce">🐹</div>
+                <h2 class="game-title text-4xl font-extrabold text-yellow-300 mb-2">오늘도 두더지 잡기 좋은 날!</h2>
+                <p class="text-sm text-purple-200">다양한 두더지를 제압하고 최고의 기록을 세워보세요.</p>
+            </div>
+
+            <!-- Skin / Theme Selection -->
+            <div class="text-left bg-black/20 p-4 rounded-2xl border border-white/5">
+                <label class="block text-xs font-bold text-purple-300 mb-2 uppercase tracking-wide">🌳 월드 테마 선택</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button id="theme-garden" onclick="setTheme('garden')" class="theme-btn p-2 rounded-xl border-2 border-yellow-400 bg-yellow-400/20 text-xs font-bold flex flex-col items-center gap-1 transition-all">
+                        <span>🌳</span>숲속 정원
+                    </button>
+                    <button id="theme-space" onclick="setTheme('space')" class="theme-btn p-2 rounded-xl border-2 border-transparent bg-white/5 hover:bg-white/10 text-xs font-bold flex flex-col items-center gap-1 transition-all">
+                        <span>🚀</span>우주 광산
+                    </button>
+                    <button id="theme-ocean" onclick="setTheme('ocean')" class="theme-btn p-2 rounded-xl border-2 border-transparent bg-white/5 hover:bg-white/10 text-xs font-bold flex flex-col items-center gap-1 transition-all">
+                        <span>🐙</span>심해 보물선
+                    </button>
+                </div>
+            </div>
+
+            <!-- Difficulty Settings -->
+            <div class="text-left bg-black/20 p-4 rounded-2xl border border-white/5">
+                <label class="block text-xs font-bold text-purple-300 mb-2 uppercase tracking-wide">⚡ 난이도 설정</label>
+                <div class="grid grid-cols-3 gap-2">
+                    <button id="diff-easy" onclick="setDifficulty('easy')" class="diff-btn p-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-semibold transition-all">쉬움</button>
+                    <button id="diff-medium" onclick="setDifficulty('medium')" class="diff-btn p-2 rounded-xl border-2 border-purple-500 bg-purple-500/20 text-xs font-bold transition-all">보통</button>
+                    <button id="diff-hard" onclick="setDifficulty('hard')" class="diff-btn p-2 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-xs font-semibold transition-all">매운맛</button>
+                </div>
+            </div>
+
+            <button id="start-btn" class="w-full bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 text-black font-extrabold py-4 px-6 rounded-2xl shadow-xl transition-all duration-200 transform hover:scale-105 text-lg flex items-center justify-center gap-2">
+                <i class="fas fa-play"></i> 게임 시작하기
+            </button>
+        </div>
+
+        <!-- Active Gameplay UI -->
+        <div id="game-container" class="w-full hidden flex-col gap-4">
+            <!-- HUD / Stats Dashboard -->
+            <div class="grid grid-cols-3 gap-3 w-full">
+                <!-- Score Display -->
+                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10 flex flex-col justify-center items-center">
+                    <span class="text-[10px] text-purple-300 font-bold uppercase tracking-wider">점수</span>
+                    <span id="score-display" class="text-2xl font-black text-white">0</span>
+                </div>
+                <!-- Combo Counter -->
+                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10 flex flex-col justify-center items-center relative overflow-hidden">
+                    <span class="text-[10px] text-purple-300 font-bold uppercase tracking-wider">콤보</span>
+                    <span id="combo-display" class="text-2xl font-black text-pink-400 animate-pulse">0</span>
+                    <div id="combo-bar" class="absolute bottom-0 left-0 h-1 bg-pink-500 transition-all duration-100" style="width: 0%"></div>
+                </div>
+                <!-- Timer Display -->
+                <div class="bg-white/10 backdrop-blur-md rounded-2xl p-3 border border-white/10 flex flex-col justify-center items-center">
+                    <span class="text-[10px] text-purple-300 font-bold uppercase tracking-wider">남은 시간</span>
+                    <span id="timer-display" class="text-2xl font-black text-yellow-400">30s</span>
+                </div>
+            </div>
+
+            <!-- Time Progress Bar -->
+            <div class="w-full bg-black/40 h-2.5 rounded-full overflow-hidden border border-white/5">
+                <div id="time-progress" class="bg-gradient-to-r from-green-400 via-yellow-400 to-red-500 h-full w-full transition-all duration-200"></div>
+            </div>
+
+            <!-- Whacking Grid Board (3x3 Grid) -->
+            <div id="grid-board" class="grid grid-cols-3 gap-4 bg-gradient-to-b from-emerald-800 to-emerald-950 p-4 rounded-3xl shadow-inner border-4 border-emerald-900 aspect-square relative select-none">
+                <!-- 9 Holes generated via JS -->
+            </div>
+
+            <!-- Quick Action: Back to Home -->
+            <button id="quit-btn" class="self-center mt-2 px-6 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs text-purple-200 transition">
+                <i class="fas fa-home mr-1"></i> 메인 화면으로 돌아가기
+            </button>
+        </div>
+
+        <!-- Game Over Modal Overlay -->
+        <div id="game-over-modal" class="hidden absolute inset-0 bg-black/80 backdrop-blur-md rounded-3xl flex flex-col items-center justify-center p-6 text-center z-30 border border-white/10 animate-fade-in">
+            <div class="text-5xl mb-2">🎉</div>
+            <h2 class="game-title text-4xl font-extrabold text-yellow-300 mb-1">게임 오버!</h2>
+            <p id="game-over-reason" class="text-xs text-purple-300 mb-6">시간이 모두 종료되었습니다.</p>
+
+            <!-- Score Cards -->
+            <div class="w-full bg-white/10 rounded-2xl p-4 border border-white/5 mb-6 flex flex-col gap-3">
+                <div class="flex justify-between items-center px-2">
+                    <span class="text-sm text-purple-200 font-semibold">최종 획득 점수</span>
+                    <span id="final-score" class="text-2xl font-extrabold text-white">0점</span>
+                </div>
+                <div class="h-px bg-white/10"></div>
+                <div class="flex justify-between items-center px-2">
+                    <span class="text-sm text-purple-200 font-semibold">최대 연속 콤보</span>
+                    <span id="final-combo" class="text-xl font-bold text-pink-400">0 Combo</span>
+                </div>
+            </div>
+
+            <!-- Leaderboard Segment -->
+            <div class="w-full bg-black/30 rounded-2xl p-4 border border-white/5 mb-6 text-left">
+                <h3 class="text-xs font-bold text-yellow-400 uppercase tracking-wider mb-2 flex items-center gap-1">
+                    <i class="fas fa-trophy text-yellow-300"></i> 주간 명예의 전당 (최고기록)
+                </h3>
+                <div id="leaderboard-list" class="flex flex-col gap-1.5 text-xs">
+                    <!-- Dynamic Top Scores inside here -->
+                </div>
+            </div>
+
+            <!-- Action buttons inside GameOver -->
+            <div class="flex gap-3 w-full">
+                <button id="modal-home-btn" class="flex-1 bg-white/10 hover:bg-white/15 border border-white/10 text-white font-bold py-3 px-4 rounded-xl text-sm transition">
+                    처음으로
+                </button>
+                <button id="restart-btn" class="flex-1 bg-gradient-to-r from-yellow-400 to-orange-500 hover:from-yellow-300 hover:to-orange-400 text-black font-extrabold py-3 px-4 rounded-xl text-sm transition shadow-lg">
+                    다시 도전
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer Developer tag & Info -->
+    <footer class="text-[10px] text-purple-300/60 text-center py-2 flex flex-col gap-1">
+        <p>💥 콤보를 이어가면 추가 배율 점수가 쏟아집니다!</p>
+        <p>© 2026 Whack-A-Mole Game Engine. Developed with Tone.js Audio.</p>
+    </footer>
+
+    <script>
+        // Audio Synthesizers Setup using Tone.js
+        let isMuted = false;
+        
+        // Simple Synth for whack hit sound effects
+        const hitSynth = new Tone.Synth({
+            oscillator: { type: "sine" },
+            envelope: { attack: 0.005, decay: 0.1, sustain: 0, release: 0.1 }
+        }).toDestination();
+
+        // High pitch Synth for Golden Mole hit
+        const goldenSynth = new Tone.MetalSynth({
+            frequency: 440,
+            envelope: { attack: 0.001, decay: 0.15, release: 0.2 },
+            harmonicity: 5.1,
+            resonance: 8000
+        }).toDestination();
+
+        // Bomb Explosion Synth sound
+        const bombSynth = new Tone.NoiseSynth({
+            noise: { type: "pink" },
+            envelope: { attack: 0.005, decay: 0.6, sustain: 0 }
+        }).toDestination();
+
+        // Game Over Fanfare
+        const soundGameOver = () => {
+            if (isMuted) return;
+            const now = Tone.now();
+            const synth = new Tone.PolySynth().toDestination();
+            synth.triggerAttackRelease(["C4", "E4", "G4"], "0.2", now);
+            synth.triggerAttackRelease(["E4", "G4", "B4"], "0.2", now + 0.25);
+            synth.triggerAttackRelease(["G4", "B4", "D5"], "0.5", now + 0.5);
+        };
+
+        const playWhackSound = (type) => {
+            if (isMuted) return;
+            try {
+                if (type === 'gold') {
+                    goldenSynth.triggerAttackRelease(0.2);
+                } else if (type === 'bomb') {
+                    bombSynth.triggerAttack();
+                } else if (type === 'miss') {
+                    hitSynth.triggerAttackRelease("A2", "0.05");
+                } else {
+                    hitSynth.triggerAttackRelease("C5", "0.08");
+                }
+            } catch (e) {
+                console.warn("Sound triggering issue:", e);
+            }
+        };
+
+        // Global Game Configuration
+        const CONFIG = {
+            easy: { duration: 40000, spawnInterval: 900, minMoleTime: 1200, maxMoleTime: 2000, goldRate: 0.1, bombRate: 0.05 },
+            medium: { duration: 30000, spawnInterval: 700, minMoleTime: 900, maxMoleTime: 1600, goldRate: 0.15, bombRate: 0.15 },
+            hard: { duration: 30000, spawnInterval: 500, minMoleTime: 700, maxMoleTime: 1200, goldRate: 0.2, bombRate: 0.25 }
+        };
+
+        let currentDifficulty = 'medium';
+        let currentTheme = 'garden';
+        let score = 0;
+        let combo = 0;
+        let maxCombo = 0;
+        let timeRemaining = 30;
+        let isPlaying = false;
+        let gameTimer = null;
+        let gameLoopTimer = null;
+        let comboResetTimer = null;
+        let activeMoles = new Map(); // tracks active moles and their lifecycles
+
+        // Theme Assets Mapping
+        const THEME_ASSETS = {
+            garden: {
+                boardBg: "bg-gradient-to-b from-emerald-800 to-emerald-950",
+                boardBorder: "border-emerald-900",
+                holeStyle: "bg-amber-950/90 shadow-emerald-950/60 shadow-inner border-t-4 border-amber-900",
+                moles: {
+                    regular: "🐹",
+                    gold: "👑",
+                    bomb: "💣"
+                }
+            },
+            space: {
+                boardBg: "bg-gradient-to-b from-indigo-950 to-slate-950",
+                boardBorder: "border-indigo-900",
+                holeStyle: "bg-slate-900 shadow-indigo-950/90 shadow-inner border-t-4 border-indigo-500/30",
+                moles: {
+                    regular: "👽",
+                    gold: "👾",
+                    bomb: "🚀"
+                }
+            },
+            ocean: {
+                boardBg: "bg-gradient-to-b from-cyan-900 to-blue-950",
+                boardBorder: "border-cyan-950",
+                holeStyle: "bg-cyan-950 shadow-blue-950/90 shadow-inner border-t-4 border-cyan-800",
+                moles: {
+                    regular: "🐙",
+                    gold: "🦀",
+                    bomb: "⚓"
+                }
+            }
+        };
+
+        // DOM Selections
+        const startScreen = document.getElementById('start-screen');
+        const gameContainer = document.getElementById('game-container');
+        const gameOverModal = document.getElementById('game-over-modal');
+        const scoreDisplay = document.getElementById('score-display');
+        const comboDisplay = document.getElementById('combo-display');
+        const comboBar = document.getElementById('combo-bar');
+        const timerDisplay = document.getElementById('timer-display');
+        const timeProgress = document.getElementById('time-progress');
+        const gridBoard = document.getElementById('grid-board');
+        const highScoreDisplay = document.getElementById('high-score');
+        const finalScore = document.getElementById('final-score');
+        const finalCombo = document.getElementById('final-combo');
+        const leaderboardList = document.getElementById('leaderboard-list');
+
+        // Initialize Theme & High Score on page load
+        window.addEventListener('load', () => {
+            const savedHighScore = localStorage.getItem('whack_high_score') || '0';
+            highScoreDisplay.textContent = savedHighScore.padStart(4, '0');
+            setTheme('garden');
+            setDifficulty('medium');
+            buildGrid();
+        });
+
+        const setTheme = (themeName) => {
+            currentTheme = themeName;
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.classList.remove('border-yellow-400', 'bg-yellow-400/20');
+                btn.classList.add('border-transparent', 'bg-white/5');
+            });
+            const targetBtn = document.getElementById(`theme-${themeName}`);
+            if (targetBtn) {
+                targetBtn.classList.remove('border-transparent', 'bg-white/5');
+                targetBtn.classList.add('border-yellow-400', 'bg-yellow-400/20');
+            }
+            buildGrid(); // Rebuild with proper styling assets
+        };
+
+        const setDifficulty = (diffName) => {
+            currentDifficulty = diffName;
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                btn.classList.remove('border-2', 'border-purple-500', 'bg-purple-500/20', 'font-bold');
+                btn.classList.add('border', 'border-white/10', 'bg-white/5', 'font-semibold');
+            });
+            const targetBtn = document.getElementById(`diff-${diffName}`);
+            if (targetBtn) {
+                targetBtn.classList.remove('border', 'border-white/10', 'bg-white/5', 'font-semibold');
+                targetBtn.classList.add('border-2', 'border-purple-500', 'bg-purple-500/20', 'font-bold');
+            }
+        };
+
+        // Render 3x3 Grid of Holes
+        const buildGrid = () => {
+            const themeConfig = THEME_ASSETS[currentTheme];
+            
+            // Apply grid-board outer styling
+            gridBoard.className = `grid grid-cols-3 gap-4 ${themeConfig.boardBg} p-4 rounded-3xl shadow-inner border-4 ${themeConfig.boardBorder} aspect-square relative select-none`;
+            gridBoard.innerHTML = '';
+
+            for (let i = 0; i < 9; i++) {
+                const hole = document.createElement('div');
+                hole.className = `relative overflow-hidden rounded-full aspect-square flex items-center justify-center ${themeConfig.holeStyle}`;
+                hole.dataset.holeId = i;
+
+                // Inner Mole Container
+                const moleContainer = document.createElement('div');
+                moleContainer.className = "mole-container absolute inset-0 flex items-center justify-center pointer-events-none";
+
+                const mole = document.createElement('div');
+                mole.className = "mole absolute bottom-0 w-4/5 h-4/5 flex items-center justify-center text-4xl cursor-pointer select-none pointer-events-auto filter drop-shadow-md";
+                mole.dataset.id = i;
+                
+                // Clicking custom touch triggers
+                mole.addEventListener('mousedown', (e) => handleWhack(e, i));
+                mole.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    handleWhack(e, i);
+                });
+
+                moleContainer.appendChild(mole);
+                hole.appendChild(moleContainer);
+
+                // Adding dirt rim details
+                const rim = document.createElement('div');
+                rim.className = "absolute bottom-0 left-0 right-0 h-1/4 bg-amber-950/40 pointer-events-none rounded-b-full border-t border-amber-900/30";
+                hole.appendChild(rim);
+
+                gridBoard.appendChild(hole);
+            }
+        };
+
+        // Sound toggle switch
+        const audioToggleBtn = document.getElementById('audio-toggle');
+        const audioIcon = document.getElementById('audio-icon');
+
+        audioToggleBtn.addEventListener('click', () => {
+            isMuted = !isMuted;
+            if (isMuted) {
+                audioIcon.className = "fas fa-volume-mute text-red-400";
+            } else {
+                audioIcon.className = "fas fa-volume-up";
+                // Start Audio Context if not started yet
+                Tone.start();
+            }
+        });
+
+        // Start Game loop
+        const startGame = async () => {
+            // Audio Context initialization for modern browsers
+            await Tone.start();
+
+            // Setup state parameters
+            const config = CONFIG[currentDifficulty];
+            score = 0;
+            combo = 0;
+            maxCombo = 0;
+            timeRemaining = config.duration / 1000;
+            isPlaying = true;
+
+            // Reset scores & layout
+            scoreDisplay.textContent = '0';
+            comboDisplay.textContent = '0';
+            timerDisplay.textContent = `${timeRemaining}s`;
+            timeProgress.style.width = '100%';
+
+            // Transition UI views
+            startScreen.classList.add('hidden');
+            gameOverModal.classList.add('hidden');
+            gameContainer.classList.remove('hidden');
+
+            activeMoles.clear();
+            document.querySelectorAll('.mole').forEach(m => m.classList.remove('active'));
+
+            // Core tick timers
+            startTimers();
+        };
+
+        const startTimers = () => {
+            const config = CONFIG[currentDifficulty];
+
+            // Primary countdown Timer
+            gameTimer = setInterval(() => {
+                timeRemaining--;
+                timerDisplay.textContent = `${timeRemaining}s`;
+
+                // Update dynamic progress color/width
+                const maxTime = config.duration / 1000;
+                const percentage = (timeRemaining / maxTime) * 100;
+                timeProgress.style.width = `${percentage}%`;
+
+                if (percentage < 30) {
+                    timeProgress.className = "bg-gradient-to-r from-red-500 to-red-600 h-full w-full transition-all duration-200";
+                } else if (percentage < 60) {
+                    timeProgress.className = "bg-gradient-to-r from-yellow-400 to-yellow-500 h-full w-full transition-all duration-200";
+                } else {
+                    timeProgress.className = "bg-gradient-to-r from-green-400 via-yellow-400 to-red-500 h-full w-full transition-all duration-200";
+                }
+
+                if (timeRemaining <= 0) {
+                    endGame();
+                }
+            }, 1000);
+
+            // Spawning loop based on configuration rates
+            gameLoopTimer = setInterval(() => {
+                if (isPlaying) {
+                    spawnMole();
+                }
+            }, config.spawnInterval);
+        };
+
+        const spawnMole = () => {
+            const config = CONFIG[currentDifficulty];
+            const themeConfig = THEME_ASSETS[currentTheme];
+
+            // Find empty spots
+            const availableHoles = [];
+            for (let i = 0; i < 9; i++) {
+                if (!activeMoles.has(i)) {
+                    availableHoles.push(i);
+                }
+            }
+
+            if (availableHoles.length === 0) return;
+
+            // Pick a random index
+            const holeId = availableHoles[Math.floor(Math.random() * availableHoles.length)];
+            
+            // Randomly select mole variety
+            let moleType = 'regular';
+            const roll = Math.random();
+            if (roll < config.bombRate) {
+                moleType = 'bomb';
+            } else if (roll < config.bombRate + config.goldRate) {
+                moleType = 'gold';
+            }
+
+            // Bind type text to rendering target
+            const moleEl = document.querySelector(`.mole[data-id="${holeId}"]`);
+            moleEl.textContent = themeConfig.moles[moleType];
+            moleEl.dataset.type = moleType;
+            moleEl.classList.add('active');
+
+            // Spawn longevity
+            const lifespan = Math.floor(Math.random() * (config.maxMoleTime - config.minMoleTime)) + config.minMoleTime;
+
+            // Set popdown timeout
+            const hideTimeout = setTimeout(() => {
+                despawnMole(holeId);
+            }, lifespan);
+
+            activeMoles.set(holeId, {
+                type: moleType,
+                timeoutId: hideTimeout
+            });
+        };
+
+        const despawnMole = (holeId) => {
+            if (activeMoles.has(holeId)) {
+                const moleEl = document.querySelector(`.mole[data-id="${holeId}"]`);
+                moleEl.classList.remove('active');
+                activeMoles.delete(holeId);
+            }
+        };
+
+        const handleWhack = (e, holeId) => {
+            if (!isPlaying) return;
+
+            // Check if there's actually a mole to whack
+            if (activeMoles.has(holeId)) {
+                const moleData = activeMoles.get(holeId);
+                const moleEl = document.querySelector(`.mole[data-id="${holeId}"]`);
+                
+                // Clear despawn auto timer
+                clearTimeout(moleData.timeoutId);
+
+                // Add popdown transition
+                moleEl.classList.remove('active');
+                activeMoles.delete(holeId);
+
+                // Interaction visual effect
+                createHitEffects(e, moleData.type, moleEl.parentElement);
+
+                // Score Calculator
+                handlePoints(moleData.type);
+            } else {
+                // Whacked empty air - break Combo streak
+                playWhackSound('miss');
+                resetCombo();
+            }
+        };
+
+        const handlePoints = (type) => {
+            let pts = 0;
+            const comboMultiplier = 1 + Math.floor(combo / 5) * 0.1; // +10% score every 5 combo steps
+
+            if (type === 'gold') {
+                pts = Math.round(300 * comboMultiplier);
+                combo++;
+                playWhackSound('gold');
+            } else if (type === 'bomb') {
+                // Detonator hit - Subtracts score, breaks shake, triggers explosion sound
+                pts = -500;
+                resetCombo();
+                triggerScreenShake();
+                playWhackSound('bomb');
+            } else {
+                pts = Math.round(100 * comboMultiplier);
+                combo++;
+                playWhackSound('regular');
+            }
+
+            maxCombo = Math.max(maxCombo, combo);
+            score = Math.max(0, score + pts); // Prevent negative aggregate scores
+            
+            // Render updates
+            scoreDisplay.textContent = score;
+            updateComboBar();
+
+            // Trigger score popup
+            triggerFloatingText(pts, type);
+        };
+
+        const resetCombo = () => {
+            combo = 0;
+            updateComboBar();
+        };
+
+        const updateComboBar = () => {
+            comboDisplay.textContent = combo;
+            // Combo visual gauge level
+            const gaugeProgress = Math.min((combo % 5) * 20, 100);
+            comboBar.style.width = combo > 0 && combo % 5 === 0 ? '100%' : `${gaugeProgress}%`;
+        };
+
+        const createHitEffects = (e, type, container) => {
+            // Locate precise click offset inside frame or use fallback center of element
+            let clientX, clientY;
+            if (e.touches && e.touches.length > 0) {
+                clientX = e.touches[0].clientX;
+                clientY = e.touches[0].clientY;
+            } else {
+                clientX = e.clientX;
+                clientY = e.clientY;
+            }
+
+            const bounds = container.getBoundingClientRect();
+            const posX = clientX - bounds.left;
+            const posY = clientY - bounds.top;
+
+            // Particle dispersion counts
+            const count = type === 'gold' ? 16 : (type === 'bomb' ? 24 : 8);
+            const particleColors = type === 'gold' ? ['#facc15', '#eab308', '#ffffff'] : (type === 'bomb' ? ['#ef4444', '#f97316', '#1e293b'] : ['#a78bfa', '#ec4899', '#ffffff']);
+
+            for (let i = 0; i < count; i++) {
+                const particle = document.createElement('div');
+                particle.className = "hit-particle rounded-full";
+                
+                // Variating speeds and sizes
+                const size = Math.random() * 8 + (type === 'bomb' ? 6 : 4);
+                const color = particleColors[Math.floor(Math.random() * particleColors.length)];
+                
+                particle.style.width = `${size}px`;
+                particle.style.height = `${size}px`;
+                particle.style.backgroundColor = color;
+                
+                // Set offset point
+                particle.style.left = `${posX}px`;
+                particle.style.top = `${posY}px`;
+
+                // Calculate radial explosive trajectory vectors
+                const angle = Math.random() * Math.PI * 2;
+                const force = Math.random() * (type === 'bomb' ? 120 : 60) + 20;
+                particle.style.setProperty('--x', `${Math.cos(angle) * force}px`);
+                particle.style.setProperty('--y', `${Math.sin(angle) * force}px`);
+
+                container.appendChild(particle);
+
+                // Auto remove node
+                setTimeout(() => particle.remove(), 600);
+            }
+        };
+
+        // Pop rising numbers indicator (+100 / -500)
+        const triggerFloatingText = (points, type) => {
+            const popup = document.createElement('div');
+            popup.className = `absolute z-20 font-extrabold text-xl pointer-events-none drop-shadow-md select-none animate-bounce transition-all duration-500`;
+            
+            if (points > 0) {
+                popup.textContent = `+${points}`;
+                popup.className += type === 'gold' ? ' text-yellow-300 scale-125' : ' text-pink-400';
+            } else {
+                popup.textContent = `${points}`;
+                popup.className += ' text-red-500 font-black scale-110';
+            }
+
+            // Position right above grid board center randomly
+            popup.style.left = `${Math.random() * 60 + 20}%`;
+            popup.style.top = `${Math.random() * 40 + 30}%`;
+
+            gridBoard.appendChild(popup);
+            
+            // Slide up & fade
+            setTimeout(() => {
+                popup.style.transform = 'translateY(-40px)';
+                popup.style.opacity = '0';
+            }, 50);
+
+            setTimeout(() => popup.remove(), 600);
+        };
+
+        const triggerScreenShake = () => {
+            gridBoard.classList.add('shake');
+            setTimeout(() => gridBoard.classList.remove('shake'), 300);
+        };
+
+        // Record Highscore system
+        const saveScoreToLeaderboard = (scoreValue) => {
+            const savedScoresRaw = localStorage.getItem('whack_leaderboard') || '[]';
+            let scores = JSON.parse(savedScoresRaw);
+
+            // Add the new score run
+            const newEntry = {
+                score: scoreValue,
+                date: new Date().toLocaleDateString('ko-KR', { month: 'short', day: 'numeric' }),
+                theme: currentTheme,
+                diff: currentDifficulty
+            };
+
+            scores.push(newEntry);
+            // Sort Descending
+            scores.sort((a, b) => b.score - a.score);
+            // Slice top 5
+            scores = scores.slice(0, 5);
+
+            localStorage.setItem('whack_leaderboard', JSON.stringify(scores));
+            
+            // Render local storage leaderboard UI
+            renderLeaderboard(scores);
+        };
+
+        const renderLeaderboard = (scoreList) => {
+            leaderboardList.innerHTML = '';
+            
+            if (scoreList.length === 0) {
+                leaderboardList.innerHTML = `<p class="text-[10px] text-purple-300 text-center">아직 기록이 없습니다. 일등에 도전해보세요!</p>`;
+                return;
+            }
+
+            scoreList.forEach((entry, idx) => {
+                const row = document.createElement('div');
+                row.className = "flex justify-between items-center py-1 border-b border-white/5 last:border-0";
+                
+                const rankLabels = ['🥇', '🥈', '🥉', '4th', '5th'];
+                const rankText = idx < 3 ? rankLabels[idx] : `<span class="px-1 text-purple-400">${idx+1}</span>`;
+
+                // Difficulty badge helper
+                const diffBadge = entry.diff === 'hard' ? '매운맛' : (entry.diff === 'easy' ? '쉬움' : '보통');
+                const badgeColor = entry.diff === 'hard' ? 'bg-red-500/30 text-red-300' : (entry.diff === 'easy' ? 'bg-green-500/30 text-green-300' : 'bg-blue-500/30 text-blue-300');
+
+                row.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span>${rankText}</span>
+                        <span class="font-bold text-white">${entry.score}점</span>
+                        <span class="px-1 py-0.5 rounded text-[9px] ${badgeColor}">${diffBadge}</span>
+                    </div>
+                    <span class="text-[10px] text-purple-400">${entry.date}</span>
+                `;
+                leaderboardList.appendChild(row);
+            });
+        };
+
+        const endGame = () => {
+            isPlaying = false;
+            clearInterval(gameTimer);
+            clearInterval(gameLoopTimer);
+            clearTimeout(comboResetTimer);
+
+            // Clear active elements
+            activeMoles.clear();
+            document.querySelectorAll('.mole').forEach(m => m.classList.remove('active'));
+
+            // Highscore save calculation
+            const prevHighScore = parseInt(localStorage.getItem('whack_high_score') || '0', 10);
+            if (score > prevHighScore) {
+                localStorage.setItem('whack_high_score', score);
+                highScoreDisplay.textContent = score.toString().padStart(4, '0');
+            }
+
+            // Save in regional scoreboard
+            saveScoreToLeaderboard(score);
+
+            // Audio fanfare alert
+            soundGameOver();
+
+            // Populate Modal stats
+            finalScore.textContent = `${score}점`;
+            finalCombo.textContent = `${maxCombo} Combo`;
+            
+            if (score > prevHighScore && prevHighScore > 0) {
+                document.getElementById('game-over-reason').innerHTML = `👑 <strong>최고 기록 갱신 성공!</strong> 👑`;
+            } else {
+                document.getElementById('game-over-reason').textContent = `수고하셨습니다! 한 번 더 도전해 보세요.`;
+            }
+
+            // Reveal modal
+            gameOverModal.classList.remove('hidden');
+        };
+
+        const resetToHome = () => {
+            clearInterval(gameTimer);
+            clearInterval(gameLoopTimer);
+            isPlaying = false;
+
+            gameOverModal.classList.add('hidden');
+            gameContainer.classList.add('hidden');
+            startScreen.classList.remove('hidden');
+        };
+
+        // Wire Event handlers
+        document.getElementById('start-btn').addEventListener('click', startGame);
+        document.getElementById('restart-btn').addEventListener('click', startGame);
+        document.getElementById('quit-btn').addEventListener('click', resetToHome);
+        document.getElementById('modal-home-btn').addEventListener('click', resetToHome);
+
+    </script>
+</body>
+</html>
