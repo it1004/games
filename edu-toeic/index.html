@@ -1,1 +1,1552 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI TOEIC Master - 실시간 AI 토익 출제 및 풀이</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Inter & Noto Sans KR -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+            background-color: #f8fafc;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+        /* Shimmer Loading Animation */
+        @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+        }
+        .animate-shimmer {
+            background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite linear;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-800 flex flex-col">
 
+    <!-- Top Navigation Bar -->
+    <header class="bg-indigo-950 text-white shadow-md sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 p-2 rounded-lg text-white shadow-md shadow-indigo-500/30">
+                    <i class="fa-solid fa-graduation-cap text-xl"></i>
+                </div>
+                <div>
+                    <span class="text-lg font-bold tracking-wider text-white">AI TOEIC <span class="text-indigo-400">Master</span></span>
+                    <p class="text-xs text-slate-300 hidden sm:block">개인 맞춤형 인공지능 토익 클리닉</p>
+                </div>
+            </div>
+            
+            <!-- Quick Stats -->
+            <div class="flex items-center space-x-6">
+                <div class="hidden md:flex items-center space-x-2 text-sm text-slate-300">
+                    <i class="fa-solid fa-fire text-amber-500 animate-pulse"></i>
+                    <span>연속 학습 <strong class="text-white" id="streak-count">1</strong>일</span>
+                </div>
+                <div class="hidden sm:flex items-center space-x-2 text-sm text-slate-300">
+                    <i class="fa-solid fa-circle-check text-emerald-500"></i>
+                    <span>푼 문제 <strong class="text-white" id="solved-count">0</strong>개</span>
+                </div>
+                <div class="bg-indigo-900 border border-indigo-700/50 rounded-full px-4 py-1.5 flex items-center space-x-2 text-xs font-semibold">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                    <span>AI LIVE ACTIVE</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col lg:flex-row gap-6">
+        
+        <!-- Sidebar Navigation -->
+        <aside class="w-full lg:w-64 flex-shrink-0">
+            <nav class="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 space-y-2 sticky top-20">
+                <button onclick="switchTab('dashboard')" id="btn-tab-dashboard" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition duration-200 bg-indigo-50 text-indigo-700 font-semibold text-sm">
+                    <i class="fa-solid fa-chart-pie text-lg"></i>
+                    <span>대시보드</span>
+                </button>
+                <button onclick="switchTab('study')" id="btn-tab-study" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition duration-200 text-slate-600 hover:bg-slate-50 font-medium text-sm">
+                    <i class="fa-solid fa-pen-to-square text-lg"></i>
+                    <span>AI 문제 풀이</span>
+                </button>
+                <button onclick="switchTab('review')" id="btn-tab-review" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition duration-200 text-slate-600 hover:bg-slate-50 font-medium text-sm">
+                    <i class="fa-solid fa-book-open-reader text-lg"></i>
+                    <span>오답 노트</span>
+                    <span id="badge-review-count" class="ml-auto bg-rose-100 text-rose-700 text-xs px-2 py-0.5 rounded-full font-bold hidden">0</span>
+                </button>
+                <button onclick="switchTab('wordbook')" id="btn-tab-wordbook" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition duration-200 text-slate-600 hover:bg-slate-50 font-medium text-sm">
+                    <i class="fa-solid fa-spell-check text-lg"></i>
+                    <span>나만의 단어장</span>
+                    <span id="badge-word-count" class="ml-auto bg-indigo-100 text-indigo-700 text-xs px-2 py-0.5 rounded-full font-bold hidden">0</span>
+                </button>
+
+                <hr class="border-slate-100 my-4">
+
+                <!-- Dynamic Setup Info -->
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                    <h4 class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">목표 점수 설정</h4>
+                    <select id="config-target" onchange="updateTargetScore()" class="w-full bg-white border border-slate-200 rounded-lg py-1.5 px-3 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="600">입문 과정 (600+)</option>
+                        <option value="750" selected>기본 과정 (750+)</option>
+                        <option value="850">실전 고득점 (850+)</option>
+                        <option value="950">만점 도전 (950+)</option>
+                    </select>
+                    <p class="text-[10px] text-slate-400 mt-2 leading-relaxed">목표 점수에 맞춰 AI가 어휘 난이도와 문법 복잡도를 미세 조정합니다.</p>
+                </div>
+            </nav>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="flex-1 min-w-0">
+            
+            <!-- Tab 1: Dashboard -->
+            <section id="tab-dashboard" class="space-y-6">
+                <!-- Welcome Banner -->
+                <div class="bg-gradient-to-r from-indigo-900 via-indigo-800 to-indigo-950 text-white rounded-2xl p-6 sm:p-8 relative overflow-hidden shadow-lg border border-indigo-950">
+                    <div class="relative z-10 max-w-lg">
+                        <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2">스마트한 AI 토익 학습</h2>
+                        <p class="text-slate-200 text-sm sm:text-base leading-relaxed mb-6">고정된 문제집은 그만! 내가 원하는 유형과 난이도로 AI가 무제한 맞춤형 문제와 친절한 해설을 만들어 드립니다.</p>
+                        <button onclick="switchTab('study')" class="bg-indigo-500 hover:bg-indigo-600 text-white px-5 py-2.5 rounded-xl font-bold text-sm shadow-md transition duration-200 inline-flex items-center space-x-2">
+                            <span>맞춤 문제 풀러가기</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                    <!-- Decorative Element -->
+                    <div class="absolute right-0 bottom-0 opacity-10 pointer-events-none transform translate-y-4 translate-x-4">
+                        <i class="fa-solid fa-graduation-cap text-[15rem]"></i>
+                    </div>
+                </div>
+
+                <!-- Stats Cards Grid -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-semibold text-slate-400">학습 정확도</span>
+                            <div class="w-8 h-8 rounded-full bg-indigo-50 flex items-center justify-center text-indigo-600">
+                                <i class="fa-solid fa-bullseye"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-baseline space-x-1">
+                            <span id="stat-accuracy" class="text-2xl font-bold">0%</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1">최근 10문제 기준</p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-semibold text-slate-400">맞춘 문제</span>
+                            <div class="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+                                <i class="fa-solid fa-check"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-baseline space-x-1">
+                            <span id="stat-correct" class="text-2xl font-bold">0</span>
+                            <span class="text-xs text-slate-400">/ <span id="stat-total">0</span></span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1">누적 성공 횟수</p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-semibold text-slate-400">단어장 단어</span>
+                            <div class="w-8 h-8 rounded-full bg-sky-50 flex items-center justify-center text-sky-600">
+                                <i class="fa-solid fa-book"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-baseline space-x-1">
+                            <span id="stat-words" class="text-2xl font-bold">0</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1">저장한 필수 어휘</p>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-slate-100 shadow-sm">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-semibold text-slate-400">학습 레벨</span>
+                            <div class="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
+                                <i class="fa-solid fa-award"></i>
+                            </div>
+                        </div>
+                        <div class="flex items-baseline space-x-1">
+                            <span id="stat-level" class="text-xl font-bold">TOEIC Beginner</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1">학습 경험치 환산</p>
+                    </div>
+                </div>
+
+                <!-- Recommended Tip & Daily Vocab -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center space-x-2 text-indigo-600 mb-3">
+                                <i class="fa-solid fa-lightbulb"></i>
+                                <span class="font-bold text-sm">오늘의 토익 격파 팁</span>
+                            </div>
+                            <h3 class="font-bold text-slate-800 text-base mb-2">Part 5 시간 배분 꿀팁</h3>
+                            <p class="text-slate-600 text-sm leading-relaxed">
+                                토익 Part 5는 총 30문제가 출제됩니다. 고득점을 원하신다면 한 문제당 평균 20초, 즉 총 10분 내외로 모든 문제를 신속하게 풀고 Part 7의 독해 파트 시간(약 55분)을 확실하게 확보해야 합니다.
+                            </p>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-slate-100 text-xs text-indigo-500 font-semibold cursor-pointer flex items-center space-x-1" onclick="switchTab('study')">
+                            <span>지금 연습하러 가기</span>
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </div>
+                    </div>
+
+                    <!-- Daily Core Words -->
+                    <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm">
+                        <div class="flex items-center justify-between mb-4">
+                            <div class="flex items-center space-x-2 text-emerald-600">
+                                <i class="fa-solid fa-bolt"></i>
+                                <span class="font-bold text-sm">오늘의 추천 영단어</span>
+                            </div>
+                            <button onclick="refreshDailyWords()" class="text-xs text-slate-400 hover:text-indigo-600"><i class="fa-solid fa-arrows-rotate mr-1"></i>새 단어</button>
+                        </div>
+                        <div id="daily-words-container" class="space-y-3">
+                            <!-- JS will render daily words here -->
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 2: AI Study (Question Generator & Solve) -->
+            <section id="tab-study" class="space-y-6 hidden">
+                <!-- Config Bar -->
+                <div class="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm flex flex-wrap gap-4 items-center justify-between">
+                    <div class="flex flex-wrap items-center gap-3">
+                        <!-- Select Part -->
+                        <div class="flex flex-col">
+                            <label class="text-[10px] font-bold text-slate-400 mb-1">토익 파트</label>
+                            <select id="study-part" class="bg-slate-50 border border-slate-200 rounded-lg py-1.5 px-3 text-xs font-semibold text-slate-700">
+                                <option value="5" selected>Part 5 (단문 공란 메우기)</option>
+                            </select>
+                        </div>
+                        <!-- Select Category -->
+                        <div class="flex flex-col">
+                            <label class="text-[10px] font-bold text-slate-400 mb-1">문제 영역</label>
+                            <select id="study-category" class="bg-slate-50 border border-slate-200 rounded-lg py-1.5 px-3 text-xs font-semibold text-slate-700">
+                                <option value="mixed" selected>전체 (문법 + 어휘)</option>
+                                <option value="grammar">문법 전용 (Grammar)</option>
+                                <option value="vocabulary">어휘 전용 (Vocabulary)</option>
+                            </select>
+                        </div>
+                        <!-- Select Topic -->
+                        <div class="flex flex-col">
+                            <label class="text-[10px] font-bold text-slate-400 mb-1">비즈니스 도메인</label>
+                            <select id="study-topic" class="bg-slate-50 border border-slate-200 rounded-lg py-1.5 px-3 text-xs font-semibold text-slate-700">
+                                <option value="random" selected>무작위 토픽</option>
+                                <option value="office">사무실/인사 (HR)</option>
+                                <option value="marketing">마케팅/영업 (Sales)</option>
+                                <option value="travel">여행/기내/호텔 (Travel)</option>
+                                <option value="finance">금융/투자 (Finance)</option>
+                                <option value="customer">고객 지원 (Service)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button id="btn-generate" onclick="generateNewQuestion()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm px-5 py-2.5 rounded-xl shadow-md transition duration-200 flex items-center space-x-2">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <span>AI 신규 문제 출제</span>
+                    </button>
+                </div>
+
+                <!-- Loading State Skeleton -->
+                <div id="study-loading" class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 sm:p-8 space-y-6 hidden">
+                    <div class="flex items-center space-x-3">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center text-indigo-500 animate-spin">
+                            <i class="fa-solid fa-spinner text-lg"></i>
+                        </div>
+                        <div>
+                            <h3 class="font-bold text-slate-800 text-base">인공지능 출제 엔진 가동 중...</h3>
+                            <p class="text-xs text-slate-400">지정한 설정에 맞춘 하이퀄리티 실전 문제를 생성 중입니다.</p>
+                        </div>
+                    </div>
+                    <div class="space-y-4">
+                        <div class="h-6 w-3/4 animate-shimmer rounded"></div>
+                        <div class="h-4 w-1/2 animate-shimmer rounded"></div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-6">
+                            <div class="h-12 animate-shimmer rounded-xl"></div>
+                            <div class="h-12 animate-shimmer rounded-xl"></div>
+                            <div class="h-12 animate-shimmer rounded-xl"></div>
+                            <div class="h-12 animate-shimmer rounded-xl"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Empty State (First Load) -->
+                <div id="study-empty" class="bg-white rounded-2xl border border-slate-100 shadow-sm p-12 text-center space-y-4">
+                    <div class="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto text-2xl">
+                        <i class="fa-solid fa-pen-fancy"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-slate-800 text-lg">준비되셨나요?</h3>
+                        <p class="text-slate-500 text-sm max-w-sm mx-auto mt-1">상단의 설정에서 원하는 영역을 선택한 후 "AI 신규 문제 출제" 버튼을 누르면 인공지능이 토익 문제를 직접 만들어 줍니다.</p>
+                    </div>
+                    <button onclick="generateNewQuestion()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm px-5 py-2.5 rounded-xl shadow-md transition duration-200 inline-flex items-center space-x-2">
+                        <span>첫 문제 풀기 시작</span>
+                        <i class="fa-solid fa-play"></i>
+                    </button>
+                </div>
+
+                <!-- Active Question Container -->
+                <div id="study-question-box" class="space-y-6 hidden">
+                    <!-- Main Question Card -->
+                    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 sm:p-8 space-y-6 relative overflow-hidden">
+                        <!-- Top Bar of Question -->
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <span class="bg-indigo-100 text-indigo-700 font-extrabold text-xs px-2.5 py-1 rounded-full" id="question-part-badge">PART 5</span>
+                                <span class="bg-amber-100 text-amber-700 font-extrabold text-xs px-2.5 py-1 rounded-full" id="question-diff-badge">난이도 750+</span>
+                                <span class="text-slate-400 text-xs font-semibold" id="question-category-badge">Grammar</span>
+                            </div>
+                            <!-- Save/Bookmark button -->
+                            <button id="btn-bookmark" onclick="toggleBookmarkActiveQuestion()" class="text-slate-400 hover:text-rose-500 transition duration-150 p-2 rounded-lg hover:bg-slate-50">
+                                <i class="fa-regular fa-bookmark text-lg" id="bookmark-icon"></i>
+                            </button>
+                        </div>
+
+                        <!-- Question Sentence -->
+                        <div class="space-y-2">
+                            <div class="flex items-start space-x-3">
+                                <span class="font-black text-indigo-600 text-xl pt-0.5">Q.</span>
+                                <h2 class="text-lg sm:text-xl font-bold text-slate-800 leading-relaxed tracking-wide" id="question-text">
+                                    The new policy regarding remote work _______ to be highly beneficial to employee morale.
+                                </h2>
+                            </div>
+                        </div>
+
+                        <!-- Options Choices (A, B, C, D) -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3" id="options-grid">
+                            <!-- Options will be generated dynamically by JS -->
+                        </div>
+
+                        <!-- Controls -->
+                        <div class="flex items-center justify-between pt-4 border-t border-slate-100">
+                            <!-- Voice/TTS Reader button -->
+                            <button onclick="readActiveQuestion()" id="btn-tts" class="flex items-center space-x-2 text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100/70 px-4.5 py-2.5 rounded-xl transition duration-150">
+                                <i class="fa-solid fa-volume-high text-sm"></i>
+                                <span>원어민 음성 듣기</span>
+                            </button>
+                            
+                            <div class="flex items-center space-x-2">
+                                <button onclick="triggerSubmit()" id="btn-submit-answer" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm px-6 py-2.5 rounded-xl shadow-md transition duration-200 disabled:opacity-50" disabled>
+                                    답안 제출하기
+                                </button>
+                                <button onclick="generateNewQuestion()" id="btn-next-question" class="bg-slate-800 hover:bg-slate-900 text-white font-bold text-sm px-6 py-2.5 rounded-xl shadow-md transition duration-200 hidden">
+                                    다음 문제 풀기
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Explanation Section (Hidden initially, shown after answer submit) -->
+                    <div id="explanation-box" class="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 sm:p-8 space-y-6 hidden">
+                        <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+                            <div class="flex items-center space-x-3">
+                                <div id="feedback-icon" class="w-10 h-10 rounded-full flex items-center justify-center">
+                                    <i class="fa-solid text-lg"></i>
+                                </div>
+                                <div>
+                                    <h3 class="font-bold text-slate-800 text-base" id="feedback-title">정답입니다!</h3>
+                                    <p class="text-xs text-slate-500">정답: <strong class="text-indigo-600" id="correct-choice-indicator">A</strong></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Translation / Interpretation -->
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                            <h4 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">지문 번역</h4>
+                            <p class="text-sm text-slate-700 leading-relaxed font-medium" id="question-translation">
+                                원격 근무에 관한 새로운 정책은 직원 사기에 매우 유익한 것으로 드러났습니다.
+                            </p>
+                        </div>
+
+                        <!-- Core Grammar Point Info -->
+                        <div>
+                            <span class="inline-block bg-indigo-50 text-indigo-700 text-xs px-2.5 py-1 rounded-md font-bold mb-2">핵심 포인트</span>
+                            <h4 class="text-base font-bold text-slate-800" id="grammar-point-title">자동사 'prove'의 능동/수동 구분</h4>
+                        </div>
+
+                        <!-- Step-by-Step Explanation Text -->
+                        <div class="prose max-w-none text-slate-600 text-sm leading-relaxed space-y-3">
+                            <h4 class="font-bold text-slate-800">풀이 분석</h4>
+                            <p id="question-explanation-text">
+                                빈칸 뒤의 to be highly beneficial... 과 결합하여 ~로 판명되다(prove to be)라는 뜻의 연결고리가 필요합니다. prove는 주어가 스스로 판명되다라는 자동사 뜻이 있으므로 수동태를 쓰지 않아도 됩니다.
+                            </p>
+                        </div>
+
+                        <!-- Vocabulary Panel inside Explanation -->
+                        <div class="space-y-3 pt-4 border-t border-slate-100">
+                            <h4 class="font-bold text-slate-800 text-sm">출제 주요 어휘 정리</h4>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="vocab-grid">
+                                <!-- Dynamic vocabulary list with "Add to wordbook" button -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Tab 4: Review Notebook -->
+            <section id="tab-review" class="space-y-6 hidden">
+                <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">오답 노트 클리닉</h2>
+                        <p class="text-xs text-slate-500 mt-1">내가 북마크하거나 틀렸던 약점 문제들을 다시 한번 점검하고 풀이법을 완전히 내 것으로 만드세요.</p>
+                    </div>
+                    <button onclick="clearAllBookmarks()" class="text-xs text-slate-400 hover:text-rose-500 flex items-center space-x-1">
+                        <i class="fa-solid fa-trash-arrow-up"></i>
+                        <span>오답 노트 비우기</span>
+                    </button>
+                </div>
+
+                <!-- Review list container -->
+                <div id="review-list-container" class="space-y-4">
+                    <!-- JS will load items here -->
+                </div>
+            </section>
+
+            <!-- Tab 5: Wordbook Panel -->
+            <section id="tab-wordbook" class="space-y-6 hidden">
+                <div class="bg-white p-6 rounded-2xl border border-slate-100 shadow-sm flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">나만의 영단어 암기장</h2>
+                        <p class="text-xs text-slate-500 mt-1">AI 토익 문제를 학습하면서 북마크해 둔 단어들을 직관적으로 암기할 수 있습니다.</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <button onclick="toggleWordMeanings()" id="btn-toggle-meaning" class="bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold text-xs px-4 py-2 rounded-xl transition duration-150">
+                            뜻 일괄 가리기
+                        </button>
+                        <button onclick="clearAllWords()" class="text-xs text-slate-400 hover:text-rose-500 flex items-center space-x-1 pl-2">
+                            <i class="fa-solid fa-trash-can"></i>
+                            <span>단어장 초기화</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Word Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4" id="wordbook-grid">
+                    <!-- JS will inject vocabulary cards here -->
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Simple Custom Modal/Toast notification -->
+    <div id="custom-toast" class="fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none flex items-center space-x-3 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-xl max-w-sm">
+        <span class="text-emerald-500" id="toast-icon-container"><i class="fa-solid fa-circle-check"></i></span>
+        <p class="text-xs font-semibold leading-relaxed" id="toast-message">알림 메시지입니다.</p>
+    </div>
+
+    <!-- JavaScript Application Controller -->
+    <script>
+        // System Config & State
+        const CONFIG = {
+            apiKey: "", // Left blank to utilize platform inject/fallback
+            textModel: "gemini-3-flash-preview",
+            ttsModel: "gemini-2.5-flash-preview-tts"
+        };
+
+        // Standard Offline Fallback Question list (to guarantee seamless interaction)
+        const OFFLINE_QUESTIONS = [
+            {
+                part: 5,
+                question: "The director of operations requested that the quarterly report be reviewed _______ before the general board meeting next Thursday.",
+                options: {
+                    A: "thorough",
+                    B: "thoroughly",
+                    C: "thoroughness",
+                    D: "more thorough"
+                },
+                correctAnswer: "B",
+                translation: "운영 부사장은 다음 주 목요일에 열리는 총 이사회 이전에 분기 보고서가 철저하게 검토되기를 요청했습니다.",
+                grammarPoint: "부사의 동사 수식(부사 자리 구분)",
+                explanation: "수동태 동사구 'be reviewed'의 뒤에서 이 행위를 명확히 수식하여 '철저하게 검토되다'의 문맥을 이끌 수 있는 부사 자리입니다. 따라서 부사 접미사 -ly가 붙은 (B) thoroughly가 알맞은 정답입니다. (A)는 형용사, (C)는 명사입니다.",
+                vocabulary: [
+                    { word: "operations", meaning: "운영, 운영 주체" },
+                    { word: "thoroughly", meaning: "철저히, 빈틈없이" },
+                    { word: "quarterly", meaning: "분기별의" },
+                    { word: "board meeting", meaning: "이사회 회의" }
+                ]
+            },
+            {
+                part: 5,
+                question: "Please keep in mind that the storage rooms are restricted to authorized personnel _______, as valuable prototypes are kept inside.",
+                options: {
+                    A: "exclusive",
+                    B: "exclusively",
+                    C: "exclusion",
+                    D: "exclusivity"
+                },
+                correctAnswer: "B",
+                translation: "귀중한 프로토타입들이 내부 보관되어 있으므로 창고 구역은 오직 권한이 허가된 직원들에게만 제한된다는 사실을 명심하십시오.",
+                grammarPoint: "부사의 부사/수식어구 수식",
+                explanation: "전치사구 'to authorized personnel'을 직접 수식하여 '오직 허가된 직원들만을 위해'라는 단독적 제한의 문맥을 형성하려면 부사인 (B) exclusively가 필요합니다. exclusive는 '독점적인' 형용사입니다.",
+                vocabulary: [
+                    { word: "keep in mind", meaning: "명심하다" },
+                    { word: "authorized", meaning: "공인된, 권한이 부여된" },
+                    { word: "exclusively", meaning: "독점적으로, 오직 ~만" },
+                    { word: "prototype", meaning: "시제품, 프로토타입" }
+                ]
+            },
+            {
+                part: 5,
+                question: "Mr. Henderson decided to delegate some of his responsibilities so that he could focus _______ on finalizing the international expansion draft.",
+                options: {
+                    A: "entirely",
+                    B: "entirety",
+                    C: "entire",
+                    D: "entires"
+                },
+                correctAnswer: "A",
+                translation: "헨더슨 씨는 국제 확장 초안을 확정하는 데 전적으로 집중하기 위해 자신의 책임 일부를 양도하기로 결정했습니다.",
+                grammarPoint: "부사의 자동사 수식",
+                explanation: "자동사 'focus'를 수식하여 '완벽히/전적으로 집중하다'의 뜻을 보충할 수 있도록 빈칸은 부사가 들어갈 자리입니다. 따라서 부사인 (A) entirely가 최적의 답입니다. (B)는 명사, (C)는 형용사입니다.",
+                vocabulary: [
+                    { word: "delegate", meaning: "위임하다, 넘겨주다" },
+                    { word: "responsibility", meaning: "책임, 업무" },
+                    { word: "entirely", meaning: "전적으로, 완전히" },
+                    { word: "expansion", meaning: "확장" }
+                ]
+            },
+            {
+                part: 5,
+                question: "The legal department advised that all client contracts be updated _______ to comply with the newly implemented privacy regulations.",
+                options: {
+                    A: "prompt",
+                    B: "promptly",
+                    C: "promptness",
+                    D: "prompting"
+                },
+                correctAnswer: "B",
+                translation: "법무 부서는 새로 제정된 개인정보 보호 규정을 준수하기 위해 모든 고객 계약서가 신속하게 업데이트되도록 권고했습니다.",
+                grammarPoint: "부사의 동사구 수식",
+                explanation: "수동태 동사 'be updated'를 뒤쪽에서 논리적으로 수식하여 '신속하게 업데이트되다'의 의미를 구성할 수 있도록 부사인 (B) promptly가 와야 올바릅니다.",
+                vocabulary: [
+                    { word: "advise", meaning: "권고하다, 조언하다" },
+                    { word: "promptly", meaning: "신속하게, 즉시" },
+                    { word: "comply with", meaning: "~을 준수하다" },
+                    { word: "regulation", meaning: "규정, 규칙" }
+                ]
+            },
+            {
+                part: 5,
+                question: "Because of the unexpected surge in online sales, the shipping team required _______ staff to handle the holiday orders.",
+                options: {
+                    A: "additions",
+                    B: "add",
+                    C: "additional",
+                    D: "additionally"
+                },
+                correctAnswer: "C",
+                translation: "온라인 판매의 예상치 못한 급증으로 인해, 배송팀은 연휴 주문을 처리하기 위해 추가적인 직원을 필요로 했습니다.",
+                grammarPoint: "형용사의 명사 수식",
+                explanation: "명사 'staff'를 수식하여 '추가적인 직원'이라는 개념을 충족해야 하므로 빈칸은 형용사 자리입니다. 따라서 형용사인 (C) additional이 정답입니다.",
+                vocabulary: [
+                    { word: "unexpected", meaning: "예상치 못한" },
+                    { word: "surge", meaning: "급증, 밀려듬" },
+                    { word: "additional", meaning: "추가적인" },
+                    { word: "handle", meaning: "처리하다, 다루다" }
+                ]
+            },
+            {
+                part: 5,
+                question: "The design committee worked _______ with the engineering division to finalize the structural layout of the building.",
+                options: {
+                    A: "cooperatively",
+                    B: "cooperative",
+                    C: "cooperation",
+                    D: "cooperator"
+                },
+                correctAnswer: "A",
+                translation: "디자인 위원회는 건물의 구조적 설계를 최종 확정하기 위해 엔지니어링 부서와 협력하여 일했습니다.",
+                grammarPoint: "부사의 자동사 수식",
+                explanation: "완전자동사 'worked' 뒤에서 부사구 'with the engineering division'과 어우러져 동사의 성질을 한층 꾸며줄 부사가 알맞습니다. 부사인 (A) cooperatively가 최적입니다.",
+                vocabulary: [
+                    { word: "committee", meaning: "위원회" },
+                    { word: "cooperatively", meaning: "협력하여, 협조적으로" },
+                    { word: "finalize", meaning: "마무리 짓다, 완결하다" },
+                    { word: "structural", meaning: "구조적인" }
+                ]
+            },
+            {
+                part: 5,
+                question: "The recent merger resulted in a _______ increase in the company's overall market share in East Asia.",
+                options: {
+                    A: "signify",
+                    B: "significantly",
+                    C: "significance",
+                    D: "significant"
+                },
+                correctAnswer: "D",
+                translation: "최근의 합병은 동아시아 내 회사의 전반적인 시장 점유율에 있어서 상당한 상승을 초래했습니다.",
+                grammarPoint: "형용사의 명사 수식",
+                explanation: "명사 'increase'를 앞에서 단독으로 수식하여 '상당한 증가'를 표현할 수 있는 형용사 (D) significant가 명확한 정답입니다.",
+                vocabulary: [
+                    { word: "merger", meaning: "합병" },
+                    { word: "result in", meaning: "~을 야기하다, 결과를 낳다" },
+                    { word: "significant", meaning: "상당한, 중대한" },
+                    { word: "market share", meaning: "시장 점유율" }
+                ]
+            },
+            {
+                part: 5,
+                question: "To prevent any mechanical malfunctions, the technicians calibrated the measuring devices _______ as instructed in the guide.",
+                options: {
+                    A: "precision",
+                    B: "precise",
+                    C: "precisely",
+                    D: "preciseness"
+                },
+                correctAnswer: "C",
+                translation: "기계적 오작동을 방지하기 위해서, 기술자들은 지침서에 명시된 대로 정확하게 측정 장비들을 조율했습니다.",
+                grammarPoint: "부사의 타동사구 수식",
+                explanation: "타동사구 'calibrated the measuring devices'의 뒤편에서 그 행동이 일어난 양상을 묘사하는 부사가 필요한 자리입니다. 따라서 부사인 (C) precisely가 정답입니다.",
+                vocabulary: [
+                    { word: "malfunction", meaning: "오작동, 고장" },
+                    { word: "calibrate", meaning: "조정하다, 눈금을 맞추다" },
+                    { word: "precisely", meaning: "정확하게, 정밀하게" },
+                    { word: "instruct", meaning: "지시하다, 지침을 주다" }
+                ]
+            }
+        ];
+
+        // Global State variables
+        let appState = {
+            currentTab: "dashboard",
+            targetScore: "750",
+            currentQuestion: null,
+            userSelectedAnswer: null,
+            solvedCount: 0,
+            correctCount: 0,
+            streak: 1,
+            bookmarks: [], // Review Note list
+            wordbook: [],   // Custom Vocabulary book
+            recentAccuracyHistory: [], // T/F list of recent answers
+            generatedQuestionsHistory: [], // Keep track of past questions to prevent duplication
+            audioCache: null,
+            hideWordMeanings: false
+        };
+
+        // Initialize App on Window Load
+        window.onload = function() {
+            loadSavedData();
+            refreshDailyWords();
+            updateUIStats();
+            // Automatically select dashboard on load
+            switchTab('dashboard');
+        };
+
+        // Save and Load LocalStorage Utility
+        function loadSavedData() {
+            try {
+                const savedState = localStorage.getItem("AI_TOEIC_MASTER_STATE_2026");
+                if (savedState) {
+                    const parsed = JSON.parse(savedState);
+                    appState.solvedCount = parsed.solvedCount || 0;
+                    appState.correctCount = parsed.correctCount || 0;
+                    appState.streak = parsed.streak || 1;
+                    appState.bookmarks = parsed.bookmarks || [];
+                    appState.wordbook = parsed.wordbook || [];
+                    appState.recentAccuracyHistory = parsed.recentAccuracyHistory || [];
+                    appState.targetScore = parsed.targetScore || "750";
+                    appState.generatedQuestionsHistory = parsed.generatedQuestionsHistory || [];
+                }
+            } catch (e) {
+                console.error("데이터 로딩 중 오류:", e);
+            }
+            // Sync config dropdown
+            document.getElementById("config-target").value = appState.targetScore;
+        }
+
+        function saveStateToStorage() {
+            try {
+                localStorage.setItem("AI_TOEIC_MASTER_STATE_2026", JSON.stringify({
+                    solvedCount: appState.solvedCount,
+                    correctCount: appState.correctCount,
+                    streak: appState.streak,
+                    bookmarks: appState.bookmarks,
+                    wordbook: appState.wordbook,
+                    recentAccuracyHistory: appState.recentAccuracyHistory,
+                    targetScore: appState.targetScore,
+                    generatedQuestionsHistory: appState.generatedQuestionsHistory
+                }));
+            } catch (e) {
+                console.error("데이터 저장 중 오류:", e);
+            }
+            updateUIStats();
+        }
+
+        // Navigation Tabs switching controller
+        function switchTab(tabId) {
+            appState.currentTab = tabId;
+            
+            // Hide all tab sections
+            document.querySelectorAll("main > section").forEach(section => {
+                section.classList.add("hidden");
+            });
+            // Show target section
+            document.getElementById(`tab-${tabId}`).classList.remove("hidden");
+
+            // Update tab button styles
+            const navButtons = document.querySelectorAll("aside nav button");
+            navButtons.forEach(btn => {
+                if (btn.id === `btn-tab-${tabId}`) {
+                    btn.className = "w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition duration-200 bg-indigo-50 text-indigo-700 font-semibold text-sm";
+                } else {
+                    btn.className = "w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition duration-200 text-slate-600 hover:bg-slate-50 font-medium text-sm";
+                }
+            });
+
+            // Trigger tab specific loads
+            if (tabId === 'review') {
+                renderReviewNote();
+            } else if (tabId === 'wordbook') {
+                renderWordbook();
+            } else if (tabId === 'dashboard') {
+                updateUIStats();
+            }
+        }
+
+        function updateTargetScore() {
+            appState.targetScore = document.getElementById("config-target").value;
+            saveStateToStorage();
+            showToast(`목표 점수 ${appState.targetScore}점에 맞춰 AI 모듈이 갱신되었습니다.`);
+        }
+
+        // Call Gemini Model to generate TOEIC Question dynamically with schema
+        async function generateNewQuestion() {
+            // Setup loading UI
+            document.getElementById("study-empty").classList.add("hidden");
+            document.getElementById("study-question-box").classList.add("hidden");
+            document.getElementById("study-loading").classList.remove("hidden");
+
+            // Build prompts
+            const part = document.getElementById("study-part").value;
+            const category = document.getElementById("study-category").value;
+            const topic = document.getElementById("study-topic").value;
+            const target = appState.targetScore;
+
+            const systemPrompt = `너는 세계 최고의 토익(TOEIC) 출제위원이자 스타 강사야. 사용자가 입력하는 요구 조건(점수 타겟, 어휘/문법 범주, 주제)에 완벽하게 부합하는 실전 고품격 토익 Part 5 다지선다형(4선 선지) 문제를 하나 생성해줘.`;
+
+            // Collect recently generated questions to prevent duplication
+            const exclusions = appState.generatedQuestionsHistory.slice(-8);
+            const avoidSection = exclusions.length > 0 
+                ? `\n[다음의 이미 출제된 지문들은 절대로 중복해서 출제하지 마라 (유사 문장도 금지)]:\n${exclusions.map(q => "- " + q).join("\n")}`
+                : "";
+
+            let userQuery = `다음 조건에 정확히 일치하는 고품격 토익 Part 5 단문 공란 메우기 문제를 완전히 새롭게 생성해줘. 이전에 출제했던 패턴이나 단어, 지문과 절대 중복되지 않아야 함을 엄격히 약속해라.
+            
+            [무작위화 시드 번호]: ${Math.random()} / 현재 시간값: ${Date.now()}
+            ${avoidSection}
+
+            조건:
+            1. 난이도: 토익 목표 점수 ${target}점에 완벽 부합 (어휘 난이도 조절 필수)
+            2. 문제 유형: ${category === 'mixed' ? '문법과 어휘 복합형' : category === 'grammar' ? '정밀한 문법 패턴 중심' : '직관적이고 정교한 비즈니스 어휘 중심'}
+            3. 출제 도메인 테마: ${topic === 'random' ? '정통 ETS 비즈니스 세팅 전반' : topic}
+            4. 선지(A, B, C, D)는 실제 토익처럼 헷갈릴 법한 혼동 어휘나 문법 품사 변형으로 구성할 것.
+            5. 정답의 원리와 오답인 이유를 초보자도 납득하기 쉽게 '풀이 과정 설명(explanation)'에 포함시킬 것.`;
+
+            const payload = {
+                contents: [{ parts: [{ text: userQuery }] }],
+                generationConfig: {
+                    responseMimeType: "application/json",
+                    responseSchema: {
+                        type: "OBJECT",
+                        properties: {
+                            part: { type: "NUMBER" },
+                            question: { type: "STRING" },
+                            options: {
+                                type: "OBJECT",
+                                properties: {
+                                    A: { type: "STRING" },
+                                    B: { type: "STRING" },
+                                    C: { type: "STRING" },
+                                    D: { type: "STRING" }
+                                },
+                                required: ["A", "B", "C", "D"]
+                            },
+                            correctAnswer: { type: "STRING" },
+                            translation: { type: "STRING" },
+                            explanation: { type: "STRING" },
+                            grammarPoint: { type: "STRING" },
+                            vocabulary: {
+                                type: "ARRAY",
+                                items: {
+                                    type: "OBJECT",
+                                    properties: {
+                                        word: { type: "STRING" },
+                                        meaning: { type: "STRING" }
+                                    },
+                                    required: ["word", "meaning"]
+                                }
+                            }
+                        },
+                        required: ["part", "question", "options", "correctAnswer", "translation", "explanation", "grammarPoint", "vocabulary"]
+                    }
+                },
+                systemInstruction: {
+                    parts: [{ text: systemPrompt }]
+                }
+            };
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.textModel}:generateContent?key=${CONFIG.apiKey}`;
+
+            try {
+                // Call fetch with exponential backoff wrapping
+                const response = await fetchWithRetry(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text;
+
+                if (text) {
+                    const parsedData = JSON.parse(text);
+                    
+                    // Register question in unique generation history pool
+                    if (parsedData && parsedData.question) {
+                        appState.generatedQuestionsHistory.push(parsedData.question);
+                        if (appState.generatedQuestionsHistory.length > 15) {
+                            appState.generatedQuestionsHistory.shift();
+                        }
+                    }
+
+                    appState.currentQuestion = parsedData;
+                    renderQuestion(parsedData);
+                    saveStateToStorage();
+                } else {
+                    throw new Error("비어있는 응답입니다.");
+                }
+            } catch (error) {
+                console.warn("API 호출 실패 또는 중단. 중복되지 않는 오프라인 백업 문제를 선별합니다.", error);
+                
+                let chosenQuestion = null;
+                const pool = OFFLINE_QUESTIONS;
+                
+                // Exclude recently seen fallback questions from being chosen immediately
+                const filteredPool = pool.filter(q => !appState.generatedQuestionsHistory.includes(q.question));
+                if (filteredPool.length > 0) {
+                    chosenQuestion = filteredPool[Math.floor(Math.random() * filteredPool.length)];
+                } else {
+                    // Reset duplicates pool if all fallbacks have been solved
+                    appState.generatedQuestionsHistory = [];
+                    chosenQuestion = pool[Math.floor(Math.random() * pool.length)];
+                }
+
+                if (chosenQuestion) {
+                    appState.generatedQuestionsHistory.push(chosenQuestion.question);
+                    appState.currentQuestion = chosenQuestion;
+                    renderQuestion(chosenQuestion);
+                    saveStateToStorage();
+                }
+                showToast("인터넷 불안정 또는 API 속도 이슈로 오프라인 백업 문제를 불러왔습니다.", "warning");
+            } finally {
+                document.getElementById("study-loading").classList.add("hidden");
+            }
+        }
+
+        // Helper: Fetch with Exponential Backoff
+        async function fetchWithRetry(url, options, retries = 3, delay = 1000) {
+            try {
+                const res = await fetch(url, options);
+                if (!res.ok) {
+                    if (res.status === 429 && retries > 0) {
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                        return fetchWithRetry(url, options, retries - 1, delay * 2);
+                    }
+                    throw new Error(`서버 에러: ${res.status}`);
+                }
+                return res;
+            } catch (err) {
+                if (retries > 0) {
+                    await new Promise(resolve => setTimeout(resolve, delay));
+                    return fetchWithRetry(url, options, retries - 1, delay * 2);
+                }
+                throw err;
+            }
+        }
+
+        // Render generated question object to UI
+        function renderQuestion(q) {
+            appState.userSelectedAnswer = null;
+            appState.audioCache = null; // Reset audio
+            
+            // Text values
+            document.getElementById("question-text").innerText = q.question;
+            document.getElementById("question-part-badge").innerText = `PART ${q.part}`;
+            document.getElementById("question-diff-badge").innerText = `난이도 ${appState.targetScore}+`;
+            document.getElementById("question-category-badge").innerText = q.grammarPoint || "어휘/문법";
+            
+            // Build A, B, C, D choices grid
+            const grid = document.getElementById("options-grid");
+            grid.innerHTML = "";
+
+            Object.entries(q.options).forEach(([key, val]) => {
+                const btn = document.createElement("button");
+                btn.id = `opt-${key}`;
+                btn.onclick = () => selectOption(key);
+                btn.className = "w-full p-4 rounded-xl border border-slate-200 text-left hover:bg-slate-50 font-medium text-slate-700 transition duration-150 flex items-center space-x-3";
+                
+                // Option Icon badge
+                btn.innerHTML = `
+                    <span class="w-7 h-7 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 transition duration-150 border-badge">${key}</span>
+                    <span class="option-text text-sm">${val}</span>
+                `;
+                grid.appendChild(btn);
+            });
+
+            // Handle bookmark status
+            const isBookmarked = appState.bookmarks.some(item => item.question === q.question);
+            const icon = document.getElementById("bookmark-icon");
+            if (isBookmarked) {
+                icon.className = "fa-solid fa-bookmark text-rose-500 text-lg animate-bounce";
+            } else {
+                icon.className = "fa-regular fa-bookmark text-slate-400 text-lg";
+            }
+
+            // Prep Control elements
+            document.getElementById("btn-submit-answer").classList.remove("hidden");
+            document.getElementById("btn-submit-answer").disabled = true;
+            document.getElementById("btn-next-question").classList.add("hidden");
+            document.getElementById("explanation-box").classList.add("hidden");
+
+            // Show active element
+            document.getElementById("study-question-box").classList.remove("hidden");
+        }
+
+        // User clicked a choice option
+        function selectOption(key) {
+            if (document.getElementById("btn-submit-answer").classList.contains("hidden")) return; // Locked after submit
+
+            appState.userSelectedAnswer = key;
+
+            // Reset all options style
+            Object.keys(appState.currentQuestion.options).forEach(optKey => {
+                const btn = document.getElementById(`opt-${optKey}`);
+                const badge = btn.querySelector(".border-badge");
+                btn.className = "w-full p-4 rounded-xl border border-slate-200 text-left hover:bg-slate-50 font-medium text-slate-700 transition duration-150 flex items-center space-x-3";
+                badge.className = "w-7 h-7 bg-slate-100 text-slate-600 rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 transition duration-150 border-badge";
+            });
+
+            // Highlight chosen options
+            const activeBtn = document.getElementById(`opt-${key}`);
+            const activeBadge = activeBtn.querySelector(".border-badge");
+            activeBtn.className = "w-full p-4 rounded-xl border-2 border-indigo-600 bg-indigo-50/50 text-left font-bold text-indigo-950 transition duration-150 flex items-center space-x-3";
+            activeBadge.className = "w-7 h-7 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 border-badge";
+
+            // Enable submit button
+            document.getElementById("btn-submit-answer").disabled = false;
+        }
+
+        // Handle grading and showing explanations
+        function triggerSubmit() {
+            if (!appState.userSelectedAnswer) return;
+
+            const q = appState.currentQuestion;
+            const isCorrect = appState.userSelectedAnswer === q.correctAnswer;
+            
+            // Play simple success/failure audio chime via WebAudio API (to avoid external sound assets breaking)
+            playChime(isCorrect);
+
+            // Update user stats
+            appState.solvedCount++;
+            if (isCorrect) {
+                appState.correctCount++;
+                appState.recentAccuracyHistory.push(true);
+            } else {
+                appState.recentAccuracyHistory.push(false);
+                // Auto bookmark incorrect answers to review note
+                if (!appState.bookmarks.some(item => item.question === q.question)) {
+                    appState.bookmarks.push({ ...q, addedAt: new Date().toLocaleDateString() });
+                }
+            }
+
+            // Slice history to hold maximum recent 10 values
+            if (appState.recentAccuracyHistory.length > 10) {
+                appState.recentAccuracyHistory.shift();
+            }
+
+            // Toggle submission buttons
+            document.getElementById("btn-submit-answer").classList.add("hidden");
+            document.getElementById("btn-next-question").classList.remove("hidden");
+
+            // Disable all choices interactivity, lock colours
+            Object.keys(q.options).forEach(key => {
+                const btn = document.getElementById(`opt-${key}`);
+                btn.onclick = null; // Disable click event
+                
+                // Show Answer visualizers
+                if (key === q.correctAnswer) {
+                    btn.className = "w-full p-4 rounded-xl border-2 border-emerald-500 bg-emerald-50/70 text-left font-bold text-emerald-900 transition duration-150 flex items-center space-x-3";
+                    btn.querySelector(".border-badge").className = "w-7 h-7 bg-emerald-500 text-white rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 border-badge";
+                } else if (key === appState.userSelectedAnswer) {
+                    btn.className = "w-full p-4 rounded-xl border-2 border-rose-500 bg-rose-50/70 text-left font-bold text-rose-900 transition duration-150 flex items-center space-x-3";
+                    btn.querySelector(".border-badge").className = "w-7 h-7 bg-rose-500 text-white rounded-full flex items-center justify-center font-bold text-xs flex-shrink-0 border-badge";
+                }
+            });
+
+            // Reveal explanation section with correct animations
+            renderExplanationSection(isCorrect, q);
+            saveStateToStorage();
+        }
+
+        // Build detailed review panel elements
+        function renderExplanationSection(isCorrect, q) {
+            const expBox = document.getElementById("explanation-box");
+            const fdIcon = document.getElementById("feedback-icon");
+            const fdTitle = document.getElementById("feedback-title");
+            const correctIndicator = document.getElementById("correct-choice-indicator");
+            const translation = document.getElementById("question-translation");
+            const grammarTitle = document.getElementById("grammar-point-title");
+            const explanationText = document.getElementById("question-explanation-text");
+
+            // Setup Header feedback indicators
+            if (isCorrect) {
+                fdIcon.className = "w-10 h-10 rounded-full flex items-center justify-center bg-emerald-100 text-emerald-600";
+                fdIcon.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+                fdTitle.innerText = "정답입니다! 완벽해요!";
+                fdTitle.className = "font-bold text-emerald-800 text-base";
+            } else {
+                fdIcon.className = "w-10 h-10 rounded-full flex items-center justify-center bg-rose-100 text-rose-600";
+                fdIcon.innerHTML = '<i class="fa-solid fa-circle-xmark"></i>';
+                fdTitle.innerText = "오답입니다! 복습해볼까요?";
+                fdTitle.className = "font-bold text-rose-800 text-base";
+            }
+
+            correctIndicator.innerText = `${q.correctAnswer} (${q.options[q.correctAnswer]})`;
+            translation.innerText = q.translation;
+            grammarTitle.innerText = q.grammarPoint || "문법 핵심 유형";
+            explanationText.innerHTML = q.explanation.replace(/\n/g, "<br>");
+
+            // Build Vocabulary panel with add to wordbook buttons
+            const vocabGrid = document.getElementById("vocab-grid");
+            vocabGrid.innerHTML = "";
+
+            q.vocabulary.forEach(wordObj => {
+                const card = document.createElement("div");
+                card.className = "p-3 bg-slate-50 hover:bg-slate-100/70 rounded-xl border border-slate-100 flex items-center justify-between transition duration-150";
+                
+                // Check if word already added
+                const alreadyAdded = appState.wordbook.some(item => item.word.toLowerCase() === wordObj.word.toLowerCase());
+                const btnClass = alreadyAdded ? "text-indigo-600 hover:text-indigo-800" : "text-slate-400 hover:text-indigo-600";
+                const btnIcon = alreadyAdded ? "fa-solid fa-circle-check" : "fa-solid fa-plus";
+
+                card.innerHTML = `
+                    <div>
+                        <span class="font-bold text-sm text-slate-800">${wordObj.word}</span>
+                        <p class="text-xs text-slate-500 mt-0.5">${wordObj.meaning}</p>
+                    </div>
+                    <button onclick="addWordToBook('${wordObj.word.replace(/'/g, "\\'")}', '${wordObj.meaning.replace(/'/g, "\\'")}', this)" class="p-2 rounded-lg hover:bg-white/80 transition duration-150 ${btnClass}">
+                        <i class="${btnIcon}"></i>
+                    </button>
+                `;
+                vocabGrid.appendChild(card);
+            });
+
+            // Reveal box
+            expBox.classList.remove("hidden");
+            expBox.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+
+        // Native Web Audio API to play feedback tone
+        function playChime(isCorrect) {
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+
+                if (isCorrect) {
+                    // Pleasing double upward beep for success
+                    osc.type = "sine";
+                    osc.frequency.setValueAtTime(523.25, ctx.currentTime); // C5
+                    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+                    osc.start();
+                    osc.frequency.setValueAtTime(659.25, ctx.currentTime + 0.15); // E5
+                    gain.gain.setValueAtTime(0.1, ctx.currentTime + 0.15);
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+                    osc.stop(ctx.currentTime + 0.4);
+                } else {
+                    // Low solid tone for incorrect
+                    osc.type = "triangle";
+                    osc.frequency.setValueAtTime(220.00, ctx.currentTime); // A3
+                    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+                    osc.start();
+                    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+                    osc.stop(ctx.currentTime + 0.5);
+                }
+            } catch (e) {
+                console.warn("Audio Context init error:", e);
+            }
+        }
+
+        // Generate and Play TTS audio for TOEIC sentence
+        async function readActiveQuestion() {
+            if (!appState.currentQuestion) return;
+
+            const sentence = appState.currentQuestion.question.replace(/_______/g, `[blank]`);
+            const btn = document.getElementById("btn-tts");
+            const originalHTML = btn.innerHTML;
+
+            // Simple visual loading on button
+            btn.disabled = true;
+            btn.innerHTML = `<i class="fa-solid fa-circle-notch animate-spin mr-1"></i><span>음성 생성 중...</span>`;
+
+            // If audio already cached, play it immediately
+            if (appState.audioCache) {
+                playWavBlob(appState.audioCache);
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+                return;
+            }
+
+            const payload = {
+                contents: [{
+                    parts: [{ text: `Say clearly in a professional American accent: ${sentence}` }]
+                }],
+                generationConfig: {
+                    responseModalities: ["AUDIO"],
+                    speechConfig: {
+                        voiceConfig: {
+                            prebuiltVoiceConfig: { voiceName: "Zephyr" } // Bright tone ideal for TOEIC listening
+                        }
+                    }
+                },
+                model: CONFIG.ttsModel
+            };
+
+            const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.ttsModel}:generateContent?key=${CONFIG.apiKey}`;
+
+            try {
+                const response = await fetchWithRetry(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const part = result?.candidates?.[0]?.content?.parts?.[0];
+                const audioData = part?.inlineData?.data;
+                const mimeType = part?.inlineData?.mimeType;
+
+                if (audioData && mimeType && mimeType.startsWith("audio/")) {
+                    const sampleRate = parseInt(mimeType.match(/rate=(\d+)/)?.[1] || "24000", 10);
+                    const pcmData = base64ToArrayBuffer(audioData);
+                    const pcm16 = new Int16Array(pcmData);
+                    const wavBlob = pcmToWav(pcm16, sampleRate);
+                    
+                    appState.audioCache = wavBlob; // Cache it
+                    playWavBlob(wavBlob);
+                } else {
+                    throw new Error("올바른 오디오 청크를 반환받지 못했습니다.");
+                }
+            } catch (error) {
+                console.warn("TTS API 에러, 웹 Speech API 브라우저 TTS 백업 가동", error);
+                // Fallback to Web Speech Synthesis API
+                try {
+                    const synth = window.speechSynthesis;
+                    const utterThis = new SpeechSynthesisUtterance(sentence);
+                    utterThis.lang = 'en-US';
+                    utterThis.rate = 0.85; // Natural TOEIC speed
+                    synth.speak(utterThis);
+                } catch (synthesisError) {
+                    showToast("시스템 음성 출력을 지원하지 않는 브라우저이거나 속도 지연이 발생하고 있습니다.", "warning");
+                }
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalHTML;
+            }
+        }
+
+        // Audio Decoder Utils
+        function base64ToArrayBuffer(base64) {
+            const binaryString = window.atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        // Convert signed PCM16 raw data into WAV Container playable by HTML audio
+        function pcmToWav(pcm16, sampleRate) {
+            const buffer = new ArrayBuffer(44 + pcm16.length * 2);
+            const view = new DataView(buffer);
+            
+            // RIFF identifier
+            view.setUint32(0, 0x46464952, true);
+            // file length - 8
+            view.setUint32(4, 36 + pcm16.length * 2, true);
+            // WAVE identifier
+            view.setUint32(8, 0x45564157, true);
+            // fmt chunk
+            view.setUint32(12, 0x20746d66, true);
+            // chunk length
+            view.setUint32(16, 16, true);
+            // sample format (PCM)
+            view.setUint16(20, 1, true);
+            // channel count (1)
+            view.setUint16(22, 1, true);
+            // sample rate
+            view.setUint32(24, sampleRate, true);
+            // byte rate
+            view.setUint32(28, sampleRate * 2, true);
+            // block align
+            view.setUint16(32, 2, true);
+            // bits per sample
+            view.setUint16(34, 16, true);
+            // data chunk
+            view.setUint32(36, 0x61746164, true);
+            // chunk length
+            view.setUint32(40, pcm16.length * 2, true);
+
+            // Write sample payload
+            for (let i = 0; i < pcm16.length; i++) {
+                view.setInt16(44 + i * 2, pcm16[i], true);
+            }
+            return new Blob([view], { type: 'audio/wav' });
+        }
+
+        function playWavBlob(blob) {
+            const audioUrl = URL.createObjectURL(blob);
+            const audio = new Audio(audioUrl);
+            audio.play();
+        }
+
+        // Bookmark active question to Review notebook
+        function toggleBookmarkActiveQuestion() {
+            if (!appState.currentQuestion) return;
+            const q = appState.currentQuestion;
+            const idx = appState.bookmarks.findIndex(item => item.question === q.question);
+            const icon = document.getElementById("bookmark-icon");
+
+            if (idx > -1) {
+                appState.bookmarks.splice(idx, 1);
+                icon.className = "fa-regular fa-bookmark text-slate-400 text-lg";
+                showToast("오답 노트(북마크)에서 해제되었습니다.");
+            } else {
+                appState.bookmarks.push({ ...q, addedAt: new Date().toLocaleDateString() });
+                icon.className = "fa-solid fa-bookmark text-rose-500 text-lg animate-bounce";
+                showToast("오답 노트(북마크)에 저장되었습니다.");
+            }
+            saveStateToStorage();
+        }
+
+        // Add Single Vocab Word to custom wordbook
+        function addWordToBook(word, meaning, btnElement) {
+            const alreadyAddedIdx = appState.wordbook.findIndex(item => item.word.toLowerCase() === word.toLowerCase());
+            
+            if (alreadyAddedIdx > -1) {
+                // remove
+                appState.wordbook.splice(alreadyAddedIdx, 1);
+                if (btnElement) {
+                    btnElement.className = "p-2 rounded-lg hover:bg-white/80 transition duration-150 text-slate-400 hover:text-indigo-600";
+                    btnElement.querySelector("i").className = "fa-solid fa-plus";
+                }
+                showToast(`단어 [${word}]이(가) 삭제되었습니다.`);
+            } else {
+                // add
+                appState.wordbook.push({ word, meaning, addedAt: new Date().toLocaleDateString() });
+                if (btnElement) {
+                    btnElement.className = "p-2 rounded-lg hover:bg-white/80 transition duration-150 text-indigo-600 hover:text-indigo-800";
+                    btnElement.querySelector("i").className = "fa-solid fa-circle-check";
+                }
+                showToast(`단어 [${word}]이(가) 단어장에 추가되었습니다.`);
+            }
+            saveStateToStorage();
+        }
+
+        // Render Review Note Tab
+        function renderReviewNote() {
+            const container = document.getElementById("review-list-container");
+            container.innerHTML = "";
+
+            if (appState.bookmarks.length === 0) {
+                container.innerHTML = `
+                    <div class="bg-white p-12 text-center rounded-2xl border border-slate-100 shadow-sm">
+                        <i class="fa-solid fa-folder-open text-slate-300 text-4xl mb-3"></i>
+                        <h4 class="font-bold text-slate-700 text-sm">오답 노트가 텅 비어있습니다.</h4>
+                        <p class="text-xs text-slate-400 mt-1">풀다가 틀리거나 우측 상단 책갈피 버튼을 누른 문제가 이곳에 기록됩니다.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            appState.bookmarks.forEach((item, index) => {
+                const card = document.createElement("div");
+                card.className = "bg-white p-5 rounded-2xl border border-slate-100 shadow-sm space-y-3 relative";
+                card.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <span class="bg-slate-100 text-slate-600 text-[10px] font-bold px-2 py-0.5 rounded-full">${item.grammarPoint || "토익 문제"}</span>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-[10px] text-slate-400">저장일: ${item.addedAt || '기록 없음'}</span>
+                            <button onclick="removeBookmarkByIndex(${index})" class="text-slate-300 hover:text-rose-600 text-xs p-1"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                    <p class="text-sm font-bold text-slate-800 leading-relaxed">${item.question}</p>
+                    
+                    <!-- Choices Grid (Static indicator) -->
+                    <div class="grid grid-cols-2 gap-2 pt-1">
+                        ${Object.entries(item.options).map(([key, val]) => {
+                            const isCorrect = key === item.correctAnswer;
+                            const cls = isCorrect ? "border-emerald-200 bg-emerald-50 text-emerald-800 font-semibold" : "border-slate-100 text-slate-500";
+                            return `<div class="p-2 border rounded-lg text-xs flex items-center space-x-2 ${cls}">
+                                <span class="w-4 h-4 rounded-full flex items-center justify-center bg-white border text-[10px] font-bold">${key}</span>
+                                <span class="truncate">${val}</span>
+                            </div>`;
+                        }).join("")}
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-50 text-xs">
+                        <details class="group">
+                            <summary class="list-none flex items-center justify-between font-bold text-indigo-600 cursor-pointer hover:text-indigo-800">
+                                <span>정답 및 해석 해설서 보기</span>
+                                <i class="fa-solid fa-chevron-down transform group-open:rotate-180 transition-transform"></i>
+                            </summary>
+                            <div class="mt-3 bg-slate-50 p-3.5 rounded-xl border border-slate-100 text-slate-600 space-y-2">
+                                <p><strong class="text-slate-800">해석:</strong> ${item.translation}</p>
+                                <p class="leading-relaxed"><strong class="text-slate-800">정답 풀이:</strong> ${item.explanation}</p>
+                            </div>
+                        </details>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function removeBookmarkByIndex(idx) {
+            appState.bookmarks.splice(idx, 1);
+            saveStateToStorage();
+            renderReviewNote();
+            showToast("선택한 오답 기록이 정상 삭제되었습니다.");
+        }
+
+        function clearAllBookmarks() {
+            if (confirm("오답노트 내역을 전부 비우시겠습니까?")) {
+                appState.bookmarks = [];
+                saveStateToStorage();
+                renderReviewNote();
+            }
+        }
+
+        // Render wordbook panel UI
+        function renderWordbook() {
+            const grid = document.getElementById("wordbook-grid");
+            grid.innerHTML = "";
+
+            if (appState.wordbook.length === 0) {
+                grid.parentElement.innerHTML = `
+                    <div class="bg-white p-12 text-center rounded-2xl border border-slate-100 shadow-sm col-span-2">
+                        <i class="fa-solid fa-language text-slate-300 text-4xl mb-3"></i>
+                        <h4 class="font-bold text-slate-700 text-sm">저장된 단어가 하나도 없습니다.</h4>
+                        <p class="text-xs text-slate-400 mt-1">AI 토익 해설에 등장하는 핵심 단어 우측의 '+' 버튼을 눌러 추가하세요.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            appState.wordbook.forEach((item, index) => {
+                const card = document.createElement("div");
+                card.className = "bg-white p-4.5 rounded-2xl border border-slate-100 shadow-sm flex items-center justify-between relative hover:shadow-md transition duration-150";
+                
+                const meaningClass = appState.hideWordMeanings ? "invisible" : "";
+
+                card.innerHTML = `
+                    <div class="space-y-1">
+                        <div class="flex items-center space-x-2">
+                            <span class="font-bold text-base text-slate-800">${item.word}</span>
+                            <button onclick="readWordPronunciation('${item.word.replace(/'/g, "\\'")}')" class="text-slate-400 hover:text-indigo-600 text-xs"><i class="fa-solid fa-volume-high"></i></button>
+                        </div>
+                        <p class="text-sm font-semibold text-indigo-600 meaning-text ${meaningClass}">${item.meaning}</p>
+                    </div>
+                    <button onclick="removeWordByIndex(${index})" class="text-slate-300 hover:text-rose-500 transition duration-150 p-2"><i class="fa-solid fa-circle-minus text-base"></i></button>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function removeWordByIndex(idx) {
+            appState.wordbook.splice(idx, 1);
+            saveStateToStorage();
+            renderWordbook();
+            showToast("단어가 단어장에서 삭제되었습니다.");
+        }
+
+        function clearAllWords() {
+            if (confirm("나만의 암기장을 통째로 비우시겠습니까?")) {
+                appState.wordbook = [];
+                saveStateToStorage();
+                renderWordbook();
+            }
+        }
+
+        function toggleWordMeanings() {
+            appState.hideWordMeanings = !appState.hideWordMeanings;
+            const btn = document.getElementById("btn-toggle-meaning");
+            
+            if (appState.hideWordMeanings) {
+                btn.innerText = "뜻 일괄 보이기";
+                document.querySelectorAll(".meaning-text").forEach(el => el.classList.add("invisible"));
+            } else {
+                btn.innerText = "뜻 일괄 가리기";
+                document.querySelectorAll(".meaning-text").forEach(el => el.classList.remove("invisible"));
+            }
+        }
+
+        // Web Speech API fallback reader for single word pronounce
+        function readWordPronunciation(word) {
+            try {
+                const synth = window.speechSynthesis;
+                const utterThis = new SpeechSynthesisUtterance(word);
+                utterThis.lang = 'en-US';
+                synth.speak(utterThis);
+            } catch (e) {
+                console.error("Audio TTS error", e);
+            }
+        }
+
+        // Recalculate dashboard statistics based on state
+        function updateUIStats() {
+            // Badges
+            document.getElementById("streak-count").innerText = appState.streak;
+            document.getElementById("solved-count").innerText = appState.solvedCount;
+            
+            const badgeReview = document.getElementById("badge-review-count");
+            if (appState.bookmarks.length > 0) {
+                badgeReview.innerText = appState.bookmarks.length;
+                badgeReview.classList.remove("hidden");
+            } else {
+                badgeReview.classList.add("hidden");
+            }
+
+            const badgeWord = document.getElementById("badge-word-count");
+            if (appState.wordbook.length > 0) {
+                badgeWord.innerText = appState.wordbook.length;
+                badgeWord.classList.remove("hidden");
+            } else {
+                badgeWord.classList.add("hidden");
+            }
+
+            // Stats tab
+            document.getElementById("stat-total").innerText = appState.solvedCount;
+            document.getElementById("stat-correct").innerText = appState.correctCount;
+            document.getElementById("stat-words").innerText = appState.wordbook.length;
+
+            // Compute Accuracy (recent 10 items)
+            if (appState.recentAccuracyHistory.length === 0) {
+                document.getElementById("stat-accuracy").innerText = "0%";
+            } else {
+                const correctRecent = appState.recentAccuracyHistory.filter(x => x === true).length;
+                const totalRecent = appState.recentAccuracyHistory.length;
+                const accPercent = Math.round((correctRecent / totalRecent) * 100);
+                document.getElementById("stat-accuracy").innerText = `${accPercent}%`;
+            }
+
+            // Determine level badge
+            let level = "TOEIC Beginner";
+            if (appState.solvedCount >= 15 && appState.solvedCount < 40) level = "TOEIC Runner";
+            else if (appState.solvedCount >= 40 && appState.solvedCount < 80) level = "TOEIC Challenger";
+            else if (appState.solvedCount >= 80) level = "TOEIC Legend";
+            document.getElementById("stat-level").innerText = level;
+        }
+
+        // Offline Dynamic Refreshing words list
+        const STATIC_WORDS_POOL = [
+            { word: "Accommodate", meaning: "수용하다, 편의를 도모하다" },
+            { word: "Vigorously", meaning: "정력적으로, 활기차게" },
+            { word: "Prospective", meaning: "장래의, 미래의, 유망한" },
+            { word: "Confidentiality", meaning: "기밀 유지, 비밀" },
+            { word: "Substantially", meaning: "실질적으로, 상당히" },
+            { word: "Accumulate", meaning: "축적하다, 점차 늘어나다" },
+            { word: "Implementation", meaning: "이행, 실행, 실시" },
+            { word: "Provisional", meaning: "임시의, 잠정적인" },
+            { word: "Incur", meaning: "(비용·손실 등을) 초래하다, 당하다" }
+        ];
+
+        function refreshDailyWords() {
+            const container = document.getElementById("daily-words-container");
+            container.innerHTML = "";
+            
+            // Pick 3 random
+            const shuffled = [...STATIC_WORDS_POOL].sort(() => 0.5 - Math.random());
+            const selected = shuffled.slice(0, 3);
+
+            selected.forEach(item => {
+                const wrapper = document.createElement("div");
+                wrapper.className = "flex items-center justify-between p-2 bg-slate-50 rounded-xl border border-slate-100";
+                
+                const isWordBooked = appState.wordbook.some(x => x.word.toLowerCase() === item.word.toLowerCase());
+                const btnIcon = isWordBooked ? "fa-solid fa-circle-check text-emerald-600" : "fa-solid fa-plus text-slate-400";
+
+                wrapper.innerHTML = `
+                    <div>
+                        <span class="font-bold text-sm text-slate-800">${item.word}</span>
+                        <p class="text-xs text-slate-500">${item.meaning}</p>
+                    </div>
+                    <button onclick="addWordToBook('${item.word.replace(/'/g, "\\'")}', '${item.meaning.replace(/'/g, "\\'")}', this)" class="p-2 rounded-lg hover:bg-white transition duration-150">
+                        <i class="${btnIcon}"></i>
+                    </button>
+                `;
+                container.appendChild(wrapper);
+            });
+        }
+
+        // Toast message engine (Native alternative to block alert())
+        function showToast(message, type = "success") {
+            const toast = document.getElementById("custom-toast");
+            const iconContainer = document.getElementById("toast-icon-container");
+            const msgEl = document.getElementById("toast-message");
+
+            msgEl.innerText = message;
+            
+            if (type === "success") {
+                iconContainer.className = "text-emerald-500 text-base";
+                iconContainer.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
+            } else if (type === "warning") {
+                iconContainer.className = "text-amber-500 text-base";
+                iconContainer.innerHTML = '<i class="fa-solid fa-circle-exclamation"></i>';
+            } else {
+                iconContainer.className = "text-indigo-400 text-base";
+                iconContainer.innerHTML = '<i class="fa-solid fa-bell"></i>';
+            }
+
+            // Animate In
+            toast.className = "fixed bottom-6 right-6 z-50 transform translate-y-0 opacity-100 transition-all duration-300 flex items-center space-x-3 bg-slate-950 text-white px-5 py-3 rounded-xl shadow-2xl max-w-sm border border-slate-800";
+            
+            // Clear previous timeouts if click is spammed
+            if (toast.timeoutId) {
+                clearTimeout(toast.timeoutId);
+            }
+
+            toast.timeoutId = setTimeout(() => {
+                // Animate Out
+                toast.className = "fixed bottom-6 right-6 z-50 transform translate-y-20 opacity-0 transition-all duration-300 pointer-events-none flex items-center space-x-3 bg-slate-900 text-white px-5 py-3 rounded-xl shadow-xl max-w-sm";
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
