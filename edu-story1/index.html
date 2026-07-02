@@ -1,1 +1,1184 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>토끼와 거북이 - AI 입체 동화책</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: 나눔바른펜, 나눔고딕, 인터 -->
+    <link href="https://fonts.googleapis.com/css2?family=Nanum+Pen+Script&family=Nanum+Gothic:wght@400;700;800&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nanum Gothic', sans-serif;
+            background-color: #f7f3e9; /* 아늑한 종이느낌 연한 노란빛 */
+        }
+        .fairytale-font {
+            font-family: 'Nanum Pen Script', cursive;
+        }
+        /* 페이징 애니메이션 및 디테일 스타일링 */
+        .page-transition {
+            transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.4s ease;
+        }
+        .book-shadow {
+            box-shadow: 0 15px 35px rgba(121, 85, 72, 0.15), 0 5px 15px rgba(0, 0, 0, 0.08);
+        }
+        /* 커스텀 스크롤바 */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1ebd9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d4c5a9;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #bda885;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen text-slate-800 antialiased overflow-x-hidden">
 
+    <!-- 상단 내비게이션 바 -->
+    <header class="w-full bg-[#8D6E63] text-white py-3 px-6 shadow-md flex justify-between items-center z-10">
+        <div class="flex items-center space-x-2">
+            <!-- 책 아이콘 -->
+            <svg class="w-8 h-8 text-amber-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+            </svg>
+            <h1 class="text-xl md:text-2xl font-extrabold tracking-wide text-amber-100">토끼와 거북이 <span class="text-xs bg-amber-500 text-white font-bold px-2 py-0.5 rounded-full ml-1">AI 북</span></h1>
+        </div>
+        <div class="flex items-center space-x-3">
+            <!-- 글자 크기 조절 버튼 -->
+            <div class="flex items-center bg-[#795548] rounded-lg px-2 py-1 space-x-1">
+                <button id="btn-font-dec" class="px-2 py-1 text-xs md:text-sm font-bold hover:bg-[#6D4C41] rounded transition" title="글씨 작게">가-</button>
+                <span class="text-xs text-amber-200">글자</span>
+                <button id="btn-font-inc" class="px-2 py-1 text-xs md:text-sm font-bold hover:bg-[#6D4C41] rounded transition" title="글씨 크게">가+</button>
+            </div>
+            <!-- 환경 설정 모달 열기 -->
+            <button id="btn-settings" class="p-2 hover:bg-[#795548] rounded-lg transition" title="설정">
+                <svg class="w-6 h-6 text-amber-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- 메인 대시보드 / 책 컨테이너 -->
+    <main class="flex-grow flex flex-col items-center justify-center p-4 md:p-8 max-w-6xl mx-auto w-full">
+        <!-- 책 틀 (Book Frame) -->
+        <div class="relative w-full bg-[#fdfaf2] rounded-2xl book-shadow border-4 border-[#8D6E63] flex flex-col md:flex-row min-h-[500px] md:min-h-[600px] overflow-hidden">
+            
+            <!-- 왼쪽: 고품질 삽화 영역 (일러스트) -->
+            <div class="w-full md:w-1/2 bg-[#ECEFF1] relative flex items-center justify-center border-b-2 md:border-b-0 md:border-r-2 border-[#D7CCC8] h-[250px] md:h-auto overflow-hidden">
+                <!-- 일러스트 캔버스 / 이미지 -->
+                <div id="illustration-container" class="w-full h-full flex items-center justify-center relative">
+                    <!-- 기본 일러스트 SVG 그래픽 (페이지마다 동적 교체됨) -->
+                    <div id="default-svg" class="w-full h-full flex items-center justify-center p-6 bg-gradient-to-br from-sky-100 to-emerald-50">
+                        <!-- 동적 SVG가 여기에 렌더링됨 -->
+                    </div>
+                    <!-- AI 생성 이미지 레이어 (생성 시 활성화) -->
+                    <img id="ai-generated-img" class="absolute inset-0 w-full h-full object-cover hidden transition-opacity duration-500" alt="AI 동화 삽화">
+                    
+                    <!-- AI 이미지 생성 로딩 인디케이터 -->
+                    <div id="ai-loading" class="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white space-y-4 opacity-0 pointer-events-none transition-opacity duration-300">
+                        <div class="relative w-16 h-16">
+                            <div class="absolute border-4 border-amber-400 border-t-transparent rounded-full w-full h-full animate-spin"></div>
+                            <svg class="w-8 h-8 text-amber-300 absolute inset-0 m-auto animate-bounce" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+                            </svg>
+                        </div>
+                        <p class="text-sm font-bold text-amber-200">AI 화가가 정성껏 그림을 그리는 중...</p>
+                        <span class="text-xs text-slate-300">약 5~10초 소요됩니다.</span>
+                    </div>
+
+                    <!-- AI 화가 워터마크/버튼 -->
+                    <button id="btn-draw-ai" class="absolute bottom-4 right-4 bg-amber-500 hover:bg-amber-600 text-white font-bold text-xs py-2 px-3 rounded-full shadow-lg flex items-center space-x-1.5 transition-all transform hover:scale-105 z-10">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                        </svg>
+                        <span>AI 삽화 그리기</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 오른쪽: 동화 이야기 텍스트 및 오디오 조작부 -->
+            <div class="w-full md:w-1/2 p-6 md:p-10 flex flex-col justify-between bg-[#FDFBF7] relative">
+                <!-- 북 클립 장식 (아날로그 느낌 극대화) -->
+                <div class="absolute top-0 right-10 w-8 h-16 bg-[#D7CCC8]/40 border-b-4 border-[#8D6E63] rounded-b-md shadow-sm hidden md:block"></div>
+
+                <!-- 페이지 상단 표시기 -->
+                <div class="flex justify-between items-center text-xs font-semibold text-slate-500 uppercase tracking-widest border-b border-[#E0D8C8] pb-3 mb-4">
+                    <span id="page-badge" class="bg-[#8D6E63] text-white px-2.5 py-0.5 rounded-full">페이지 1/10</span>
+                    <span id="page-title" class="font-bold text-[#5D4037]">대결의 시작</span>
+                </div>
+
+                <!-- 동화 텍스트 본문 영역 -->
+                <div class="flex-grow flex flex-col justify-center my-6">
+                    <div id="story-content" class="text-slate-800 leading-relaxed font-medium select-none space-y-4 page-transition text-lg md:text-xl">
+                        <!-- 동화 내용이 스크립트에 의해 주입됩니다. -->
+                    </div>
+                </div>
+
+                <!-- 조작 도구 및 미디어 버튼 -->
+                <div class="mt-6 pt-4 border-t border-[#E0D8C8] flex flex-col space-y-4">
+                    <!-- 오디오 듣기 제어 영역 -->
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div class="flex items-center space-x-2">
+                            <!-- 읽어주기 버튼 (TTS) -->
+                            <button id="btn-tts" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 px-5 rounded-xl shadow-md flex items-center space-x-2 transition transform active:scale-95">
+                                <svg id="icon-play" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                                <svg id="icon-stop" class="w-5 h-5 hidden animate-pulse text-amber-200" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1H10a1 1 0 01-1-1v-4z"></path>
+                                </svg>
+                                <span id="text-tts">이야기 들어보기</span>
+                            </button>
+
+                            <!-- 자동 넘김 토글 -->
+                            <button id="btn-autoplay" class="bg-[#CFD8DC] hover:bg-[#B0BEC5] text-[#37474F] font-bold py-2.5 px-4 rounded-xl shadow-sm text-sm transition flex items-center space-x-1">
+                                <span class="w-2.5 h-2.5 rounded-full bg-slate-400 mr-1" id="autoplay-indicator"></span>
+                                <span>자동 재생</span>
+                            </button>
+                        </div>
+
+                        <!-- 현재 오디오 음성 서비스 제공처 표시 -->
+                        <span id="audio-provider" class="text-xs bg-slate-100 text-slate-500 font-semibold px-2 py-1 rounded-md border border-slate-200">
+                            로컬 TTS 보이스
+                        </span>
+                    </div>
+
+                    <!-- 재생 진행률 바 (오디오 길이에 맞춤) -->
+                    <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                        <div id="tts-progress" class="bg-emerald-500 h-1.5 w-0 transition-all duration-300"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 책 하부 조작 네비게이션 -->
+        <div class="w-full flex flex-col md:flex-row items-center justify-between mt-6 gap-4 px-2">
+            <!-- 이전 페이지 이동 -->
+            <button id="btn-prev" class="w-full md:w-auto bg-[#8D6E63] hover:bg-[#795548] text-white font-bold py-3 px-6 rounded-xl shadow-md flex items-center justify-center space-x-2 transition-all transform hover:-translate-x-1 active:translate-x-0 disabled:opacity-40 disabled:pointer-events-none">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+                </svg>
+                <span>이전 장</span>
+            </button>
+
+            <!-- 책 점 내비게이터 (10개 인디케이터) -->
+            <div class="flex items-center space-x-2 bg-amber-100/60 p-2.5 rounded-2xl border border-amber-200/50">
+                <template id="dot-template">
+                    <button class="w-3.5 h-3.5 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1" aria-label="페이지 이동"></button>
+                </template>
+                <div id="dot-container" class="flex items-center space-x-1.5 md:space-x-2.5">
+                    <!-- 자바스크립트로 10개 주입 -->
+                </div>
+            </div>
+
+            <!-- 다음 페이지 이동 -->
+            <button id="btn-next" class="w-full md:w-auto bg-[#8D6E63] hover:bg-[#795548] text-white font-bold py-3 px-6 rounded-xl shadow-md flex items-center justify-center space-x-2 transition-all transform hover:translate-x-1 active:translate-x-0">
+                <span>다음 장</span>
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+                </svg>
+            </button>
+        </div>
+    </main>
+
+    <!-- 모달 백드롭 및 설정 레이아웃 -->
+    <div id="settings-modal" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 opacity-0 pointer-events-none transition-opacity duration-300">
+        <div class="bg-white rounded-2xl w-full max-w-md shadow-2xl p-6 border border-amber-100 transform scale-95 transition-transform duration-300" id="modal-content">
+            <!-- 모달 헤더 -->
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 class="text-lg font-bold text-[#5D4037] flex items-center space-x-2">
+                    <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path>
+                    </svg>
+                    <span>동화 설정 & AI 엔진 연결</span>
+                </h3>
+                <button id="btn-close-settings" class="text-slate-400 hover:text-slate-600 font-bold text-xl">&times;</button>
+            </div>
+
+            <!-- 모달 바디 -->
+            <div class="space-y-4">
+                <!-- 음성 구연 방법 선택 -->
+                <div>
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">구연동화 음성 종류</label>
+                    <select id="voice-service-selector" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-amber-500">
+                        <option value="gemini">✨ Gemini AI 오디오 (프리미엄, 한국어 목소리)</option>
+                        <option value="local">💻 스마트폰/PC 기본 제공 음성 (로컬)</option>
+                    </select>
+                </div>
+
+                <!-- Gemini AI 음성 프리셋 설정 (Gemini 선택시 활성) -->
+                <div id="gemini-voice-option">
+                    <label class="block text-sm font-semibold text-slate-700 mb-1.5">Gemini 목소리 모델</label>
+                    <select id="gemini-voice-name" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-amber-500">
+                        <option value="Kore">Kore (안정적이고 기품있는 목소리)</option>
+                        <option value="Leda">Leda (다정하고 아늑한 목소리)</option>
+                        <option value="Puck">Puck (통통튀고 활기찬 목소리)</option>
+                        <option value="Sulafat">Sulafat (따스하고 포근한 목소리)</option>
+                    </select>
+                </div>
+
+                <!-- Gemini API 키 입력 영역 (더 정밀한 개별 사용을 희망할 경우) -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-sm font-semibold text-slate-700">개인 Gemini API Key (선택)</label>
+                        <span class="text-xs text-amber-600 font-medium bg-amber-50 px-2 py-0.5 rounded">직접입력 권장</span>
+                    </div>
+                    <input id="api-key-input" type="password" placeholder="AI 기능 연결을 위해 API 키를 넣어주세요." class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-amber-500">
+                    <p class="text-xs text-slate-400 mt-1">입력하지 않을 시 프리뷰 및 제공된 임베딩 키로 제한적인 동화책 기능을 시연합니다.</p>
+                </div>
+
+                <!-- 앱 정보/안내 -->
+                <div class="bg-amber-50 rounded-xl p-3 border border-amber-100 text-xs text-amber-800 leading-relaxed">
+                    🌟 <strong>토끼와 거북이 AI 동화나라</strong><br>
+                    - AI 삽화는 'Imagen 4.0' 생성 엔진이 담당합니다.<br>
+                    - 구연 목소리는 'gemini-2.5-flash-preview-tts' 초고정밀 오디오를 탑재했습니다.
+                </div>
+            </div>
+
+            <!-- 모달 푸터 -->
+            <div class="mt-6 pt-4 border-t flex justify-end">
+                <button id="btn-save-settings" class="bg-amber-600 hover:bg-amber-700 text-white font-bold py-2.5 px-6 rounded-xl text-sm transition-all shadow-md">
+                    설정 적용 및 저장
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 푸터 정보 영역 -->
+    <footer class="w-full py-4 text-center text-xs text-slate-500 mt-auto border-t border-[#E0D8C8] bg-[#F4EFE0]">
+        &copy; 2026 AI 동화나라. 이 앱은 아이들의 창의성 증진과 즐거운 독서를 돕습니다.
+    </footer>
+
+    <script>
+        // --- 동화 스토리보드 데이터 (총 10페이지) ---
+        const STORYBOOK = [
+            {
+                page: 1,
+                title: "토끼와 거북이의 승부",
+                badge: "커버 페이지",
+                content: `<p class="fairytale-font text-5xl text-amber-800 text-center mb-4">토끼와 거북이</p>
+                          <p class="text-center text-slate-600 font-bold mb-4">끈기와 자만심의 위대한 승부수</p>
+                          <p class="text-center text-base text-slate-500 leading-relaxed">아득히 먼 옛날, 평화로운 초록 숲속에 달리기가 세상에서 가장 빠른 잘난 체쟁이 토끼와, 걸음은 조금 느리지만 끝까지 포기하지 않는 우직한 거북이가 살고 있었어요. 이 둘의 역사적인 경주 속으로 들어가 볼까요?</p>`,
+                speakText: "토끼와 거북이. 끈기와 자만심의 위대한 승부수. 아득히 먼 옛날, 평화로운 초록 숲속에 달리기가 세상에서 가장 빠른 잘난 체쟁이 토끼와, 걸음은 조금 느리지만 끝까지 포기하지 않는 우직한 거북이가 살고 있었어요. 이 둘의 역사적인 경주 속으로 들어가 볼까요?",
+                prompt: "A whimsical cute watercolor fairytale book cover illustration of a rabbit and a turtle, happy looking at each other, bright colors, forest background, children's storybook style",
+                // 기본 SVG 생성기
+                svg: `<svg viewBox="0 0 400 300" class="w-full h-full">
+                        <defs>
+                            <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" stop-color="#E0F2FE" />
+                                <stop offset="100%" stop-color="#D1FAE5" />
+                            </linearGradient>
+                        </defs>
+                        <rect width="100%" height="100%" fill="url(#bgGrad)" />
+                        <!-- 산/배경 -->
+                        <path d="M-50 300 L150 120 L350 300 Z" fill="#A7F3D0" opacity="0.7"/>
+                        <path d="M100 300 L280 150 L450 300 Z" fill="#6EE7B7" opacity="0.6"/>
+                        <!-- 태양 -->
+                        <circle cx="330" cy="70" r="30" fill="#FEE2E2" />
+                        <circle cx="330" cy="70" r="20" fill="#FCA5A5" />
+                        <!-- 토끼 -->
+                        <ellipse cx="140" cy="200" rx="25" ry="35" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="3"/>
+                        <ellipse cx="140" cy="140" rx="8" ry="25" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="2"/>
+                        <ellipse cx="155" cy="142" rx="8" ry="25" fill="#FFFFFF" stroke="#D1D5DB" stroke-width="2"/>
+                        <ellipse cx="140" cy="140" rx="4" ry="15" fill="#FCA5A5" />
+                        <ellipse cx="155" cy="142" rx="4" ry="15" fill="#FCA5A5" />
+                        <circle cx="132" cy="190" r="4" fill="#374151" />
+                        <circle cx="148" cy="190" r="4" fill="#374151" />
+                        <path d="M136 205 Q140 210 144 205" fill="none" stroke="#FCA5A5" stroke-width="3"/>
+                        <!-- 거북이 -->
+                        <path d="M220 220 C220 170, 300 170, 300 220 Z" fill="#059669" stroke="#047857" stroke-width="3"/>
+                        <circle cx="310" cy="210" r="15" fill="#10B981" stroke="#047857" stroke-width="2"/>
+                        <circle cx="315" cy="205" r="2.5" fill="#374151" />
+                        <rect x="235" y="215" width="12" height="18" rx="4" fill="#10B981"/>
+                        <rect x="275" y="215" width="12" height="18" rx="4" fill="#10B981"/>
+                        <!-- 바닥 -->
+                        <rect y="225" width="400" height="75" fill="#F59E0B" opacity="0.2"/>
+                        <text x="200" y="270" text-anchor="middle" font-family="'Nanum Pen Script', cursive" font-size="28" fill="#5D4037" font-weight="bold">숲속 나라의 큰 대결!</text>
+                      </svg>`
+            },
+            {
+                page: 2,
+                title: "자랑쟁이 토끼",
+                badge: "첫 번째 이야기",
+                content: `<p class="font-bold text-[#8D6E63] text-sm">#1. 자랑하는 토끼와 느긋한 거북이</p>
+                          <p class="text-base leading-relaxed md:text-lg">깊은 숲속, 토끼는 매일같이 숲속 동물들을 모두 불러 모으고 말했어요.</p>
+                          <p class="text-base text-emerald-800 font-bold leading-relaxed border-l-4 border-emerald-500 pl-3 md:text-lg">"이 숲속에서 나보다 빠른 동물 있으면 나와봐! 아마 번개도 나를 따라잡진 못할걸?"</p>
+                          <p class="text-base leading-relaxed md:text-lg">하지만 거북이는 토끼가 자만심에 가득 차서 방방 뛰는 모습을 조용히 바라보며, 허허실실 미소만 지을 뿐이었답니다.</p>`,
+                speakText: "깊은 숲속, 토끼는 매일같이 숲속 동물들을 모두 불러 모으고 말했어요. 이 숲속에서 나보다 빠른 동물 있으면 나와봐! 아마 번개도 나를 따라잡진 못할걸? 하지만 거북이는 토끼가 자만심에 가득 차서 방방 뛰는 모습을 조용히 바라보며, 허허실실 미소만 지을 뿐이었답니다.",
+                prompt: "A boasting rabbit holding his hands on hips laughing, and a slow green turtle smiling back in a peaceful forest. children's storybook style, soft lighting",
+                svg: `<svg viewBox="0 0 400 300" class="w-full h-full">
+                        <rect width="100%" height="100%" fill="#ECFDF5" />
+                        <!-- 토끼 자랑하는 포즈 -->
+                        <ellipse cx="150" cy="180" rx="20" ry="30" fill="#FFFFFF" stroke="#9CA3AF" stroke-width="2"/>
+                        <ellipse cx="150" cy="130" rx="6" ry="20" fill="#FFFFFF" stroke="#9CA3AF"/>
+                        <ellipse cx="162" cy="132" rx="6" ry="20" fill="#FFFFFF" stroke="#9CA3AF"/>
+                        <!-- 장난기 어린 얼굴 -->
+                        <circle cx="145" cy="170" r="3" fill="#000"/>
+                        <circle cx="155" cy="170" r="3" fill="#000"/>
+                        <path d="M145 180 Q150 185 155 180" fill="none" stroke="#F87171" stroke-width="2"/>
+                        <!-- 토끼 팔 허리에 대기 -->
+                        <path d="M130 180 Q120 190 130 200" fill="none" stroke="#374151" stroke-width="2.5"/>
+                        <path d="M170 180 Q180 190 170 200" fill="none" stroke="#374151" stroke-width="2.5"/>
+                        <!-- 멀리 거북이 조용히 미소 -->
+                        <path d="M260 210 C260 180, 310 180, 310 210 Z" fill="#047857"/>
+                        <circle cx="320" cy="205" r="10" fill="#34D399"/>
+                        <circle cx="322" cy="202" r="1.5" fill="#374151" />
+                        <text x="200" y="70" text-anchor="middle" font-size="16" fill="#065F46" font-weight="bold">"내가 세상에서 제일 빨라!"</text>
+                      </svg>`
+            },
+            {
+                page: 3,
+                title: "거북이의 도전",
+                badge: "두 번째 이야기",
+                content: `<p class="font-bold text-[#8D6E63] text-sm">#2. 참을성 많은 거북이의 선전포고</p>
+                          <p class="text-base leading-relaxed md:text-lg">토끼의 도를 넘은 비웃음에 참다못한 거북이가 마침내 흙더미 위로 걸어 나왔어요.</p>
+                          <p class="text-base text-amber-800 font-bold leading-relaxed border-l-4 border-amber-500 pl-3 md:text-lg">"토끼야, 네가 아무리 빠르다 한들 늘 겸손해야 하는 법이란다. 그렇다면 우리 저 머나먼 산꼭대기 큰 소나무까지 누가 먼저 가는지 승부를 겨뤄보지 않겠니?"</p>
+                          <p class="text-base leading-relaxed md:text-lg">토끼는 어이가 없다는 듯 배를 잡고 껄껄 웃었어요.</p>`,
+                speakText: "토끼의 도를 넘은 비웃음에 참다못한 거북이가 마침내 흙더미 위로 걸어 나왔어요. 토끼야, 네가 아무리 빠르다 한들 늘 겸손해야 하는 법이란다. 그렇다면 우리 저 머나먼 산꼭대기 큰 소나무까지 누가 먼저 가는지 승부를 겨뤄보지 않겠니? 토끼는 어이가 없다는 듯 배를 잡고 껄껄 웃었어요.",
+                prompt: "A determined turtle pointing with his finger towards a high mountain with a red flag, while a white rabbit rolls on the grass laughing. watercolor cartoon",
+                svg: `<svg viewBox="0 0 400 300" class="w-full h-full">
+                        <rect width="100%" height="100%" fill="#F0FDF4" />
+                        <!-- 산꼭대기 소나무 표현 -->
+                        <path d="M280 250 L340 100 L400 250 Z" fill="#D1FAE5"/>
+                        <rect x="335" y="95" width="10" height="20" fill="#78350F"/>
+                        <circle cx="340" cy="85" r="15" fill="#047857"/>
+                        <!-- 도발하는 거북이 -->
+                        <path d="M100 230 C100 190, 160 190, 160 230 Z" fill="#065F46"/>
+                        <circle cx="170" cy="220" r="12" fill="#10B981"/>
+                        <line x1="170" y1="220" x2="200" y2="210" stroke="#10B981" stroke-width="4" stroke-linecap="round"/>
+                        <!-- 웃어제끼는 토끼 -->
+                        <ellipse cx="250" cy="240" rx="25" ry="15" fill="#FFFFFF" stroke="#9CA3AF"/>
+                        <text x="200" y="50" text-anchor="middle" font-size="14" fill="#15803D" font-weight="bold">산꼭대기 소나무를 향한 도전장</text>
+                      </svg>`
+            },
+            {
+                page: 4,
+                title: "출발선에 서다",
+                badge: "세 번째 이야기",
+                content: `<p class="font-bold text-[#8D6E63] text-sm">#3. 수많은 목격자들과 심판 여우</p>
+                          <p class="text-base leading-relaxed md:text-lg">경기 날 아침, 소문을 들은 온 동네 동물들이 출발선 앞으로 수군거리며 몰려들었어요.</p>
+                          <p class="text-base leading-relaxed md:text-lg">지혜롭고 공정한 여우가 심판을 맡아 빨간색 깃발을 높이 들어 올렸습니다.</p>
+                          <p class="text-base text-blue-700 font-bold leading-relaxed border-l-4 border-blue-500 pl-3 md:text-lg">"규칙은 간단하다! 저 산 정상의 소나무를 먼저 터치하는 이가 승리한다! 준비... 땅!"</p>
+                          <p class="text-base leading-relaxed md:text-lg">마침내 역사적인 경주의 막이 올랐습니다!</p>`,
+                speakText: "경기 날 아침, 소문을 들은 온 동네 동물들이 출발선 앞으로 수군거리며 몰려들었어요. 지혜롭고 공정한 여우가 심판을 맡아 빨간색 깃발을 높이 들어 올렸습니다. 규칙은 간단하다! 저 산 정상의 소나무를 먼저 터치하는 이가 승리한다! 준비... 땅! 마침내 역사적인 경주의 막이 올랐습니다!",
+                prompt: "A crowd of cartoon forest animals gathered at a start line banner. A smart orange fox holding a red starter flag. cute storybook",
+                svg: `<svg viewBox="0 0 400 300" class="w-full h-full">
+                        <rect width="100%" height="100%" fill="#FFFBEB" />
+                        <!-- 출발 현수막 -->
+                        <rect x="50" y="30" width="300" height="40" fill="#F59E0B" rx="10"/>
+                        <text x="200" y="55" text-anchor="middle" fill="#FFF" font-weight="bold" font-size="16">START! 준비~ 땅!</text>
+                        <!-- 심판 여우 -->
+                        <path d="M200 240 L180 180 L220 180 Z" fill="#F97316"/>
+                        <polygon points="180,180 200,150 220,180" fill="#F97316"/>
+                        <!-- 빨간 깃발 -->
+                        <line x1="220" y1="180" x2="250" y2="130" stroke="#78350F" stroke-width="3"/>
+                        <polygon points="250,130 280,115 258,145" fill="#EF4444"/>
+                        <!-- 양쪽 대기 토끼/거북이 -->
+                        <circle cx="80" cy="220" r="15" fill="#E5E7EB" />
+                        <path d="M300 230 C300 210, 340 210, 340 230 Z" fill="#047857" />
+                      </svg>`
+            },
+            {
+                page: 5,
+                title: "눈 깜짝할 사이",
+                badge: "네 번째 이야기",
+                content: `<p class="font-bold text-[#8D6E63] text-sm">#4. 번개처럼 질주하는 토끼</p>
+                          <p class="text-base leading-relaxed md:text-lg">출발 신호가 떨어지기 무섭게 토끼는 엄청난 기세로 흙먼지를 흩뿌리며 질주했어요.</p>
+                          <p class="text-base text-rose-800 font-bold leading-relaxed border-l-4 border-rose-500 pl-3 md:text-lg">"휙~! 잘 있어라 느림보 거북아! 먼저 올라가서 기다릴게!"</p>
+                          <p class="text-base leading-relaxed md:text-lg">순식간에 토끼는 산 중턱까지 날아가듯 가버렸고, 거북이는 뽀얗게 일어난 흙먼지를 뚫고 "영차, 영차" 아주 느리게 첫 발걸음을 떼고 있었어요.</p>`,
+                speakText: "출발 신호가 떨어지기 무섭게 토끼는 엄청난 기세로 흙먼지를 흩뿌리며 질주했어요. 휙~! 잘 있어라 느림보 거북아! 먼저 올라가서 기다릴게! 순식간에 토끼는 산 중턱까지 날아가듯 가버렸고, 거북이는 뽀얗게 일어난 흙먼지를 뚫고 영차, 영차 아주 느리게 첫 발걸음을 떼고 있었어요.",
+                prompt: "A rabbit sprinting fast leaving motion lines and a dust cloud, in the far distance a tiny turtle starting slowly. cute watercolor cartoon style",
+                svg: `<svg viewBox="0 0 400 300" class="w-full h-full">
+                        <rect width="100%" height="100%" fill="#FAF5FF" />
+                        <!-- 질주 먼지 구름 -->
+                        <path d="M50 220 Q80 180 150 200 T250 210" fill="none" stroke="#E5E7EB" stroke-width="20" stroke-linecap="round" opacity="0.6"/>
+                        <!-- 번개 토끼 이펙트 -->
+                        <path d="M180 130 L220 150 L200 170 L250 160" fill="none" stroke="#FBBF24" stroke-width="4"/>
+                        <!-- 전속력으로 달리는 토끼 형상 -->
+                        <ellipse cx="280" cy="180" rx="30" ry="18" fill="#FFF" stroke="#D1D5DB" stroke-width="2"/>
+                        <ellipse cx="320" cy="170" rx="10" ry="10" fill="#FFF" stroke="#D1D5DB"/>
+                        <!-- 저 멀리 느리게 가는 거북이 -->
+                        <circle cx="60" cy="230" r="10" fill="#047857"/>
+                        <text x="280" y="80" text-anchor="middle" font-size="14" fill="#7C3AED" font-weight="bold">"너무 빨라서 안 보일걸?!"</text>
+                      </svg>`
+            },
+            {
+                page: 6,
+                title: "자만심의 덫",
+                badge: "다섯 번째 이야기",
+                content: `<p class="font-bold text-[#8D6E63] text-sm">#5. 산 중턱에 도달한 토끼의 방심</p>
+                          <p class="text-base leading-relaxed md:text-lg">어느덧 산 중턱의 거대한 그늘막 나무 밑에 도착한 토끼는 여유롭게 뒤를 돌아보았습니다.</p>
+                          <p class="text-base text-[#5D4037] font-bold leading-relaxed border-l-4 border-[#8D6E63] pl-3 md:text-lg">"휴, 역시 내 상대가 안 되는군. 저 밑을 봐도 거북이의 콧빼기도 안 보여. 거북이가 여기까지 오려면 해가 서산으로 다 지고 말겠어."</p>
+                          <p class="text-base leading-relaxed md:text-lg">토끼는 이마의 땀을 훔치며 크게 하품을 했습니다.</p>`,
+                speakText: "어느덧 산 중턱의 거대한 그늘막 나무 밑에 도착한 토끼는 여유롭게 뒤를 돌아보았습니다. 휴, 역시 내 상대가 안 되는군. 저 밑을 봐도 거북이의 콧빼기도 안 보여. 거북이가 여기까지 오려면 해가 서산으로 다 지고 말겠어. 토끼는 이마의 땀을 훔치며 크게 하품을 했습니다.",
+                prompt: "A rabbit sitting under a big green shady tree looking down the mountain, smug face, yawning. soft fairytale pastel design",
+                svg: `<svg viewBox="0 0 400 300" class="w-full h-full">
+                        <rect width="100%" height="100%" fill="#FFFBEB" />
+                        <!-- 거대한 나무 그늘 -->
+                        <rect x="250" y="100" width="40" height="150" fill="#78350F"/>
+                        <circle cx="270" cy="100" r="70" fill="#047857" opacity="0.9"/>
+                        <!-- 여유만만 토끼가 누워있음 -->
+                        <ellipse cx="160" cy="220" rx="30" ry="15" fill="#FFF" stroke="#D1D5DB"/>
+                        <circle cx="190" cy="205" r="12" fill="#FFF" stroke="#D1D5DB"/>
+                        <!-- 나뭇잎 날림 -->
+                        <path d="M120 120 Q140 100 130 140" fill="none" stroke="#34D399" stroke-width="2"/>
+                        <text x="150" y="60" text-anchor="middle" font-size="14" fill="#374151" font-weight="bold">"잠깐 쉬었다 가도 이기겠지?"</text>
+                      </svg>`
+            },
+            {
+                page: 7,
+                title: "달콤한 낮잠",
+                badge: "여섯 번째 이야기",
+                content: `<p class="font-bold text-[#8D6E63] text-sm">#6. 스르르 감기는 토끼의 눈꺼풀</p>
+                          <p class="text-base leading-relaxed md:text-lg">살랑살랑 시원한 바람이 불어오고, 따뜻한 오후 햇살이 토끼의 머리맡을 내리쬐었어요.</p>
+                          <p class="text-base leading-relaxed md:text-lg">토끼는 푹신한 잔디밭 위에 벌러덩 누웠습니다.</p>
+                          <p class="text-base text-[#D84315] font-bold leading-relaxed border-l-4 border-[#FF5722] pl-3 md:text-lg">"그래, 딱 5분만 눈을 붙이자. 거북이가 엉금엉금 기어오는 소리가 들리면 그때 일어나 뛰어가도 내가 무조건 1등이야!"</p>
+                          <p class="text-base leading-relaxed md:text-lg">토끼는 이내 스르르 잠에 빠져 깊은 코골이를 시작했어요. "쿨쿨... 드렁드렁..."</p>`,
+                speakText: "살랑살랑 시원한 바람이 불어오고, 따뜻한 오후 햇살이 토끼의 머리맡을 내리쬐었어요. 토끼는 푹신한 잔디밭 위에 벌러덩 누웠습니다. 그래, 딱 오분만 눈을 붙이자. 거북이가 엉금엉금 기어오는 소리가 들리면 그때 일어나 뛰어가도 내가 무조건 일등이야! 토끼는 이내 스르르 잠에 빠져 깊은 코골이를 시작했어요.",
+                prompt: "A fluffy white rabbit sleeping deeply under a shady tree on lush grass, Zzz snoring bubbles rising from his nose. watercolor fairy tale illustration",
+                svg: `<svg viewBox="0 0 400 300" class="w-full h-full">
+                        <rect width="100%" height="100%" fill="#EFF6FF" />
+                        <!-- 잠자는 토끼 -->
+                        <ellipse cx="200" cy="200" rx="40" ry="20" fill="#FFFFFF" stroke="#9CA3AF" stroke-width="2"/>
+                        <ellipse cx="230" cy="180" rx="15" ry="12" fill="#FFFFFF" stroke="#9CA3AF" stroke-width="2"/>
+                        <!-- 닫힌 눈 -->
+                        <path d="M232 180 Q237 185 242 180" fill="none" stroke="#4B5563" stroke-width="2"/>
+                        <!-- 코골이 Zzz -->
+                        <text x="250" y="150" font-size="20" fill="#3B82F6" font-weight="bold" opacity="0.8">Z</text>
+                        <text x="270" y="130" font-size="28" fill="#3B82F6" font-weight="bold" opacity="0.6">z</text>
+                        <text x="295" y="110" font-size="34" fill="#3B82F6" font-weight="bold" opacity="0.4">z</text>
+                        <!-- 따뜻한 햇살 -->
+                        <circle cx="50" cy="50" r="20" fill="#FEE2E2"/>
+                      </svg>`
+            },
+            {
+                page: 8,
+                title: "묵묵한 걸음",
+                badge: "일곱 번째 이야기",
+                content: `<p class="font-bold text-[#8D6E63] text-sm">#7. 땀방울이 만들어내는 정직한 힘</p>
+                          <p class="text-base leading-relaxed md:text-lg">그 시간, 거북이는 땀을 비 오듯 뻘뻘 흘리면서도 한 번도 쉬지 않고 언덕을 올랐어요.</p>
+                          <p class="text-base text-teal-800 font-bold leading-relaxed border-l-4 border-teal-500 pl-3 md:text-lg">"휴... 힘들고 다리가 아프지만, 쉬지 않고 한 걸음씩 걷다 보면 언젠가는 산꼭대기에 도착할 수 있을 거야. 힘을 내자!"</p>
+                          <p class="text-base leading-relaxed md:text-lg">거북이의 단단한 등껍질 위로 아름다운 정직한 땀방울이 반짝반짝 빛나고 있었습니다.</p>`,
+                speakText: "그 시간, 거북이는 땀을 비 오듯 뻘뻘 흘리면서도 한 번도 쉬지 않고 언덕을 올랐어요. 휴... 힘들고 다리가 아프지만, 쉬지 않고 한 걸음씩 걷다 보면 언젠가는 산꼭대기에 도착할 수 있을 거야. 힘을 내자! 거북이의 단단한 등껍질 위로 아름다운 정직한 땀방울이 반짝반짝 빛나고 있었습니다.",
+                prompt: "A determined green turtle sweating and hiking up a steep hill path, looking tired but focused, colorful warm background, children's book scene",
+                svg: `<svg viewBox="0 0 400 300" class="w-full h-full">
+                        <rect width="100%" height="100%" fill="#ECFDF5" />
+                        <!-- 오르막길 언덕 경사 -->
+                        <path d="M0 300 L400 150 L400 300 Z" fill="#F59E0B" opacity="0.15"/>
+                        <!-- 영차영차 거북이 -->
+                        <path d="M150 200 C150 160, 220 160, 220 200 Z" fill="#047857" stroke="#065F46" stroke-width="2"/>
+                        <!-- 등껍질 문양 -->
+                        <path d="M165 180 Q185 170 205 180" fill="none" stroke="#065F46" stroke-width="2"/>
+                        <circle cx="230" cy="190" r="10" fill="#34D399"/>
+                        <!-- 땀방울 효과 -->
+                        <ellipse cx="240" cy="195" rx="2" ry="4" fill="#3B82F6"/>
+                        <ellipse cx="225" cy="205" rx="1" ry="3" fill="#3B82F6"/>
+                        <text x="200" y="80" text-anchor="middle" font-size="14" fill="#0F766E" font-weight="bold">한 걸음씩, 천천히 묵묵히</text>
+                      </svg>`
+            },
+            {
+                page: 9,
+                title: "역전의 순간",
+                badge: "여덟 번째 이야기",
+                content: `<p class="font-bold text-[#8D6E63] text-sm">#8. 잠든 토끼를 추월하는 거북이</p>
+                          <p class="text-base leading-relaxed md:text-lg">드디어 거북이는 토끼가 쿨쿨 낮잠을 자고 있는 나무 그늘 밑에 도착했어요.</p>
+                          <p class="text-base leading-relaxed md:text-lg">거북이는 곤히 잠든 토끼를 발견하고는, 잠이 깨지 않도록 조심조심 발소리를 죽여 지나갔답니다.</p>
+                          <p class="text-base text-indigo-800 font-bold leading-relaxed border-l-4 border-indigo-500 pl-3 md:text-lg">"쉿, 토끼야 잘 자렴. 나는 먼저 한 걸음 더 앞으로 전진할게."</p>
+                          <p class="text-base leading-relaxed md:text-lg">거북이는 단 한순간도 흔들리지 않고 정상을 향해 계속 묵묵히 걸어갔습니다.</p>`,
+                speakText: "드디어 거북이는 토끼가 쿨쿨 낮잠을 자고 있는 나무 그늘 밑에 도착했어요. 거북이는 곤히 잠든 토끼를 발견하고는, 잠이 깨지 않도록 조심조심 발소리를 죽여 지나갔답니다. 쉿, 토끼야 잘 자렴. 나는 먼저 한 걸음 더 앞으로 전진할게. 거북이는 단 한순간도 흔들리지 않고 정상을 향해 계속 묵묵히 걸어갔습니다.",
+                prompt: "A slow green turtle quietly stepping past a deeply sleeping rabbit snoring under a tree trunk. children's book style watercolor illustration",
+                svg: `<svg viewBox="0 0 400 300" class="w-full h-full">
+                        <rect width="100%" height="100%" fill="#F8FAFC" />
+                        <!-- 자는 토끼 -->
+                        <ellipse cx="120" cy="220" rx="30" ry="15" fill="#E5E7EB" />
+                        <text x="150" y="190" font-size="12" fill="#9CA3AF" font-weight="bold">zZZ</text>
+                        <!-- 조심조심 지나가는 거북이 -->
+                        <path d="M220 220 C220 180, 290 180, 290 220 Z" fill="#047857"/>
+                        <circle cx="300" cy="210" r="10" fill="#10B981"/>
+                        <!-- 미소짓는 얼굴 -->
+                        <path d="M298 212 Q302 216 304 212" fill="none" stroke="#047857" stroke-width="2"/>
+                        <text x="200" y="70" text-anchor="middle" font-size="14" fill="#4338CA" font-weight="bold">살금살금, 정직한 역전의 순간</text>
+                      </svg>`
+            },
+            {
+                page: 10,
+                title: "거북이의 대승리",
+                badge: "마지막 이야기",
+                content: `<p class="font-bold text-[#8D6E63] text-sm">#9. 위대한 끈기가 만든 승리의 깃발</p>
+                          <p class="text-base leading-relaxed md:text-lg">뒤늦게 소스라치게 잠에서 깬 토끼가 머리를 쥐어뜯으며 정상으로 날아가듯 뛰어갔지만, 이미 늦고 말았어요!</p>
+                          <p class="text-base leading-relaxed md:text-lg">거북이가 이미 정상의 큰 소나무 붉은 깃발을 힘차게 흔들며 환호하고 있었거든요!</p>
+                          <p class="text-base text-amber-900 font-extrabold leading-relaxed border-l-4 border-amber-500 pl-3 md:text-lg">"와아! 거북이가 이겼다! 끝까지 노력한 거북이의 승리야!"</p>
+                          <p class="text-base leading-relaxed md:text-lg text-slate-500">동물들의 축하 소리 속에 토끼는 자신의 자만을 부끄러워하며 고개를 떨구었답니다.</p>`,
+                speakText: "뒤늦게 소스라치게 잠에서 깬 토끼가 머리를 쥐어뜯으며 정상으로 날아가듯 뛰어갔지만, 이미 늦고 말았어요! 거북이가 이미 정상의 큰 소나무 붉은 깃발을 힘차게 흔들며 환호하고 있었거든요! 와아! 거북이가 이겼다! 끝까지 노력한 거북이의 승리야! 동물들의 축하 소리 속에 토끼는 자신의 자만을 부끄러워하며 고개를 떨구었답니다.",
+                prompt: "A happy green turtle holding a red victory flag at a mountain peak, under confetti falling down, while a sad rabbit looks on. cheerful bright children's book illustration",
+                svg: `<svg viewBox="0 0 400 300" class="w-full h-full">
+                        <rect width="100%" height="100%" fill="#FEF3C7" />
+                        <!-- 폭죽 가루 -->
+                        <circle cx="50" cy="50" r="3" fill="#EF4444"/>
+                        <circle cx="120" cy="30" r="4" fill="#3B82F6"/>
+                        <circle cx="320" cy="60" r="3" fill="#10B981"/>
+                        <circle cx="280" cy="40" r="5" fill="#F59E0B"/>
+                        <!-- 승리의 거북이 우뚝 솟음 -->
+                        <path d="M150 250 C150 190, 250 190, 250 250 Z" fill="#047857"/>
+                        <circle cx="200" cy="180" r="25" fill="#10B981" />
+                        <path d="M190 180 Q200 195 210 180" fill="none" stroke="#047857" stroke-width="4"/>
+                        <!-- 붉은 깃발 흔들기 -->
+                        <line x1="225" y1="180" x2="260" y2="100" stroke="#78350F" stroke-width="4"/>
+                        <polygon points="260,100 310,80 270,120" fill="#EF4444"/>
+                        <!-- 슬픈 토끼 멀리서 울고있음 -->
+                        <ellipse cx="80" cy="240" rx="15" ry="25" fill="#FFF" stroke="#D1D5DB"/>
+                        <path d="M75 230 Q80 220 85 230" fill="none" stroke="#374151" stroke-width="2"/>
+                        <text x="200" y="280" text-anchor="middle" font-family="'Nanum Pen Script', cursive" font-size="32" fill="#78350F" font-weight="bold">꾸준한 노력은 배신하지 않아요!</text>
+                      </svg>`
+            }
+        ];
+
+        // --- 전역 애플리케이션 상태 관리 ---
+        const state = {
+            currentPage: 1, // 1~10 범위
+            fontSize: 18,    // 기본 픽셀 글꼴 크기
+            isPlayingTTS: false,
+            autoPlayEnabled: false,
+            voiceService: 'local', // 'gemini' 또는 'local'
+            geminiVoiceName: 'Kore',
+            apiKey: '', // 사용자 입력 API 키
+            generatedImages: {}, // 캐싱용 AI 이미지 URL 저장
+            currentUtterance: null, // 브라우저 TTS 인스턴스
+            audioElement: null,     // Gemini API 다운로드 오디오 인스턴스
+            autoPlayTimer: null     // 자동 넘김 감지 타이머
+        };
+
+        // 로컬스토리지 복구 (저장된 설정 복원)
+        try {
+            const savedApiKey = localStorage.getItem('ai_fairytale_key');
+            if (savedApiKey) state.apiKey = savedApiKey;
+            
+            const savedVoiceService = localStorage.getItem('ai_fairytale_service');
+            if (savedVoiceService) state.voiceService = savedVoiceService;
+
+            const savedVoiceName = localStorage.getItem('ai_fairytale_voicename');
+            if (savedVoiceName) state.geminiVoiceName = savedVoiceName;
+        } catch (e) {
+            console.error('설정 로드 중 오류:', e);
+        }
+
+        // --- UI 요소 선언 ---
+        const dom = {
+            storyContent: document.getElementById('story-content'),
+            pageBadge: document.getElementById('page-badge'),
+            pageTitle: document.getElementById('page-title'),
+            defaultSvg: document.getElementById('default-svg'),
+            aiGeneratedImg: document.getElementById('ai-generated-img'),
+            aiLoading: document.getElementById('ai-loading'),
+            btnPrev: document.getElementById('btn-prev'),
+            btnNext: document.getElementById('btn-next'),
+            btnFontDec: document.getElementById('btn-font-dec'),
+            btnFontInc: document.getElementById('btn-font-inc'),
+            btnDrawAi: document.getElementById('btn-draw-ai'),
+            btnTts: document.getElementById('btn-tts'),
+            btnAutoplay: document.getElementById('btn-autoplay'),
+            autoplayIndicator: document.getElementById('autoplay-indicator'),
+            ttsProgress: document.getElementById('tts-progress'),
+            dotContainer: document.getElementById('dot-container'),
+            dotTemplate: document.getElementById('dot-template'),
+            btnSettings: document.getElementById('btn-settings'),
+            btnCloseSettings: document.getElementById('btn-close-settings'),
+            btnSaveSettings: document.getElementById('btn-save-settings'),
+            settingsModal: document.getElementById('settings-modal'),
+            modalContent: document.getElementById('modal-content'),
+            voiceServiceSelector: document.getElementById('voice-service-selector'),
+            geminiVoiceNameSelector: document.getElementById('gemini-voice-name'),
+            geminiVoiceOption: document.getElementById('gemini-voice-option'),
+            apiKeyInput: document.getElementById('api-key-input'),
+            audioProvider: document.getElementById('audio-provider'),
+            iconPlay: document.getElementById('icon-play'),
+            iconStop: document.getElementById('icon-stop'),
+            textTts: document.getElementById('text-tts')
+        };
+
+        // 책장을 넘길 때 나는 실제 종이 서걱거림 연출
+        function playPageFlipSound() {
+            try {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                if (!AudioContext) return;
+                
+                const ctx = new AudioContext();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                // 주파수를 부드럽게 감소시켜 책장이 '후루룩' 넘어가는 노이즈 연출
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(450, ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(80, ctx.currentTime + 0.35);
+                
+                gain.gain.setValueAtTime(0.25, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+                
+                osc.start();
+                osc.stop(ctx.currentTime + 0.35);
+            } catch (err) {
+                console.warn('효과음 지원 불가 또는 브라우저 잠금 상태:', err);
+            }
+        }
+
+        // 현재 페이지의 콘텐츠, 삽화, 조작 도구를 한 번에 리렌더링
+        function renderBook() {
+            const pageData = STORYBOOK[state.currentPage - 1];
+            if (!pageData) return;
+
+            // 1. 텍스트 교체 (페이지 전환 트랜지션 유도)
+            dom.storyContent.style.opacity = '0';
+            setTimeout(() => {
+                dom.storyContent.innerHTML = pageData.content;
+                dom.storyContent.style.fontSize = `${state.fontSize}px`;
+                dom.storyContent.style.opacity = '1';
+            }, 200);
+
+            // 2. 메타데이터 반영
+            dom.pageBadge.innerText = `페이지 ${state.currentPage} / 10`;
+            dom.pageTitle.innerText = pageData.title;
+
+            // 3. 네비게이션 제어
+            dom.btnPrev.disabled = (state.currentPage === 1);
+            if (state.currentPage === 10) {
+                dom.btnNext.innerHTML = `<span>첫 장으로</span><svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 8H12h-3L12 5V8"></path></svg>`;
+            } else {
+                dom.btnNext.innerHTML = `<span>다음 장</span><svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>`;
+            }
+
+            // 4. 삽화 결정 (AI가 미리 그린게 있다면 캐시 적용, 없으면 기본 벡터)
+            const aiImgUrl = state.generatedImages[state.currentPage];
+            if (aiImgUrl) {
+                dom.aiGeneratedImg.src = aiImgUrl;
+                dom.aiGeneratedImg.classList.remove('hidden');
+                dom.defaultSvg.classList.add('hidden');
+            } else {
+                dom.aiGeneratedImg.classList.add('hidden');
+                dom.defaultSvg.classList.remove('hidden');
+                dom.defaultSvg.innerHTML = pageData.svg;
+            }
+
+            // 5. 하단 닷 인디케이터 점등
+            const dots = dom.dotContainer.querySelectorAll('button');
+            dots.forEach((dot, index) => {
+                if (index === (state.currentPage - 1)) {
+                    dot.className = "w-7 h-3.5 bg-amber-600 rounded-full transition-all duration-300 shadow-sm";
+                } else {
+                    dot.className = "w-3.5 h-3.5 bg-amber-200/80 hover:bg-amber-300 rounded-full transition-all duration-300";
+                }
+            });
+
+            // 6. 음성 안내 바 리셋
+            stopNarration();
+            updateTtsProgress(0);
+
+            // 7. 음성 서비스 공급자 뱃지 동기화
+            if (state.voiceService === 'gemini') {
+                dom.audioProvider.innerText = `✨ Gemini AI (${state.geminiVoiceName})`;
+                dom.audioProvider.className = "text-xs bg-amber-50 text-amber-700 font-semibold px-2 py-1 rounded-md border border-amber-200";
+            } else {
+                dom.audioProvider.innerText = `💻 로컬 보이스`;
+                dom.audioProvider.className = "text-xs bg-slate-50 text-slate-600 font-semibold px-2 py-1 rounded-md border border-slate-200";
+            }
+        }
+
+        // 닷 내비게이션 초기 생성
+        function initDots() {
+            dom.dotContainer.innerHTML = '';
+            STORYBOOK.forEach((_, index) => {
+                const clone = dom.dotTemplate.content.cloneNode(true);
+                const button = clone.querySelector('button');
+                button.addEventListener('click', () => {
+                    if (state.currentPage !== index + 1) {
+                        playPageFlipSound();
+                        state.currentPage = index + 1;
+                        renderBook();
+                    }
+                });
+                dom.dotContainer.appendChild(clone);
+            });
+        }
+
+        // PROGRESS BAR 동기화 함수
+        function updateTtsProgress(percentage) {
+            dom.ttsProgress.style.width = `${percentage}%`;
+        }
+
+        function playLocalTTS(text) {
+            if (!('speechSynthesis' in window)) {
+                alert("이 웹 브라우저는 음성 낭독 기능을 지원하지 않습니다. 크롬 브라우저를 추천해요.");
+                return;
+            }
+
+            window.speechSynthesis.cancel(); // 이전 소리 전부 완전 종료
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'ko-KR';
+            utterance.rate = 0.95; // 어린이를 위해 살짝 느리게 조절
+            utterance.pitch = 1.0;
+
+            // 한국어 친화형 목소리 고르기 자동 시도
+            const voices = window.speechSynthesis.getVoices();
+            const preferredVoice = voices.find(v => v.lang.includes('ko') && (v.name.includes('Google') || v.name.includes('Yuna') || v.name.includes('Heami')));
+            if (preferredVoice) utterance.voice = preferredVoice;
+
+            // 오디오 진행을 흉내내는 타이머 (로컬 TTS 특성상 글자 수 비율로 추정 매핑)
+            let charIndex = 0;
+            utterance.onboundary = (event) => {
+                if (event.name === 'word') {
+                    const progress = (event.charIndex / text.length) * 100;
+                    updateTtsProgress(progress);
+                }
+            };
+
+            utterance.onstart = () => {
+                toggleTtsUi(true);
+            };
+
+            utterance.onend = () => {
+                toggleTtsUi(false);
+                updateTtsProgress(100);
+                triggerAutoplayNext();
+            };
+
+            utterance.onerror = () => {
+                toggleTtsUi(false);
+            };
+
+            state.currentUtterance = utterance;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // Gemini TTS API가 회신하는 Signed PCM 16bit 원시 오디오를 헤더가 결합된 재생 가능 WAV 파일로 패킹
+        function pcmToWav(pcm16Array, sampleRate) {
+            const buffer = new ArrayBuffer(44 + pcm16Array.length * 2);
+            const view = new DataView(buffer);
+
+            // 'RIFF' 마커
+            writeString(view, 0, 'RIFF');
+            // 전체 바이트 길이
+            view.setUint32(4, 36 + pcm16Array.length * 2, true);
+            // 'WAVE' 마커
+            writeString(view, 8, 'WAVE');
+            // 포맷 블록
+            writeString(view, 12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true); // PCM 타입
+            view.setUint16(22, 1, true); // 모노 채널
+            view.setUint32(24, sampleRate, true); // 샘플링 속도 (24000Hz 등)
+            view.setUint32(28, sampleRate * 2, true); // 바이트 전송률
+            view.setUint16(32, 2, true); // 블록 얼라인
+            view.setUint16(34, 16, true); // 샘플당 비트 (16bit)
+            
+            // 데이터 블록
+            writeString(view, 36, 'data');
+            view.setUint32(40, pcm16Array.length * 2, true);
+
+            // 실제 PCM 오디오 샘플 순차 라이팅
+            let offset = 44;
+            for (let i = 0; i < pcm16Array.length; i++, offset += 2) {
+                view.setInt16(offset, pcm16Array[i], true);
+            }
+
+            return new Blob([view], { type: 'audio/wav' });
+        }
+
+        function writeString(view, offset, string) {
+            for (let i = 0; i < string.length; i++) {
+                view.setUint8(offset + i, string.charCodeAt(i));
+            }
+        }
+
+        function base64ToArrayBuffer(base64) {
+            const binaryString = window.atob(base64);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        }
+
+        async function playGeminiTTS(text) {
+            toggleTtsUi(true);
+            updateTtsProgress(10); // 연결 시작 로딩바
+
+            try {
+                // API 키 탐색 순위: 1. 입력창 -> 2. 로컬스토리지 -> 3. 기본 키 (프리뷰 지원용)
+                const apiKey = state.apiKey || "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`;
+
+                const payload = {
+                    contents: [{
+                        parts: [{ text: `아름답고 생동감 넘치는 연기 톤으로 아이에게 말하듯 따뜻하게 소리내어 구연동화를 읽어줘: ${text}` }]
+                    }],
+                    generationConfig: {
+                        responseModalities: ["AUDIO"],
+                        speechConfig: {
+                            voiceConfig: {
+                                prebuiltVoiceConfig: { voiceName: state.geminiVoiceName }
+                            }
+                        }
+                    },
+                    model: "gemini-2.5-flash-preview-tts"
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`API 응답 실패 (코드: ${response.status})`);
+                }
+
+                const result = await response.json();
+                const part = result?.candidates?.[0]?.content?.parts?.[0];
+                const audioBase64 = part?.inlineData?.data;
+                const mimeType = part?.inlineData?.mimeType;
+
+                if (!audioBase64 || !mimeType) {
+                    throw new Error("응답 결과에서 오디오 바이너리 데이터를 찾을 수 없습니다.");
+                }
+
+                updateTtsProgress(40); // 디코딩 단계
+
+                // 샘플 속도 추출 (mimetype에서 rate 파싱 ex: "audio/L16;rate=24000")
+                let sampleRate = 24000; 
+                const rateMatch = mimeType.match(/rate=(\d+)/);
+                if (rateMatch) {
+                    sampleRate = parseInt(rateMatch[1], 10);
+                }
+
+                // Base64 -> PCM -> WAV Blob 변환 과정
+                const pcmBuffer = base64ToArrayBuffer(audioBase64);
+                const pcm16Array = new Int16Array(pcmBuffer);
+                const wavBlob = pcmToWav(pcm16Array, sampleRate);
+                const audioUrl = URL.createObjectURL(wavBlob);
+
+                // 오디오 태그 재생
+                state.audioElement = new Audio(audioUrl);
+                
+                // 실시간 오디오 타임라인 바 연결
+                state.audioElement.ontimeupdate = () => {
+                    if (state.audioElement.duration) {
+                        const progress = (state.audioElement.currentTime / state.audioElement.duration) * 100;
+                        updateTtsProgress(progress);
+                    }
+                };
+
+                state.audioElement.onended = () => {
+                    toggleTtsUi(false);
+                    updateTtsProgress(100);
+                    triggerAutoplayNext();
+                };
+
+                state.audioElement.play();
+
+            } catch (err) {
+                console.warn("Gemini 프리미엄 음성 실패, 로컬 장치 기본 음성으로 대체 재생합니다:", err);
+                // 로컬 TTS 긴급 폴백
+                playLocalTTS(text);
+            }
+        }
+
+        function toggleTtsUi(playing) {
+            state.isPlayingTTS = playing;
+            if (playing) {
+                dom.iconPlay.classList.add('hidden');
+                dom.iconStop.classList.remove('hidden');
+                dom.textTts.innerText = "이야기 멈추기";
+            } else {
+                dom.iconPlay.classList.remove('hidden');
+                dom.iconStop.classList.add('hidden');
+                dom.textTts.innerText = "이야기 들어보기";
+            }
+        }
+
+        // 구연동화 듣기 트리거
+        function toggleSpeak() {
+            if (state.isPlayingTTS) {
+                stopNarration();
+            } else {
+                const currentText = STORYBOOK[state.currentPage - 1].speakText;
+                if (state.voiceService === 'gemini') {
+                    playGeminiTTS(currentText);
+                } else {
+                    playLocalTTS(currentText);
+                }
+            }
+        }
+
+        // 모든 소리 중단
+        function stopNarration() {
+            // 로컬 중단
+            if (window.speechSynthesis) {
+                window.speechSynthesis.cancel();
+            }
+            // 원격 중단
+            if (state.audioElement) {
+                state.audioElement.pause();
+                state.audioElement = null;
+            }
+            toggleTtsUi(false);
+            if (state.autoPlayTimer) {
+                clearTimeout(state.autoPlayTimer);
+                state.autoPlayTimer = null;
+            }
+        }
+
+        // 자동 페이지 재생 로직
+        function toggleAutoPlay() {
+            state.autoPlayEnabled = !state.autoPlayEnabled;
+            if (state.autoPlayEnabled) {
+                dom.autoplayIndicator.className = "w-2.5 h-2.5 rounded-full bg-emerald-500 mr-1 animate-ping";
+                dom.btnAutoplay.classList.replace('bg-[#CFD8DC]', 'bg-emerald-100');
+                dom.btnAutoplay.classList.replace('text-[#37474F]', 'text-emerald-800');
+                // 만약 현재 연주중이 아니라면, 즉시 오디오 청취 시도
+                if (!state.isPlayingTTS) {
+                    toggleSpeak();
+                }
+            } else {
+                dom.autoplayIndicator.className = "w-2.5 h-2.5 rounded-full bg-slate-400 mr-1";
+                dom.btnAutoplay.classList.replace('bg-emerald-100', 'bg-[#CFD8DC]');
+                dom.btnAutoplay.classList.replace('text-emerald-800', 'text-[#37474F]');
+                if (state.autoPlayTimer) {
+                    clearTimeout(state.autoPlayTimer);
+                    state.autoPlayTimer = null;
+                }
+            }
+        }
+
+        // 오디오가 끝난 후 다음장 자동 지연 전환
+        function triggerAutoplayNext() {
+            if (!state.autoPlayEnabled) return;
+            
+            // 마지막 페이지 도달 시 자동 재생 해제
+            if (state.currentPage === 10) {
+                toggleAutoPlay();
+                return;
+            }
+
+            // 1.5초 휴식 후 지연 페이지 넘김
+            state.autoPlayTimer = setTimeout(() => {
+                navigateNext();
+                // 다음장 이동 후 즉시 소리 연동
+                toggleSpeak();
+            }, 1500);
+        }
+
+        async function generateAiIllustration() {
+            const pageData = STORYBOOK[state.currentPage - 1];
+            if (!pageData) return;
+
+            // 로딩 상태 돌입
+            dom.aiLoading.style.opacity = '1';
+            dom.aiLoading.style.pointerEvents = 'auto';
+
+            try {
+                const apiKey = state.apiKey || "";
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-generate-001:predict?key=${apiKey}`;
+
+                const payload = {
+                    instances: [
+                        { prompt: pageData.prompt }
+                    ],
+                    parameters: {
+                        sampleCount: 1,
+                        aspectRatio: "4:3",
+                        outputMimeType: "image/jpeg"
+                    }
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`이미지 서버 통신 장애 (상태코드: ${response.status})`);
+                }
+
+                const result = await response.json();
+                const base64Bytes = result?.predictions?.[0]?.bytesBase64Encoded;
+
+                if (!base64Bytes) {
+                    throw new Error("결과 구조 내에서 인코딩된 이미지 픽셀 정보를 읽어내지 못했습니다.");
+                }
+
+                // 캐싱 및 출력 교체
+                const newImgUrl = `data:image/jpeg;base64,${base64Bytes}`;
+                state.generatedImages[state.currentPage] = newImgUrl;
+
+                // 부드러운 이미지 교차 전환 효과
+                dom.aiGeneratedImg.src = newImgUrl;
+                dom.aiGeneratedImg.classList.remove('hidden');
+                dom.defaultSvg.classList.add('hidden');
+
+            } catch (err) {
+                console.error("AI 일러스트 생성 중 고장 발생:", err);
+                alert("아쿠! AI 화가가 상상력을 그리는 데 오류가 났어요. API 키 설정을 확인해주시거나 잠시 후 다시 조작해주세요.");
+            } finally {
+                // 로딩 스크린 종료
+                dom.aiLoading.style.opacity = '0';
+                dom.aiLoading.style.pointerEvents = 'none';
+            }
+        }
+
+        function navigateNext() {
+            playPageFlipSound();
+            if (state.currentPage < 10) {
+                state.currentPage++;
+            } else {
+                state.currentPage = 1; // 마지막 장에서 누르면 첫 장 회귀
+            }
+            renderBook();
+        }
+
+        function navigatePrev() {
+            if (state.currentPage > 1) {
+                playPageFlipSound();
+                state.currentPage--;
+                renderBook();
+            }
+        }
+
+        // 키보드 방향키 조작 지원
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowRight') {
+                navigateNext();
+            } else if (e.key === 'ArrowLeft') {
+                navigatePrev();
+            }
+        });
+
+        // 모바일 스와이프 제스처 추적
+        let touchStartX = 0;
+        let touchEndX = 0;
+
+        document.addEventListener('touchstart', e => {
+            touchStartX = e.changedTouches[0].screenX;
+        }, false);
+
+        document.addEventListener('touchend', e => {
+            touchEndX = e.changedTouches[0].screenX;
+            handleSwipe();
+        }, false);
+
+        function handleSwipe() {
+            const threshold = 70; // 70px 이상 움직이면 반응
+            if (touchStartX - touchEndX > threshold) {
+                navigateNext(); // 왼쪽 슬라이딩 -> 다음장
+            } else if (touchEndX - touchStartX > threshold) {
+                navigatePrev(); // 오른쪽 슬라이딩 -> 이전장
+            }
+        }
+
+        // 폰트 크기 변경기
+        dom.btnFontInc.addEventListener('click', () => {
+            if (state.fontSize < 28) {
+                state.fontSize += 2;
+                dom.storyContent.style.fontSize = `${state.fontSize}px`;
+            }
+        });
+
+        dom.btnFontDec.addEventListener('click', () => {
+            if (state.fontSize > 14) {
+                state.fontSize -= 2;
+                dom.storyContent.style.fontSize = `${state.fontSize}px`;
+            }
+        });
+
+        // 모달 제어 제스처
+        function openSettings() {
+            dom.settingsModal.classList.remove('opacity-0', 'pointer-events-none');
+            dom.modalContent.classList.remove('scale-95');
+            dom.modalContent.classList.add('scale-100');
+            // 복원 동기화
+            dom.voiceServiceSelector.value = state.voiceService;
+            dom.geminiVoiceNameSelector.value = state.geminiVoiceName;
+            dom.apiKeyInput.value = state.apiKey;
+            toggleGeminiSelector();
+        }
+
+        function closeSettings() {
+            dom.settingsModal.classList.add('opacity-0', 'pointer-events-none');
+            dom.modalContent.classList.remove('scale-100');
+            dom.modalContent.classList.add('scale-95');
+        }
+
+        function toggleGeminiSelector() {
+            if (dom.voiceServiceSelector.value === 'gemini') {
+                dom.geminiVoiceOption.style.display = 'block';
+            } else {
+                dom.geminiVoiceOption.style.display = 'none';
+            }
+        }
+
+        // 설정 저장
+        function saveSettings() {
+            state.voiceService = dom.voiceServiceSelector.value;
+            state.geminiVoiceName = dom.geminiVoiceNameSelector.value;
+            state.apiKey = dom.apiKeyInput.value.trim();
+
+            try {
+                localStorage.setItem('ai_fairytale_key', state.apiKey);
+                localStorage.setItem('ai_fairytale_service', state.voiceService);
+                localStorage.setItem('ai_fairytale_voicename', state.geminiVoiceName);
+            } catch (e) {
+                console.error(e);
+            }
+
+            closeSettings();
+            renderBook(); // 최신 설정으로 갱신
+        }
+
+        // 이벤트 결합
+        dom.btnSettings.addEventListener('click', openSettings);
+        dom.btnCloseSettings.addEventListener('click', closeSettings);
+        dom.btnSaveSettings.addEventListener('click', saveSettings);
+        dom.voiceServiceSelector.addEventListener('change', toggleGeminiSelector);
+
+        // 모달 창 바깥 클릭 시 닫기
+        dom.settingsModal.addEventListener('click', (e) => {
+            if (e.target === dom.settingsModal) {
+                closeSettings();
+            }
+        });
+
+        // 기능 작동 버튼 매핑
+        dom.btnPrev.addEventListener('click', navigatePrev);
+        dom.btnNext.addEventListener('click', navigateNext);
+        dom.btnTts.addEventListener('click', toggleSpeak);
+        dom.btnAutoplay.addEventListener('click', toggleAutoPlay);
+        dom.btnDrawAi.addEventListener('click', generateAiIllustration);
+
+        // 페이지가 완전히 구동되면 첫 페이지 셋업 및 TTS 준비 완료
+        window.onload = function() {
+            initDots();
+            renderBook();
+            
+            // 로컬 TTS 지원 가능성 검수 (브라우저 마다 Voice 로딩 타이밍 미세 오차 대응)
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.getVoices();
+            }
+        };
+    </script>
+</body>
+</html>
