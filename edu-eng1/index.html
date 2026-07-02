@@ -1,1 +1,1151 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>초등 영어 단어 놀이터 - Fun English Land</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Gmarket Sans 혹은 기본 라운드 폰트 적용을 위한 나눔스퀘어라운드 대체 -->
+    <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Nanum+Pen+Script&family=Single+Day&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Gaegu', 'Single Day', cursive, sans-serif;
+            background-color: #f0fdf4; /* 연한 초록색 바탕 */
+            -webkit-tap-highlight-color: transparent;
+        }
+        .kids-shadow {
+            box-shadow: 0 8px 0px #e2e8f0;
+        }
+        .kids-shadow-primary {
+            box-shadow: 0 8px 0px #bbf7d0;
+        }
+        .kids-shadow-active {
+            transform: translateY(4px);
+            box-shadow: 0 4px 0px #bbf7d0;
+        }
+        .kids-btn-shadow {
+            box-shadow: 0 6px 0px rgba(0,0,0,0.15);
+        }
+        .kids-btn-shadow:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0px rgba(0,0,0,0.15);
+        }
+        /* 풍선 애니메이션 */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-10px) rotate(3deg); }
+        }
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between pb-6 selection:bg-yellow-200">
 
+    <div id="app" class="w-full max-w-md bg-white min-h-[92vh] sm:min-h-[85vh] md:rounded-3xl shadow-2xl flex flex-col justify-between overflow-hidden relative border-4 border-yellow-300 sm:my-4">
+        
+        <!-- 상단 헤더 영역 -->
+        <header class="bg-yellow-300 p-4 flex justify-between items-center border-b-4 border-yellow-400">
+            <button onclick="goHome()" class="flex items-center space-x-1 bg-white hover:bg-yellow-50 text-yellow-600 font-bold px-3 py-1.5 rounded-full text-lg kids-btn-shadow transition-all">
+                <span>🏡</span> <span class="text-sm font-bold">홈으로</span>
+            </button>
+            <h1 class="text-2xl font-bold text-amber-950 flex items-center space-x-1">
+                <span>🎒</span> <span id="app-title">영어 단어 놀이터</span>
+            </h1>
+            <div class="flex items-center space-x-2">
+                <button onclick="toggleSound()" id="sound-btn" class="bg-white p-2 rounded-full text-lg kids-btn-shadow transition-all" title="소리 켜기/끄기">
+                    🔊
+                </button>
+            </div>
+        </header>
+
+        <!-- 메인 콘텐츠 영역 (동적 전환) -->
+        <main class="flex-grow p-4 overflow-y-auto flex flex-col items-center justify-center">
+            
+            <!-- 1. 메인 홈 화면 -->
+            <section id="screen-home" class="w-full text-center space-y-6 block">
+                <div class="space-y-2">
+                    <p class="text-xl text-emerald-600 font-bold">재미있게 놀면서 배우는!</p>
+                    <h2 class="text-4xl font-black text-amber-500 tracking-wide floating">Hello, Word Land!</h2>
+                    <p class="text-gray-500 text-sm">원하는 단어 상자를 골라 학습을 시작해요!</p>
+                </div>
+
+                <!-- 카테고리 그리드 -->
+                <div class="grid grid-cols-2 gap-4 my-6" id="category-list">
+                    <!-- JS로 카테고리 동적 렌더링 -->
+                </div>
+
+                <!-- 누적 학습 성과 -->
+                <div class="bg-amber-50 rounded-2xl p-4 border-2 border-dashed border-amber-300">
+                    <h3 class="font-bold text-amber-800 text-lg mb-2">🏆 나의 학습 훈장</h3>
+                    <div id="badge-container" class="flex justify-center space-x-3 text-3xl py-1">
+                        <!-- 획득한 배지 표시 -->
+                    </div>
+                    <p class="text-xs text-amber-600 mt-2" id="badge-desc">퀴즈와 게임을 마쳐서 칭찬 배지를 모아보세요!</p>
+                </div>
+            </section>
+
+            <!-- 2. 학습 모드 선택 화면 -->
+            <section id="screen-mode-select" class="w-full text-center space-y-6 hidden">
+                <div id="selected-category-banner" class="rounded-2xl p-4 text-white text-2xl font-bold shadow-md">
+                    <!-- 동적 채움 -->
+                </div>
+                <h3 class="text-xl font-bold text-gray-700">오늘 어떤 공부를 해볼까요?</h3>
+                
+                <div class="space-y-4">
+                    <!-- 카드 모드 버튼 -->
+                    <button onclick="startFlashcardMode()" class="w-full bg-blue-100 hover:bg-blue-200 border-2 border-blue-300 rounded-2xl p-4 flex items-center space-x-4 transition-all text-left kids-btn-shadow">
+                        <span class="text-4xl">🎴</span>
+                        <div>
+                            <h4 class="font-bold text-lg text-blue-800">1단계: 말하는 카드 공부</h4>
+                            <p class="text-xs text-blue-600">귀여운 그림 카드와 발음을 들으며 눈과 귀로 외워요!</p>
+                        </div>
+                    </button>
+
+                    <!-- 스펠링 버블 게임 버튼 -->
+                    <button onclick="startBubbleGameMode()" class="w-full bg-pink-100 hover:bg-pink-200 border-2 border-pink-300 rounded-2xl p-4 flex items-center space-x-4 transition-all text-left kids-btn-shadow">
+                        <span class="text-4xl">🎈</span>
+                        <div>
+                            <h4 class="font-bold text-lg text-pink-800">2단계: 스펠링 풍선 팡팡</h4>
+                            <p class="text-xs text-pink-600">이리저리 움직이는 풍선 알파벳을 맞춰 단어를 완성해요!</p>
+                        </div>
+                    </button>
+
+                    <!-- 객관식 퀴즈 버튼 -->
+                    <button onclick="startQuizMode()" class="w-full bg-emerald-100 hover:bg-emerald-200 border-2 border-emerald-300 rounded-2xl p-4 flex items-center space-x-4 transition-all text-left kids-btn-shadow">
+                        <span class="text-4xl">⚡</span>
+                        <div>
+                            <h4 class="font-bold text-lg text-emerald-800">3단계: 단어 마스터 퀴즈</h4>
+                            <p class="text-xs text-emerald-600">4가지 보기 중 올바른 그림이나 단어를 찾아보세요!</p>
+                        </div>
+                    </button>
+                </div>
+            </section>
+
+            <!-- 3. 단어 카드 학습 화면 -->
+            <section id="screen-flashcard" class="w-full flex flex-col items-center justify-between space-y-4 hidden">
+                <!-- 상단 게이지 -->
+                <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                    <div id="card-progress" class="bg-blue-500 h-full transition-all duration-300" style="width: 10%"></div>
+                </div>
+                <div class="text-sm font-bold text-gray-500 text-center flex justify-between w-full">
+                    <span id="card-count">단어 1 / 10</span>
+                    <span class="text-blue-500 font-extrabold" id="card-score">학습 중</span>
+                </div>
+
+                <!-- 플래시 카드 몸체 -->
+                <div id="flash-card" onclick="flipCard()" class="w-full aspect-[4/3] max-w-[320px] bg-gradient-to-br from-yellow-50 to-amber-100 border-4 border-amber-300 rounded-3xl p-6 flex flex-col items-center justify-center cursor-pointer transition-all duration-500 relative kids-btn-shadow select-none">
+                    <!-- 앞면 (그림 + 영어) / 뒷면 (한국어 + 발음 도움말) -->
+                    <div id="card-content-front" class="flex flex-col items-center justify-center space-y-4">
+                        <span id="card-emoji" class="text-7xl floating">🍎</span>
+                        <h3 id="card-english" class="text-4xl font-extrabold text-amber-900 tracking-wider">apple</h3>
+                        <p class="text-xs text-amber-500 font-semibold">[카드를 터치하면 뜻이 보여요!]</p>
+                    </div>
+                    <div id="card-content-back" class="hidden flex flex-col items-center justify-center space-y-4">
+                        <span id="card-korean" class="text-4xl font-bold text-emerald-700">사과</span>
+                        <div class="text-center">
+                            <p class="text-lg text-amber-800 font-semibold" id="card-phonetic">[애플]</p>
+                            <p class="text-xs text-gray-400 mt-2">터치하면 단어로 다시 바뀝니다</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 음성 재생 및 조작 버튼 -->
+                <div class="flex flex-col items-center space-y-3 w-full">
+                    <button onclick="speakCurrentWord(event)" class="bg-blue-500 hover:bg-blue-600 text-white rounded-full px-8 py-3 font-extrabold text-xl kids-btn-shadow transition-all flex items-center space-x-2">
+                        <span>🔊</span> <span>발음 들어보기</span>
+                    </button>
+                    
+                    <div class="flex justify-between w-full max-w-[320px] pt-4">
+                        <button onclick="prevCard()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold px-4 py-2 rounded-2xl kids-btn-shadow transition-all">
+                            ⬅️ 이전 단어
+                        </button>
+                        <button onclick="nextCard()" id="btn-next-card" class="bg-emerald-400 hover:bg-emerald-500 text-white font-extrabold px-6 py-2 rounded-2xl kids-btn-shadow transition-all">
+                            다음 단어 ➡️
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- 4. 스펠링 풍선 게임 화면 -->
+            <section id="screen-bubble-game" class="w-full flex flex-col items-center justify-between space-y-4 hidden">
+                <div class="w-full text-center">
+                    <p class="text-xs font-bold text-pink-500">순서대로 풍선을 팡! 터뜨려 단어를 만들어요!</p>
+                    <!-- 맞추어야 할 정답 정보 -->
+                    <div class="flex items-center justify-center space-x-3 mt-1">
+                        <span id="bubble-emoji" class="text-4xl">🍎</span>
+                        <span id="bubble-meaning" class="text-2xl font-bold text-gray-800">사과</span>
+                    </div>
+                </div>
+
+                <!-- 정답 조합 창 -->
+                <div id="spelling-progress-container" class="flex justify-center space-x-2 my-2 py-2 px-4 bg-gray-100 rounded-2xl min-h-[50px] w-full max-w-[320px] border-2 border-dashed border-gray-300">
+                    <!-- 맞춘 단어가 들어갈 자리 -->
+                </div>
+
+                <!-- 풍선이 둥둥 뜨는 캔버스 혹은 인터랙티브 보드 -->
+                <div id="bubble-board" class="w-full max-w-[350px] h-[220px] bg-sky-50 rounded-2xl relative overflow-hidden border-2 border-sky-200 shadow-inner">
+                    <!-- 풍선 버튼들이 동적으로 움직이며 배치됨 -->
+                </div>
+
+                <div class="flex justify-between w-full max-w-[320px] items-center">
+                    <button onclick="resetCurrentSpellingGame()" class="bg-amber-100 text-amber-800 font-bold px-3 py-1.5 rounded-full text-sm kids-btn-shadow">
+                        🔄 처음부터 다시
+                    </button>
+                    <button onclick="skipSpellingGame()" class="bg-gray-200 text-gray-600 px-3 py-1.5 rounded-full text-sm kids-btn-shadow">
+                        건너뛰기 ⏩
+                    </button>
+                </div>
+            </section>
+
+            <!-- 5. 퀴즈 풀기 화면 -->
+            <section id="screen-quiz" class="w-full flex flex-col items-center justify-between space-y-4 hidden">
+                <!-- 점수 및 문제 수 표시 -->
+                <div class="flex justify-between items-center w-full max-w-[320px]">
+                    <span class="text-sm font-bold bg-purple-100 text-purple-700 px-3 py-1 rounded-full" id="quiz-question-num">문제 1/5</span>
+                    <span class="text-sm font-bold bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full" id="quiz-score-display">❤️ 하트: 3</span>
+                </div>
+
+                <!-- 퀴즈 문제 카드 -->
+                <div class="w-full max-w-[320px] bg-gradient-to-tr from-purple-50 to-pink-50 border-4 border-purple-300 rounded-3xl p-6 text-center shadow-lg relative min-h-[140px] flex flex-col justify-center items-center">
+                    <div id="quiz-question-type" class="text-xs font-bold text-purple-500 mb-2">이 영어 단어는 무슨 뜻일까요?</div>
+                    <div id="quiz-question-content" class="text-4xl font-bold text-purple-900 tracking-wider">apple</div>
+                </div>
+
+                <!-- 보기 선택 영역 (4지선다) -->
+                <div id="quiz-options" class="grid grid-cols-2 gap-3 w-full max-w-[320px]">
+                    <!-- 버튼 4개가 동적으로 추가됨 -->
+                </div>
+
+                <div class="text-center pt-2 w-full">
+                    <div id="quiz-feedback" class="text-lg font-bold min-h-[28px] text-emerald-500"></div>
+                </div>
+            </section>
+
+            <!-- 6. 학습 완료 결과 화면 -->
+            <section id="screen-result" class="w-full text-center space-y-6 hidden relative">
+                <canvas id="confetti-canvas" class="absolute inset-0 pointer-events-none w-full h-full"></canvas>
+                <div class="space-y-2 relative z-10">
+                    <div class="text-7xl floating">🌟</div>
+                    <h2 class="text-3xl font-black text-amber-500">참 잘했어요! 완벽해요!</h2>
+                    <p class="text-gray-600 font-bold" id="result-message">동물 단어 카드를 모두 완료했습니다.</p>
+                </div>
+
+                <div class="bg-yellow-50 rounded-2xl p-6 border-4 border-yellow-300 max-w-[280px] mx-auto space-y-4 relative z-10">
+                    <p class="text-sm text-amber-800 font-bold">🎉 새로 획득한 배지</p>
+                    <div id="new-badge-emoji" class="text-6xl my-2">🦁</div>
+                    <div id="new-badge-name" class="font-extrabold text-xl text-yellow-600">동물 꼬마 학자</div>
+                    <p class="text-xs text-gray-500" id="new-badge-desc">동물 단어 학습을 완료한 최고 멋쟁이!</p>
+                </div>
+
+                <div class="space-y-3 pt-4 relative z-10">
+                    <button onclick="goHome()" class="w-full max-w-[250px] bg-emerald-400 hover:bg-emerald-500 text-white font-extrabold text-xl py-3 rounded-2xl kids-btn-shadow transition-all">
+                        다른 공부하러 가기!
+                    </button>
+                </div>
+            </section>
+
+        </main>
+
+        <!-- 푸터 피드백 / 하단바 -->
+        <footer class="bg-amber-100 py-3 text-center text-xs text-amber-900 border-t-2 border-amber-200">
+            <span>초등 영단어 놀이터. 모든 단어는 교과서 필수 50어휘</span>
+        </footer>
+
+    </div>
+
+    <script>
+        // --- 1. 단어 데이터베이스 (초등 교육과정 기반 5가지 카테고리) ---
+        const VOCAB_DB = {
+            animals: {
+                title: "동물 나라",
+                emoji: "🦁",
+                themeColor: "from-green-400 to-emerald-500",
+                badge: { icon: "🦁", name: "동물 박사", desc: "동물 나라 마스터!" },
+                words: [
+                    { en: "dog", ko: "개", phonetic: "독", emoji: "🐶" },
+                    { en: "cat", ko: "고양이", phonetic: "캣", emoji: "🐱" },
+                    { en: "lion", ko: "사자", phonetic: "라이언", emoji: "🦁" },
+                    { en: "bear", ko: "곰", phonetic: "베어", emoji: "🐻" },
+                    { en: "rabbit", ko: "토끼", phonetic: "래빗", emoji: "🐰" },
+                    { en: "bird", ko: "새", phonetic: "버드", emoji: "🐦" },
+                    { en: "fish", ko: "물고기", phonetic: "피쉬", emoji: "🐟" },
+                    { en: "monkey", ko: "원숭이", phonetic: "멍키", emoji: "🐵" },
+                    { en: "frog", ko: "개구리", phonetic: "프로그", emoji: "🐸" },
+                    { en: "elephant", ko: "코끼리", phonetic: "엘리펀트", emoji: "🐘" }
+                ]
+            },
+            fruits: {
+                title: "맛있는 음식",
+                emoji: "🍎",
+                themeColor: "from-red-400 to-orange-500",
+                badge: { icon: "🍎", name: "꼬마 미식가", desc: "음식 나라 마스터!" },
+                words: [
+                    { en: "apple", ko: "사과", phonetic: "애플", emoji: "🍎" },
+                    { en: "banana", ko: "바나나", phonetic: "바내나", emoji: "🍌" },
+                    { en: "grape", ko: "포도", phonetic: "그레이프", emoji: "🍇" },
+                    { en: "strawberry", ko: "딸기", phonetic: "스트로베리", emoji: "🍓" },
+                    { en: "orange", ko: "오렌지", phonetic: "오렌지", emoji: "🍊" },
+                    { en: "bread", ko: "빵", phonetic: "브레드", emoji: "🍞" },
+                    { en: "milk", ko: "우유", phonetic: "밀크", emoji: "🥛" },
+                    { en: "egg", ko: "달걀", phonetic: "에그", emoji: "🥚" },
+                    { en: "cheese", ko: "치즈", phonetic: "치즈", emoji: "🧀" },
+                    { en: "water", ko: "물", phonetic: "워터", emoji: "💧" }
+                ]
+            },
+            colors: {
+                title: "색깔과 도형",
+                emoji: "🎨",
+                themeColor: "from-purple-400 to-indigo-500",
+                badge: { icon: "🎨", name: "칼라 아티스트", desc: "색깔/도형 나라 마스터!" },
+                words: [
+                    { en: "red", ko: "빨간색", phonetic: "레드", emoji: "🔴" },
+                    { en: "blue", ko: "파란색", phonetic: "블루", emoji: "🔵" },
+                    { en: "yellow", ko: "노란색", phonetic: "옐로우", emoji: "🟡" },
+                    { en: "green", ko: "초록색", phonetic: "그린", emoji: "🟢" },
+                    { en: "pink", ko: "분홍색", phonetic: "핑크", emoji: "🌸" },
+                    { en: "star", ko: "별", phonetic: "스타", emoji: "⭐" },
+                    { en: "heart", ko: "하트/심장", phonetic: "하트", emoji: "❤️" },
+                    { en: "circle", ko: "동그라미", phonetic: "써클", emoji: "⭕" },
+                    { en: "square", ko: "네모", phonetic: "스퀘어", emoji: "⬛" },
+                    { en: "triangle", ko: "세모", phonetic: "트라이앵글", emoji: "🔺" }
+                ]
+            },
+            school: {
+                title: "교실과 우리 방",
+                emoji: "🏫",
+                themeColor: "from-amber-400 to-yellow-500",
+                badge: { icon: "🏫", name: "골든 스쿨러", desc: "학용품/내방 나라 마스터!" },
+                words: [
+                    { en: "book", ko: "책", phonetic: "북", emoji: "📖" },
+                    { en: "pencil", ko: "연필", phonetic: "펜슬", emoji: "✏️" },
+                    { en: "desk", ko: "책상", phonetic: "데스크", emoji: "🪑" }, // desk emoji 대용
+                    { en: "bag", ko: "가방", phonetic: "백", emoji: "🎒" },
+                    { en: "clock", ko: "시계", phonetic: "클락", emoji: "⏰" },
+                    { en: "bed", ko: "침대", phonetic: "베드", emoji: "🛏️" },
+                    { en: "toy", ko: "장난감", phonetic: "토이", emoji: "🧸" },
+                    { en: "window", ko: "창문", phonetic: "윈도우", emoji: "🪟" },
+                    { en: "door", ko: "문", phonetic: "도어", emoji: "🚪" },
+                    { en: "chair", ko: "의자", phonetic: "체어", emoji: "🪑" }
+                ]
+            },
+            actions: {
+                title: "움직이는 동작",
+                emoji: "🏃",
+                themeColor: "from-pink-400 to-rose-500",
+                badge: { icon: "🏃", name: "액션 마스터", desc: "동사 나라 마스터!" },
+                words: [
+                    { en: "run", ko: "달리다", phonetic: "런", emoji: "🏃" },
+                    { en: "jump", ko: "뛰다", phonetic: "점프", emoji: "🦘" },
+                    { en: "swim", ko: "수영하다", phonetic: "스윔", emoji: "🏊" },
+                    { en: "sing", ko: "노래하다", phonetic: "싱", emoji: "🎤" },
+                    { en: "dance", ko: "춤추다", phonetic: "댄스", emoji: "💃" },
+                    { en: "sleep", ko: "잠자다", phonetic: "슬립", emoji: "💤" },
+                    { en: "eat", ko: "먹다", phonetic: "이트", emoji: "😋" },
+                    { en: "drink", ko: "마시다", phonetic: "드링크", emoji: "🥤" },
+                    { en: "read", ko: "읽다", phonetic: "리드", emoji: "📚" },
+                    { en: "write", ko: "쓰다", phonetic: "라이트", emoji: "✍️" }
+                ]
+            }
+        };
+
+        // --- STREAMING_CHUNK: State management variables ---
+        // 앱 상태 관리 변수들
+        let isSoundEnabled = true;
+        let currentCategoryKey = "animals";
+        let currentWordsList = [];
+        let currentWordIndex = 0;
+        let activeScreen = "screen-home";
+        let isCardFlipped = false;
+
+        // 게임용 상태 변수들
+        let quizScore = 0;
+        let quizQuestions = [];
+        let quizCurrentIdx = 0;
+        let quizHearts = 3;
+
+        // 스펠링 버블용 상태
+        let currentSpellingWordObj = null;
+        let currentSpellingBuffer = [];
+        let bubbleInterval = null;
+
+        // 로컬 스토리지에 저장되는 획득 배지 리스트
+        let earnedBadges = JSON.parse(localStorage.getItem('kids_english_badges')) || [];
+
+        // --- STREAMING_CHUNK: Synthesized Sound System ---
+        // Web Audio API를 사용한 내장 효과음 제너레이터 (외부 사운드 의존성 완전 제거)
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+        function playSound(type) {
+            if (!isSoundEnabled) return;
+            // Safari 등 브라우저 자동 재생 방지 해결책
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'click') {
+                    // 통통 튀는 짧은 터치음
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.exponentialRampToValueAtTime(880, now + 0.1);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+                    osc.start(now);
+                    osc.stop(now + 0.1);
+                } else if (type === 'pop') {
+                    // 풍선 터지는 사운드
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(80, now + 0.15);
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                } else if (type === 'correct') {
+                    // 기분 좋은 딩동댕 소리 (도-미-솔-도 아르페지오)
+                    const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                    notes.forEach((freq, idx) => {
+                        const o = audioCtx.createOscillator();
+                        const g = audioCtx.createGain();
+                        o.connect(g);
+                        g.connect(audioCtx.destination);
+                        
+                        o.type = 'sine';
+                        o.frequency.setValueAtTime(freq, now + idx * 0.08);
+                        g.gain.setValueAtTime(0.1, now + idx * 0.08);
+                        g.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.08 + 0.15);
+                        
+                        o.start(now + idx * 0.08);
+                        o.stop(now + idx * 0.08 + 0.15);
+                    });
+                } else if (type === 'wrong') {
+                    // 오답 소리 (디-잉 우웅)
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.linearRampToValueAtTime(120, now + 0.3);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                    osc.start(now);
+                    osc.stop(now + 0.3);
+                } else if (type === 'win') {
+                    // 전체 클리어 팡파르
+                    const melody = [523.25, 523.25, 523.25, 523.25, 659.25, 587.33, 659.25, 783.99];
+                    const times = [0, 0.1, 0.2, 0.3, 0.45, 0.55, 0.65, 0.8];
+                    melody.forEach((freq, idx) => {
+                        const o = audioCtx.createOscillator();
+                        const g = audioCtx.createGain();
+                        o.connect(g);
+                        g.connect(audioCtx.destination);
+                        
+                        o.type = 'sine';
+                        o.frequency.setValueAtTime(freq, now + times[idx]);
+                        g.gain.setValueAtTime(0.12, now + times[idx]);
+                        g.gain.exponentialRampToValueAtTime(0.01, now + times[idx] + 0.2);
+                        
+                        o.start(now + times[idx]);
+                        o.stop(now + times[idx] + 0.25);
+                    });
+                }
+            } catch (error) {
+                console.warn("Audio Context Playback error:", error);
+            }
+        }
+
+        // 음성합성(TTS) 읽기 함수
+        function speakWord(text) {
+            if ('speechSynthesis' in window) {
+                // 기존 재생되던 음성 끊기
+                window.speechSynthesis.cancel();
+                
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.8; // 어린이가 듣기 좋게 약간 느린 속도
+                utterance.pitch = 1.2; // 조금 귀엽고 높은 피치
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        // 소리 설정 켜고 끄기
+        function toggleSound() {
+            isSoundEnabled = !isSoundEnabled;
+            const btn = document.getElementById('sound-btn');
+            if (isSoundEnabled) {
+                btn.innerHTML = '🔊';
+                btn.classList.remove('opacity-50');
+            } else {
+                btn.innerHTML = '🔇';
+                btn.classList.add('opacity-50');
+            }
+        }
+
+        // --- STREAMING_CHUNK: App Initialization & Screen Routing ---
+        // 앱 구동 시 로딩 처리
+        window.onload = function() {
+            renderCategories();
+            renderBadges();
+            goHome();
+        };
+
+        // 화면 전환 함수
+        function showScreen(screenId) {
+            // 모든 화면 숨기기
+            const screens = ['screen-home', 'screen-mode-select', 'screen-flashcard', 'screen-bubble-game', 'screen-quiz', 'screen-result'];
+            screens.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.classList.add('hidden');
+            });
+            
+            // 지정된 화면 보이기
+            const target = document.getElementById(screenId);
+            if (target) {
+                target.classList.remove('hidden');
+                activeScreen = screenId;
+            }
+
+            // 상단 타이틀 갱신
+            const titleEl = document.getElementById('app-title');
+            if (screenId === 'screen-home') {
+                titleEl.textContent = "영어 단어 놀이터";
+            } else {
+                const cat = VOCAB_DB[currentCategoryKey];
+                titleEl.textContent = cat ? cat.title : "영어 나라";
+            }
+
+            // 타이틀 클릭 시 사운드 플레이
+            playSound('click');
+        }
+
+        // 홈으로 이동
+        function goHome() {
+            // 주기적인 인터벌(풍선 타이머) 초기화
+            if (bubbleInterval) {
+                clearInterval(bubbleInterval);
+                bubbleInterval = null;
+            }
+            showScreen('screen-home');
+            renderBadges();
+        }
+
+        // 카테고리 렌더링
+        function renderCategories() {
+            const container = document.getElementById('category-list');
+            container.innerHTML = "";
+
+            Object.keys(VOCAB_DB).forEach(key => {
+                const category = VOCAB_DB[key];
+                
+                // 배지 획득 여부에 따른 스타일 분기
+                const hasBadge = earnedBadges.includes(key);
+                const badgeCheck = hasBadge ? "🏆" : "";
+
+                const button = document.createElement('button');
+                button.onclick = () => selectCategory(key);
+                button.className = `bg-gradient-to-br ${category.themeColor} text-white p-5 rounded-3xl flex flex-col items-center justify-between space-y-3 shadow-md kids-btn-shadow hover:scale-105 active:scale-95 transition-all relative overflow-hidden`;
+                
+                button.innerHTML = `
+                    <div class="absolute top-2 right-2 text-sm">${badgeCheck}</div>
+                    <span class="text-5xl mt-2 floating">${category.emoji}</span>
+                    <div class="text-center w-full">
+                        <p class="font-extrabold text-xl tracking-tight">${category.title}</p>
+                        <p class="text-[11px] opacity-90">${category.words.length}개 단어 수록</p>
+                    </div>
+                `;
+                container.appendChild(button);
+            });
+        }
+
+        // 획득한 훈장 렌더링
+        function renderBadges() {
+            const container = document.getElementById('badge-container');
+            const desc = document.getElementById('badge-desc');
+            container.innerHTML = "";
+
+            if (earnedBadges.length === 0) {
+                container.innerHTML = `
+                    <span class="opacity-30">❔</span>
+                    <span class="opacity-30">❔</span>
+                    <span class="opacity-30">❔</span>
+                `;
+                desc.textContent = "아직 획득한 배지가 없어요. 게임을 클리어해봐요!";
+                return;
+            }
+
+            earnedBadges.forEach(key => {
+                const badge = VOCAB_DB[key]?.badge;
+                if (badge) {
+                    const el = document.createElement('span');
+                    el.className = "cursor-pointer transform hover:scale-125 transition-transform relative group";
+                    el.innerHTML = badge.icon;
+                    el.title = `${badge.name}: ${badge.desc}`;
+                    
+                    // 터치 시 알림 대용 커스텀 문구 출력
+                    el.onclick = (e) => {
+                        e.stopPropagation();
+                        desc.innerHTML = `🌟 <strong>${badge.name}</strong>: ${badge.desc}`;
+                        playSound('click');
+                    };
+
+                    container.appendChild(el);
+                }
+            });
+
+            desc.innerHTML = `축하해요! ${earnedBadges.length}개의 공부 훈장을 모았어요! 더 모아볼까요?`;
+        }
+
+        // 카테고리 선택 후 모드 전환
+        function selectCategory(categoryKey) {
+            currentCategoryKey = categoryKey;
+            currentWordsList = VOCAB_DB[categoryKey].words;
+            
+            // 배너 설정
+            const selectBanner = document.getElementById('selected-category-banner');
+            const cat = VOCAB_DB[categoryKey];
+            selectBanner.className = `rounded-2xl p-4 text-white text-2xl font-bold shadow-md bg-gradient-to-r ${cat.themeColor}`;
+            selectBanner.innerHTML = `<span>${cat.emoji}</span> ${cat.title} 대모험`;
+
+            showScreen('screen-mode-select');
+        }
+
+        // --- STREAMING_CHUNK: Flashcards Mode Implementation ---
+        // 1단계: 플래시카드 모드 시작
+        function startFlashcardMode() {
+            currentWordIndex = 0;
+            isCardFlipped = false;
+            showScreen('screen-flashcard');
+            updateFlashcard();
+        }
+
+        // 카드 뒤집기
+        function flipCard() {
+            const card = document.getElementById('flash-card');
+            const front = document.getElementById('card-content-front');
+            const back = document.getElementById('card-content-back');
+
+            playSound('click');
+
+            if (!isCardFlipped) {
+                // 뒤집혀서 한글 뜻 보이기
+                card.style.transform = "rotateY(180deg)";
+                setTimeout(() => {
+                    // 회전 반대 방향 보정
+                    front.classList.add('hidden');
+                    back.classList.remove('hidden');
+                    back.style.transform = "rotateY(180deg)";
+                }, 150);
+                isCardFlipped = true;
+            } else {
+                // 원래대로 (영어)
+                card.style.transform = "rotateY(0deg)";
+                setTimeout(() => {
+                    back.classList.add('hidden');
+                    front.classList.remove('hidden');
+                    front.style.transform = "rotateY(0deg)";
+                }, 150);
+                isCardFlipped = false;
+            }
+        }
+
+        // 단어 카드 업데이트
+        function updateFlashcard() {
+            const word = currentWordsList[currentWordIndex];
+            
+            // 카드를 뒤집힌 상태면 다시 원래대로 초기화
+            const card = document.getElementById('flash-card');
+            const front = document.getElementById('card-content-front');
+            const back = document.getElementById('card-content-back');
+            card.style.transform = "rotateY(0deg)";
+            front.classList.remove('hidden');
+            front.style.transform = "rotateY(0deg)";
+            back.classList.add('hidden');
+            isCardFlipped = false;
+
+            // 데이터 변경
+            document.getElementById('card-emoji').textContent = word.emoji;
+            document.getElementById('card-english').textContent = word.en;
+            document.getElementById('card-korean').textContent = word.ko;
+            document.getElementById('card-phonetic').textContent = `[${word.phonetic}]`;
+
+            // 진행률 게이지 계산
+            const progressPercent = ((currentWordIndex + 1) / currentWordsList.length) * 100;
+            document.getElementById('card-progress').style.width = `${progressPercent}%`;
+            document.getElementById('card-count').textContent = `단어 ${currentWordIndex + 1} / ${currentWordsList.length}`;
+
+            // 이전/다음 버튼 텍스트 대응
+            const nextBtn = document.getElementById('btn-next-card');
+            if (currentWordIndex === currentWordsList.length - 1) {
+                nextBtn.textContent = "공부 완료! 🎉";
+                nextBtn.className = "bg-yellow-400 hover:bg-yellow-500 text-amber-900 font-extrabold px-6 py-2 rounded-2xl kids-btn-shadow transition-all";
+            } else {
+                nextBtn.textContent = "다음 단어 ➡️";
+                nextBtn.className = "bg-emerald-400 hover:bg-emerald-500 text-white font-extrabold px-6 py-2 rounded-2xl kids-btn-shadow transition-all";
+            }
+
+            // 자동 발음 지원
+            setTimeout(() => {
+                speakWord(word.en);
+            }, 300);
+        }
+
+        // 발음 재생 단축 실행
+        function speakCurrentWord(event) {
+            if (event) event.stopPropagation(); // 카드 뒤집기 막기
+            const word = currentWordsList[currentWordIndex];
+            speakWord(word.en);
+        }
+
+        // 이전 카드
+        function prevCard() {
+            if (currentWordIndex > 0) {
+                currentWordIndex--;
+                updateFlashcard();
+            } else {
+                playSound('wrong');
+            }
+        }
+
+        // 다음 카드 혹은 학습 완료
+        function nextCard() {
+            if (currentWordIndex < currentWordsList.length - 1) {
+                currentWordIndex++;
+                updateFlashcard();
+            } else {
+                // 플래시카드 최종 학습 완수! 배지 부여 및 완료 연출
+                awardBadge(currentCategoryKey);
+            }
+        }
+
+        // --- STREAMING_CHUNK: Bubble Spelling Game Implementation ---
+        // 2단계: 스펠링 풍선 게임 시작
+        function startBubbleGameMode() {
+            currentWordIndex = 0;
+            showScreen('screen-bubble-game');
+            setupSpellingGame();
+        }
+
+        function setupSpellingGame() {
+            currentSpellingWordObj = currentWordsList[currentWordIndex];
+            currentSpellingBuffer = [];
+
+            document.getElementById('bubble-emoji').textContent = currentSpellingWordObj.emoji;
+            document.getElementById('bubble-meaning').textContent = currentSpellingWordObj.ko;
+
+            // 정답 자리 렌더링 (예: b o o k 이면 4개 빈칸)
+            renderSpellingPlaceholder();
+            
+            // 공중에 띄울 풍선 문자들 정의 (정답 문자에 보너스 훼방꾼 알파벳 2개 추가)
+            const answerLetters = currentSpellingWordObj.en.split('');
+            const alphabet = "abcdefghijklmnopqrstuvwxyz";
+            let dummyLetters = [];
+            while(dummyLetters.length < 2) {
+                const randLetter = alphabet[Math.floor(Math.random() * alphabet.length)];
+                if (!answerLetters.includes(randLetter)) {
+                    dummyLetters.push(randLetter);
+                }
+            }
+
+            const allGameLetters = [...answerLetters, ...dummyLetters];
+            // 배열 무작위 셔플
+            allGameLetters.sort(() => Math.random() - 0.5);
+
+            // 보드 렌더링
+            spawnBubbles(allGameLetters);
+            
+            // 발음 힌트 주기
+            speakWord(currentSpellingWordObj.en);
+        }
+
+        // 맞추어야 할 자리를 밑줄 모양으로 만들기
+        function renderSpellingPlaceholder() {
+            const container = document.getElementById('spelling-progress-container');
+            container.innerHTML = "";
+
+            const targetLength = currentSpellingWordObj.en.length;
+            for(let i = 0; i < targetLength; i++) {
+                const cell = document.createElement('div');
+                cell.className = "w-10 h-10 flex items-center justify-center border-b-4 border-yellow-400 font-extrabold text-2xl text-blue-800 uppercase mx-1 bg-white rounded-lg shadow-sm";
+                
+                if (currentSpellingBuffer[i]) {
+                    cell.textContent = currentSpellingBuffer[i];
+                    cell.classList.add('bg-yellow-100');
+                } else {
+                    cell.textContent = "";
+                }
+                container.appendChild(cell);
+            }
+        }
+
+        // 풍선들을 화면상에 둥둥 뜨게 띄움
+        function spawnBubbles(letters) {
+            const board = document.getElementById('bubble-board');
+            board.innerHTML = "";
+
+            // 타이머 중단 후 재설정
+            if (bubbleInterval) clearInterval(bubbleInterval);
+
+            const colors = [
+                'bg-red-300 border-red-400', 
+                'bg-orange-300 border-orange-400', 
+                'bg-yellow-300 border-yellow-400', 
+                'bg-emerald-300 border-emerald-400', 
+                'bg-sky-300 border-sky-400', 
+                'bg-pink-300 border-pink-400',
+                'bg-indigo-300 border-indigo-400'
+            ];
+
+            const bubbles = [];
+
+            // 풍선 객체 정보 설정
+            letters.forEach((letter, i) => {
+                const bubble = document.createElement('button');
+                const randomColor = colors[Math.floor(Math.random() * colors.length)];
+                
+                bubble.className = `absolute rounded-full w-12 h-12 flex items-center justify-center font-bold text-xl text-white uppercase shadow-lg border-2 border-dashed ${randomColor} transition-transform duration-200 hover:scale-115 active:scale-95 cursor-pointer select-none`;
+                bubble.textContent = letter;
+
+                // 초기 랜덤 좌표 지정 (중복 최소화를 위해 격자형 배치 후 미세 무작위)
+                const col = i % 4;
+                const row = Math.floor(i / 4);
+                let posX = 15 + (col * 22) + (Math.random() * 8);
+                let posY = 15 + (row * 35) + (Math.random() * 10);
+
+                bubble.style.left = `${posX}%`;
+                bubble.style.top = `${posY}%`;
+
+                // 물리 모션을 위해 속도값 지정
+                bubbles.push({
+                    element: bubble,
+                    x: posX,
+                    y: posY,
+                    vx: (Math.random() - 0.5) * 0.4,
+                    vy: (Math.random() - 0.5) * 0.4
+                });
+
+                // 터치 이벤트 연결
+                bubble.onclick = () => popLetterBubble(letter, bubble);
+
+                board.appendChild(bubble);
+            });
+
+            // 간단 모션 인터벌 루프 (둥실둥실 물리 효과 구현)
+            bubbleInterval = setInterval(() => {
+                bubbles.forEach(b => {
+                    // 속도 누적
+                    b.x += b.vx;
+                    b.y += b.vy;
+
+                    // 보드 벽 경계선 튕김
+                    if (b.x < 5 || b.x > 85) { b.vx *= -1; b.x = b.x < 5 ? 5 : 85; }
+                    if (b.y < 5 || b.y > 80) { b.vy *= -1; b.y = b.y < 5 ? 5 : 80; }
+
+                    b.element.style.left = `${b.x}%`;
+                    b.element.style.top = `${b.y}%`;
+                });
+            }, 30);
+        }
+
+        // 풍선을 눌렀을 때 처리
+        function popLetterBubble(letter, element) {
+            const targetWord = currentSpellingWordObj.en;
+            const currentRequiredIndex = currentSpellingBuffer.length;
+            const expectedLetter = targetWord[currentRequiredIndex];
+
+            if (letter.toLowerCase() === expectedLetter.toLowerCase()) {
+                // 올바른 알파벳 순서 클릭!
+                playSound('pop');
+                currentSpellingBuffer.push(letter);
+                renderSpellingPlaceholder();
+                
+                // 터뜨린 풍선 제거
+                element.style.transform = "scale(0)";
+                setTimeout(() => { element.remove(); }, 150);
+
+                // 단어가 완성되었는지 검사
+                if (currentSpellingBuffer.length === targetWord.length) {
+                    if (bubbleInterval) clearInterval(bubbleInterval);
+                    
+                    // 정답 축하
+                    playSound('correct');
+                    setTimeout(() => {
+                        handleSpellingSuccess();
+                    }, 500);
+                }
+            } else {
+                // 잘못된 철자 클릭! 경고 피드백
+                playSound('wrong');
+                element.classList.add('animate-ping');
+                setTimeout(() => {
+                    element.classList.remove('animate-ping');
+                }, 300);
+            }
+        }
+
+        // 스펠링 한 단어 통과 시
+        function handleSpellingSuccess() {
+            // 귀여운 오버레이 메시지 표시 처리 대신 간단한 토스트 혹은 진행
+            if (currentWordIndex < currentWordsList.length - 1) {
+                currentWordIndex++;
+                setupSpellingGame();
+            } else {
+                // 게임 최종 클리어
+                awardBadge(currentCategoryKey);
+            }
+        }
+
+        // 스펠링 게임 리셋
+        function resetCurrentSpellingGame() {
+            playSound('click');
+            setupSpellingGame();
+        }
+
+        // 다음 문제로 패스
+        function skipSpellingGame() {
+            playSound('click');
+            if (currentWordIndex < currentWordsList.length - 1) {
+                currentWordIndex++;
+                setupSpellingGame();
+            } else {
+                awardBadge(currentCategoryKey);
+            }
+        }
+
+        // --- STREAMING_CHUNK: Multiple Choice Quiz Implementation ---
+        // 3단계: 단어 퀴즈 모드 시작
+        function startQuizMode() {
+            quizScore = 0;
+            quizHearts = 3;
+            quizCurrentIdx = 0;
+            
+            // 출제 리스트 빌드 (전체 중 5문제를 램덤하게 선별하여 혼합식으로 문제 출제)
+            quizQuestions = [...currentWordsList].sort(() => Math.random() - 0.5).slice(0, 5);
+            
+            showScreen('screen-quiz');
+            setupQuizQuestion();
+        }
+
+        function setupQuizQuestion() {
+            if (quizCurrentIdx >= quizQuestions.length || quizHearts <= 0) {
+                // 하트가 오링났거나 끝까지 풀었을 때 분기
+                if (quizHearts > 0) {
+                    // 완벽 클리어!
+                    awardBadge(currentCategoryKey);
+                } else {
+                    // 실패 안내 커스텀 모달
+                    showGameOverModal();
+                }
+                return;
+            }
+
+            // 피드백 텍스트 제거
+            document.getElementById('quiz-feedback').textContent = "";
+
+            const question = quizQuestions[quizCurrentIdx];
+            document.getElementById('quiz-question-num').textContent = `문제 ${quizCurrentIdx + 1} / ${quizQuestions.length}`;
+            document.getElementById('quiz-score-display').textContent = `❤️ 하트: ${"❤️".repeat(quizHearts)}`;
+
+            // 문제 유형 변형 (1: 영어단어 보고 한글뜻 고르기, 2: 한글/이모지 보고 영어 단어 고르기)
+            const typeFlag = Math.random() > 0.5;
+            const optionCount = 4;
+            let options = [];
+
+            if (typeFlag) {
+                // 영어단어 문제형
+                document.getElementById('quiz-question-type').textContent = "Q. 이 단어는 어떤 의미일까요?";
+                document.getElementById('quiz-question-content').textContent = question.en;
+                
+                options.push({ text: `${question.emoji} ${question.ko}`, isCorrect: true });
+                
+                // 오답 풀 만들기
+                const dummyPool = currentWordsList.filter(w => w.en !== question.en);
+                dummyPool.sort(() => Math.random() - 0.5);
+                for(let i = 0; i < optionCount - 1; i++) {
+                    if (dummyPool[i]) {
+                        options.push({ text: `${dummyPool[i].emoji} ${dummyPool[i].ko}`, isCorrect: false });
+                    } else {
+                        options.push({ text: "❓ 모르는 단어", isCorrect: false });
+                    }
+                }
+            } else {
+                // 이모지 + 한글 뜻 문제형
+                document.getElementById('quiz-question-type').textContent = "Q. 다음 뜻에 어울리는 영단어는?";
+                document.getElementById('quiz-question-content').innerHTML = `<span class='text-5xl block'>${question.emoji}</span>${question.ko}`;
+                
+                options.push({ text: question.en, isCorrect: true });
+                
+                // 오답 풀 만들기
+                const dummyPool = currentWordsList.filter(w => w.en !== question.en);
+                dummyPool.sort(() => Math.random() - 0.5);
+                for(let i = 0; i < optionCount - 1; i++) {
+                    if (dummyPool[i]) {
+                        options.push({ text: dummyPool[i].en, isCorrect: false });
+                    } else {
+                        options.push({ text: "unknown", isCorrect: false });
+                    }
+                }
+            }
+
+            // 발음 힌트 자동 듣기
+            speakWord(question.en);
+
+            // 보기 섞기
+            options.sort(() => Math.random() - 0.5);
+
+            // 보기 버튼 생성
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = "";
+
+            options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = "bg-white hover:bg-yellow-50 border-2 border-purple-200 text-purple-900 font-bold p-3 rounded-2xl kids-btn-shadow transition-all text-sm truncate flex justify-center items-center h-16";
+                btn.innerHTML = opt.text;
+                btn.onclick = () => checkQuizAnswer(opt.isCorrect, btn);
+                optionsContainer.appendChild(btn);
+            });
+        }
+
+        // 정답 체크 프로세스
+        function checkQuizAnswer(isCorrect, element) {
+            // 버튼들 일시적 비활성화
+            const buttons = document.querySelectorAll('#quiz-options button');
+            buttons.forEach(b => b.disabled = true);
+
+            const feedbackEl = document.getElementById('quiz-feedback');
+
+            if (isCorrect) {
+                playSound('correct');
+                feedbackEl.className = "text-xl font-bold text-emerald-500 animate-bounce";
+                feedbackEl.textContent = "딩동댕! 🎉 정답입니다!";
+                element.className = "bg-emerald-100 border-4 border-emerald-500 text-emerald-900 font-extrabold p-3 rounded-2xl transition-all text-sm truncate flex justify-center items-center h-16";
+                quizScore += 10;
+            } else {
+                playSound('wrong');
+                feedbackEl.className = "text-xl font-bold text-rose-500 animate-pulse";
+                feedbackEl.textContent = "아쉬워요! 다시 한 번 생각해보세요 😢";
+                element.className = "bg-rose-100 border-4 border-rose-500 text-rose-900 font-extrabold p-3 rounded-2xl transition-all text-sm truncate flex justify-center items-center h-16";
+                quizHearts--;
+            }
+
+            // 잠시 피드백 유지 후 다음 단계로
+            setTimeout(() => {
+                quizCurrentIdx++;
+                setupQuizQuestion();
+            }, 1500);
+        }
+
+        // 하트 소진 시 게임 오버 모달
+        function showGameOverModal() {
+            // 퀴즈 화면 초기화 및 메인 경고
+            const optionsContainer = document.getElementById('quiz-options');
+            optionsContainer.innerHTML = "";
+            
+            document.getElementById('quiz-question-type').textContent = "🔋 충전 완료 후 도전!";
+            document.getElementById('quiz-question-content').innerHTML = `
+                <div class="space-y-3">
+                    <p class="text-3xl font-black text-rose-500">조금만 힘을 내요!</p>
+                    <p class="text-sm text-gray-500 font-semibold">단어 카드를 보고 복습해볼까요?</p>
+                </div>
+            `;
+            
+            const retryBtn = document.createElement('button');
+            retryBtn.onclick = () => { playSound('click'); startQuizMode(); };
+            retryBtn.className = "w-full col-span-2 bg-purple-500 text-white font-extrabold py-3 rounded-2xl kids-btn-shadow text-center text-lg";
+            retryBtn.innerHTML = "다시 도전하기 🔄";
+
+            optionsContainer.appendChild(retryBtn);
+        }
+
+        // --- STREAMING_CHUNK: Confetti & Badge Reward System ---
+        // 배지 부여 및 완료 보상 화면 출력
+        function awardBadge(categoryKey) {
+            playSound('win');
+            
+            // 배지가 이미 보유 중인지 검증하고 신규 추가
+            if (!earnedBadges.includes(categoryKey)) {
+                earnedBadges.push(categoryKey);
+                localStorage.setItem('kids_english_badges', JSON.stringify(earnedBadges));
+            }
+
+            const cat = VOCAB_DB[categoryKey];
+            const badge = cat.badge;
+
+            // 결과 화면 데이터 바인딩
+            document.getElementById('result-message').innerHTML = `<strong>${cat.title}</strong> 탐험 코스를 완벽히 완료했습니다!`;
+            document.getElementById('new-badge-emoji').textContent = badge.icon;
+            document.getElementById('new-badge-name').textContent = badge.name;
+            document.getElementById('new-badge-desc').textContent = badge.desc;
+
+            showScreen('screen-result');
+            runConfettiEffect();
+        }
+
+        // 축하 폭죽(Confetti) 구현 (Canvas 활용 경량 렌더러)
+        function runConfettiEffect() {
+            const canvas = document.getElementById('confetti-canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // 캔버스 크기 브라우저 크기 기준 매핑
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+
+            const colors = ['#f59e0b', '#10b981', '#3b82f6', '#ec4899', '#8b5cf6', '#ef4444'];
+            const particles = [];
+
+            // 입자 스폰
+            for(let i = 0; i < 60; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2 + 50,
+                    radius: Math.random() * 6 + 4,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 1) * 10,
+                    gravity: 0.2,
+                    alpha: 1,
+                    decay: Math.random() * 0.015 + 0.01
+                });
+            }
+
+            // 애니메이션 렌더링 프레임 루프
+            function tick() {
+                if (activeScreen !== 'screen-result') return; // 다른 화면 가면 렌더 파토내기
+                
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let alive = false;
+
+                particles.forEach(p => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.vy += p.gravity;
+                    p.alpha -= p.decay;
+
+                    if (p.alpha > 0) {
+                        alive = true;
+                        ctx.beginPath();
+                        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                        ctx.fillStyle = p.color;
+                        ctx.globalAlpha = p.alpha;
+                        ctx.fill();
+                    }
+                });
+
+                if (alive) {
+                    requestAnimationFrame(tick);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                }
+            }
+
+            ctx.globalAlpha = 1;
+            tick();
+        }
+    </script>
+</body>
+</html>
