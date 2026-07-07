@@ -15,7 +15,9 @@
             background-color: #0b0f19;
             user-select: none;
             -webkit-user-select: none;
-            overflow: hidden;
+            /* 모바일 세로모드 대응용 세로 스크롤 허용 */
+            overflow-y: auto;
+            overflow-x: hidden;
             touch-action: none;
         }
         .neon-text-cyan {
@@ -44,11 +46,11 @@
         }
     </style>
 </head>
-<body class="w-screen h-screen flex items-center justify-center relative">
+<body class="w-screen min-h-[100dvh] flex items-center justify-center relative">
 
     <!-- Start Screen Overlay -->
-    <div id="startScreen" class="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/90 p-4 transition-all duration-500">
-        <div class="max-w-md w-full text-center space-y-8 p-8 rounded-2xl bg-slate-900/80 border border-slate-800 neon-border-cyan backdrop-blur-md">
+    <div id="startScreen" class="absolute inset-0 z-30 flex flex-col items-center justify-center bg-slate-950/90 p-4 transition-all duration-500 overflow-y-auto">
+        <div class="max-w-md w-full text-center space-y-6 p-6 my-4 rounded-2xl bg-slate-900/80 border border-slate-800 neon-border-cyan backdrop-blur-md">
             <div class="space-y-2">
                 <div class="flex justify-center space-x-2 text-cyan-500 animate-pulse text-4xl mb-2">
                     <i class="fas fa-shield-halved"></i>
@@ -65,17 +67,17 @@
                 <p class="flex justify-between"><span>조준 및 발사:</span> <span class="text-cyan-300 font-mono">마우스 조준 + 좌클릭</span></p>
                 
                 <p class="font-bold text-pink-400 border-b border-slate-800 pt-2 pb-1"><i class="fas fa-mobile-screen-button mr-2"></i>모바일 조작법</p>
-                <p class="text-slate-400 text-xs">화면 <strong class="text-pink-300">어디든 터치 후 드래그</strong>하여 탱크를 자유롭게 이동시키세요! 적이 등장하면 <strong class="text-cyan-300">자동으로 가장 가까운 대상을 포착해 발사</strong>합니다.</p>
+                <p class="text-slate-400 text-xs leading-relaxed">화면 <strong class="text-pink-300">어디든 터치 후 손가락을 미끄러뜨리듯 드래그</strong>하면 탱크가 자연스럽게 손끝을 따라 이동합니다! 적이 주변에 있으면 <strong class="text-cyan-300">가장 가까운 타겟을 자동으로 조준해 사격</strong>합니다.</p>
             </div>
 
             <!-- Sound Option & Start Button -->
-            <div class="space-y-4">
+            <div class="space-y-3">
                 <button id="soundToggle" class="w-full py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-sm transition-all flex items-center justify-center gap-2">
                     <i class="fas fa-volume-high text-cyan-400" id="soundIcon"></i>
                     <span id="soundText">사운드 켜기 (권장)</span>
                 </button>
 
-                <button id="startBtn" class="w-full py-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-xl rounded-xl transition-all shadow-[0_0_25px_rgba(6,182,212,0.4)] hover:shadow-[0_0_35px_rgba(6,182,212,0.6)] transform hover:scale-105 active:scale-95 duration-150">
+                <button id="startBtn" class="w-full py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-lg rounded-xl transition-all shadow-[0_0_25px_rgba(6,182,212,0.4)] hover:shadow-[0_0_35px_rgba(6,182,212,0.6)] transform hover:scale-105 active:scale-95 duration-150">
                     아레나 입장하기
                 </button>
             </div>
@@ -85,102 +87,122 @@
     </div>
 
     <!-- HUD Panel (Top and HUD components) -->
-    <div id="hud" class="absolute top-4 left-4 right-4 z-20 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 pointer-events-none transition-opacity duration-300 opacity-0">
+    <div id="hud" class="absolute top-2 left-2 right-2 z-20 flex flex-row flex-wrap justify-between items-center gap-2 pointer-events-none transition-opacity duration-300 opacity-0 max-sm:scale-[0.88] max-sm:origin-top">
         <!-- Life and Shield Status -->
-        <div class="flex items-center space-x-4 bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 backdrop-blur-md pointer-events-auto">
+        <div class="flex items-center space-x-3 bg-slate-950/80 p-2 rounded-xl border border-slate-800/80 backdrop-blur-md pointer-events-auto">
             <!-- Player Health -->
-            <div class="space-y-1">
-                <div class="flex justify-between text-xs text-slate-400 font-bold">
+            <div class="space-y-0.5">
+                <div class="flex justify-between text-[10px] text-slate-400 font-bold">
                     <span>HP</span>
-                    <span id="hpText" class="text-green-400">100 / 100</span>
+                    <span id="hpText" class="text-green-400">100/100</span>
                 </div>
-                <div class="w-36 h-3 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                <div class="w-24 sm:w-32 h-2.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
                     <div id="hpBar" class="h-full bg-gradient-to-r from-emerald-500 to-green-400 transition-all duration-150" style="width: 100%;"></div>
                 </div>
             </div>
 
             <!-- Player Shield -->
-            <div class="space-y-1">
-                <div class="flex justify-between text-xs text-slate-400 font-bold">
+            <div class="space-y-0.5">
+                <div class="flex justify-between text-[10px] text-slate-400 font-bold">
                     <span>SHIELD</span>
                     <span id="shieldText" class="text-cyan-400">0%</span>
                 </div>
-                <div class="w-24 h-3 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
+                <div class="w-16 sm:w-24 h-2.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700">
                     <div id="shieldBar" class="h-full bg-gradient-to-r from-cyan-500 to-blue-400 transition-all duration-150" style="width: 0%;"></div>
                 </div>
             </div>
         </div>
 
         <!-- Scores and Waves -->
-        <div class="flex items-center space-x-4 bg-slate-950/80 p-3 rounded-xl border border-slate-800/80 backdrop-blur-md pointer-events-auto font-['Orbitron']">
-            <div class="text-center px-2">
-                <div class="text-[10px] text-slate-500 font-bold">SCORE</div>
-                <div id="scoreVal" class="text-xl font-black text-cyan-400">00000</div>
+        <div class="flex items-center space-x-2 bg-slate-950/80 p-2 rounded-xl border border-slate-800/80 backdrop-blur-md pointer-events-auto font-['Orbitron'] text-xs">
+            <div class="text-center px-1">
+                <div class="text-[9px] text-slate-500 font-bold">SCORE</div>
+                <div id="scoreVal" class="font-black text-cyan-400 text-sm">00000</div>
             </div>
-            <div class="h-8 w-[1px] bg-slate-800"></div>
-            <div class="text-center px-2">
-                <div class="text-[10px] text-slate-500 font-bold">WAVE</div>
-                <div id="waveVal" class="text-xl font-black text-amber-400">1</div>
+            <div class="h-6 w-[1px] bg-slate-800"></div>
+            <div class="text-center px-1">
+                <div class="text-[9px] text-slate-500 font-bold">WAVE</div>
+                <div id="waveVal" class="font-black text-amber-400 text-sm">1</div>
             </div>
-            <div class="h-8 w-[1px] bg-slate-800"></div>
-            <div class="text-center px-2">
-                <div class="text-[10px] text-slate-500 font-bold">ENEMIES</div>
-                <div id="enemyCount" class="text-xl font-black text-rose-500">0</div>
+            <div class="h-6 w-[1px] bg-slate-800"></div>
+            <div class="text-center px-1">
+                <div class="text-[9px] text-slate-500 font-bold">ENEMIES</div>
+                <div id="enemyCount" class="font-black text-rose-500 text-sm">0</div>
             </div>
         </div>
 
+        <!-- Controller Bar -->
+        <div class="flex items-center space-x-1.5 bg-slate-950/80 p-1.5 rounded-xl border border-slate-800/80 backdrop-blur-md pointer-events-auto">
+            <!-- HUD Mute Toggle Button -->
+            <button id="hudMuteBtn" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-900 hover:bg-slate-800 text-cyan-400 transition-all border border-slate-800" title="음소거 토글">
+                <i class="fas fa-volume-high text-xs" id="hudMuteIcon"></i>
+            </button>
+            <!-- Back to Menu Button -->
+            <button id="hudExitBtn" class="px-2.5 h-8 flex items-center justify-center gap-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-rose-400 transition-all border border-slate-800 font-bold text-xs" title="메인 화면으로 이동">
+                <i class="fas fa-house-chimney text-xs"></i>
+                <span class="text-[11px] font-['Noto Sans KR']">메인으로</span>
+            </button>
+        </div>
+
         <!-- Active Buffs Indicator -->
-        <div id="buffContainer" class="flex gap-2 pointer-events-auto">
+        <div id="buffContainer" class="flex gap-1.5 pointer-events-auto w-full md:w-auto justify-end mt-1 md:mt-0">
             <!-- Dynamically injected items -->
         </div>
     </div>
 
+    <!-- Exit Confirmation Modal (iframe 친화적인 자체 모달 대체) -->
+    <div id="confirmModal" class="absolute inset-0 z-40 hidden flex-col items-center justify-center bg-slate-950/85 p-4">
+        <div class="max-w-xs w-full text-center space-y-4 p-5 rounded-2xl bg-slate-900 border border-slate-800 neon-border-cyan backdrop-blur-md">
+            <h3 class="text-base font-bold text-slate-200">메인 화면으로 이동</h3>
+            <p class="text-xs text-slate-400 leading-relaxed">정말로 현재 게임을 중단하시겠습니까?<br>기록 중인 점수는 저장되지 않습니다.</p>
+            <div class="flex gap-2 pt-2">
+                <button id="confirmCancelBtn" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-lg transition-all">계속하기</button>
+                <button id="confirmOkBtn" class="flex-1 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-lg transition-all shadow-[0_0_15px_rgba(244,63,94,0.4)]">중단하기</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Game Over Screen Overlay -->
-    <div id="gameOverScreen" class="absolute inset-0 z-30 hidden flex-col items-center justify-center bg-slate-950/95 p-4 transition-all duration-500">
-        <div class="max-w-md w-full text-center space-y-6 p-8 rounded-2xl bg-slate-900/90 border border-red-500/50 neon-border-red backdrop-blur-md">
+    <div id="gameOverScreen" class="absolute inset-0 z-30 hidden flex-col items-center justify-center bg-slate-950/95 p-4 transition-all duration-500 overflow-y-auto">
+        <div class="max-w-md w-full text-center space-y-6 p-6 my-4 rounded-2xl bg-slate-900/90 border border-red-500/50 neon-border-red backdrop-blur-md">
             <div class="space-y-2">
-                <div class="text-red-500 text-5xl mb-2 animate-bounce">
+                <div class="text-red-500 text-5xl mb-1 animate-bounce">
                     <i class="fas fa-skull-crossbones"></i>
                 </div>
-                <h1 class="text-4xl font-black font-['Orbitron'] text-red-500 neon-text-red tracking-widest">MISSION FAILED</h1>
+                <h1 class="text-3xl font-black font-['Orbitron'] text-red-500 neon-text-red tracking-widest">MISSION FAILED</h1>
                 <p class="text-xs uppercase tracking-[0.2em] text-slate-400">탱크가 파괴되었습니다</p>
             </div>
 
             <!-- Stats display -->
-            <div class="bg-slate-950/80 p-5 rounded-xl border border-slate-800 text-slate-300 space-y-3 font-medium">
+            <div class="bg-slate-950/80 p-4 rounded-xl border border-slate-800 text-slate-300 space-y-2.5 text-sm font-medium">
                 <div class="flex justify-between">
                     <span>최종 점수:</span>
-                    <span id="finalScore" class="text-cyan-400 font-bold text-lg font-['Orbitron']">0</span>
+                    <span id="finalScore" class="text-cyan-400 font-bold font-['Orbitron']">0</span>
                 </div>
                 <div class="flex justify-between">
                     <span>도달한 웨이브:</span>
-                    <span id="finalWave" class="text-amber-400 font-bold text-lg font-['Orbitron']">1</span>
+                    <span id="finalWave" class="text-amber-400 font-bold font-['Orbitron']">1</span>
                 </div>
                 <div class="flex justify-between">
                     <span>처치한 적 수:</span>
-                    <span id="finalKills" class="text-rose-400 font-bold text-lg font-['Orbitron']">0</span>
+                    <span id="finalKills" class="text-rose-400 font-bold font-['Orbitron']">0</span>
                 </div>
-                <div class="border-t border-slate-800 pt-3 flex justify-between items-center">
+                <div class="border-t border-slate-800 pt-2.5 flex justify-between items-center">
                     <span>최고 기록 갱신:</span>
-                    <span id="newRecordBadge" class="hidden text-xs bg-yellow-500 text-slate-950 font-bold px-2 py-0.5 rounded animate-pulse">NEW RECORD</span>
+                    <span id="newRecordBadge" class="hidden text-[10px] bg-yellow-500 text-slate-950 font-bold px-1.5 py-0.5 rounded animate-pulse">NEW RECORD</span>
                     <span id="highScoreText" class="text-yellow-400 font-bold font-['Orbitron']">0</span>
                 </div>
             </div>
 
-            <button id="restartBtn" class="w-full py-4 bg-gradient-to-r from-red-600 to-rose-500 hover:from-red-500 hover:to-rose-400 text-white font-bold text-lg rounded-xl transition-all shadow-[0_0_20px_rgba(239,68,68,0.3)] hover:shadow-[0_0_30px_rgba(239,68,68,0.5)] transform hover:scale-105 active:scale-95 duration-150">
+            <button id="restartBtn" class="w-full py-3.5 bg-gradient-to-r from-red-600 to-rose-500 hover:from-red-500 hover:to-rose-400 text-white font-bold text-base rounded-xl transition-all shadow-[0_0_20px_rgba(239,68,68,0.3)] hover:shadow-[0_0_30px_rgba(239,68,68,0.5)] transform hover:scale-105 active:scale-95 duration-150">
                 <i class="fas fa-rotate-right mr-2"></i>다시 도전하기
             </button>
         </div>
     </div>
 
     <!-- Canvas for rendering the game -->
-    <div class="w-full h-full relative overflow-hidden bg-slate-950">
+    <div class="w-full h-[100dvh] relative overflow-hidden bg-slate-950">
         <canvas id="gameCanvas" class="block w-full h-full"></canvas>
-    </div>
-
-    <!-- Dynamic Touch Joystick UI (appears where user touches) -->
-    <div id="dynamicJoystick" class="absolute w-24 h-24 border-2 border-cyan-500/40 rounded-full flex items-center justify-center pointer-events-none z-20 opacity-0 scale-75 transition-all duration-150 backdrop-blur-[2px]">
-        <div id="dynamicKnob" class="w-8 h-8 bg-cyan-400/80 border-2 border-cyan-300 rounded-full shadow-[0_0_15px_rgba(6,182,212,0.8)]"></div>
     </div>
 
     <script>
@@ -211,7 +233,17 @@
                 return this.enabled;
             }
 
-            // Synthesize Laser Shoot sound
+            setMuteState(shouldMute) {
+                if (!this.ctx) this.init();
+                if (shouldMute) {
+                    if (this.ctx.state === 'running') this.ctx.suspend();
+                    this.enabled = false;
+                } else {
+                    if (this.ctx.state === 'suspended') this.ctx.resume();
+                    this.enabled = true;
+                }
+            }
+
             playShoot() {
                 if (!this.enabled) return;
                 const osc = this.ctx.createOscillator();
@@ -231,7 +263,6 @@
                 osc.stop(this.ctx.currentTime + 0.15);
             }
 
-            // Synthesize Sniper Shoot sound (Heavy pitch sweep)
             playSniperShoot() {
                 if (!this.enabled) return;
                 const osc = this.ctx.createOscillator();
@@ -250,14 +281,12 @@
                 osc.stop(this.ctx.currentTime + 0.3);
             }
 
-            // Synthesize Tank Explosion sound (Filter noise + bass swell)
             playExplosion() {
                 if (!this.enabled) return;
                 const bufferSize = this.ctx.sampleRate * 0.4;
                 const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
                 const data = buffer.getChannelData(0);
                 
-                // White noise generation
                 for (let i = 0; i < bufferSize; i++) {
                     data[i] = Math.random() * 2 - 1;
                 }
@@ -281,7 +310,6 @@
                 noise.start();
                 noise.stop(this.ctx.currentTime + 0.4);
                 
-                // Add sub-bass thump
                 const subOsc = this.ctx.createOscillator();
                 const subGain = this.ctx.createGain();
                 subOsc.connect(subGain);
@@ -294,7 +322,6 @@
                 subOsc.stop(this.ctx.currentTime + 0.3);
             }
 
-            // Synthesize Hit sound (Quick high-frequency noise burst)
             playHit() {
                 if (!this.enabled) return;
                 const osc = this.ctx.createOscillator();
@@ -313,10 +340,9 @@
                 osc.stop(this.ctx.currentTime + 0.08);
             }
 
-            // Synthesize Upgrade/PowerUp sound (Arpeggio style)
             playPowerup() {
                 if (!this.enabled) return;
-                const notes = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
+                const notes = [261.63, 329.63, 392.00, 523.25];
                 const now = this.ctx.currentTime;
                 
                 notes.forEach((freq, idx) => {
@@ -345,24 +371,15 @@
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         
-        // Track highscore in localStorage
         let highScore = parseInt(localStorage.getItem('neon_tank_high_score') || '0');
         document.getElementById('startHighScore').textContent = highScore;
         document.getElementById('highScoreText').textContent = highScore;
-
-        // Adaptive Resize
-        function resizeCanvas() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-        window.addEventListener('resize', resizeCanvas);
-        resizeCanvas();
 
         // Game Configuration & State Variables
         const CONFIG = {
             playerBaseSpeed: 4.5,
             playerBaseHealth: 100,
-            baseFireRate: 250, // ms between shots
+            baseFireRate: 250,
             joystickSensitivity: 0.15
         };
 
@@ -385,96 +402,87 @@
             waveSpawning: false
         };
 
-        // Screen Shake Helper
-        function triggerShake(magnitude) {
-            gameState.screenShake = magnitude;
-        }
-
-        // Check if device is touch-enabled
+        // 모바일 터치 감지 및 최적화
         function detectTouchDevice() {
             const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
             if (hasTouch) {
                 gameState.isTouchDevice = true;
+                CONFIG.playerBaseSpeed = 3.0; // 모바일 조작 안정성을 위해 속도 밸런싱
             }
         }
         detectTouchDevice();
 
-        // Single Dynamic Joystick State
-        const joystick = {
+        // Adaptive Resize
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            if (typeof gameState !== 'undefined' && gameState && gameState.player) {
+                gameState.player.x = Math.max(gameState.player.radius, Math.min(canvas.width - gameState.player.radius, gameState.player.x));
+                gameState.player.y = Math.max(gameState.player.radius, Math.min(canvas.height - gameState.player.radius, gameState.player.y));
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function triggerShake(magnitude) {
+            gameState.screenShake = magnitude;
+        }
+
+        // 모바일 전용: 손가락 터치 드래그 추적 시스템 상태 객체
+        const touchState = {
             active: false,
             touchId: null,
             startX: 0,
             startY: 0,
-            curX: 0,
-            curY: 0,
-            angle: 0,
-            force: 0,
-            maxRadius: 40 // Maximum travel of knob
+            playerStartX: 0,
+            playerStartY: 0,
+            currentX: 0,
+            currentY: 0
         };
 
-        // Handle Touch Events for Dynamic Stick (Drag Anywhere)
+        // 모바일 1:1 상대 드래그 터치 리스너 구축 (가상 스틱 완벽 대체)
         function setupTouchListeners() {
-            const dynamicJoystick = document.getElementById('dynamicJoystick');
-            const dynamicKnob = document.getElementById('dynamicKnob');
-
             canvas.addEventListener('touchstart', (e) => {
-                if (!gameState.running || gameState.gameOver) return;
+                if (!gameState.running || gameState.gameOver || !gameState.player) return;
                 e.preventDefault();
                 
                 const touch = e.changedTouches[0];
                 if (touch) {
-                    joystick.active = true;
-                    joystick.touchId = touch.identifier;
-                    joystick.startX = touch.clientX;
-                    joystick.startY = touch.clientY;
-                    joystick.curX = touch.clientX;
-                    joystick.curY = touch.clientY;
-
-                    // Position and reveal the joystick overlay at the touch coordinate
-                    dynamicJoystick.style.left = `${joystick.startX - 48}px`;
-                    dynamicJoystick.style.top = `${joystick.startY - 48}px`;
-                    dynamicJoystick.style.opacity = '1';
-                    dynamicJoystick.style.transform = 'scale(1)';
+                    touchState.active = true;
+                    touchState.touchId = touch.identifier;
+                    touchState.startX = touch.clientX;
+                    touchState.startY = touch.clientY;
+                    touchState.playerStartX = gameState.player.x;
+                    touchState.playerStartY = gameState.player.y;
+                    touchState.currentX = touch.clientX;
+                    touchState.currentY = touch.clientY;
                 }
             }, {passive: false});
 
             window.addEventListener('touchmove', (e) => {
-                if (!joystick.active) return;
+                if (!touchState.active) return;
                 e.preventDefault();
 
-                const touch = Array.from(e.touches).find(t => t.identifier === joystick.touchId);
-                if (!touch) return;
-
-                joystick.curX = touch.clientX;
-                joystick.curY = touch.clientY;
-
-                const dx = joystick.curX - joystick.startX;
-                const dy = joystick.curY - joystick.startY;
-                const dist = Math.hypot(dx, dy);
-
-                joystick.angle = Math.atan2(dy, dx);
-                joystick.force = Math.min(dist / joystick.maxRadius, 1);
-
-                // Displace the physical visual knob
-                const knobX = Math.cos(joystick.angle) * joystick.force * joystick.maxRadius;
-                const knobY = Math.sin(joystick.angle) * joystick.force * joystick.maxRadius;
-                dynamicKnob.style.transform = `translate(${knobX}px, ${knobY}px)`;
+                const touch = Array.from(e.touches).find(t => t.identifier === touchState.touchId);
+                if (touch) {
+                    touchState.currentX = touch.clientX;
+                    touchState.currentY = touch.clientY;
+                }
             }, {passive: false});
 
             window.addEventListener('touchend', (e) => {
-                if (!joystick.active) return;
-                const stillTouching = Array.from(e.touches).some(t => t.identifier === joystick.touchId);
+                if (!touchState.active) return;
+                const stillTouching = Array.from(e.touches).some(t => t.identifier === touchState.touchId);
                 if (!stillTouching) {
-                    joystick.active = false;
-                    joystick.touchId = null;
-                    joystick.force = 0;
-
-                    // Fade out the joystick
-                    dynamicJoystick.style.opacity = '0';
-                    dynamicJoystick.style.transform = 'scale(0.75)';
-                    dynamicKnob.style.transform = `translate(0px, 0px)`;
+                    touchState.active = false;
+                    touchState.touchId = null;
                 }
             }, {passive: false});
+
+            window.addEventListener('touchcancel', (e) => {
+                touchState.active = false;
+                touchState.touchId = null;
+            });
         }
         setupTouchListeners();
 
@@ -483,18 +491,18 @@
                 this.x = x;
                 this.y = y;
                 this.radius = 22;
-                this.angle = 0; // movement angle
-                this.turretAngle = 0; // shooting angle
+                this.angle = 0; // 탱크 본체 각도
+                this.turretAngle = 0; // 포탑 각도
                 this.speed = CONFIG.playerBaseSpeed;
                 
                 this.maxHp = CONFIG.playerBaseHealth;
                 this.hp = this.maxHp;
-                this.shield = 0; // shield hitpoints
+                this.shield = 0;
                 this.maxShield = 100;
                 
                 this.lastShotTime = 0;
                 
-                // Active powerup states
+                // 버프 지속 시간 타이머
                 this.buffs = {
                     doubleShot: { active: false, timer: 0 },
                     tripleShot: { active: false, timer: 0 },
@@ -504,10 +512,10 @@
             }
 
             update() {
-                // Update active buffs timer
+                // 버프 연산
                 for (let bKey in this.buffs) {
                     if (this.buffs[bKey].active) {
-                        this.buffs[bKey].timer -= 16.66; // approx. 1 frame
+                        this.buffs[bKey].timer -= 16.66;
                         if (this.buffs[bKey].timer <= 0) {
                             this.buffs[bKey].active = false;
                         }
@@ -516,42 +524,68 @@
 
                 this.speed = this.buffs.speedBoost.active ? CONFIG.playerBaseSpeed * 1.5 : CONFIG.playerBaseSpeed;
 
-                // Handle keyboard movement inputs
                 let dx = 0;
                 let dy = 0;
 
-                if (gameState.keys['w'] || gameState.keys['arrowup']) dy -= 1;
-                if (gameState.keys['s'] || gameState.keys['arrowdown']) dy += 1;
-                if (gameState.keys['a'] || gameState.keys['arrowleft']) dx -= 1;
-                if (gameState.keys['d'] || gameState.keys['arrowright']) dx += 1;
+                // 1. 키보드 입력 핸들링 (PC 전용)
+                if (!gameState.isTouchDevice) {
+                    if (gameState.keys['w'] || gameState.keys['arrowup']) dy -= 1;
+                    if (gameState.keys['s'] || gameState.keys['arrowdown']) dy += 1;
+                    if (gameState.keys['a'] || gameState.keys['arrowleft']) dx -= 1;
+                    if (gameState.keys['d'] || gameState.keys['arrowright']) dx += 1;
 
-                // Normalize keyboard direction
-                if (dx !== 0 && dy !== 0) {
-                    const len = Math.hypot(dx, dy);
-                    dx /= len;
-                    dy /= len;
+                    if (dx !== 0 && dy !== 0) {
+                        const len = Math.hypot(dx, dy);
+                        dx /= len;
+                        dy /= len;
+                    }
+
+                    this.x += dx * this.speed;
+                    this.y += dy * this.speed;
+
+                    if (dx !== 0 || dy !== 0) {
+                        this.angle = Math.atan2(dy, dx);
+                    }
+                } 
+                // 2. 터치 드래그 추적 (모바일 전용 1:1 드래깅 연산)
+                else if (touchState.active) {
+                    // 터치가 처음 시작된 지점으로부터 손가락이 움직인 변위 계산
+                    const targetX = touchState.playerStartX + (touchState.currentX - touchState.startX);
+                    const targetY = touchState.playerStartY + (touchState.currentY - touchState.startY);
+
+                    // 부드러운 위치 추적(Lerp 보정값 적용)
+                    const moveX = targetX - this.x;
+                    const moveY = targetY - this.y;
+                    const dist = Math.hypot(moveX, moveY);
+
+                    if (dist > 0.5) {
+                        this.x += moveX * 0.25; // 0.25 속도 가속 계수로 부드럽고 끈적하게 따라옴
+                        this.y += moveY * 0.25;
+                        this.angle = Math.atan2(moveY, moveX);
+                    }
                 }
 
-                // Or take virtual joystick inputs
-                if (joystick.active) {
-                    dx = Math.cos(joystick.angle) * joystick.force;
-                    dy = Math.sin(joystick.angle) * joystick.force;
+                // 이동 범위 고정 및 가상 드래그 중심점 리셋 (화면 밖 드래그 유실 방지)
+                const clampedX = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
+                const clampedY = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
+                
+                if (gameState.isTouchDevice && touchState.active) {
+                    if (this.x !== clampedX) {
+                        touchState.startX = touchState.currentX;
+                        touchState.playerStartX = clampedX;
+                    }
+                    if (this.y !== clampedY) {
+                        touchState.startY = touchState.currentY;
+                        touchState.playerStartY = clampedY;
+                    }
                 }
+                
+                this.x = clampedX;
+                this.y = clampedY;
 
-                // Move Player with boundary check
-                this.x += dx * this.speed;
-                this.y += dy * this.speed;
-
-                this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
-                this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
-
-                if (dx !== 0 || dy !== 0) {
-                    this.angle = Math.atan2(dy, dx);
-                }
-
-                // Turret Aim & Automated Shooting Logic
+                // 자동 타겟 조준 및 포탄 사격 메커니즘
                 if (gameState.isTouchDevice) {
-                    // Mobile: Find the closest enemy automatically (Auto-Aim)
+                    // 최단 거리 적 추적 알고리즘
                     let closestEnemy = null;
                     let minDist = Infinity;
                     
@@ -564,26 +598,24 @@
                     });
 
                     if (closestEnemy) {
-                        // Point turret to the closest enemy
                         this.turretAngle = Math.atan2(closestEnemy.y - this.y, closestEnemy.x - this.x);
-                    } else if (dx !== 0 || dy !== 0) {
-                        // If no enemies, point forward
+                    } else if (touchState.active) {
                         this.turretAngle = this.angle;
                     }
 
-                    // Auto-Fire: Shoot automatically whenever joystick is active (dragging) or if enemies are close!
-                    if (joystick.active || closestEnemy) {
+                    // 모바일 자동 사격 조건 (터치 중이거나 사정거리 내 적이 있을 때 가동)
+                    if (touchState.active || closestEnemy) {
                         this.shoot();
                     }
                 } else {
-                    // PC Keyboard/Mouse Controls
+                    // 마우스 기반 포탑 회전
                     this.turretAngle = Math.atan2(gameState.mouse.y - this.y, gameState.mouse.x - this.x);
                     if (gameState.mouse.down) {
                         this.shoot();
                     }
                 }
 
-                // Auto-regenerate shield slowly if not damaged recently
+                // 쉴드 비전투 자동 회복
                 if (this.shield < this.maxShield && Math.random() < 0.005) {
                     this.shield = Math.min(this.maxShield, this.shield + 1);
                     updateHUD();
@@ -593,7 +625,7 @@
             shoot() {
                 const now = Date.now();
                 let cd = CONFIG.baseFireRate;
-                if (this.buffs.fireRate.active) cd *= 0.5; // Fast firing buff
+                if (this.buffs.fireRate.active) cd *= 0.5;
 
                 if (now - this.lastShotTime >= cd) {
                     sound.playShoot();
@@ -603,7 +635,6 @@
                     const bSpeed = 12;
 
                     if (this.buffs.tripleShot.active) {
-                        // Fire 3 spreading bullets
                         const offsets = [-0.25, 0, 0.25];
                         offsets.forEach(off => {
                             gameState.bullets.push(new Bullet(
@@ -617,7 +648,6 @@
                         });
                         triggerShake(2);
                     } else if (this.buffs.doubleShot.active) {
-                        // Parallel 2 bullets
                         const sideAngle = this.turretAngle + Math.PI / 2;
                         const bx1 = this.x + Math.cos(this.turretAngle) * 28 + Math.cos(sideAngle) * 10;
                         const by1 = this.y + Math.sin(this.turretAngle) * 28 + Math.sin(sideAngle) * 10;
@@ -628,7 +658,6 @@
                         gameState.bullets.push(new Bullet(bx2, by2, this.turretAngle, bSpeed, damage, true));
                         triggerShake(2);
                     } else {
-                        // Single center bullet
                         const bx = this.x + Math.cos(this.turretAngle) * 30;
                         const by = this.y + Math.sin(this.turretAngle) * 30;
                         gameState.bullets.push(new Bullet(bx, by, this.turretAngle, bSpeed, damage, true));
@@ -641,7 +670,7 @@
                 if (this.shield > 0) {
                     this.shield -= amt;
                     if (this.shield < 0) {
-                        this.hp += this.shield; // remaining damage goes to hp
+                        this.hp += this.shield;
                         this.shield = 0;
                     }
                 } else {
@@ -663,7 +692,6 @@
                 ctx.save();
                 ctx.translate(this.x, this.y);
 
-                // Draw Shield Bubble if active
                 if (this.shield > 0) {
                     ctx.beginPath();
                     ctx.arc(0, 0, this.radius + 12, 0, Math.PI * 2);
@@ -674,25 +702,21 @@
                     ctx.stroke();
                 }
 
-                // Draw Tank Body shadow
                 ctx.shadowColor = '#10b981';
                 ctx.shadowBlur = 12;
 
-                // Treads Rotation (Follows movement direction)
                 ctx.save();
                 ctx.rotate(this.angle);
                 ctx.fillStyle = '#064e3b';
-                ctx.fillRect(-24, -20, 48, 8); // left tread
-                ctx.fillRect(-24, 12, 48, 8);  // right tread
+                ctx.fillRect(-24, -20, 48, 8);
+                ctx.fillRect(-24, 12, 48, 8);
                 ctx.fillStyle = '#10b981';
-                // Thread lines detail
                 for (let i = -20; i < 20; i += 8) {
                     ctx.fillRect(i, -20, 2, 8);
                     ctx.fillRect(i, 12, 2, 8);
                 }
                 ctx.restore();
 
-                // Main body hull (Hexagon style)
                 ctx.fillStyle = '#0f172a';
                 ctx.strokeStyle = '#10b981';
                 ctx.lineWidth = 3;
@@ -706,21 +730,17 @@
                 ctx.fill();
                 ctx.stroke();
 
-                // Turret center rotating separately
                 ctx.rotate(this.turretAngle);
 
-                // Barrel
                 ctx.fillStyle = '#059669';
                 ctx.strokeStyle = '#34d399';
                 ctx.lineWidth = 2.5;
                 ctx.fillRect(0, -6, 28, 12);
                 ctx.strokeRect(0, -6, 28, 12);
                 
-                // Muzzle tip
                 ctx.fillStyle = '#34d399';
                 ctx.fillRect(24, -8, 6, 16);
 
-                // Turret Dome
                 ctx.beginPath();
                 ctx.arc(0, 0, 11, 0, Math.PI * 2);
                 ctx.fillStyle = '#047857';
@@ -743,7 +763,7 @@
                 this.angle = angle;
                 this.damage = damage;
                 this.fromPlayer = fromPlayer;
-                this.life = 120; // frame count limit
+                this.life = 120;
             }
 
             update() {
@@ -757,12 +777,10 @@
                 ctx.translate(this.x, this.y);
                 ctx.rotate(this.angle);
 
-                // Glow style
                 ctx.shadowColor = this.fromPlayer ? '#22d3ee' : '#f43f5e';
                 ctx.shadowBlur = 10;
                 
                 ctx.fillStyle = this.fromPlayer ? '#22d3ee' : '#f43f5e';
-                // Capsule shape bullet
                 ctx.beginPath();
                 ctx.arc(0, 0, this.radius, Math.PI/2, -Math.PI/2);
                 ctx.lineTo(12, -this.radius);
@@ -778,7 +796,7 @@
             constructor(x, y, type) {
                 this.x = x;
                 this.y = y;
-                this.type = type; // 'normal', 'scout', 'sniper', 'boss'
+                this.type = type;
                 
                 this.angle = 0;
                 this.turretAngle = 0;
@@ -789,46 +807,48 @@
             }
 
             setStats() {
+                const mobileSpeedFactor = gameState.isTouchDevice ? 0.7 : 1.0;
+
                 switch(this.type) {
                     case 'normal':
                         this.radius = 20;
-                        this.speed = 1.8; // 속도 감소 (기존 2.0)
-                        this.hp = 30; // 체력 대폭 감소 (기존 50)
+                        this.speed = 1.8 * mobileSpeedFactor; 
+                        this.hp = 30; 
                         this.maxHp = 30;
-                        this.color = '#ef4444'; // Red
+                        this.color = '#ef4444';
                         this.accent = '#fca5a5';
                         this.scoreVal = 100;
-                        this.shootCooldown = 1800; // 공격 주기 느려짐 (기존 1500)
+                        this.shootCooldown = 1800; 
                         break;
-                    case 'scout': // Quick suicide attacker (melee focus)
+                    case 'scout':
                         this.radius = 16;
-                        this.speed = 2.0; // 속도 대폭 감소 (기존 2.8)
-                        this.hp = 15; // 체력 대폭 감소 (기존 25 - 플레이어 1방 컷)
+                        this.speed = 2.0 * mobileSpeedFactor; 
+                        this.hp = 15; 
                         this.maxHp = 15;
-                        this.color = '#e11d48'; // Bright Rose/Pink
+                        this.color = '#e11d48';
                         this.accent = '#fda4af';
                         this.scoreVal = 150;
-                        this.shootCooldown = 999999; // Never shoots, just rams
+                        this.shootCooldown = 999999;
                         break;
-                    case 'sniper': // Slower, highly defensive, fires fast bullets
+                    case 'sniper':
                         this.radius = 22;
-                        this.speed = 1.0; // 속도 감소 (기존 1.3)
-                        this.hp = 45; // 체력 대폭 감소 (기존 70)
+                        this.speed = 1.0 * mobileSpeedFactor; 
+                        this.hp = 45; 
                         this.maxHp = 45;
-                        this.color = '#fbbf24'; // Yellow
+                        this.color = '#fbbf24';
                         this.accent = '#fef3c7';
                         this.scoreVal = 200;
-                        this.shootCooldown = 3500; // 공격 주기 느려짐 (기존 3000)
+                        this.shootCooldown = 3500; 
                         break;
-                    case 'boss': // Giant Tank boss
+                    case 'boss':
                         this.radius = 45;
-                        this.speed = 0.6; // 속도 감소 (기존 0.8)
-                        this.hp = 300 + (gameState.wave * 80); // 체력 대폭 감소 (기존 600 + wave*150)
+                        this.speed = 0.6 * mobileSpeedFactor; 
+                        this.hp = 300 + (gameState.wave * 80); 
                         this.maxHp = this.hp;
-                        this.color = '#a855f7'; // Purple
+                        this.color = '#a855f7';
                         this.accent = '#f3e8ff';
                         this.scoreVal = 1000;
-                        this.shootCooldown = 1500; // 공격 주기 느려짐 (기존 1200)
+                        this.shootCooldown = 1500; 
                         break;
                 }
             }
@@ -841,21 +861,17 @@
                 const dist = Math.hypot(dx, dy);
 
                 this.angle = Math.atan2(dy, dx);
-                this.turretAngle = this.angle; // locks turret on player
+                this.turretAngle = this.angle;
 
-                // Basic AI steering
                 if (this.type === 'scout') {
-                    // Scout charges immediately
                     this.x += Math.cos(this.angle) * this.speed;
                     this.y += Math.sin(this.angle) * this.speed;
 
-                    // Ramming Damage Check
                     if (dist < this.radius + gameState.player.radius) {
                         gameState.player.takeDamage(20);
                         this.destroy();
                     }
                 } else if (this.type === 'sniper') {
-                    // Try to stay back and shoot
                     if (dist > 300) {
                         this.x += Math.cos(this.angle) * this.speed;
                         this.y += Math.sin(this.angle) * this.speed;
@@ -865,12 +881,10 @@
                     }
                     this.shoot();
                 } else if (this.type === 'boss') {
-                    // Slowly approach
                     this.x += Math.cos(this.angle) * this.speed;
                     this.y += Math.sin(this.angle) * this.speed;
                     this.shoot();
                 } else {
-                    // Normal behavior: approach within range, then hover
                     if (dist > 180) {
                         this.x += Math.cos(this.angle) * this.speed;
                         this.y += Math.sin(this.angle) * this.speed;
@@ -878,7 +892,6 @@
                     this.shoot();
                 }
 
-                // Prevent enemies from leaving screen boundaries
                 this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
                 this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
             }
@@ -892,7 +905,6 @@
                     const damage = this.type === 'boss' ? 30 : (this.type === 'sniper' ? 25 : 15);
 
                     if (this.type === 'boss') {
-                        // Boss shoots 3 wide projectiles
                         sound.playSniperShoot();
                         const angles = [-0.2, 0, 0.2];
                         angles.forEach(off => {
@@ -908,7 +920,6 @@
                             gameState.bullets.push(b);
                         });
                     } else {
-                        // standard bullet
                         if (this.type === 'sniper') sound.playSniperShoot();
                         else sound.playShoot();
 
@@ -927,7 +938,6 @@
             }
 
             destroy() {
-                // Remove self from list safely in main loop
                 const index = gameState.enemies.indexOf(this);
                 if (index > -1) {
                     gameState.enemies.splice(index, 1);
@@ -938,11 +948,9 @@
                 ctx.save();
                 ctx.translate(this.x, this.y);
 
-                // Body glow shadow
                 ctx.shadowColor = this.color;
                 ctx.shadowBlur = 10;
 
-                // HP Bar container above head
                 if (this.hp < this.maxHp) {
                     ctx.fillStyle = 'rgba(15, 23, 42, 0.6)';
                     ctx.fillRect(-this.radius, -this.radius - 12, this.radius * 2, 4);
@@ -952,24 +960,20 @@
 
                 ctx.rotate(this.angle);
 
-                // Draw Treads
                 ctx.fillStyle = '#334155';
                 ctx.fillRect(-this.radius - 2, -this.radius + 2, this.radius * 2 + 4, 5);
                 ctx.fillRect(-this.radius - 2, this.radius - 7, this.radius * 2 + 4, 5);
 
-                // Main body hull (distinct shaped based on type)
                 ctx.fillStyle = '#0f172a';
                 ctx.strokeStyle = this.color;
                 ctx.lineWidth = 2.5;
 
                 ctx.beginPath();
                 if (this.type === 'scout') {
-                    // Triangle shaped scout
                     ctx.moveTo(-this.radius, -this.radius + 4);
                     ctx.lineTo(this.radius, 0);
                     ctx.lineTo(-this.radius, this.radius - 4);
                 } else if (this.type === 'sniper') {
-                    // Octagon shaped defensive sniper
                     ctx.moveTo(-this.radius + 6, -this.radius);
                     ctx.lineTo(this.radius - 6, -this.radius);
                     ctx.lineTo(this.radius, -this.radius + 6);
@@ -979,14 +983,12 @@
                     ctx.lineTo(-this.radius, this.radius - 6);
                     ctx.lineTo(-this.radius, -this.radius + 6);
                 } else {
-                    // Classic robust square/rect body
                     ctx.rect(-this.radius, -this.radius + 4, this.radius * 2, this.radius * 2 - 8);
                 }
                 ctx.closePath();
                 ctx.fill();
                 ctx.stroke();
 
-                // Turret Dome and Barrel
                 if (this.type !== 'scout') {
                     ctx.fillStyle = '#1e293b';
                     ctx.fillRect(0, -4, this.radius * 1.2, 8);
@@ -998,7 +1000,6 @@
                     ctx.fill();
                     ctx.stroke();
                 } else {
-                    // Spike details on scouts
                     ctx.fillStyle = this.color;
                     ctx.beginPath();
                     ctx.moveTo(5, -4);
@@ -1012,12 +1013,11 @@
             }
         }
 
-        // Power-Up items that drop inside the Arena
         class PowerUp {
             constructor(x, y, type) {
                 this.x = x;
                 this.y = y;
-                this.type = type; // 'health', 'shield', 'doubleShot', 'tripleShot', 'fireRate', 'speed'
+                this.type = type;
                 this.radius = 16;
                 this.angle = 0;
                 this.spawnTime = Date.now();
@@ -1025,13 +1025,11 @@
             }
 
             update() {
-                // Pulse effect
                 this.angle += 0.05;
                 this.pulseFactor = 1 + Math.sin(this.angle) * 0.15;
             }
 
             draw() {
-                // Check blinking on timeout (expires in 12s, blinks after 8s)
                 const elapsed = Date.now() - this.spawnTime;
                 if (elapsed > 12000) {
                     const idx = gameState.powerUps.indexOf(this);
@@ -1039,7 +1037,7 @@
                     return;
                 }
                 if (elapsed > 8000 && Math.floor(elapsed / 150) % 2 === 0) {
-                    return; // Skip drawing to blink
+                    return;
                 }
 
                 ctx.save();
@@ -1051,32 +1049,31 @@
 
                 switch (this.type) {
                     case 'health':
-                        color = '#10b981'; // Green
+                        color = '#10b981';
                         icon = '+';
                         break;
                     case 'shield':
-                        color = '#06b6d4'; // Cyan
+                        color = '#06b6d4';
                         icon = 'S';
                         break;
                     case 'doubleShot':
-                        color = '#fbbf24'; // Amber
+                        color = '#fbbf24';
                         icon = 'D';
                         break;
                     case 'tripleShot':
-                        color = '#ec4899'; // Pink
+                        color = '#ec4899';
                         icon = 'T';
                         break;
                     case 'fireRate':
-                        color = '#8b5cf6'; // Purple
+                        color = '#8b5cf6';
                         icon = 'F';
                         break;
                     case 'speed':
-                        color = '#f97316'; // Orange
+                        color = '#f97316';
                         icon = 'V';
                         break;
                 }
 
-                // Outter glow ring
                 ctx.shadowColor = color;
                 ctx.shadowBlur = 12;
                 ctx.strokeStyle = color;
@@ -1085,7 +1082,6 @@
                 ctx.arc(0, 0, this.radius, 0, Math.PI * 2);
                 ctx.stroke();
 
-                // Inner rotating polygon
                 ctx.rotate(this.angle * 0.4);
                 ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
                 ctx.beginPath();
@@ -1093,7 +1089,6 @@
                 ctx.fill();
                 ctx.stroke();
 
-                // Icon lettering
                 ctx.rotate(-this.angle * 0.4);
                 ctx.fillStyle = color;
                 ctx.font = "bold 14px 'Orbitron', sans-serif";
@@ -1105,7 +1100,6 @@
             }
         }
 
-        // Sparks Particles for Explosions
         class Particle {
             constructor(x, y, color) {
                 this.x = x;
@@ -1123,7 +1117,7 @@
             update() {
                 this.x += this.vx;
                 this.y += this.vy;
-                this.vx *= 0.96; // drag
+                this.vx *= 0.96;
                 this.vy *= 0.96;
                 this.alpha -= this.decay;
             }
@@ -1147,46 +1141,38 @@
             }
         }
 
-        // Check game item collision with player
         function checkCollisions() {
             if (!gameState.player) return;
 
-            // Player VS PowerUps
             for (let i = gameState.powerUps.length - 1; i >= 0; i--) {
                 const pu = gameState.powerUps[i];
                 const dist = Math.hypot(pu.x - gameState.player.x, pu.y - gameState.player.y);
                 if (dist < pu.radius + gameState.player.radius) {
-                    // Collect item
                     sound.playPowerup();
                     applyPowerUp(pu.type);
                     gameState.powerUps.splice(i, 1);
                 }
             }
 
-            // Bullet collisions
             for (let i = gameState.bullets.length - 1; i >= 0; i--) {
                 const b = gameState.bullets[i];
 
                 if (b.fromPlayer) {
-                    // Check against all enemies
                     for (let j = gameState.enemies.length - 1; j >= 0; j--) {
                         const enemy = gameState.enemies[j];
                         const dist = Math.hypot(b.x - enemy.x, b.y - enemy.y);
                         if (dist < b.radius + enemy.radius) {
-                            // Hit enemy!
                             enemy.hp -= b.damage;
                             spawnSparks(b.x, b.y, enemy.color, 6);
                             sound.playHit();
                             gameState.bullets.splice(i, 1);
 
-                            // Check death
                             if (enemy.hp <= 0) {
                                 sound.playExplosion();
                                 triggerShake(enemy.type === 'boss' ? 12 : 4);
                                 spawnSparks(enemy.x, enemy.y, enemy.color, enemy.type === 'boss' ? 40 : 20);
                                 
-                                // Chance to spawn a PowerUp item
-                                if (Math.random() < 0.35 || enemy.type === 'boss') { // Increased drop rate (was 0.25)
+                                if (Math.random() < 0.35 || enemy.type === 'boss') {
                                     spawnRandomPowerUp(enemy.x, enemy.y);
                                 }
 
@@ -1196,11 +1182,10 @@
 
                                 enemy.destroy();
                             }
-                            break; // break enemy inner loop as bullet is gone
+                            break;
                         }
                     }
                 } else {
-                    // Check against Player
                     const dist = Math.hypot(b.x - gameState.player.x, b.y - gameState.player.y);
                     if (dist < b.radius + gameState.player.radius) {
                         gameState.player.takeDamage(b.damage);
@@ -1210,9 +1195,8 @@
             }
         }
 
-        // Apply item effect to player
         function applyPowerUp(type) {
-            const duration = 8000; // 8 seconds standard duration
+            const duration = 8000;
             switch (type) {
                 case 'health':
                     gameState.player.hp = Math.min(gameState.player.maxHp, gameState.player.hp + 35);
@@ -1223,7 +1207,6 @@
                 case 'doubleShot':
                     gameState.player.buffs.doubleShot.active = true;
                     gameState.player.buffs.doubleShot.timer = duration;
-                    // Mutually exclusive visual representation
                     gameState.player.buffs.tripleShot.active = false;
                     break;
                 case 'tripleShot':
@@ -1243,14 +1226,12 @@
             updateHUD();
         }
 
-        // Spawns power-up at location
         function spawnRandomPowerUp(x, y) {
             const pool = ['health', 'shield', 'doubleShot', 'tripleShot', 'fireRate', 'speed'];
             const chosen = pool[Math.floor(Math.random() * pool.length)];
             gameState.powerUps.push(new PowerUp(x, y, chosen));
         }
 
-        // Update top-screen values HUD
         function updateHUD() {
             if (!gameState.player) return;
 
@@ -1260,13 +1241,12 @@
 
             const hpPercent = (gameState.player.hp / gameState.player.maxHp) * 100;
             document.getElementById('hpBar').style.width = `${hpPercent}%`;
-            document.getElementById('hpText').textContent = `${Math.ceil(gameState.player.hp)} / ${gameState.player.maxHp}`;
+            document.getElementById('hpText').textContent = `${Math.ceil(gameState.player.hp)}/${gameState.player.maxHp}`;
 
             const shieldPercent = (gameState.player.shield / gameState.player.maxShield) * 100;
             document.getElementById('shieldBar').style.width = `${shieldPercent}%`;
             document.getElementById('shieldText').textContent = `${Math.ceil(shieldPercent)}%`;
 
-            // Active buff tags rendering
             const buffContainer = document.getElementById('buffContainer');
             buffContainer.innerHTML = '';
             
@@ -1282,56 +1262,50 @@
                 if (buff.active) {
                     const cfg = bIcons[bKey];
                     const div = document.createElement('div');
-                    div.className = `px-2 py-1 text-xs font-bold rounded-lg border flex items-center gap-1 ${cfg.color}`;
-                    div.innerHTML = `<span>${cfg.name}</span><span class="text-[10px] opacity-70">${Math.ceil(buff.timer / 1000)}s</span>`;
+                    div.className = `px-1.5 py-0.5 text-[9px] font-bold rounded border flex items-center gap-1 ${cfg.color}`;
+                    div.innerHTML = `<span>${cfg.name}</span><span class="text-[8px] opacity-70">${Math.ceil(buff.timer / 1000)}s</span>`;
                     buffContainer.appendChild(div);
                 }
             }
         }
 
-        // Wave Engine Progression Mechanics
         function startNextWave() {
             gameState.waveSpawning = true;
             gameState.enemies = [];
             
-            // Calculate spawn quantities based on wave number (극도로 여유롭게 난이도 완화)
             const enemyCount = Math.floor(2 + (gameState.wave * 0.8));
             
-            // Spawn normal, scouts, snipers based on waves
             let types = ['normal'];
             if (gameState.wave >= 2) types.push('scout');
             if (gameState.wave >= 3) types.push('sniper');
 
-            // Generate Enemy Units outside the direct viewport area to prevent instant player collisions
             for (let i = 0; i < enemyCount; i++) {
                 let ex, ey;
-                const edge = Math.floor(Math.random() * 4); // top, right, bottom, left
+                const edge = Math.floor(Math.random() * 4);
                 
                 switch (edge) {
-                    case 0: // Top edge
+                    case 0:
                         ex = Math.random() * canvas.width;
                         ey = -50;
                         break;
-                    case 1: // Right Edge
+                    case 1:
                         ex = canvas.width + 50;
                         ey = Math.random() * canvas.height;
                         break;
-                    case 2: // Bottom Edge
+                    case 2:
                         ex = Math.random() * canvas.width;
                         ey = canvas.height + 50;
                         break;
-                    case 3: // Left Edge
+                    case 3:
                         ex = -50;
                         ey = Math.random() * canvas.height;
                         break;
                 }
 
-                // Pick a random enemy class type
                 const pickedType = types[Math.floor(Math.random() * types.length)];
                 gameState.enemies.push(new Enemy(ex, ey, pickedType));
             }
 
-            // Spawn BOSS every 5 waves!
             if (gameState.wave % 5 === 0) {
                 gameState.enemies.push(new Enemy(canvas.width / 2, -100, 'boss'));
             }
@@ -1340,7 +1314,6 @@
             updateHUD();
         }
 
-        // Setup Keyboard listeners
         window.addEventListener('keydown', (e) => {
             gameState.keys[e.key.toLowerCase()] = true;
             if (e.key === ' ') {
@@ -1354,7 +1327,6 @@
             }
         });
 
-        // Mouse listeners
         window.addEventListener('mousemove', (e) => {
             const rect = canvas.getBoundingClientRect();
             gameState.mouse.x = e.clientX - rect.left;
@@ -1371,40 +1343,35 @@
             }
         });
 
-        // Draw Arena Grid Floor Pattern
         function drawGridBackground() {
             ctx.strokeStyle = 'rgba(16, 185, 129, 0.04)';
             ctx.lineWidth = 1;
             const gridSize = 45;
 
             ctx.beginPath();
-            // vertical grid lines
             for (let x = 0; x < canvas.width; x += gridSize) {
                 ctx.moveTo(x, 0);
                 ctx.lineTo(x, canvas.height);
             }
-            // horizontal grid lines
             for (let y = 0; y < canvas.height; y += gridSize) {
                 ctx.moveTo(0, y);
                 ctx.lineTo(canvas.width, y);
             }
             ctx.stroke();
 
-            // Inner Boundary line glow style
             ctx.strokeStyle = 'rgba(6, 182, 212, 0.15)';
             ctx.lineWidth = 4;
             ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20);
         }
 
-        // Game Over Trigger
         function triggerGameOver() {
             gameState.gameOver = true;
             gameState.running = false;
             gameState.mouse.down = false;
+            touchState.active = false;
 
             sound.playExplosion();
 
-            // Save High Score
             const newRecord = gameState.score > highScore;
             if (newRecord) {
                 highScore = gameState.score;
@@ -1422,59 +1389,68 @@
             document.getElementById('gameOverScreen').style.display = 'flex';
         }
 
-        // Main Loop
+        function exitToMainMenu() {
+            gameState.running = false;
+            gameState.gameOver = false;
+            gameState.mouse.down = false;
+            touchState.active = false;
+            
+            document.getElementById('hud').style.opacity = '0';
+            document.getElementById('startScreen').classList.remove('hidden');
+            
+            gameState.bullets = [];
+            gameState.enemies = [];
+            gameState.particles = [];
+            gameState.powerUps = [];
+            gameState.player = null;
+
+            const currentScore = parseInt(localStorage.getItem('neon_tank_high_score') || '0');
+            document.getElementById('startHighScore').textContent = currentScore;
+        }
+
         function gameLoop() {
             if (!gameState.running || gameState.gameOver) return;
 
-            // Apply Screen Shake
             ctx.save();
             if (gameState.screenShake > 0.1) {
                 const dx = (Math.random() - 0.5) * gameState.screenShake;
                 const dy = (Math.random() - 0.5) * gameState.screenShake;
                 ctx.translate(dx, dy);
-                gameState.screenShake *= 0.9; // dampen
+                gameState.screenShake *= 0.9;
             }
 
-            // Clear Background Screen
             ctx.fillStyle = '#0f172a';
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-            // Draw Environment Grid
             drawGridBackground();
 
-            // Update & Render Player
             if (gameState.player) {
                 gameState.player.update();
                 gameState.player.draw();
             }
 
-            // Update & Render Bullets
             for (let i = gameState.bullets.length - 1; i >= 0; i--) {
                 const b = gameState.bullets[i];
                 b.update();
                 b.draw();
 
-                // Bullet lifecycle check or screen boundaries check
                 if (b.life <= 0 || b.x < 0 || b.x > canvas.width || b.y < 0 || b.y > canvas.height) {
                     gameState.bullets.splice(i, 1);
                 }
             }
 
-            // Update & Render Enemies
             for (let i = gameState.enemies.length - 1; i >= 0; i--) {
                 const enemy = gameState.enemies[i];
                 enemy.update();
                 enemy.draw();
             }
 
-            // Update & Render PowerUps
             for (let i = gameState.powerUps.length - 1; i >= 0; i--) {
                 const pu = gameState.powerUps[i];
                 pu.update();
                 pu.draw();
             }
 
-            // Update & Render Particles
             for (let i = gameState.particles.length - 1; i >= 0; i--) {
                 const p = gameState.particles[i];
                 p.update();
@@ -1485,10 +1461,8 @@
                 }
             }
 
-            // Compute Physics and Damages
             checkCollisions();
 
-            // Handle wave transition triggers
             if (gameState.enemies.length === 0 && !gameState.waveSpawning) {
                 gameState.wave++;
                 startNextWave();
@@ -1498,7 +1472,6 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Initialize Game Reset
         function restartGame() {
             document.getElementById('gameOverScreen').style.display = 'none';
             document.getElementById('hud').style.opacity = '1';
@@ -1519,9 +1492,24 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Start Screen Click Event listeners
+        function syncSoundUI(isEnabled) {
+            const startIcon = document.getElementById('soundIcon');
+            const startText = document.getElementById('soundText');
+            const hudIcon = document.getElementById('hudMuteIcon');
+
+            if (isEnabled) {
+                startIcon.className = 'fas fa-volume-high text-cyan-400';
+                startText.textContent = '사운드 켜짐 (권장)';
+                hudIcon.className = 'fas fa-volume-high text-cyan-400';
+            } else {
+                startIcon.className = 'fas fa-volume-xmark text-slate-500';
+                startText.textContent = '사운드 꺼짐';
+                hudIcon.className = 'fas fa-volume-xmark text-rose-500';
+            }
+        }
+
         document.getElementById('startBtn').addEventListener('click', () => {
-            sound.init(); // Init audio node context on click interaction
+            sound.init();
             document.getElementById('startScreen').classList.add('hidden');
             restartGame();
         });
@@ -1530,19 +1518,33 @@
             restartGame();
         });
 
-        // Toggle Audio Icon Handler
         document.getElementById('soundToggle').addEventListener('click', () => {
             const isEnabled = sound.toggle();
-            const icon = document.getElementById('soundIcon');
-            const text = document.getElementById('soundText');
+            syncSoundUI(isEnabled);
+        });
 
-            if (isEnabled) {
-                icon.className = 'fas fa-volume-high text-cyan-400';
-                text.textContent = '사운드 켜짐 (권장)';
-            } else {
-                icon.className = 'fas fa-volume-xmark text-slate-500';
-                text.textContent = '사운드 꺼짐';
-            }
+        document.getElementById('hudMuteBtn').addEventListener('click', () => {
+            const isEnabled = sound.toggle();
+            syncSoundUI(isEnabled);
+        });
+
+        // 자체 Confirm 모달 트리거 바인딩
+        const confirmModal = document.getElementById('confirmModal');
+        
+        document.getElementById('hudExitBtn').addEventListener('click', () => {
+            confirmModal.classList.remove('hidden');
+            confirmModal.classList.add('flex');
+        });
+
+        document.getElementById('confirmCancelBtn').addEventListener('click', () => {
+            confirmModal.classList.remove('flex');
+            confirmModal.classList.add('hidden');
+        });
+
+        document.getElementById('confirmOkBtn').addEventListener('click', () => {
+            confirmModal.classList.remove('flex');
+            confirmModal.classList.add('hidden');
+            exitToMainMenu();
         });
     </script>
 </body>
