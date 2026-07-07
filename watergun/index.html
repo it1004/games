@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>물총대전: 워터 스플래시 아레나</title>
     <!-- Tailwind CSS for modern UI design -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -19,16 +19,23 @@
             touch-action: none;
             overflow: hidden;
             background-color: #e0f2fe;
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overscroll-behavior: none;
         }
         /* Mobile layout styling to prevent default pull-to-refresh and gestures */
-        html, body {
-            position: fixed;
+        html {
             width: 100%;
             height: 100%;
+            overflow: hidden;
+            position: fixed;
         }
         canvas {
             image-rendering: pixelated;
-            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+            touch-action: none;
         }
         /* Gradient animations for immersive background */
         .bg-wave {
@@ -39,7 +46,7 @@
         }
     </style>
 </head>
-<body class="flex flex-col items-center justify-center min-h-screen p-0 m-0 overflow-hidden select-none">
+<body class="w-screen h-screen m-0 p-0 overflow-hidden select-none bg-sky-100 flex items-center justify-center">
 
 <!-- Start Screen Overlay -->
 <div id="startScreen" class="absolute inset-0 z-50 flex flex-col items-center justify-center p-4 bg-wave text-white overflow-y-auto">
@@ -99,7 +106,7 @@
 </div>
 
 <!-- Main Gameplay Overlay UI & Canvas Wrapper -->
-<div class="relative w-full h-full flex flex-col items-center justify-center">
+<div class="absolute inset-0 w-full h-full flex flex-col items-center justify-center overflow-hidden">
     
     <!-- Top HUD (Scoreboard & Status) -->
     <div id="gameHUD" class="absolute top-4 left-4 right-4 z-40 flex justify-between items-center pointer-events-none hidden">
@@ -154,9 +161,9 @@
         </div>
     </div>
 
-    <!-- Canvas Container -->
-    <div id="canvasContainer" class="relative w-full h-full flex items-center justify-center bg-sky-100">
-        <canvas id="gameCanvas" class="block rounded-lg"></canvas>
+    <!-- Canvas Container (Fills exact viewport space nicely) -->
+    <div id="canvasContainer" class="w-full h-full flex items-center justify-center bg-sky-100 relative overflow-hidden">
+        <canvas id="gameCanvas" class="block rounded-xl"></canvas>
     </div>
 
     <!-- Mobile Controller Overlays (Active on mobile/touch interfaces) -->
@@ -302,7 +309,6 @@ function playSound(type) {
         const now = audioCtx.currentTime;
 
         if (type === 'shoot') {
-            // Water shooting frequency sweep
             osc.type = 'triangle';
             osc.frequency.setValueAtTime(800, now);
             osc.frequency.exponentialRampToValueAtTime(150, now + 0.15);
@@ -311,7 +317,6 @@ function playSound(type) {
             osc.start(now);
             osc.stop(now + 0.15);
         } else if (type === 'hit') {
-            // Squelch wet hit sound
             osc.type = 'sine';
             osc.frequency.setValueAtTime(300, now);
             osc.frequency.exponentialRampToValueAtTime(80, now + 0.1);
@@ -320,7 +325,6 @@ function playSound(type) {
             osc.start(now);
             osc.stop(now + 0.1);
         } else if (type === 'refill') {
-            // Bubbling water refill sound
             osc.type = 'sine';
             osc.frequency.setValueAtTime(400 + Math.random() * 200, now);
             osc.frequency.linearRampToValueAtTime(700, now + 0.1);
@@ -329,7 +333,6 @@ function playSound(type) {
             osc.start(now);
             osc.stop(now + 0.1);
         } else if (type === 'powerup') {
-            // Powerup jingle
             osc.type = 'sine';
             osc.frequency.setValueAtTime(523.25, now); // C5
             osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
@@ -339,7 +342,6 @@ function playSound(type) {
             osc.start(now);
             osc.stop(now + 0.35);
         } else if (type === 'defeat') {
-            // Defeat sad down sweep
             osc.type = 'sawtooth';
             osc.frequency.setValueAtTime(300, now);
             osc.frequency.linearRampToValueAtTime(80, now + 0.5);
@@ -348,7 +350,6 @@ function playSound(type) {
             osc.start(now);
             osc.stop(now + 0.5);
         } else if (type === 'victory') {
-            // Victory fanfare
             osc.type = 'square';
             osc.frequency.setValueAtTime(523.25, now);
             osc.frequency.setValueAtTime(659.25, now + 0.1);
@@ -360,12 +361,12 @@ function playSound(type) {
             osc.stop(now + 0.6);
         }
     } catch (e) {
-        // Fallback if audio fails or is blocked
         console.warn("Audio Context error:", e);
     }
 }
 </script>
 
+<!-- Main Game Configs -->
 <script>
 // Game Area Dimensions
 const V_WIDTH = 1600; // Virtual width of the arena
@@ -459,30 +460,33 @@ function initCanvas() {
 }
 
 function resizeCanvas() {
-    // Fits the virtual 16:10 or 16:9 box nicely inside screen while scaling
+    // Fits the virtual box nicely inside screen while scaling dynamically
     const container = document.getElementById('canvasContainer');
-    const width = container.clientWidth;
-    const height = container.clientHeight;
+    const width = container.clientWidth || window.innerWidth;
+    const height = container.clientHeight || window.innerHeight;
 
     const ratio = V_WIDTH / V_HEIGHT;
     
     let w = width;
     let h = width / ratio;
 
+    // Adjust sizes to fit screen strictly without vertical or horizontal overflows
     if (h > height) {
         h = height;
         w = height * ratio;
     }
 
+    // Force exact pixel layouts for standard views
     canvas.style.width = w + 'px';
     canvas.style.height = h + 'px';
     
-    // Physical resolution of the canvas
+    // Physical internal resolution of the canvas
     canvas.width = V_WIDTH;
     canvas.height = V_HEIGHT;
 }
 </script>
 
+<!-- Mobile Input Control System -->
 <script>
 const keys = {};
 const mouse = { x: 0, y: 0, isDown: false };
@@ -495,7 +499,6 @@ let aimTouchId = null;
 let joystickCenter = { x: 0, y: 0 };
 let mobileFiring = false;
 
-// Initialize all user input bindings
 function initInput() {
     // Key bindings (PC)
     window.addEventListener('keydown', (e) => {
@@ -514,8 +517,8 @@ function initInput() {
     // Mouse Events for Arena Play (Desktop)
     canvas.addEventListener('mousemove', (e) => {
         const rect = canvas.getBoundingClientRect();
-        const scaleX = V_WIDTH / rect.width;
-        const scaleY = V_HEIGHT / rect.height;
+        const scaleX = V_WIDTH / (rect.width || 1);
+        const scaleY = V_HEIGHT / (rect.height || 1);
         mouse.x = (e.clientX - rect.left) * scaleX;
         mouse.y = (e.clientY - rect.top) * scaleY;
     });
@@ -535,7 +538,7 @@ function initInput() {
     window.addEventListener('touchstart', (e) => {
         if (!isPlaying) return;
 
-        // Prevent UI interference: ignore touches on buttons, select grids and active modal cards
+        // Prevent UI interference
         if (e.target.closest('button') || e.target.closest('a') || e.target.closest('.gun-btn') || e.target.closest('#shopScreen')) {
             return;
         }
@@ -626,7 +629,6 @@ function initInput() {
                 joystickActive = false;
                 joystickDir = { x: 0, y: 0 };
                 
-                // Hide dynamic joystick visually on release
                 joystickZone.style.opacity = '0';
                 knob.style.transform = `translate(0px, 0px)`;
             } 
@@ -636,22 +638,37 @@ function initInput() {
                 mouse.isDown = false;
             }
         }
+
+        // PERFECT MOBILE SAFETY-NET: If there are absolutely no active touches, reset all states
+        if (e.touches.length === 0) {
+            moveTouchId = null;
+            aimTouchId = null;
+            joystickActive = false;
+            mobileFiring = false;
+            mouse.isDown = false;
+            joystickDir = { x: 0, y: 0 };
+            joystickZone.style.opacity = '0';
+            knob.style.transform = `translate(0px, 0px)`;
+        }
     }
 
     function updateAimCoordinates(touch) {
         const canvasRect = canvas.getBoundingClientRect();
-        const scaleX = V_WIDTH / canvasRect.width;
-        const scaleY = V_HEIGHT / canvasRect.height;
+        // Fallback to avoid division by zero when calculating scaling factor
+        const scaleX = V_WIDTH / (canvasRect.width || 1);
+        const scaleY = V_HEIGHT / (canvasRect.height || 1);
         const touchX = (touch.clientX - canvasRect.left) * scaleX;
         const touchY = (touch.clientY - canvasRect.top) * scaleY;
 
-        mouse.x = touchX;
-        mouse.y = touchY;
+        // Bounded within game world to prevent NaN / Out of bounds calculations
+        mouse.x = Math.max(0, Math.min(V_WIDTH, touchX));
+        mouse.y = Math.max(0, Math.min(V_HEIGHT, touchY));
         mouse.isDown = true;
     }
 }
 </script>
 
+<!-- Map & Game Objects definition -->
 <script>
 class Obstacle {
     constructor(x, y, w, h, type = 'box') {
@@ -659,13 +676,12 @@ class Obstacle {
         this.y = y;
         this.w = w;
         this.h = h;
-        this.type = type; // 'box', 'round', 'umbrella'
+        this.type = type; // 'box', 'umbrella', 'bush'
     }
 
     draw() {
         ctx.save();
         if (this.type === 'box') {
-            // High beach wall
             ctx.fillStyle = '#b45309'; // Sand brown box
             ctx.strokeStyle = '#78350f';
             ctx.lineWidth = 4;
@@ -674,22 +690,18 @@ class Obstacle {
             ctx.fill();
             ctx.stroke();
             
-            // Wooden fence patterns inside
             ctx.fillStyle = '#92400e';
             ctx.fillRect(this.x + 8, this.y + 8, this.w - 16, this.h - 16);
         } else if (this.type === 'umbrella') {
-            // Beach Umbrella
             const cx = this.x + this.w / 2;
             const cy = this.y + this.h / 2;
             const r = this.w / 2;
             
-            // Umbrella Pole shadow
             ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
             ctx.beginPath();
             ctx.ellipse(cx + 8, cy + 25, r * 0.9, r * 0.4, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // Umbrella Stand
             ctx.strokeStyle = '#64748b';
             ctx.lineWidth = 6;
             ctx.beginPath();
@@ -697,10 +709,9 @@ class Obstacle {
             ctx.lineTo(cx + 4, cy + 20);
             ctx.stroke();
 
-            // Canopy
             ctx.beginPath();
             ctx.arc(cx, cy, r, 0, Math.PI * 2);
-            ctx.fillStyle = '#ef4444'; // Red and white stripe
+            ctx.fillStyle = '#ef4444'; 
             ctx.fill();
 
             ctx.fillStyle = '#ffffff';
@@ -712,20 +723,17 @@ class Obstacle {
             }
             ctx.fill();
 
-            // Center tip
             ctx.fillStyle = '#f59e0b';
             ctx.beginPath();
             ctx.arc(cx, cy, r * 0.15, 0, Math.PI * 2);
             ctx.fill();
         } else if (this.type === 'bush') {
-            // Green Bush
             const cx = this.x + this.w/2;
             const cy = this.y + this.h/2;
             ctx.fillStyle = '#15803d';
             ctx.strokeStyle = '#166534';
             ctx.lineWidth = 3;
             
-            // Draw multi-layered bush circles
             ctx.beginPath();
             ctx.arc(cx - 15, cy, 35, 0, Math.PI * 2);
             ctx.arc(cx + 15, cy, 35, 0, Math.PI * 2);
@@ -733,7 +741,6 @@ class Obstacle {
             ctx.fill();
             ctx.stroke();
 
-            // Highlights
             ctx.fillStyle = '#22c55e';
             ctx.beginPath();
             ctx.arc(cx - 5, cy - 8, 20, 0, Math.PI * 2);
@@ -758,7 +765,7 @@ class Particle {
     update() {
         this.x += this.vx;
         this.y += this.vy;
-        this.vx *= 0.95; // Drag
+        this.vx *= 0.95; 
         this.vy *= 0.95;
         this.life--;
     }
@@ -780,7 +787,7 @@ class SplashPuddle {
         this.y = y;
         this.radius = radius;
         this.color = color;
-        this.life = 120; // Last for 2 seconds (60fps)
+        this.life = 120; 
     }
     update() { this.life--; }
     draw() {
@@ -798,7 +805,7 @@ class PowerUp {
     constructor(x, y, type) {
         this.x = x;
         this.y = y;
-        this.type = type; // 'shield', 'speed', 'towel' (heal), 'infinite_water'
+        this.type = type; 
         this.size = 20;
         this.pulse = 0;
     }
@@ -811,13 +818,11 @@ class PowerUp {
         ctx.save();
         const scale = 1 + Math.sin(this.pulse) * 0.1;
         
-        // Draw shadow
         ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
         ctx.beginPath();
         ctx.arc(this.x, this.y + 12, this.size * scale * 0.8, 0, Math.PI*2);
         ctx.fill();
 
-        // Draw outer ring glow
         let color = '#fbbf24';
         let icon = '⚡';
         if (this.type === 'shield') { color = '#3b82f6'; icon = '🛡️'; }
@@ -832,7 +837,6 @@ class PowerUp {
         ctx.fill();
         ctx.stroke();
 
-        // Draw inner glyph representation
         ctx.fillStyle = '#1e293b';
         ctx.font = 'bold 16px Arial';
         ctx.textAlign = 'center';
@@ -843,6 +847,7 @@ class PowerUp {
 }
 </script>
 
+<!-- Water Projectile Object -->
 <script>
 class WaterBullet {
     constructor(x, y, angle, gunStats, isPlayerBullet, ownerId, color = '#38bdf8') {
@@ -867,11 +872,8 @@ class WaterBullet {
         this.x += this.vx;
         this.y += this.vy;
         this.traveled += this.speed;
-        
-        // Add water drop falling effect visually
         this.size = Math.max(2, this.size * 0.99);
 
-        // Spawn gentle water trail particles
         if (Math.random() < 0.3) {
             particles.push(new Particle(this.x, this.y, -this.vx * 0.2, -this.vy * 0.2, this.color, this.size * 0.6, 15));
         }
@@ -894,6 +896,7 @@ class WaterBullet {
 }
 </script>
 
+<!-- Dynamic Character (Player + AI Bots) -->
 <script>
 class Character {
     constructor(x, y, team, gunType, isPlayer = false, id) {
@@ -905,13 +908,11 @@ class Character {
         this.isPlayer = isPlayer;
         this.id = id;
 
-        // Custom base attributes
         this.speed = 5.0;
-        this.wetness = 0;      // Wetness meter (0 to 100), reaches 100 = KO
-        this.waterAmmo = 100;  // Capacity (0 to 100)
+        this.wetness = 0;      
+        this.waterAmmo = 100;  
         this.maxWater = 100;
 
-        // Action mechanics
         this.angle = 0;
         this.cooldownTimer = 0;
         this.shieldTimer = 0;
@@ -920,12 +921,10 @@ class Character {
         this.isKO = false;
         this.respawnTimer = 0;
 
-        // Custom visual color options
         this.color = this.team === 'blue' ? '#38bdf8' : '#ef4444';
         this.accentColor = this.team === 'blue' ? '#0369a1' : '#b91c1c';
 
-        // AI decision logic states
-        this.aiState = 'wander'; // 'wander', 'chase', 'refill', 'flee'
+        this.aiState = 'wander'; 
         this.aiTarget = null;
         this.aiTimer = 0;
     }
@@ -947,15 +946,13 @@ class Character {
 
         const gun = GUNS[this.gunType];
         
-        // Water consumption logic
         if (this.infiniteWaterTimer <= 0) {
-            if (this.waterAmmo < gun.waterCost) return; // Empty tank!
+            if (this.waterAmmo < gun.waterCost) return; 
             this.waterAmmo -= gun.waterCost;
         }
 
         this.cooldownTimer = gun.cooldown;
         
-        // Spawn actual bullet(s)
         const spawnDist = 32;
         const bx = this.x + Math.cos(this.angle) * spawnDist;
         const by = this.y + Math.sin(this.angle) * spawnDist;
@@ -965,33 +962,27 @@ class Character {
         }
 
         if (this.gunType === 'shotgun') {
-            // Shoots 3 spreaded water drops
             for (let offset = -1; offset <= 1; offset++) {
                 const spreadAngle = this.angle + offset * 0.18;
                 bullets.push(new WaterBullet(bx, by, spreadAngle, gun, this.isPlayer, this.id, gun.color));
             }
         } else {
-            // Normal projectile
             bullets.push(new WaterBullet(bx, by, this.angle, gun, this.isPlayer, this.id, gun.color));
         }
 
-        // Slight kickback effect (pushes character back slightly)
         this.x -= Math.cos(this.angle) * 1.5;
         this.y -= Math.sin(this.angle) * 1.5;
     }
 
     update() {
-        // Cooldown timer subtraction
         if (this.cooldownTimer > 0) {
-            this.cooldownTimer -= 16.67; // Assuming solid ~60fps
+            this.cooldownTimer -= 16.67; 
         }
 
-        // Handle Active Power-ups timers
         if (this.shieldTimer > 0) this.shieldTimer -= 1;
         if (this.speedBuffTimer > 0) this.speedBuffTimer -= 1;
         if (this.infiniteWaterTimer > 0) this.infiniteWaterTimer -= 1;
 
-        // KO respawn sequence
         if (this.isKO) {
             this.respawnTimer--;
             if (this.respawnTimer <= 0) {
@@ -1000,21 +991,19 @@ class Character {
             return;
         }
 
-        // Dry up slowly over time (Recovery)
         if (this.wetness > 0) {
             let drySpeed = 0.04;
             if (this.isPlayer) drySpeed *= playerStats.drySpeedMult;
             this.wetness = Math.max(0, this.wetness - drySpeed);
         }
 
-        // Check Water refill pools collision
+        // standing in refill pools
         let refilling = false;
         REFILL_ZONES.forEach(zone => {
             const dx = this.x - zone.x;
             const dy = this.y - zone.y;
             const dist = Math.sqrt(dx*dx + dy*dy);
             if (dist < zone.r) {
-                // Standing in water pool
                 refilling = true;
                 const maxWaterCap = this.getEffectiveMaxWater();
                 if (this.waterAmmo < maxWaterCap) {
@@ -1022,7 +1011,6 @@ class Character {
                     if (this.isPlayer && Math.random() < 0.15) {
                         playSound('refill');
                     }
-                    // Visual splash bubbles while refilling
                     if (Math.random() < 0.2) {
                         particles.push(new Particle(
                             this.x + (Math.random() - 0.5) * 40,
@@ -1038,7 +1026,6 @@ class Character {
             }
         });
 
-        // AI Logic loop
         if (!this.isPlayer) {
             this.runAI();
         }
@@ -1048,7 +1035,6 @@ class Character {
         this.isKO = false;
         this.wetness = 0;
         this.waterAmmo = this.getEffectiveMaxWater();
-        // Teleport back to spawn point
         if (this.team === 'blue') {
             this.x = 100 + Math.random() * 100;
             this.y = V_HEIGHT / 2 + (Math.random() - 0.5) * 150;
@@ -1061,9 +1047,7 @@ class Character {
     takeWaterHit(damage) {
         if (this.isKO) return;
 
-        // Shield blocks damage entirely
         if (this.shieldTimer > 0) {
-            // Shield hit visual particles
             for (let i = 0; i < 5; i++) {
                 particles.push(new Particle(this.x, this.y, (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6, '#60a5fa', 6, 12));
             }
@@ -1072,7 +1056,6 @@ class Character {
 
         this.wetness += damage;
         
-        // Spawn soft blue hit splashing particles
         for(let i=0; i<3; i++) {
             particles.push(new Particle(
                 this.x, 
@@ -1088,16 +1071,14 @@ class Character {
         if (this.wetness >= 100) {
             this.wetness = 100;
             this.isKO = true;
-            this.respawnTimer = 180; // 3 seconds KO
+            this.respawnTimer = 180; 
             
-            // Score tracking
             if (this.team === 'blue') {
                 scores.red++;
             } else {
                 scores.blue++;
             }
 
-            // Splash rings on knockout
             splashPuddles.push(new SplashPuddle(this.x, this.y + 10, 45, 'rgba(56, 189, 248, 0.4)'));
 
             if (this.isPlayer) {
@@ -1109,14 +1090,12 @@ class Character {
     draw() {
         ctx.save();
 
-        // 1. Shadow underneath
         ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
         ctx.beginPath();
         ctx.ellipse(this.x, this.y + 16, 22, 10, 0, 0, Math.PI * 2);
         ctx.fill();
 
         if (this.isKO) {
-            // Draw Knockout State (Soaked puddle)
             ctx.fillStyle = 'rgba(56, 189, 248, 0.6)';
             ctx.beginPath();
             ctx.ellipse(this.x, this.y + 5, 30, 15, 0, 0, Math.PI * 2);
@@ -1130,7 +1109,6 @@ class Character {
             return;
         }
 
-        // 2. Active Shields Glowing Ring
         if (this.shieldTimer > 0) {
             ctx.strokeStyle = '#3b82f6';
             ctx.lineWidth = 4;
@@ -1139,10 +1117,9 @@ class Character {
             ctx.beginPath();
             ctx.arc(this.x, this.y, this.r + 8, 0, Math.PI * 2);
             ctx.stroke();
-            ctx.shadowBlur = 0; // reset
+            ctx.shadowBlur = 0; 
         }
 
-        // 3. Draw Character Body (Cute round bubble design with swim goggles)
         ctx.fillStyle = this.color;
         ctx.strokeStyle = this.accentColor;
         ctx.lineWidth = 3;
@@ -1151,11 +1128,9 @@ class Character {
         ctx.fill();
         ctx.stroke();
 
-        // Face & Goggles details based on rotation angle
         const gx = this.x + Math.cos(this.angle) * 12;
         const gy = this.y + Math.sin(this.angle) * 12;
 
-        // Cute swim goggle frame
         ctx.fillStyle = '#ffffff';
         ctx.strokeStyle = '#1e293b';
         ctx.lineWidth = 2;
@@ -1165,14 +1140,12 @@ class Character {
         ctx.fill();
         ctx.stroke();
 
-        // Goggle glass pupil dots
         ctx.fillStyle = '#0f172a';
         ctx.beginPath();
         ctx.arc(gx - Math.sin(this.angle)*6 + Math.cos(this.angle)*2, gy + Math.cos(this.angle)*2 + Math.sin(this.angle)*2, 2.5, 0, Math.PI * 2);
         ctx.arc(gx + Math.sin(this.angle)*6 + Math.cos(this.angle)*2, gy - Math.cos(this.angle)*2 + Math.sin(this.angle)*2, 2.5, 0, Math.PI * 2);
         ctx.fill();
 
-        // 4. Draw Hand-held Water Gun
         ctx.translate(this.x, this.y);
         ctx.rotate(this.angle);
 
@@ -1181,13 +1154,11 @@ class Character {
         ctx.strokeStyle = '#1e293b';
         ctx.lineWidth = 2.5;
 
-        // Gun barrel
         ctx.beginPath();
         ctx.roundRect(14, -6, 22, 11, 4);
         ctx.fill();
         ctx.stroke();
 
-        // Water tank/canister on top of gun
         ctx.fillStyle = '#a5f3fc';
         ctx.beginPath();
         ctx.roundRect(16, -12, 14, 7, 3);
@@ -1196,22 +1167,18 @@ class Character {
 
         ctx.restore();
 
-        // 5. HP/Wetness overhead meter (Only for enemy/others, player has big UI HUD)
         if (!this.isPlayer) {
             const barW = 40;
             const barH = 5;
             const bx = this.x - barW / 2;
             const by = this.y - this.r - 12;
 
-            // Health bar BG
             ctx.fillStyle = '#94a3b8';
             ctx.fillRect(bx, by, barW, barH);
-            // Filled part representing wetness (inverted: full means soaked, so color is red/blue)
             ctx.fillStyle = this.team === 'blue' ? '#38bdf8' : '#ef4444';
             const filledW = (this.wetness / 100) * barW;
             ctx.fillRect(bx, by, filledW, barH);
             
-            // Draw a tiny frame
             ctx.strokeStyle = '#334155';
             ctx.lineWidth = 1;
             ctx.strokeRect(bx, by, barW, barH);
@@ -1221,11 +1188,9 @@ class Character {
     runAI() {
         this.aiTimer--;
         
-        // Dynamic target evaluation
         if (this.aiTimer <= 0 || !this.aiTarget) {
-            this.aiTimer = 40 + Math.random() * 40; // Change focus every 0.7-1.3 seconds
+            this.aiTimer = 40 + Math.random() * 40; 
             
-            // Scan for closest opponent
             let closestOpp = null;
             let minDist = Infinity;
 
@@ -1241,7 +1206,6 @@ class Character {
 
             this.aiTarget = closestOpp;
 
-            // State selection logic
             if (this.waterAmmo < 20) {
                 this.aiState = 'refill';
             } else if (this.wetness > 75) {
@@ -1256,9 +1220,7 @@ class Character {
         let targetX = this.x;
         let targetY = this.y;
 
-        // Refill tank behavior
         if (this.aiState === 'refill') {
-            // Head to closest refill zone
             let closestZone = REFILL_ZONES[0];
             let minDist = Infinity;
             REFILL_ZONES.forEach(z => {
@@ -1275,9 +1237,7 @@ class Character {
                 this.aiState = 'chase';
             }
         } 
-        // Retreating behavior (High wetness)
         else if (this.aiState === 'flee' && this.aiTarget) {
-            // Move opposite of closest enemy
             const dx = this.x - this.aiTarget.x;
             const dy = this.y - this.aiTarget.y;
             const dist = Math.sqrt(dx*dx + dy*dy);
@@ -1286,26 +1246,21 @@ class Character {
                 targetY = this.y + (dy / dist) * 200;
             }
         } 
-        // Combat pursuit behavior
         else if (this.aiState === 'chase' && this.aiTarget) {
             targetX = this.aiTarget.x;
             targetY = this.aiTarget.y;
 
-            // Aim gun towards target
             const dx = this.aiTarget.x - this.x;
             const dy = this.aiTarget.y - this.y;
             this.angle = Math.atan2(dy, dx);
 
-            // Shoot if in weapon range and water is available
             const gun = GUNS[this.gunType];
             const dist = Math.sqrt(dx*dx + dy*dy);
             if (dist < gun.range && this.waterAmmo > 10) {
                 this.shoot();
             }
         } 
-        // Chill/Wander behavior
         else {
-            // Wander around spawn/center
             if (this.team === 'blue') {
                 targetX = V_WIDTH * 0.25;
                 targetY = V_HEIGHT * 0.5;
@@ -1315,21 +1270,18 @@ class Character {
             }
         }
 
-        // Steer / Move towards calculated targets
         let dx = targetX - this.x;
         let dy = targetY - this.y;
         let dist = Math.sqrt(dx*dx + dy*dy);
 
         if (dist > 10) {
-            let moveSpeed = this.getEffectiveSpeed() * 0.8; // Bot speed slightly scaled down for playability
+            let moveSpeed = this.getEffectiveSpeed() * 0.8; 
             let vx = (dx / dist) * moveSpeed;
             let vy = (dy / dist) * moveSpeed;
 
-            // Apply movement & resolve collisions with obstacles
             let nextX = this.x + vx;
             let nextY = this.y + vy;
 
-            // Basic map bounds confinement
             if (nextX > this.r && nextX < V_WIDTH - this.r) {
                 if (!checkObstacleCollision(nextX, this.y, this.r)) this.x = nextX;
             }
@@ -1341,30 +1293,26 @@ class Character {
 }
 </script>
 
+<!-- Arena Map Obstacles Setup -->
 <script>
 function setupMapObstacles() {
     obstacles = [];
     
-    // Symmetric high walls / pools boundaries
     obstacles.push(new Obstacle(400, 180, 80, 220, 'box'));
     obstacles.push(new Obstacle(V_WIDTH - 480, V_HEIGHT - 400, 80, 220, 'box'));
 
-    // Beach Umbrellas
     obstacles.push(new Obstacle(300, V_HEIGHT - 320, 120, 120, 'umbrella'));
     obstacles.push(new Obstacle(V_WIDTH - 420, 200, 120, 120, 'umbrella'));
 
-    // Bushes scattered around map
     obstacles.push(new Obstacle(V_WIDTH / 2 - 250, 140, 100, 80, 'bush'));
     obstacles.push(new Obstacle(V_WIDTH / 2 + 150, V_HEIGHT - 220, 100, 80, 'bush'));
 }
 
-// Collide check against all static objects in world map
 function checkObstacleCollision(x, y, r) {
     for (let i = 0; i < obstacles.length; i++) {
         const obs = obstacles[i];
         
         if (obs.type === 'box') {
-            // Circle vs Rectangle AABB collision
             const closestX = Math.max(obs.x, Math.min(x, obs.x + obs.w));
             const closestY = Math.max(obs.y, Math.min(y, obs.y + obs.h));
             const dx = x - closestX;
@@ -1372,10 +1320,9 @@ function checkObstacleCollision(x, y, r) {
             const dist = Math.sqrt(dx*dx + dy*dy);
             if (dist < r) return true;
         } else {
-            // Circle vs Circle collision (Umbrella & Bush modeled as circular colliders)
             const cx = obs.x + obs.w / 2;
             const cy = obs.y + obs.h / 2;
-            const cr = obs.w / 2 * 0.85; // slightly smaller collider than visual representation for ease
+            const cr = obs.w / 2 * 0.85; 
             const dx = x - cx;
             const dy = y - cy;
             const dist = Math.sqrt(dx*dx + dy*dy);
@@ -1386,13 +1333,13 @@ function checkObstacleCollision(x, y, r) {
 }
 </script>
 
+<!-- Core Game Loop -->
 <script>
 let lastTime = 0;
 
 function gameLoop(timestamp) {
     if (!isPlaying) return;
 
-    // Fixed tick update
     updateGame();
     drawGame();
 
@@ -1400,24 +1347,21 @@ function gameLoop(timestamp) {
 }
 
 function updateGame() {
-    const player = players[0]; // Player index reference
+    const player = players[0]; 
+    if (!player) return; // Prevent crashes before spawning
 
-    // 1. Core Player Movement controls (W,A,S,D / Arrow keys OR Mobile touch joysticks)
     let mx = 0;
     let my = 0;
 
     if (joystickActive) {
-        // Apply virtual dynamic joystick coordinates
         mx = joystickDir.x;
         my = joystickDir.y;
     } else {
-        // Keyboard inputs fallback
         if (keys['w'] || keys['arrowup']) my = -1;
         if (keys['s'] || keys['arrowdown']) my = 1;
         if (keys['a'] || keys['arrowleft']) mx = -1;
         if (keys['d'] || keys['arrowright']) mx = 1;
 
-        // Diagonal speed normalize
         const len = Math.sqrt(mx*mx + my*my);
         if (len > 0) {
             mx /= len;
@@ -1430,7 +1374,6 @@ function updateGame() {
         const nextX = player.x + mx * moveSpeed;
         const nextY = player.y + my * moveSpeed;
 
-        // Apply movement with barrier maps bounding & collision checks
         if (nextX > player.r && nextX < V_WIDTH - player.r) {
             if (!checkObstacleCollision(nextX, player.y, player.r)) player.x = nextX;
         }
@@ -1438,39 +1381,30 @@ function updateGame() {
             if (!checkObstacleCollision(player.x, nextY, player.r)) player.y = nextY;
         }
 
-        // Mouse/Touch aiming direction calculation
         const dx = mouse.x - player.x;
         const dy = mouse.y - player.y;
-        // Keep facing current direction if joystick or click was not made
         if (dx !== 0 || dy !== 0) {
             player.angle = Math.atan2(dy, dx);
         }
 
-        // Auto Fire if held down
         if (mouse.isDown) {
             player.shoot();
         }
     }
 
-    // 2. Update all active Characters in the scene
     players.forEach(p => p.update());
 
-    // 3. Update & Move Projectiles
     for (let i = bullets.length - 1; i >= 0; i--) {
         const b = bullets[i];
         b.update();
 
-        // Check Wall / Obstacle collision
         if (checkObstacleCollision(b.x, b.y, b.size)) {
-            // Splash effect
             createWaterSplash(b.x, b.y, b.color);
             bullets.splice(i, 1);
             continue;
         }
 
-        // Out of bounds check
         if (b.x < 0 || b.x > V_WIDTH || b.y < 0 || b.y > V_HEIGHT || b.isExpired()) {
-            // Left visual wet spot puddle on floor occasionally
             if (Math.random() < 0.4) {
                 splashPuddles.push(new SplashPuddle(b.x, b.y, 10 + Math.random()*15));
             }
@@ -1478,13 +1412,11 @@ function updateGame() {
             continue;
         }
 
-        // Check Hits against players
         let hitSomething = false;
         for (let j = 0; j < players.length; j++) {
             const p = players[j];
             if (p.isKO) continue;
 
-            // Only damage opponents
             const isOpponent = (b.isPlayer && p.team === 'red') || (!b.isPlayer && b.ownerId !== p.id && p.team !== players.find(x => x.id === b.ownerId)?.team);
 
             if (isOpponent) {
@@ -1507,7 +1439,6 @@ function updateGame() {
         }
     }
 
-    // 4. Update splash puddles and particles decay timers
     for (let i = particles.length - 1; i >= 0; i--) {
         particles[i].update();
         if (particles[i].life <= 0) particles.splice(i, 1);
@@ -1517,16 +1448,14 @@ function updateGame() {
         if (splashPuddles[i].life <= 0) splashPuddles.splice(i, 1);
     }
 
-    // 5. Manage Spawning Power-ups
     spawnTimer--;
     if (spawnTimer <= 0) {
-        spawnTimer = 480 + Math.random() * 400; // 8-15 seconds
+        spawnTimer = 480 + Math.random() * 400; 
         if (powerups.length < 4) {
             spawnRandomPowerup();
         }
     }
 
-    // Check Player PowerUp collisions
     for (let i = powerups.length - 1; i >= 0; i--) {
         const pw = powerups[i];
         pw.update();
@@ -1537,18 +1466,16 @@ function updateGame() {
 
             const dist = Math.sqrt((pw.x - p.x)**2 + (pw.y - p.y)**2);
             if (dist < p.r + pw.size) {
-                // Apply Buff effects
-                if (pw.type === 'shield') p.shieldTimer = 450; // ~7.5 seconds
+                if (pw.type === 'shield') p.shieldTimer = 450; 
                 else if (pw.type === 'speed') p.speedBuffTimer = 450;
-                else if (pw.type === 'towel') p.wetness = Math.max(0, p.wetness - 50); // Instantly dries 50%
-                else if (pw.type === 'infinite_water') p.infiniteWaterTimer = 300; // infinite water for 5 seconds
+                else if (pw.type === 'towel') p.wetness = Math.max(0, p.wetness - 50); 
+                else if (pw.type === 'infinite_water') p.infiniteWaterTimer = 300; 
 
                 if (p.isPlayer) {
                     playSound('powerup');
-                    currentCoins += 15; // Extra bonus gold
+                    currentCoins += 15; 
                 }
 
-                // Splashes on pickup
                 for (let k = 0; k < 12; k++) {
                     particles.push(new Particle(pw.x, pw.y, (Math.random()-0.5)*8, (Math.random()-0.5)*8, '#fbbf24', 5, 20));
                 }
@@ -1559,7 +1486,6 @@ function updateGame() {
         }
     }
 
-    // 6. Keep HUD Sync updated
     updateHUD();
 }
 
@@ -1582,7 +1508,6 @@ function spawnRandomPowerup() {
     const types = ['shield', 'speed', 'towel', 'infinite_water'];
     const selectedType = types[Math.floor(Math.random() * types.length)];
     
-    // Pick coordinates safe from wall overlays
     let px, py;
     let attempts = 0;
     do {
@@ -1595,15 +1520,13 @@ function spawnRandomPowerup() {
 }
 </script>
 
+<!-- Screen Painter & HUD Updates -->
 <script>
 function drawGame() {
-    // Clear back screen with summery sandy beige tone
-    ctx.fillStyle = '#fef08a'; // Sand color
+    ctx.fillStyle = '#fef08a'; 
     ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
 
-    // 1. Draw central Water Refill Pools
     REFILL_ZONES.forEach(zone => {
-        // Outer splash ring styling
         ctx.fillStyle = '#bae6fd';
         ctx.strokeStyle = '#e0f2fe';
         ctx.lineWidth = 6;
@@ -1612,44 +1535,34 @@ function drawGame() {
         ctx.fill();
         ctx.stroke();
 
-        // Pool inner vibrant blue water
         ctx.fillStyle = '#38bdf8';
         ctx.beginPath();
         ctx.arc(zone.x, zone.y, zone.r * 0.9, 0, Math.PI * 2);
         ctx.fill();
 
-        // Water sparkling ripples visualizer decoration
         ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
         ctx.beginPath();
         ctx.arc(zone.x - zone.r*0.2, zone.y - zone.r*0.2, zone.r * 0.35, 0, Math.PI * 2);
         ctx.fill();
     });
 
-    // 2. Draw Transient splash floor wet spot puddles
     splashPuddles.forEach(p => p.draw());
 
-    // 3. Draw powerups
     powerups.forEach(pw => pw.draw());
 
-    // 4. Draw Obstacles (Boxes, umbrellas, trees)
     obstacles.forEach(obs => obs.draw());
 
-    // 5. Draw Water project stream drops
     bullets.forEach(b => b.draw());
 
-    // 6. Draw Characters
     players.forEach(p => p.draw());
 
-    // 7. Draw Visual Action Particles
     particles.forEach(pt => pt.draw());
 }
 
-// Update text items and health bars in HUD overlay
 function updateHUD() {
     const player = players[0];
     if (!player) return;
 
-    // HP Bar represents 'wetness'. (Full = Soaked KO, so bar looks best as progress)
     document.getElementById('playerHPBar').style.width = player.wetness + '%';
     document.getElementById('playerHPText').innerText = Math.round(player.wetness) + '% 젖음';
 
@@ -1664,20 +1577,16 @@ function updateHUD() {
 }
 </script>
 
+<!-- Game Lifecycle Functions -->
 <script>
 function startGame() {
-    // Hide startup overlays
     document.getElementById('startScreen').classList.add('hidden');
     document.getElementById('gameHUD').classList.remove('hidden');
 
-    // Init canvas rendering
     initCanvas();
     initInput();
-
-    // Setup map components
     setupMapObstacles();
 
-    // Generate Teams Players (4v4 Team Battle matches)
     players = [];
     
     // Player 1
@@ -1695,7 +1604,6 @@ function startGame() {
     players.push(new Character(V_WIDTH - 150, V_HEIGHT - 200, 'red', 'shotgun', false, 'red_bot2'));
     players.push(new Character(V_WIDTH - 120, V_HEIGHT / 2, 'red', 'sniper', false, 'red_bot3'));
 
-    // Reset statistics
     scores = { blue: 0, red: 0 };
     bullets = [];
     particles = [];
@@ -1705,23 +1613,18 @@ function startGame() {
     totalPlayerHits = 0;
     spawnTimer = 100;
 
-    // Reset Upgrade states for fresh play
     playerStats = { speedMult: 1.0, maxWaterMult: 1.0, drySpeedMult: 1.0 };
 
     isPlaying = true;
-    gameTimeRemaining = 120; // 2 minutes
+    gameTimeRemaining = 120; 
 
-    // Sound start jingle
     playSound('powerup');
 
-    // Run clock loop
     if (timerInterval) clearInterval(timerInterval);
     timerInterval = setInterval(() => {
         if (!isPlaying || isShopOpen) return;
 
         gameTimeRemaining--;
-
-        // Reward player coins passive as battle continues
         currentCoins += 2;
 
         const mins = Math.floor(gameTimeRemaining / 60);
@@ -1733,13 +1636,14 @@ function startGame() {
         }
     }, 1000);
 
+    // Ensure first resize before the rendering frame starts
+    resizeCanvas();
     requestAnimationFrame(gameLoop);
 }
 
 function selectGun(type) {
     selectedGunType = type;
     
-    // Visual toggle active button class
     document.querySelectorAll('.gun-btn').forEach(btn => {
         btn.classList.remove('bg-sky-500', 'border-white', 'scale-105', 'shadow-md');
         btn.classList.add('bg-white/10', 'border-transparent', 'opacity-80');
@@ -1750,7 +1654,6 @@ function selectGun(type) {
     activeBtn.classList.remove('bg-white/10', 'border-transparent', 'opacity-80');
 }
 
-// Pause and toggle Shop screen
 function toggleShop() {
     isShopOpen = !isShopOpen;
     const shop = document.getElementById('shopScreen');
@@ -1762,7 +1665,6 @@ function toggleShop() {
     }
 }
 
-// Purchase powerup upgrade
 function buyUpgrade(type) {
     let cost = 0;
     if (type === 'speed') cost = 50;
@@ -1777,7 +1679,6 @@ function buyUpgrade(type) {
         else if (type === 'tank') playerStats.maxWaterMult += 0.25;
         else if (type === 'dry') playerStats.drySpeedMult += 0.3;
 
-        // Visual flash updates coins
         document.getElementById('shopCoinText').innerText = currentCoins;
         updateHUD();
     }
