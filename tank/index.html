@@ -62,10 +62,10 @@
             <div class="text-left text-slate-300 text-sm space-y-3 bg-slate-950/60 p-4 rounded-lg border border-slate-800">
                 <p class="font-bold text-cyan-400 border-b border-slate-800 pb-1"><i class="fas fa-keyboard mr-2"></i>PC 조작법</p>
                 <p class="flex justify-between"><span>이동:</span> <span class="text-cyan-300 font-mono">W, A, S, D / 방향키</span></p>
-                <p class="flex justify-between"><span>조준 및 발사:</span> <span class="text-cyan-300 font-mono">마우스 움직임 + 좌클릭</span></p>
+                <p class="flex justify-between"><span>조준 및 발사:</span> <span class="text-cyan-300 font-mono">마우스 조준 + 좌클릭</span></p>
                 
                 <p class="font-bold text-pink-400 border-b border-slate-800 pt-2 pb-1"><i class="fas fa-mobile-screen-button mr-2"></i>모바일 조작법</p>
-                <p class="text-slate-400 text-xs">화면 하단의 좌측 조이스틱으로 <strong class="text-pink-300">이동</strong>, 우측 조이스틱으로 <strong class="text-pink-300">조준 및 발사</strong>를 진행하세요!</p>
+                <p class="text-slate-400 text-xs">화면 <strong class="text-pink-300">어디든 터치 후 드래그</strong>하여 탱크를 자유롭게 이동시키세요! 적이 등장하면 <strong class="text-cyan-300">자동으로 가장 가까운 대상을 포착해 발사</strong>합니다.</p>
             </div>
 
             <!-- Sound Option & Start Button -->
@@ -178,19 +178,9 @@
         <canvas id="gameCanvas" class="block w-full h-full"></canvas>
     </div>
 
-    <!-- Mobile Virtual Joysticks (Visible only on touch devices) -->
-    <div id="touchControls" class="absolute inset-x-0 bottom-8 px-8 flex justify-between pointer-events-none z-20 select-none opacity-0 md:opacity-100 touch-none">
-        <!-- Left Joystick (Movement) -->
-        <div id="leftJoystickContainer" class="w-32 h-32 bg-slate-900/40 border-2 border-cyan-500/30 rounded-full flex items-center justify-center pointer-events-auto backdrop-blur-sm relative">
-            <div id="leftJoystickKnob" class="w-12 h-12 bg-cyan-500/70 border-2 border-cyan-300 rounded-full shadow-[0_0_15px_rgba(6,182,212,0.6)] transform translate-x-0 translate-y-0 transition-transform duration-75"></div>
-            <div class="absolute -top-6 text-cyan-400/60 font-bold text-xs select-none pointer-events-none">이동 조이스틱</div>
-        </div>
-
-        <!-- Right Joystick (Aim & Fire) -->
-        <div id="rightJoystickContainer" class="w-32 h-32 bg-slate-900/40 border-2 border-rose-500/30 rounded-full flex items-center justify-center pointer-events-auto backdrop-blur-sm relative">
-            <div id="rightJoystickKnob" class="w-12 h-12 bg-rose-500/70 border-2 border-rose-300 rounded-full shadow-[0_0_15px_rgba(244,63,94,0.6)] transform translate-x-0 translate-y-0 transition-transform duration-75"></div>
-            <div class="absolute -top-6 text-rose-400/60 font-bold text-xs select-none pointer-events-none">공격 조이스틱</div>
-        </div>
+    <!-- Dynamic Touch Joystick UI (appears where user touches) -->
+    <div id="dynamicJoystick" class="absolute w-24 h-24 border-2 border-cyan-500/40 rounded-full flex items-center justify-center pointer-events-none z-20 opacity-0 scale-75 transition-all duration-150 backdrop-blur-[2px]">
+        <div id="dynamicKnob" class="w-8 h-8 bg-cyan-400/80 border-2 border-cyan-300 rounded-full shadow-[0_0_15px_rgba(6,182,212,0.8)]"></div>
     </div>
 
     <script>
@@ -405,90 +395,86 @@
             const hasTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
             if (hasTouch) {
                 gameState.isTouchDevice = true;
-                document.getElementById('touchControls').style.opacity = '1';
-                document.getElementById('touchControls').classList.remove('pointer-events-none');
             }
         }
         detectTouchDevice();
 
-        // Virtual Joysticks Controls Math
-        const joysticks = {
-            left: { active: false, startX: 0, startY: 0, curX: 0, curY: 0, angle: 0, force: 0 },
-            right: { active: false, startX: 0, startY: 0, curX: 0, curY: 0, angle: 0, force: 0 }
+        // Single Dynamic Joystick State
+        const joystick = {
+            active: false,
+            touchId: null,
+            startX: 0,
+            startY: 0,
+            curX: 0,
+            curY: 0,
+            angle: 0,
+            force: 0,
+            maxRadius: 40 // Maximum travel of knob
         };
 
-        // Handle Touch Events for Virtual Sticks
+        // Handle Touch Events for Dynamic Stick (Drag Anywhere)
         function setupTouchListeners() {
-            const leftContainer = document.getElementById('leftJoystickContainer');
-            const leftKnob = document.getElementById('leftJoystickKnob');
-            const rightContainer = document.getElementById('rightJoystickContainer');
-            const rightKnob = document.getElementById('rightJoystickKnob');
+            const dynamicJoystick = document.getElementById('dynamicJoystick');
+            const dynamicKnob = document.getElementById('dynamicKnob');
 
-            // Helper to get relative touch coordinates inside a container
-            function handleJoystickStart(e, stick, container) {
+            canvas.addEventListener('touchstart', (e) => {
+                if (!gameState.running || gameState.gameOver) return;
                 e.preventDefault();
-                const rect = container.getBoundingClientRect();
-                const touch = Array.from(e.touches).find(t => {
-                    const tx = t.clientX;
-                    const ty = t.clientY;
-                    return tx >= rect.left && tx <= rect.right && ty >= rect.top && ty <= rect.bottom;
-                });
-                if (!touch) return;
                 
-                stick.active = true;
-                stick.touchId = touch.identifier;
-                stick.startX = rect.left + rect.width / 2;
-                stick.startY = rect.top + rect.height / 2;
-                stick.curX = touch.clientX;
-                stick.curY = touch.clientY;
-            }
+                const touch = e.changedTouches[0];
+                if (touch) {
+                    joystick.active = true;
+                    joystick.touchId = touch.identifier;
+                    joystick.startX = touch.clientX;
+                    joystick.startY = touch.clientY;
+                    joystick.curX = touch.clientX;
+                    joystick.curY = touch.clientY;
 
-            function handleJoystickMove(e, stick, knob, isRightStick = false) {
-                if (!stick.active) return;
-                const touch = Array.from(e.touches).find(t => t.identifier === stick.touchId);
+                    // Position and reveal the joystick overlay at the touch coordinate
+                    dynamicJoystick.style.left = `${joystick.startX - 48}px`;
+                    dynamicJoystick.style.top = `${joystick.startY - 48}px`;
+                    dynamicJoystick.style.opacity = '1';
+                    dynamicJoystick.style.transform = 'scale(1)';
+                }
+            }, {passive: false});
+
+            window.addEventListener('touchmove', (e) => {
+                if (!joystick.active) return;
+                e.preventDefault();
+
+                const touch = Array.from(e.touches).find(t => t.identifier === joystick.touchId);
                 if (!touch) return;
 
-                stick.curX = touch.clientX;
-                stick.curY = touch.clientY;
+                joystick.curX = touch.clientX;
+                joystick.curY = touch.clientY;
 
-                const dx = stick.curX - stick.startX;
-                const dy = stick.curY - stick.startY;
+                const dx = joystick.curX - joystick.startX;
+                const dy = joystick.curY - joystick.startY;
                 const dist = Math.hypot(dx, dy);
-                const maxDist = 50; // max knob travel
 
-                stick.angle = Math.atan2(dy, dx);
-                stick.force = Math.min(dist / maxDist, 1);
+                joystick.angle = Math.atan2(dy, dx);
+                joystick.force = Math.min(dist / joystick.maxRadius, 1);
 
-                const knobX = Math.cos(stick.angle) * stick.force * maxDist;
-                const knobY = Math.sin(stick.angle) * stick.force * maxDist;
+                // Displace the physical visual knob
+                const knobX = Math.cos(joystick.angle) * joystick.force * joystick.maxRadius;
+                const knobY = Math.sin(joystick.angle) * joystick.force * joystick.maxRadius;
+                dynamicKnob.style.transform = `translate(${knobX}px, ${knobY}px)`;
+            }, {passive: false});
 
-                knob.style.transform = `translate(${knobX}px, ${knobY}px)`;
-
-                if (isRightStick && stick.force > 0.4) {
-                    gameState.mouse.down = true;
-                }
-            }
-
-            function handleJoystickEnd(e, stick, knob, isRightStick = false) {
-                const stillTouching = Array.from(e.touches).some(t => t.identifier === stick.touchId);
+            window.addEventListener('touchend', (e) => {
+                if (!joystick.active) return;
+                const stillTouching = Array.from(e.touches).some(t => t.identifier === joystick.touchId);
                 if (!stillTouching) {
-                    stick.active = false;
-                    stick.touchId = null;
-                    stick.force = 0;
-                    knob.style.transform = `translate(0px, 0px)`;
-                    if (isRightStick) {
-                        gameState.mouse.down = false;
-                    }
+                    joystick.active = false;
+                    joystick.touchId = null;
+                    joystick.force = 0;
+
+                    // Fade out the joystick
+                    dynamicJoystick.style.opacity = '0';
+                    dynamicJoystick.style.transform = 'scale(0.75)';
+                    dynamicKnob.style.transform = `translate(0px, 0px)`;
                 }
-            }
-
-            leftContainer.addEventListener('touchstart', (e) => handleJoystickStart(e, joysticks.left, leftContainer), {passive: false});
-            window.addEventListener('touchmove', (e) => handleJoystickMove(e, joysticks.left, leftKnob), {passive: false});
-            window.addEventListener('touchend', (e) => handleJoystickEnd(e, joysticks.left, leftKnob), {passive: false});
-
-            rightContainer.addEventListener('touchstart', (e) => handleJoystickStart(e, joysticks.right, rightContainer), {passive: false});
-            window.addEventListener('touchmove', (e) => handleJoystickMove(e, joysticks.right, rightKnob, true), {passive: false});
-            window.addEventListener('touchend', (e) => handleJoystickEnd(e, joysticks.right, rightKnob, true), {passive: false});
+            }, {passive: false});
         }
         setupTouchListeners();
 
@@ -547,9 +533,9 @@
                 }
 
                 // Or take virtual joystick inputs
-                if (joysticks.left.active) {
-                    dx = Math.cos(joysticks.left.angle) * joysticks.left.force;
-                    dy = Math.sin(joysticks.left.angle) * joysticks.left.force;
+                if (joystick.active) {
+                    dx = Math.cos(joystick.angle) * joystick.force;
+                    dy = Math.sin(joystick.angle) * joystick.force;
                 }
 
                 // Move Player with boundary check
@@ -563,19 +549,41 @@
                     this.angle = Math.atan2(dy, dx);
                 }
 
-                // Turret Direction: Follows mouse cursor or right joystick
-                if (joysticks.right.active) {
-                    this.turretAngle = joysticks.right.angle;
-                } else if (!gameState.isTouchDevice) {
+                // Turret Aim & Automated Shooting Logic
+                if (gameState.isTouchDevice) {
+                    // Mobile: Find the closest enemy automatically (Auto-Aim)
+                    let closestEnemy = null;
+                    let minDist = Infinity;
+                    
+                    gameState.enemies.forEach(enemy => {
+                        const d = Math.hypot(enemy.x - this.x, enemy.y - this.y);
+                        if (d < minDist) {
+                            minDist = d;
+                            closestEnemy = enemy;
+                        }
+                    });
+
+                    if (closestEnemy) {
+                        // Point turret to the closest enemy
+                        this.turretAngle = Math.atan2(closestEnemy.y - this.y, closestEnemy.x - this.x);
+                    } else if (dx !== 0 || dy !== 0) {
+                        // If no enemies, point forward
+                        this.turretAngle = this.angle;
+                    }
+
+                    // Auto-Fire: Shoot automatically whenever joystick is active (dragging) or if enemies are close!
+                    if (joystick.active || closestEnemy) {
+                        this.shoot();
+                    }
+                } else {
+                    // PC Keyboard/Mouse Controls
                     this.turretAngle = Math.atan2(gameState.mouse.y - this.y, gameState.mouse.x - this.x);
+                    if (gameState.mouse.down) {
+                        this.shoot();
+                    }
                 }
 
-                // Automated Shooting
-                if (gameState.mouse.down) {
-                    this.shoot();
-                }
-
-                // Auto-regenerate shield slowly if not damaged recently (conceptual buffer)
+                // Auto-regenerate shield slowly if not damaged recently
                 if (this.shield < this.maxShield && Math.random() < 0.005) {
                     this.shield = Math.min(this.maxShield, this.shield + 1);
                     updateHUD();
