@@ -1,1 +1,1805 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>물총대전: 워터 스플래시 아레나</title>
+    <!-- Tailwind CSS for modern UI design -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for beautiful icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter & Jua for playful and neat typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Jua&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Jua', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+            overflow: hidden;
+            background-color: #e0f2fe;
+        }
+        /* Mobile layout styling to prevent default pull-to-refresh and gestures */
+        html, body {
+            position: fixed;
+            width: 100%;
+            height: 100%;
+        }
+        canvas {
+            image-rendering: pixelated;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+        /* Gradient animations for immersive background */
+        .bg-wave {
+            background: linear-gradient(135deg, #0284c7 0%, #0369a1 50%, #075985 100%);
+        }
+        .text-stroke {
+            -webkit-text-stroke: 1px #0369a1;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen p-0 m-0 overflow-hidden select-none">
 
+<!-- Start Screen Overlay -->
+<div id="startScreen" class="absolute inset-0 z-50 flex flex-col items-center justify-center p-4 bg-wave text-white overflow-y-auto">
+    <div class="max-w-md w-full bg-white/10 backdrop-blur-md rounded-3xl p-6 border-4 border-sky-300 shadow-2xl text-center">
+        <!-- Main Logo / Title -->
+        <div class="relative mb-6 animate-bounce">
+            <span class="absolute -top-6 -left-6 text-yellow-300 text-4xl rotate-12"><i class="fa-solid fa-sun"></i></span>
+            <h1 class="text-4xl md:text-5xl font-extrabold tracking-wider font-['Jua'] text-yellow-300 drop-shadow-[0_4px_4px_rgba(0,0,0,0.5)]">
+                물총대전!
+            </h1>
+            <p class="text-sky-100 text-sm mt-1 tracking-widest uppercase">Water Splash Arena</p>
+        </div>
+
+        <p class="text-sky-100 text-sm mb-6">시원한 물줄기로 상대방을 흠뻑 적셔 물리치세요!<br>팀원들과 힘을 합쳐 워터파크의 제왕이 되어보세요.</p>
+
+        <!-- Gun Selection Grid -->
+        <h3 class="text-left font-bold text-yellow-200 mb-2 text-sm"><i class="fa-solid fa-gun mr-1"></i> 무기 선택</h3>
+        <div class="grid grid-cols-2 gap-3 mb-6" id="gunSelector">
+            <!-- Pistol -->
+            <button onclick="selectGun('pistol')" id="gun-pistol" class="gun-btn p-3 bg-sky-500 hover:bg-sky-400 border-2 border-white rounded-xl flex flex-col items-center transition-all scale-105 shadow-md">
+                <i class="fa-solid fa-pistol-gun text-2xl mb-1 text-white"></i>
+                <span class="font-bold text-xs">피스톨</span>
+                <span class="text-[10px] text-sky-200">밸런스형</span>
+            </button>
+            <!-- Shotgun -->
+            <button onclick="selectGun('shotgun')" id="gun-shotgun" class="gun-btn p-3 bg-white/10 hover:bg-white/20 border-2 border-transparent rounded-xl flex flex-col items-center transition-all opacity-80">
+                <i class="fa-solid fa-bullseye text-2xl mb-1 text-yellow-300"></i>
+                <span class="font-bold text-xs">스플래셔</span>
+                <span class="text-[10px] text-sky-200">3갈래 산탄</span>
+            </button>
+            <!-- Sniper -->
+            <button onclick="selectGun('sniper')" id="gun-sniper" class="gun-btn p-3 bg-white/10 hover:bg-white/20 border-2 border-transparent rounded-xl flex flex-col items-center transition-all opacity-80">
+                <i class="fa-solid fa-crosshairs text-2xl mb-1 text-green-300"></i>
+                <span class="font-bold text-xs">스나이퍼</span>
+                <span class="text-[10px] text-sky-200">고속/장거리</span>
+            </button>
+            <!-- Super Soaker -->
+            <button onclick="selectGun('soaker')" id="gun-soaker" class="gun-btn p-3 bg-white/10 hover:bg-white/20 border-2 border-transparent rounded-xl flex flex-col items-center transition-all opacity-80">
+                <i class="fa-solid fa-bolt text-2xl mb-1 text-pink-300"></i>
+                <span class="font-bold text-xs">속사 메가</span>
+                <span class="text-[10px] text-sky-200">초고속 연사</span>
+            </button>
+        </div>
+
+        <!-- Controls Guide Info -->
+        <div class="bg-black/20 rounded-xl p-3 text-left text-xs text-sky-100 mb-6 space-y-1">
+            <div class="flex items-center"><i class="fa-solid fa-keyboard w-5 text-yellow-300"></i> <span><b>PC:</b> WASD 이동 + 마우스 클릭/드래그 (조준 및 발사)</span></div>
+            <div class="flex items-center"><i class="fa-solid fa-mobile-screen-button w-5 text-yellow-300"></i> <span><b>모바일:</b> 왼쪽 패드(이동) + 오른쪽 화면 드래그(조준/발사)</span></div>
+            <div class="flex items-center"><i class="fa-solid fa-faucet-drip w-5 text-yellow-300"></i> <span>중앙의 <b>파란 수영장</b>에서 있으면 물탱크가 충전됩니다!</span></div>
+        </div>
+
+        <!-- Start Trigger Buttons -->
+        <button onclick="startGame()" class="w-full py-4 bg-yellow-400 hover:bg-yellow-300 active:translate-y-0.5 text-blue-900 font-extrabold text-lg rounded-2xl shadow-lg transition-all tracking-wider font-['Jua'] border-b-4 border-yellow-600">
+            워터파크 입장하기!
+        </button>
+    </div>
+</div>
+
+<!-- Main Gameplay Overlay UI & Canvas Wrapper -->
+<div class="relative w-full h-full flex flex-col items-center justify-center">
+    
+    <!-- Top HUD (Scoreboard & Status) -->
+    <div id="gameHUD" class="absolute top-4 left-4 right-4 z-40 flex justify-between items-center pointer-events-none hidden">
+        <!-- Left: Player Condition -->
+        <div class="bg-white/80 backdrop-blur-md rounded-2xl p-3 shadow-lg flex flex-col space-y-1 pointer-events-auto border-2 border-sky-200 max-w-[160px] md:max-w-xs">
+            <div class="flex items-center justify-between text-xs font-bold text-sky-800">
+                <span><i class="fa-solid fa-child"></i> 나 (플레이어)</span>
+                <span id="playerHPText" class="text-red-500 font-black">0% 젖음</span>
+            </div>
+            <!-- Wetness Bar (Health concept: Filled = Game Over) -->
+            <div class="w-28 md:w-40 bg-gray-200 h-3 rounded-full overflow-hidden border border-gray-300">
+                <div id="playerHPBar" class="bg-gradient-to-r from-cyan-400 to-blue-500 h-full transition-all duration-100" style="width: 0%"></div>
+            </div>
+
+            <!-- Ammo/Water Tank Bar -->
+            <div class="flex items-center justify-between text-[10px] font-bold text-sky-600 mt-1">
+                <span><i class="fa-solid fa-droplet text-blue-500"></i> 수압 탱크</span>
+                <span id="playerWaterText">100%</span>
+            </div>
+            <div class="w-28 md:w-40 bg-gray-200 h-2 rounded-full overflow-hidden border border-gray-300">
+                <div id="playerWaterBar" class="bg-cyan-400 h-full transition-all duration-100" style="width: 100%"></div>
+            </div>
+        </div>
+
+        <!-- Middle: Center Score / Timer -->
+        <div class="bg-blue-900/90 text-white px-4 py-2 rounded-2xl shadow-lg flex items-center space-x-4 border-2 border-yellow-300 font-['Jua']">
+            <div class="text-center">
+                <p class="text-[10px] text-sky-300">아군</p>
+                <p id="blueScore" class="text-xl text-sky-300 font-extrabold">0</p>
+            </div>
+            <div class="text-center px-2 border-x border-sky-600">
+                <p class="text-[9px] text-yellow-300">TIME</p>
+                <p id="gameTimer" class="text-lg text-yellow-300">02:00</p>
+            </div>
+            <div class="text-center">
+                <p class="text-[10px] text-red-300">적군</p>
+                <p id="redScore" class="text-xl text-red-300 font-extrabold">0</p>
+            </div>
+        </div>
+
+        <!-- Right: Current Weapon & Upgrades button (Pause/Shop) -->
+        <div class="flex flex-col items-end space-y-2 pointer-events-auto">
+            <div class="bg-white/80 backdrop-blur-md rounded-2xl p-2 px-3 shadow-lg flex items-center space-x-2 border-2 border-sky-200">
+                <div class="text-right">
+                    <p class="text-[9px] text-sky-700">보유 코인</p>
+                    <p id="hudCoins" class="text-xs font-black text-yellow-600"><i class="fa-solid fa-coins"></i> 0</p>
+                </div>
+            </div>
+            <button onclick="toggleShop()" class="bg-yellow-400 hover:bg-yellow-300 text-blue-900 font-bold text-xs p-2.5 rounded-xl shadow-lg border-b-2 border-yellow-600 transition-all flex items-center space-x-1">
+                <i class="fa-solid fa-store"></i> <span>무기 상점</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Canvas Container -->
+    <div id="canvasContainer" class="relative w-full h-full flex items-center justify-center bg-sky-100">
+        <canvas id="gameCanvas" class="block rounded-lg"></canvas>
+    </div>
+
+    <!-- Mobile Controller Overlays (Only active on mobile/touch interfaces) -->
+    <div id="mobileControls" class="absolute inset-0 pointer-events-none z-30 hidden">
+        <!-- Left Touch Zone: Joystick for moving -->
+        <div id="joystickZone" class="absolute bottom-10 left-10 w-32 h-32 rounded-full bg-white/20 border-2 border-white/30 backdrop-blur-sm pointer-events-auto flex items-center justify-center">
+            <div id="joystickKnob" class="w-12 h-12 rounded-full bg-sky-500/80 shadow-md transform transition-all duration-75"></div>
+        </div>
+
+        <!-- Right Touch Zone Helper Indicator -->
+        <div class="absolute bottom-10 right-10 flex flex-col items-end pointer-events-none opacity-60">
+            <div class="bg-black/30 text-white rounded-full p-3 mb-2 flex items-center justify-center w-14 h-14">
+                <i class="fa-solid fa-crosshairs text-xl animate-spin"></i>
+            </div>
+            <span class="text-white text-[10px] bg-black/40 px-2 py-0.5 rounded font-bold">우측 드래그: 조준 및 발사</span>
+        </div>
+    </div>
+
+    <!-- Shop / Upgrade Overlay Modal -->
+    <div id="shopScreen" class="absolute inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm hidden">
+        <div class="max-w-md w-full bg-sky-900/95 border-4 border-sky-400 rounded-3xl p-6 shadow-2xl text-white">
+            <div class="flex justify-between items-center mb-4 pb-2 border-b border-sky-700">
+                <h2 class="text-2xl font-extrabold font-['Jua'] text-yellow-300"><i class="fa-solid fa-store mr-1"></i> 상점 & 파워업</h2>
+                <button onclick="toggleShop()" class="text-sky-300 hover:text-white text-xl p-1"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div class="flex justify-between items-center bg-blue-950/50 p-3 rounded-xl mb-4">
+                <span class="text-sm">현재 보유 워터코인:</span>
+                <span class="text-lg font-black text-yellow-400"><i class="fa-solid fa-coins mr-1"></i><span id="shopCoinText">0</span> 골드</span>
+            </div>
+
+            <div class="space-y-3 mb-6 max-h-[250px] overflow-y-auto pr-1">
+                <!-- Upgrade Item 1: Running Speed -->
+                <div class="bg-sky-800/60 p-3 rounded-xl flex items-center justify-between border border-sky-700">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-blue-600 p-2 rounded-lg text-white w-10 h-10 flex items-center justify-center text-lg"><i class="fa-solid fa-person-running"></i></div>
+                        <div>
+                            <p class="font-bold text-sm">달리기 속도 업</p>
+                            <p class="text-[10px] text-sky-200">기본 이동속도가 상승합니다.</p>
+                        </div>
+                    </div>
+                    <button onclick="buyUpgrade('speed')" class="bg-yellow-400 hover:bg-yellow-300 text-blue-900 font-extrabold text-xs px-3 py-2 rounded-lg active:scale-95 transition-all">
+                        <span id="price-speed">50</span> C
+                    </button>
+                </div>
+
+                <!-- Upgrade Item 2: Tank Capacity -->
+                <div class="bg-sky-800/60 p-3 rounded-xl flex items-center justify-between border border-sky-700">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-cyan-600 p-2 rounded-lg text-white w-10 h-10 flex items-center justify-center text-lg"><i class="fa-solid fa-glass-water"></i></div>
+                        <div>
+                            <p class="font-bold text-sm">물탱크 대용량화</p>
+                            <p class="text-[10px] text-sky-200">최대 수압 저장량이 증가합니다.</p>
+                        </div>
+                    </div>
+                    <button onclick="buyUpgrade('tank')" class="bg-yellow-400 hover:bg-yellow-300 text-blue-900 font-extrabold text-xs px-3 py-2 rounded-lg active:scale-95 transition-all">
+                        <span id="price-tank">75</span> C
+                    </button>
+                </div>
+
+                <!-- Upgrade Item 3: Quick Dry -->
+                <div class="bg-sky-800/60 p-3 rounded-xl flex items-center justify-between border border-sky-700">
+                    <div class="flex items-center space-x-3">
+                        <div class="bg-red-500 p-2 rounded-lg text-white w-10 h-10 flex items-center justify-center text-lg"><i class="fa-solid fa-wind"></i></div>
+                        <div>
+                            <p class="font-bold text-sm">급속 건조 (회복력)</p>
+                            <p class="text-[10px] text-sky-200">초당 젖음 회복 속도가 강화됩니다.</p>
+                        </div>
+                    </div>
+                    <button onclick="buyUpgrade('dry')" class="bg-yellow-400 hover:bg-yellow-300 text-blue-900 font-extrabold text-xs px-3 py-2 rounded-lg active:scale-95 transition-all">
+                        <span id="price-dry">60</span> C
+                    </button>
+                </div>
+            </div>
+
+            <button onclick="toggleShop()" class="w-full py-3 bg-sky-500 hover:bg-sky-400 font-bold rounded-xl text-center shadow-md transition-all">
+                완료하고 복귀하기
+            </button>
+        </div>
+    </div>
+
+    <!-- Match Results Screen Overlay -->
+    <div id="resultScreen" class="absolute inset-0 z-50 flex flex-col items-center justify-center p-4 bg-black/85 backdrop-blur-sm hidden">
+        <div class="max-w-md w-full bg-white rounded-3xl p-6 border-4 border-sky-400 shadow-2xl text-center text-gray-800">
+            <div id="resultBadge" class="mx-auto w-20 h-20 rounded-full flex items-center justify-center text-4xl mb-4 text-white shadow-lg animate-bounce">
+                <!-- Will be dynamically filled -->
+            </div>
+            
+            <h2 id="resultTitle" class="text-3xl font-extrabold font-['Jua'] mb-2">승리했습니다!</h2>
+            <p id="resultDesc" class="text-sm text-gray-500 mb-6">우리 블루 팀이 아주 시원한 압승을 거두었습니다!</p>
+
+            <!-- Score Stats Box -->
+            <div class="bg-sky-50 rounded-2xl p-4 mb-6 border border-sky-100">
+                <div class="grid grid-cols-2 gap-4">
+                    <div class="border-r border-sky-200">
+                        <p class="text-xs text-sky-600 font-bold">블루 팀 (아군)</p>
+                        <p id="resultBlueScore" class="text-2xl font-black text-sky-500">0</p>
+                    </div>
+                    <div>
+                        <p class="text-xs text-red-500 font-bold">레드 팀 (적군)</p>
+                        <p id="resultRedScore" class="text-2xl font-black text-red-400">0</p>
+                    </div>
+                </div>
+                <div class="border-t border-sky-200 mt-3 pt-3 flex justify-between items-center px-4 text-xs">
+                    <span class="font-bold text-gray-600"><i class="fa-solid fa-crosshairs text-sky-500 mr-1"></i> 나의 총 물총 적중 횟수</span>
+                    <span id="resultPlayerHits" class="font-black text-blue-600 text-sm">0회</span>
+                </div>
+            </div>
+
+            <!-- Action buttons -->
+            <div class="space-y-3">
+                <button onclick="restartGame()" class="w-full py-4 bg-sky-500 hover:bg-sky-400 text-white font-extrabold text-lg rounded-2xl shadow-lg border-b-4 border-sky-700 transition-all font-['Jua']">
+                    다시 한 판 대전하기!
+                </button>
+                <button onclick="goToMainMenu()" class="w-full py-3 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold text-sm rounded-2xl transition-all">
+                    메인 메뉴로 이동
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- Audio and sound visual system wrapper -->
+<script>
+// Simple Synthesized Web Audio Controller (No external source required)
+const AudioCtx = window.AudioContext || window.webkitAudioContext;
+let audioCtx = null;
+
+function playSound(type) {
+    try {
+        if (!audioCtx) {
+            audioCtx = new AudioCtx();
+        }
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+        }
+
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+
+        if (type === 'shoot') {
+            // Water shooting frequency sweep
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(800, now);
+            osc.frequency.exponentialRampToValueAtTime(150, now + 0.15);
+            gainNode.gain.setValueAtTime(0.2, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+            osc.start(now);
+            osc.stop(now + 0.15);
+        } else if (type === 'hit') {
+            // Squelch wet hit sound
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(300, now);
+            osc.frequency.exponentialRampToValueAtTime(80, now + 0.1);
+            gainNode.gain.setValueAtTime(0.3, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.start(now);
+            osc.stop(now + 0.1);
+        } else if (type === 'refill') {
+            // Bubbling water refill sound
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(400 + Math.random() * 200, now);
+            osc.frequency.linearRampToValueAtTime(700, now + 0.1);
+            gainNode.gain.setValueAtTime(0.08, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.start(now);
+            osc.stop(now + 0.1);
+        } else if (type === 'powerup') {
+            // Powerup jingle
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(523.25, now); // C5
+            osc.frequency.setValueAtTime(659.25, now + 0.08); // E5
+            osc.frequency.setValueAtTime(783.99, now + 0.16); // G5
+            gainNode.gain.setValueAtTime(0.15, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+            osc.start(now);
+            osc.stop(now + 0.35);
+        } else if (type === 'defeat') {
+            // Defeat sad down sweep
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(300, now);
+            osc.frequency.linearRampToValueAtTime(80, now + 0.5);
+            gainNode.gain.setValueAtTime(0.2, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+            osc.start(now);
+            osc.stop(now + 0.5);
+        } else if (type === 'victory') {
+            // Victory fanfare
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(523.25, now);
+            osc.frequency.setValueAtTime(659.25, now + 0.1);
+            osc.frequency.setValueAtTime(783.99, now + 0.2);
+            osc.frequency.setValueAtTime(1046.50, now + 0.3);
+            gainNode.gain.setValueAtTime(0.12, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.6);
+            osc.start(now);
+            osc.stop(now + 0.6);
+        }
+    } catch (e) {
+        // Fallback if audio fails or is blocked
+        console.warn("Audio Context error:", e);
+    }
+}
+</script>
+
+<script>
+// Game Area Dimensions
+const V_WIDTH = 1600; // Virtual width of the arena
+const V_HEIGHT = 1000; // Virtual height of the arena
+
+// Global Settings & Selection States
+let selectedGunType = 'pistol';
+let currentCoins = 0;
+let playerStats = {
+    speedMult: 1.0,
+    maxWaterMult: 1.0,
+    drySpeedMult: 1.0,
+};
+
+// Gun stats configuration
+const GUNS = {
+    pistol: {
+        name: 'Classic Pistol',
+        damage: 4,         // Wetness added per hit
+        waterCost: 1.2,    // Tank usage per shot
+        range: 350,        // Max projectile life/distance
+        bulletSpeed: 10,   // Velocity of stream
+        cooldown: 200,     // Time between shots (ms)
+        spread: 0.05,      // Accuracy
+        color: '#38bdf8'
+    },
+    shotgun: {
+        name: 'Triple Splasher',
+        damage: 3,         // Low per drop but sprays multiple
+        waterCost: 3.5,
+        range: 220,
+        bulletSpeed: 8,
+        cooldown: 500,
+        spread: 0.35,      // Wide spread
+        color: '#fbbf24'
+    },
+    sniper: {
+        name: 'Sniper Hose',
+        damage: 12,
+        waterCost: 5.0,
+        range: 600,
+        bulletSpeed: 16,
+        cooldown: 800,
+        spread: 0.01,      // Extremely precise
+        color: '#4ade80'
+    },
+    soaker: {
+        name: 'Super Soaker',
+        damage: 2.2,
+        waterCost: 0.8,
+        range: 300,
+        bulletSpeed: 12,
+        cooldown: 80,       // Very high firing rate
+        spread: 0.12,
+        color: '#f472b6'
+    }
+};
+
+// Game Runtime Variables
+let canvas, ctx;
+let isPlaying = false;
+let isShopOpen = false;
+let gameTimeRemaining = 120; // 2 minutes
+let timerInterval = null;
+let spawnTimer = 0;
+
+// Scoring
+let scores = { blue: 0, red: 0 };
+let totalPlayerHits = 0;
+
+// Arena World Components
+let players = []; // Player + AI Bots
+let bullets = [];
+let particles = [];
+let powerups = [];
+let obstacles = [];
+let splashPuddles = []; // Ground water effects
+
+// Water Refill Areas in Map (Pools)
+const REFILL_ZONES = [
+    { x: V_WIDTH / 2, y: V_HEIGHT / 2, r: 160 }, // Center main pool
+    { x: 120, y: 120, r: 60 },                   // Top Left fountain
+    { x: V_WIDTH - 120, y: V_HEIGHT - 120, r: 60 } // Bottom Right fountain
+];
+
+function initCanvas() {
+    canvas = document.getElementById('gameCanvas');
+    ctx = canvas.getContext('2d');
+    resizeCanvas();
+    window.addEventListener('resize', resizeCanvas);
+}
+
+function resizeCanvas() {
+    // Fits the virtual 16:10 or 16:9 box nicely inside screen while scaling
+    const container = document.getElementById('canvasContainer');
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+
+    const ratio = V_WIDTH / V_HEIGHT;
+    
+    let w = width;
+    let h = width / ratio;
+
+    if (h > height) {
+        h = height;
+        w = height * ratio;
+    }
+
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    
+    // Physical resolution of the canvas
+    canvas.width = V_WIDTH;
+    canvas.height = V_HEIGHT;
+}
+</script>
+
+<script>
+const keys = {};
+const mouse = { x: 0, y: 0, isDown: false };
+let joystickActive = false;
+let joystickStart = { x: 0, y: 0 };
+let joystickMove = { x: 0, y: 0 };
+let joystickDir = { x: 0, y: 0 }; // Normal direction for movement
+
+// Right side touch logic for aiming
+let aimTouchId = null;
+let aimVector = { x: 0, y: 0 };
+let mobileFiring = false;
+
+// Initialize all user input bindings
+function initInput() {
+    // Key bindings (PC)
+    window.addEventListener('keydown', (e) => {
+        keys[e.key.toLowerCase()] = true;
+    });
+    window.addEventListener('keyup', (e) => {
+        keys[e.key.toLowerCase()] = false;
+    });
+
+    // Detect mobile touch vs mouse to activate touch hud
+    const isTouch = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+    if (isTouch) {
+        document.getElementById('mobileControls').classList.remove('hidden');
+    }
+
+    // Mouse Events for Arena Play (Desktop)
+    canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const scaleX = V_WIDTH / rect.width;
+        const scaleY = V_HEIGHT / rect.height;
+        mouse.x = (e.clientX - rect.left) * scaleX;
+        mouse.y = (e.clientY - rect.top) * scaleY;
+    });
+    
+    canvas.addEventListener('mousedown', (e) => {
+        if (e.button === 0) mouse.isDown = true;
+    });
+    
+    window.addEventListener('mouseup', () => {
+        mouse.isDown = false;
+    });
+
+    // Touch Event Handling for Dual Touch Control (Mobile Joystick + Shoot Area)
+    const joystickZone = document.getElementById('joystickZone');
+    const knob = document.getElementById('joystickKnob');
+
+    joystickZone.addEventListener('touchstart', (e) => {
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = joystickZone.getBoundingClientRect();
+        joystickStart = {
+            x: rect.left + rect.width / 2,
+            y: rect.top + rect.height / 2
+        };
+        joystickActive = true;
+        updateJoystick(touch);
+    }, { passive: false });
+
+    window.addEventListener('touchmove', (e) => {
+        if (!isPlaying) return;
+        
+        // Handle touch inputs individually
+        for (let i = 0; i < e.touches.length; i++) {
+            const touch = e.touches[i];
+            
+            // Check if touch is on left half (Movement Joystick)
+            if (joystickActive && touch.clientX < window.innerWidth * 0.45) {
+                updateJoystick(touch);
+            } 
+            // Check if touch is on right half (Aim & Shooting)
+            else if (touch.clientX >= window.innerWidth * 0.45) {
+                // Determine direction vector from canvas center representation
+                aimTouchId = touch.identifier;
+                mobileFiring = true;
+                
+                const canvasRect = canvas.getBoundingClientRect();
+                const scaleX = V_WIDTH / canvasRect.width;
+                const scaleY = V_HEIGHT / canvasRect.height;
+                const touchX = (touch.clientX - canvasRect.left) * scaleX;
+                const touchY = (touch.clientY - canvasRect.top) * scaleY;
+                
+                // Set mouse coordinates to mock mouse aiming
+                mouse.x = touchX;
+                mouse.y = touchY;
+                mouse.isDown = true;
+            }
+        }
+    }, { passive: false });
+
+    window.addEventListener('touchend', (e) => {
+        // Reset joystick if no longer in touch
+        let joystickTouchAlive = false;
+        let aimTouchAlive = false;
+
+        for (let i = 0; i < e.touches.length; i++) {
+            const touch = e.touches[i];
+            if (touch.clientX < window.innerWidth * 0.45) joystickTouchAlive = true;
+            if (touch.clientX >= window.innerWidth * 0.45) aimTouchAlive = true;
+        }
+
+        if (!joystickTouchAlive) {
+            joystickActive = false;
+            joystickDir = { x: 0, y: 0 };
+            knob.style.transform = `translate(0px, 0px)`;
+        }
+
+        if (!aimTouchAlive) {
+            mobileFiring = false;
+            mouse.isDown = false;
+            aimTouchId = null;
+        }
+    });
+
+    function updateJoystick(touch) {
+        const dx = touch.clientX - joystickStart.x;
+        const dy = touch.clientY - joystickStart.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const maxDist = 50; // Max visual travel radius
+        
+        if (dist === 0) {
+            joystickDir = { x: 0, y: 0 };
+            return;
+        }
+
+        const angle = Math.atan2(dy, dx);
+        const intensity = Math.min(dist / maxDist, 1.0);
+        
+        joystickDir.x = Math.cos(angle) * intensity;
+        joystickDir.y = Math.sin(angle) * intensity;
+
+        // Move visually
+        const visualX = joystickDir.x * maxDist;
+        const visualY = joystickDir.y * maxDist;
+        knob.style.transform = `translate(${visualX}px, ${visualY}px)`;
+    }
+}
+</script>
+
+<script>
+class Obstacle {
+    constructor(x, y, w, h, type = 'box') {
+        this.x = x;
+        this.y = y;
+        this.w = w;
+        this.h = h;
+        this.type = type; // 'box', 'round', 'umbrella'
+    }
+
+    draw() {
+        ctx.save();
+        if (this.type === 'box') {
+            // High beach wall
+            ctx.fillStyle = '#b45309'; // Sand brown box
+            ctx.strokeStyle = '#78350f';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.roundRect(this.x, this.y, this.w, this.h, 12);
+            ctx.fill();
+            ctx.stroke();
+            
+            // Wooden fence patterns inside
+            ctx.fillStyle = '#92400e';
+            ctx.fillRect(this.x + 8, this.y + 8, this.w - 16, this.h - 16);
+        } else if (this.type === 'umbrella') {
+            // Beach Umbrella
+            const cx = this.x + this.w / 2;
+            const cy = this.y + this.h / 2;
+            const r = this.w / 2;
+            
+            // Umbrella Pole shadow
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+            ctx.beginPath();
+            ctx.ellipse(cx + 8, cy + 25, r * 0.9, r * 0.4, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Umbrella Stand
+            ctx.strokeStyle = '#64748b';
+            ctx.lineWidth = 6;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy);
+            ctx.lineTo(cx + 4, cy + 20);
+            ctx.stroke();
+
+            // Canopy
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, Math.PI * 2);
+            ctx.fillStyle = '#ef4444'; // Red and white stripe
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            for(let i=0; i<8; i+=2) {
+                ctx.moveTo(cx, cy);
+                ctx.arc(cx, cy, r, (i * Math.PI)/4, ((i+1)*Math.PI)/4);
+                ctx.closePath();
+            }
+            ctx.fill();
+
+            // Center tip
+            ctx.fillStyle = '#f59e0b';
+            ctx.beginPath();
+            ctx.arc(cx, cy, r * 0.15, 0, Math.PI * 2);
+            ctx.fill();
+        } else if (this.type === 'bush') {
+            // Green Bush
+            const cx = this.x + this.w/2;
+            const cy = this.y + this.h/2;
+            ctx.fillStyle = '#15803d';
+            ctx.strokeStyle = '#166534';
+            ctx.lineWidth = 3;
+            
+            // Draw multi-layered bush circles
+            ctx.beginPath();
+            ctx.arc(cx - 15, cy, 35, 0, Math.PI * 2);
+            ctx.arc(cx + 15, cy, 35, 0, Math.PI * 2);
+            ctx.arc(cx, cy - 15, 38, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Highlights
+            ctx.fillStyle = '#22c55e';
+            ctx.beginPath();
+            ctx.arc(cx - 5, cy - 8, 20, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
+    }
+}
+
+class Particle {
+    constructor(x, y, vx, vy, color, size, life) {
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.color = color;
+        this.size = size;
+        this.maxLife = life;
+        this.life = life;
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.vx *= 0.95; // Drag
+        this.vy *= 0.95;
+        this.life--;
+    }
+
+    draw() {
+        ctx.save();
+        ctx.globalAlpha = this.life / this.maxLife;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
+class SplashPuddle {
+    constructor(x, y, radius, color = 'rgba(14, 165, 233, 0.15)') {
+        this.x = x;
+        this.y = y;
+        this.radius = radius;
+        this.color = color;
+        this.life = 120; // Last for 2 seconds (60fps)
+    }
+    update() { this.life--; }
+    draw() {
+        ctx.save();
+        ctx.globalAlpha = this.life / 120;
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.ellipse(this.x, this.y, this.radius, this.radius * 0.6, 0, 0, Math.PI*2);
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
+class PowerUp {
+    constructor(x, y, type) {
+        this.x = x;
+        this.y = y;
+        this.type = type; // 'shield', 'speed', 'towel' (heal), 'infinite_water'
+        this.size = 20;
+        this.pulse = 0;
+    }
+
+    update() {
+        this.pulse += 0.05;
+    }
+
+    draw() {
+        ctx.save();
+        const scale = 1 + Math.sin(this.pulse) * 0.1;
+        
+        // Draw shadow
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y + 12, this.size * scale * 0.8, 0, Math.PI*2);
+        ctx.fill();
+
+        // Draw outer ring glow
+        let color = '#fbbf24';
+        let icon = '⚡';
+        if (this.type === 'shield') { color = '#3b82f6'; icon = '🛡️'; }
+        else if (this.type === 'towel') { color = '#10b981'; icon = '🧼'; }
+        else if (this.type === 'infinite_water') { color = '#06b6d4'; icon = '🌀'; }
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 3;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size * scale, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Draw inner glyph representation
+        ctx.fillStyle = '#1e293b';
+        ctx.font = 'bold 16px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(icon, this.x, this.y);
+        ctx.restore();
+    }
+}
+</script>
+
+<script>
+class WaterBullet {
+    constructor(x, y, angle, gunStats, isPlayerBullet, ownerId, color = '#38bdf8') {
+        this.x = x;
+        this.y = y;
+        this.angle = angle + (Math.random() - 0.5) * gunStats.spread;
+        this.speed = gunStats.bulletSpeed;
+        this.vx = Math.cos(this.angle) * this.speed;
+        this.vy = Math.sin(this.angle) * this.speed;
+        
+        this.damage = gunStats.damage;
+        this.range = gunStats.range;
+        this.isPlayer = isPlayerBullet;
+        this.ownerId = ownerId;
+        this.color = color;
+        
+        this.traveled = 0;
+        this.size = 6 + Math.random() * 4;
+    }
+
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.traveled += this.speed;
+        
+        // Add water drop falling effect visually
+        this.size = Math.max(2, this.size * 0.99);
+
+        // Spawn gentle water trail particles
+        if (Math.random() < 0.3) {
+            particles.push(new Particle(this.x, this.y, -this.vx * 0.2, -this.vy * 0.2, this.color, this.size * 0.6, 15));
+        }
+    }
+
+    draw() {
+        ctx.save();
+        ctx.fillStyle = this.color;
+        ctx.shadowColor = '#0284c7';
+        ctx.shadowBlur = 4;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    isExpired() {
+        return this.traveled >= this.range;
+    }
+}
+</script>
+
+<script>
+class Character {
+    constructor(x, y, team, gunType, isPlayer = false, id) {
+        this.x = x;
+        this.y = y;
+        this.r = 25;
+        this.team = team; // 'blue' or 'red'
+        this.gunType = gunType;
+        this.isPlayer = isPlayer;
+        this.id = id;
+
+        // Custom base attributes
+        this.speed = 5.0;
+        this.wetness = 0;      // Wetness meter (0 to 100), reaches 100 = KO
+        this.waterAmmo = 100;  // Capacity (0 to 100)
+        this.maxWater = 100;
+
+        // Action mechanics
+        this.angle = 0;
+        this.cooldownTimer = 0;
+        this.shieldTimer = 0;
+        this.speedBuffTimer = 0;
+        this.infiniteWaterTimer = 0;
+        this.isKO = false;
+        this.respawnTimer = 0;
+
+        // Custom visual color options
+        this.color = this.team === 'blue' ? '#38bdf8' : '#ef4444';
+        this.accentColor = this.team === 'blue' ? '#0369a1' : '#b91c1c';
+
+        // AI decision logic states
+        this.aiState = 'wander'; // 'wander', 'chase', 'refill', 'flee'
+        this.aiTarget = null;
+        this.aiTimer = 0;
+    }
+
+    getEffectiveSpeed() {
+        let base = this.speed;
+        if (this.isPlayer) base *= playerStats.speedMult;
+        if (this.speedBuffTimer > 0) base *= 1.4;
+        return base;
+    }
+
+    getEffectiveMaxWater() {
+        return this.isPlayer ? this.maxWater * playerStats.maxWaterMult : this.maxWater;
+    }
+
+    shoot() {
+        if (this.isKO) return;
+        if (this.cooldownTimer > 0) return;
+
+        const gun = GUNS[this.gunType];
+        
+        // Water consumption logic
+        if (this.infiniteWaterTimer <= 0) {
+            if (this.waterAmmo < gun.waterCost) return; // Empty tank!
+            this.waterAmmo -= gun.waterCost;
+        }
+
+        this.cooldownTimer = gun.cooldown;
+        
+        // Spawn actual bullet(s)
+        const spawnDist = 32;
+        const bx = this.x + Math.cos(this.angle) * spawnDist;
+        const by = this.y + Math.sin(this.angle) * spawnDist;
+
+        if (this.isPlayer) {
+            playSound('shoot');
+        }
+
+        if (this.gunType === 'shotgun') {
+            // Shoots 3 spreaded water drops
+            for (let offset = -1; offset <= 1; offset++) {
+                const spreadAngle = this.angle + offset * 0.18;
+                bullets.push(new WaterBullet(bx, by, spreadAngle, gun, this.isPlayer, this.id, gun.color));
+            }
+        } else {
+            // Normal projectile
+            bullets.push(new WaterBullet(bx, by, this.angle, gun, this.isPlayer, this.id, gun.color));
+        }
+
+        // Slight kickback effect (pushes character back slightly)
+        this.x -= Math.cos(this.angle) * 1.5;
+        this.y -= Math.sin(this.angle) * 1.5;
+    }
+
+    update() {
+        // Cooldown timer subtraction
+        if (this.cooldownTimer > 0) {
+            this.cooldownTimer -= 16.67; // Assuming solid ~60fps
+        }
+
+        // Handle Active Power-ups timers
+        if (this.shieldTimer > 0) this.shieldTimer -= 1;
+        if (this.speedBuffTimer > 0) this.speedBuffTimer -= 1;
+        if (this.infiniteWaterTimer > 0) this.infiniteWaterTimer -= 1;
+
+        // KO respawn sequence
+        if (this.isKO) {
+            this.respawnTimer--;
+            if (this.respawnTimer <= 0) {
+                this.respawn();
+            }
+            return;
+        }
+
+        // Dry up slowly over time (Recovery)
+        if (this.wetness > 0) {
+            let drySpeed = 0.04;
+            if (this.isPlayer) drySpeed *= playerStats.drySpeedMult;
+            this.wetness = Math.max(0, this.wetness - drySpeed);
+        }
+
+        // Check Water refill pools collision
+        let refilling = false;
+        REFILL_ZONES.forEach(zone => {
+            const dx = this.x - zone.x;
+            const dy = this.y - zone.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < zone.r) {
+                // Standing in water pool
+                refilling = true;
+                const maxWaterCap = this.getEffectiveMaxWater();
+                if (this.waterAmmo < maxWaterCap) {
+                    this.waterAmmo = Math.min(maxWaterCap, this.waterAmmo + 1.2);
+                    if (this.isPlayer && Math.random() < 0.15) {
+                        playSound('refill');
+                    }
+                    // Visual splash bubbles while refilling
+                    if (Math.random() < 0.2) {
+                        particles.push(new Particle(
+                            this.x + (Math.random() - 0.5) * 40,
+                            this.y + 15,
+                            (Math.random() - 0.5) * 2,
+                            -Math.random() * 3,
+                            'rgba(14, 165, 233, 0.4)',
+                            4 + Math.random()*4,
+                            20
+                        ));
+                    }
+                }
+            }
+        });
+
+        // AI Logic loop
+        if (!this.isPlayer) {
+            this.runAI();
+        }
+    }
+
+    respawn() {
+        this.isKO = false;
+        this.wetness = 0;
+        this.waterAmmo = this.getEffectiveMaxWater();
+        // Teleport back to spawn point
+        if (this.team === 'blue') {
+            this.x = 100 + Math.random() * 100;
+            this.y = V_HEIGHT / 2 + (Math.random() - 0.5) * 150;
+        } else {
+            this.x = V_WIDTH - 100 - Math.random() * 100;
+            this.y = V_HEIGHT / 2 + (Math.random() - 0.5) * 150;
+        }
+    }
+
+    takeWaterHit(damage) {
+        if (this.isKO) return;
+
+        // Shield blocks damage entirely
+        if (this.shieldTimer > 0) {
+            // Shield hit visual particles
+            for (let i = 0; i < 5; i++) {
+                particles.push(new Particle(this.x, this.y, (Math.random() - 0.5) * 6, (Math.random() - 0.5) * 6, '#60a5fa', 6, 12));
+            }
+            return;
+        }
+
+        this.wetness += damage;
+        
+        // Spawn soft blue hit splashing particles
+        for(let i=0; i<3; i++) {
+            particles.push(new Particle(
+                this.x, 
+                this.y, 
+                (Math.random() - 0.5) * 5, 
+                (Math.random() - 0.5) * 5, 
+                '#38bdf8', 
+                4 + Math.random() * 4, 
+                15
+            ));
+        }
+
+        if (this.wetness >= 100) {
+            this.wetness = 100;
+            this.isKO = true;
+            this.respawnTimer = 180; // 3 seconds KO
+            
+            // Score tracking
+            if (this.team === 'blue') {
+                scores.red++;
+            } else {
+                scores.blue++;
+            }
+
+            // Splash rings on knockout
+            splashPuddles.push(new SplashPuddle(this.x, this.y + 10, 45, 'rgba(56, 189, 248, 0.4)'));
+
+            if (this.isPlayer) {
+                playSound('defeat');
+            }
+        }
+    }
+
+    draw() {
+        ctx.save();
+
+        // 1. Shadow underneath
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.15)';
+        ctx.beginPath();
+        ctx.ellipse(this.x, this.y + 16, 22, 10, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        if (this.isKO) {
+            // Draw Knockout State (Soaked puddle)
+            ctx.fillStyle = 'rgba(56, 189, 248, 0.6)';
+            ctx.beginPath();
+            ctx.ellipse(this.x, this.y + 5, 30, 15, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = 'bold 12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText("젖음!", this.x, this.y - 10);
+            ctx.restore();
+            return;
+        }
+
+        // 2. Active Shields Glowing Ring
+        if (this.shieldTimer > 0) {
+            ctx.strokeStyle = '#3b82f6';
+            ctx.lineWidth = 4;
+            ctx.shadowColor = '#60a5fa';
+            ctx.shadowBlur = 10;
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, this.r + 8, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.shadowBlur = 0; // reset
+        }
+
+        // 3. Draw Character Body (Cute round bubble design with swim goggles)
+        ctx.fillStyle = this.color;
+        ctx.strokeStyle = this.accentColor;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Face & Goggles details based on rotation angle
+        const gx = this.x + Math.cos(this.angle) * 12;
+        const gy = this.y + Math.sin(this.angle) * 12;
+
+        // Cute swim goggle frame
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(gx - Math.sin(this.angle)*6, gy + Math.cos(this.angle)*2, 6, 0, Math.PI * 2);
+        ctx.arc(gx + Math.sin(this.angle)*6, gy - Math.cos(this.angle)*2, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Goggle glass pupil dots
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.arc(gx - Math.sin(this.angle)*6 + Math.cos(this.angle)*2, gy + Math.cos(this.angle)*2 + Math.sin(this.angle)*2, 2.5, 0, Math.PI * 2);
+        ctx.arc(gx + Math.sin(this.angle)*6 + Math.cos(this.angle)*2, gy - Math.cos(this.angle)*2 + Math.sin(this.angle)*2, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 4. Draw Hand-held Water Gun
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+
+        const gun = GUNS[this.gunType];
+        ctx.fillStyle = gun.color;
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth = 2.5;
+
+        // Gun barrel
+        ctx.beginPath();
+        ctx.roundRect(14, -6, 22, 11, 4);
+        ctx.fill();
+        ctx.stroke();
+
+        // Water tank/canister on top of gun
+        ctx.fillStyle = '#a5f3fc';
+        ctx.beginPath();
+        ctx.roundRect(16, -12, 14, 7, 3);
+        ctx.fill();
+        ctx.stroke();
+
+        ctx.restore();
+
+        // 5. HP/Wetness overhead meter (Only for enemy/others, player has big UI HUD)
+        if (!this.isPlayer) {
+            const barW = 40;
+            const barH = 5;
+            const bx = this.x - barW / 2;
+            const by = this.y - this.r - 12;
+
+            // Health bar BG
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillRect(bx, by, barW, barH);
+            // Filled part representing wetness (inverted: full means soaked, so color is red/blue)
+            ctx.fillStyle = this.team === 'blue' ? '#38bdf8' : '#ef4444';
+            const filledW = (this.wetness / 100) * barW;
+            ctx.fillRect(bx, by, filledW, barH);
+            
+            // Draw a tiny frame
+            ctx.strokeStyle = '#334155';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(bx, by, barW, barH);
+        }
+    }
+
+    runAI() {
+        this.aiTimer--;
+        
+        // Dynamic target evaluation
+        if (this.aiTimer <= 0 || !this.aiTarget) {
+            this.aiTimer = 40 + Math.random() * 40; // Change focus every 0.7-1.3 seconds
+            
+            // Scan for closest opponent
+            let closestOpp = null;
+            let minDist = Infinity;
+
+            players.forEach(p => {
+                if (p.team !== this.team && !p.isKO) {
+                    const d = Math.sqrt((this.x - p.x)**2 + (this.y - p.y)**2);
+                    if (d < minDist) {
+                        minDist = d;
+                        closestOpp = p;
+                    }
+                }
+            });
+
+            this.aiTarget = closestOpp;
+
+            // State selection logic
+            if (this.waterAmmo < 20) {
+                this.aiState = 'refill';
+            } else if (this.wetness > 75) {
+                this.aiState = 'flee';
+            } else if (closestOpp) {
+                this.aiState = 'chase';
+            } else {
+                this.aiState = 'wander';
+            }
+        }
+
+        let targetX = this.x;
+        let targetY = this.y;
+
+        // Refill tank behavior
+        if (this.aiState === 'refill') {
+            // Head to closest refill zone
+            let closestZone = REFILL_ZONES[0];
+            let minDist = Infinity;
+            REFILL_ZONES.forEach(z => {
+                const d = Math.sqrt((this.x - z.x)**2 + (this.y - z.y)**2);
+                if (d < minDist) {
+                    minDist = d;
+                    closestZone = z;
+                }
+            });
+            targetX = closestZone.x;
+            targetY = closestZone.y;
+
+            if (this.waterAmmo >= this.getEffectiveMaxWater() - 5) {
+                this.aiState = 'chase';
+            }
+        } 
+        // Retreating behavior (High wetness)
+        else if (this.aiState === 'flee' && this.aiTarget) {
+            // Move opposite of closest enemy
+            const dx = this.x - this.aiTarget.x;
+            const dy = this.y - this.aiTarget.y;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist > 0) {
+                targetX = this.x + (dx / dist) * 200;
+                targetY = this.y + (dy / dist) * 200;
+            }
+        } 
+        // Combat pursuit behavior
+        else if (this.aiState === 'chase' && this.aiTarget) {
+            targetX = this.aiTarget.x;
+            targetY = this.aiTarget.y;
+
+            // Aim gun towards target
+            const dx = this.aiTarget.x - this.x;
+            const dy = this.aiTarget.y - this.y;
+            this.angle = Math.atan2(dy, dx);
+
+            // Shoot if in weapon range and water is available
+            const gun = GUNS[this.gunType];
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < gun.range && this.waterAmmo > 10) {
+                this.shoot();
+            }
+        } 
+        // Chill/Wander behavior
+        else {
+            // Wander around spawn/center
+            if (this.team === 'blue') {
+                targetX = V_WIDTH * 0.25;
+                targetY = V_HEIGHT * 0.5;
+            } else {
+                targetX = V_WIDTH * 0.75;
+                targetY = V_HEIGHT * 0.5;
+            }
+        }
+
+        // Steer / Move towards calculated targets
+        let dx = targetX - this.x;
+        let dy = targetY - this.y;
+        let dist = Math.sqrt(dx*dx + dy*dy);
+
+        if (dist > 10) {
+            let moveSpeed = this.getEffectiveSpeed() * 0.8; // Bot speed slightly scaled down for playability
+            let vx = (dx / dist) * moveSpeed;
+            let vy = (dy / dist) * moveSpeed;
+
+            // Apply movement & resolve collisions with obstacles
+            let nextX = this.x + vx;
+            let nextY = this.y + vy;
+
+            // Basic map bounds confinement
+            if (nextX > this.r && nextX < V_WIDTH - this.r) {
+                if (!checkObstacleCollision(nextX, this.y, this.r)) this.x = nextX;
+            }
+            if (nextY > this.r && nextY < V_HEIGHT - this.r) {
+                if (!checkObstacleCollision(this.x, nextY, this.r)) this.y = nextY;
+            }
+        }
+    }
+}
+</script>
+
+<script>
+function setupMapObstacles() {
+    obstacles = [];
+    
+    // Symmetric high walls / pools boundaries
+    obstacles.push(new Obstacle(400, 180, 80, 220, 'box'));
+    obstacles.push(new Obstacle(V_WIDTH - 480, V_HEIGHT - 400, 80, 220, 'box'));
+
+    // Beach Umbrellas
+    obstacles.push(new Obstacle(300, V_HEIGHT - 320, 120, 120, 'umbrella'));
+    obstacles.push(new Obstacle(V_WIDTH - 420, 200, 120, 120, 'umbrella'));
+
+    // Bushes scattered around map
+    obstacles.push(new Obstacle(V_WIDTH / 2 - 250, 140, 100, 80, 'bush'));
+    obstacles.push(new Obstacle(V_WIDTH / 2 + 150, V_HEIGHT - 220, 100, 80, 'bush'));
+}
+
+// Collide check against all static objects in world map
+function checkObstacleCollision(x, y, r) {
+    for (let i = 0; i < obstacles.length; i++) {
+        const obs = obstacles[i];
+        
+        if (obs.type === 'box') {
+            // Circle vs Rectangle AABB collision
+            const closestX = Math.max(obs.x, Math.min(x, obs.x + obs.w));
+            const closestY = Math.max(obs.y, Math.min(y, obs.y + obs.h));
+            const dx = x - closestX;
+            const dy = y - closestY;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < r) return true;
+        } else {
+            // Circle vs Circle collision (Umbrella & Bush modeled as circular colliders)
+            const cx = obs.x + obs.w / 2;
+            const cy = obs.y + obs.h / 2;
+            const cr = obs.w / 2 * 0.85; // slightly smaller collider than visual representation for ease
+            const dx = x - cx;
+            const dy = y - cy;
+            const dist = Math.sqrt(dx*dx + dy*dy);
+            if (dist < r + cr) return true;
+        }
+    }
+    return false;
+}
+</script>
+
+<script>
+let lastTime = 0;
+
+function gameLoop(timestamp) {
+    if (!isPlaying) return;
+
+    // Fixed tick update
+    updateGame();
+    drawGame();
+
+    requestAnimationFrame(gameLoop);
+}
+
+function updateGame() {
+    const player = players[0]; // Player index reference
+
+    // 1. Core Player Movement controls (W,A,S,D / Arrow keys OR Mobile touch joysticks)
+    let mx = 0;
+    let my = 0;
+
+    if (joystickActive) {
+        // Apply virtual joystick coordinates
+        mx = joystickDir.x;
+        my = joystickDir.y;
+    } else {
+        // Keyboard inputs fallback
+        if (keys['w'] || keys['arrowup']) my = -1;
+        if (keys['s'] || keys['arrowdown']) my = 1;
+        if (keys['a'] || keys['arrowleft']) mx = -1;
+        if (keys['d'] || keys['arrowright']) mx = 1;
+
+        // Diagonal speed normalize
+        const len = Math.sqrt(mx*mx + my*my);
+        if (len > 0) {
+            mx /= len;
+            my /= len;
+        }
+    }
+
+    if (!player.isKO) {
+        const moveSpeed = player.getEffectiveSpeed();
+        const nextX = player.x + mx * moveSpeed;
+        const nextY = player.y + my * moveSpeed;
+
+        // Apply movement with barrier maps bounding & collision checks
+        if (nextX > player.r && nextX < V_WIDTH - player.r) {
+            if (!checkObstacleCollision(nextX, player.y, player.r)) player.x = nextX;
+        }
+        if (nextY > player.r && nextY < V_HEIGHT - player.r) {
+            if (!checkObstacleCollision(player.x, nextY, player.r)) player.y = nextY;
+        }
+
+        // Mouse aiming direction
+        const dx = mouse.x - player.x;
+        const dy = mouse.y - player.y;
+        player.angle = Math.atan2(dy, dx);
+
+        // Auto Fire if held down
+        if (mouse.isDown) {
+            player.shoot();
+        }
+    }
+
+    // 2. Update all active Characters in the scene
+    players.forEach(p => p.update());
+
+    // 3. Update & Move Projectiles
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        b.update();
+
+        // Check Wall / Obstacle collision
+        if (checkObstacleCollision(b.x, b.y, b.size)) {
+            // Splash effect
+            createWaterSplash(b.x, b.y, b.color);
+            bullets.splice(i, 1);
+            continue;
+        }
+
+        // Out of bounds check
+        if (b.x < 0 || b.x > V_WIDTH || b.y < 0 || b.y > V_HEIGHT || b.isExpired()) {
+            // Left visual wet spot puddle on floor occasionally
+            if (Math.random() < 0.4) {
+                splashPuddles.push(new SplashPuddle(b.x, b.y, 10 + Math.random()*15));
+            }
+            bullets.splice(i, 1);
+            continue;
+        }
+
+        // Check Hits against players
+        let hitSomething = false;
+        for (let j = 0; j < players.length; j++) {
+            const p = players[j];
+            if (p.isKO) continue;
+
+            // Only damage opponents
+            const isOpponent = (b.isPlayer && p.team === 'red') || (!b.isPlayer && b.ownerId !== p.id && p.team !== players.find(x => x.id === b.ownerId)?.team);
+
+            if (isOpponent) {
+                const dist = Math.sqrt((b.x - p.x)**2 + (b.y - p.y)**2);
+                if (dist < p.r + b.size) {
+                    p.takeWaterHit(b.damage);
+                    hitSomething = true;
+                    
+                    if (b.isPlayer) {
+                        totalPlayerHits++;
+                        playSound('hit');
+                    }
+                    break;
+                }
+            }
+        }
+
+        if (hitSomething) {
+            bullets.splice(i, 1);
+        }
+    }
+
+    // 4. Update splash puddles and particles decay timers
+    for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        if (particles[i].life <= 0) particles.splice(i, 1);
+    }
+    for (let i = splashPuddles.length - 1; i >= 0; i--) {
+        splashPuddles[i].update();
+        if (splashPuddles[i].life <= 0) splashPuddles.splice(i, 1);
+    }
+
+    // 5. Manage Spawning Power-ups
+    spawnTimer--;
+    if (spawnTimer <= 0) {
+        spawnTimer = 480 + Math.random() * 400; // 8-15 seconds
+        if (powerups.length < 4) {
+            spawnRandomPowerup();
+        }
+    }
+
+    // Check Player PowerUp collisions
+    for (let i = powerups.length - 1; i >= 0; i--) {
+        const pw = powerups[i];
+        pw.update();
+
+        for (let j = 0; j < players.length; j++) {
+            const p = players[j];
+            if (p.isKO) continue;
+
+            const dist = Math.sqrt((pw.x - p.x)**2 + (pw.y - p.y)**2);
+            if (dist < p.r + pw.size) {
+                // Apply Buff effects
+                if (pw.type === 'shield') p.shieldTimer = 450; // ~7.5 seconds
+                else if (pw.type === 'speed') p.speedBuffTimer = 450;
+                else if (pw.type === 'towel') p.wetness = Math.max(0, p.wetness - 50); // Instantly dries 50%
+                else if (pw.type === 'infinite_water') p.infiniteWaterTimer = 300; // infinite water for 5 seconds
+
+                if (p.isPlayer) {
+                    playSound('powerup');
+                    currentCoins += 15; // Extra bonus gold
+                }
+
+                // Splashes on pickup
+                for (let k = 0; k < 12; k++) {
+                    particles.push(new Particle(pw.x, pw.y, (Math.random()-0.5)*8, (Math.random()-0.5)*8, '#fbbf24', 5, 20));
+                }
+
+                powerups.splice(i, 1);
+                break;
+            }
+        }
+    }
+
+    // 6. Keep HUD Sync updated
+    updateHUD();
+}
+
+function createWaterSplash(x, y, color) {
+    for (let i = 0; i < 6; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const spd = 2 + Math.random() * 4;
+        particles.push(new Particle(
+            x, y, 
+            Math.cos(angle) * spd, 
+            Math.sin(angle) * spd, 
+            color, 
+            3 + Math.random() * 3, 
+            12
+        ));
+    }
+}
+
+function spawnRandomPowerup() {
+    const types = ['shield', 'speed', 'towel', 'infinite_water'];
+    const selectedType = types[Math.floor(Math.random() * types.length)];
+    
+    // Pick coordinates safe from wall overlays
+    let px, py;
+    let attempts = 0;
+    do {
+        px = 150 + Math.random() * (V_WIDTH - 300);
+        py = 150 + Math.random() * (V_HEIGHT - 300);
+        attempts++;
+    } while (checkObstacleCollision(px, py, 30) && attempts < 10);
+
+    powerups.push(new PowerUp(px, py, selectedType));
+}
+</script>
+
+<script>
+function drawGame() {
+    // Clear back screen with summery sandy beige tone
+    ctx.fillStyle = '#fef08a'; // Sand color
+    ctx.fillRect(0, 0, V_WIDTH, V_HEIGHT);
+
+    // 1. Draw central Water Refill Pools
+    REFILL_ZONES.forEach(zone => {
+        // Outer splash ring styling
+        ctx.fillStyle = '#bae6fd';
+        ctx.strokeStyle = '#e0f2fe';
+        ctx.lineWidth = 6;
+        ctx.beginPath();
+        ctx.arc(zone.x, zone.y, zone.r, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // Pool inner vibrant blue water
+        ctx.fillStyle = '#38bdf8';
+        ctx.beginPath();
+        ctx.arc(zone.x, zone.y, zone.r * 0.9, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Water sparkling ripples visualizer decoration
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+        ctx.beginPath();
+        ctx.arc(zone.x - zone.r*0.2, zone.y - zone.r*0.2, zone.r * 0.35, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    // 2. Draw Transient splash floor wet spot puddles
+    splashPuddles.forEach(p => p.draw());
+
+    // 3. Draw powerups
+    powerups.forEach(pw => pw.draw());
+
+    // 4. Draw Obstacles (Boxes, umbrellas, trees)
+    obstacles.forEach(obs => obs.draw());
+
+    // 5. Draw Water project stream drops
+    bullets.forEach(b => b.draw());
+
+    // 6. Draw Characters
+    players.forEach(p => p.draw());
+
+    // 7. Draw Visual Action Particles
+    particles.forEach(pt => pt.draw());
+}
+
+// Update text items and health bars in HUD overlay
+function updateHUD() {
+    const player = players[0];
+    if (!player) return;
+
+    // HP Bar represents 'wetness'. (Full = Soaked KO, so bar looks best as progress)
+    document.getElementById('playerHPBar').style.width = player.wetness + '%';
+    document.getElementById('playerHPText').innerText = Math.round(player.wetness) + '% 젖음';
+
+    const maxWater = player.getEffectiveMaxWater();
+    const waterPerc = Math.round((player.waterAmmo / maxWater) * 100);
+    document.getElementById('playerWaterBar').style.width = waterPerc + '%';
+    document.getElementById('playerWaterText').innerText = waterPerc + '%';
+
+    document.getElementById('blueScore').innerText = scores.blue;
+    document.getElementById('redScore').innerText = scores.red;
+    document.getElementById('hudCoins').innerHTML = `<i class="fa-solid fa-coins"></i> ${currentCoins}`;
+}
+</script>
+
+<script>
+function startGame() {
+    // Hide startup overlays
+    document.getElementById('startScreen').classList.add('hidden');
+    document.getElementById('gameHUD').classList.remove('hidden');
+
+    // Init canvas rendering
+    initCanvas();
+    initInput();
+
+    // Setup map components
+    setupMapObstacles();
+
+    // Generate Teams Players (4v4 Team Battle matches)
+    players = [];
+    
+    // Player 1
+    const pX = 150;
+    const pY = V_HEIGHT / 2;
+    const playerInst = new Character(pX, pY, 'blue', selectedGunType, true, 'player_main');
+    players.push(playerInst);
+
+    // Blue Team AI partners
+    players.push(new Character(120, 250, 'blue', 'pistol', false, 'blue_bot1'));
+    players.push(new Character(120, V_HEIGHT - 250, 'blue', 'shotgun', false, 'blue_bot2'));
+
+    // Red Team AI opponents
+    players.push(new Character(V_WIDTH - 150, 200, 'red', 'pistol', false, 'red_bot1'));
+    players.push(new Character(V_WIDTH - 150, V_HEIGHT - 200, 'red', 'shotgun', false, 'red_bot2'));
+    players.push(new Character(V_WIDTH - 120, V_HEIGHT / 2, 'red', 'sniper', false, 'red_bot3'));
+
+    // Reset statistics
+    scores = { blue: 0, red: 0 };
+    bullets = [];
+    particles = [];
+    powerups = [];
+    splashPuddles = [];
+    currentCoins = 0;
+    totalPlayerHits = 0;
+    spawnTimer = 100;
+
+    // Reset Upgrade states for fresh play
+    playerStats = { speedMult: 1.0, maxWaterMult: 1.0, drySpeedMult: 1.0 };
+
+    isPlaying = true;
+    gameTimeRemaining = 120; // 2 minutes
+
+    // Sound start jingle
+    playSound('powerup');
+
+    // Run clock loop
+    if (timerInterval) clearInterval(timerInterval);
+    timerInterval = setInterval(() => {
+        if (!isPlaying || isShopOpen) return;
+
+        gameTimeRemaining--;
+
+        // Reward player coins passive as battle continues
+        currentCoins += 2;
+
+        const mins = Math.floor(gameTimeRemaining / 60);
+        const secs = gameTimeRemaining % 60;
+        document.getElementById('gameTimer').innerText = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+
+        if (gameTimeRemaining <= 0) {
+            endMatch();
+        }
+    }, 1000);
+
+    requestAnimationFrame(gameLoop);
+}
+
+function selectGun(type) {
+    selectedGunType = type;
+    
+    // Visual toggle active button class
+    document.querySelectorAll('.gun-btn').forEach(btn => {
+        btn.classList.remove('bg-sky-500', 'border-white', 'scale-105', 'shadow-md');
+        btn.classList.add('bg-white/10', 'border-transparent', 'opacity-80');
+    });
+
+    const activeBtn = document.getElementById('gun-' + type);
+    activeBtn.classList.add('bg-sky-500', 'border-white', 'scale-105', 'shadow-md');
+    activeBtn.classList.remove('bg-white/10', 'border-transparent', 'opacity-80');
+}
+
+// Pause and toggle Shop screen
+function toggleShop() {
+    isShopOpen = !isShopOpen;
+    const shop = document.getElementById('shopScreen');
+    if (isShopOpen) {
+        document.getElementById('shopCoinText').innerText = currentCoins;
+        shop.classList.remove('hidden');
+    } else {
+        shop.classList.add('hidden');
+    }
+}
+
+// Purchase powerup upgrade
+function buyUpgrade(type) {
+    let cost = 0;
+    if (type === 'speed') cost = 50;
+    else if (type === 'tank') cost = 75;
+    else if (type === 'dry') cost = 60;
+
+    if (currentCoins >= cost) {
+        currentCoins -= cost;
+        playSound('powerup');
+
+        if (type === 'speed') playerStats.speedMult += 0.15;
+        else if (type === 'tank') playerStats.maxWaterMult += 0.25;
+        else if (type === 'dry') playerStats.drySpeedMult += 0.3;
+
+        // Visual flash updates coins
+        document.getElementById('shopCoinText').innerText = currentCoins;
+        updateHUD();
+    }
+}
+
+function endMatch() {
+    isPlaying = false;
+    clearInterval(timerInterval);
+
+    const overlay = document.getElementById('resultScreen');
+    const badge = document.getElementById('resultBadge');
+    const title = document.getElementById('resultTitle');
+    const desc = document.getElementById('resultDesc');
+
+    overlay.classList.remove('hidden');
+
+    document.getElementById('resultBlueScore').innerText = scores.blue;
+    document.getElementById('resultRedScore').innerText = scores.red;
+    document.getElementById('resultPlayerHits').innerText = totalPlayerHits + '회';
+
+    if (scores.blue > scores.red) {
+        badge.className = "mx-auto w-20 h-20 rounded-full flex items-center justify-center text-4xl mb-4 bg-yellow-400 text-yellow-900 shadow-lg animate-bounce";
+        badge.innerHTML = '<i class="fa-solid fa-trophy"></i>';
+        title.innerText = '블루 팀 승리!';
+        desc.innerText = '훌륭합니다! 우리 워터파크 블루 팀원들이 완벽한 호흡으로 상대를 흠뻑 적셨습니다!';
+        playSound('victory');
+    } else if (scores.blue < scores.red) {
+        badge.className = "mx-auto w-20 h-20 rounded-full flex items-center justify-center text-4xl mb-4 bg-red-500 text-white shadow-lg";
+        badge.innerHTML = '<i class="fa-solid fa-cloud-showers-heavy"></i>';
+        title.innerText = '아쉬운 패배...';
+        desc.innerText = '상대 레드 팀의 워터 폭격이 만만치 않았네요. 건조하고 다음 번에 승리를 조준해보세요!';
+        playSound('defeat');
+    } else {
+        badge.className = "mx-auto w-20 h-20 rounded-full flex items-center justify-center text-4xl mb-4 bg-gray-400 text-white shadow-lg";
+        badge.innerHTML = '<i class="fa-solid fa-handshake"></i>';
+        title.innerText = '사이좋게 무승부!';
+        desc.innerText = '두 팀 모두 박빙의 승부였습니다! 서로를 격려해주며 악수 한 판!';
+        playSound('powerup');
+    }
+}
+
+function restartGame() {
+    document.getElementById('resultScreen').classList.add('hidden');
+    startGame();
+}
+
+function goToMainMenu() {
+    document.getElementById('resultScreen').classList.add('hidden');
+    document.getElementById('gameHUD').classList.add('hidden');
+    document.getElementById('startScreen').classList.remove('hidden');
+    isPlaying = false;
+}
+</script>
+</body>
+</html>
