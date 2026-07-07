@@ -1,1 +1,1252 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>궁수 마스터: 국궁 활쏘기 게임</title>
+    <!-- Tailwind CSS 및 FontAwesome 아이콘 추가 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            overflow: hidden;
+        }
+        /* 커스텀 버튼 버블 효과 및 부드러운 전환 */
+        .btn-premium {
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        }
+        .btn-premium:hover {
+            transform: translateY(-3px) scale(1.03);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.25);
+        }
+        .btn-premium:active {
+            transform: translateY(1px) scale(0.98);
+        }
+        /* 바람 화살표 회전 애니메이션 */
+        .wind-indicator {
+            transition: transform 0.5s ease-out;
+        }
+        /* 캔버스 테두리 광원 효과 */
+        .canvas-container {
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-white min-h-screen flex flex-col items-center justify-center p-2 sm:p-4">
 
+    <!-- 전체 게임 컨테이너 -->
+    <div class="relative w-full max-w-5xl bg-slate-800 rounded-2xl overflow-hidden canvas-container border border-slate-700 flex flex-col">
+        
+        <!-- 게임 상단 HUD (점수, 화살 수, 바람 정보 등) -->
+        <div class="bg-slate-950/80 backdrop-blur px-4 py-3 flex flex-wrap items-center justify-between gap-3 border-b border-slate-700/50 z-10">
+            <!-- 로고 및 라운드 -->
+            <div class="flex items-center space-x-3">
+                <span class="text-xl sm:text-2xl font-black tracking-wider text-amber-500 flex items-center">
+                    <i class="fa-solid fa-bullseye mr-2 animate-pulse"></i>궁수 마스터
+                </span>
+                <span id="hud-mode" class="px-2 py-0.5 text-xs bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-full font-bold">쉬움</span>
+            </div>
+
+            <!-- 현재 점수 및 최고 점수 -->
+            <div class="flex items-center space-x-6">
+                <div class="text-center">
+                    <div class="text-xs text-slate-400 font-bold uppercase tracking-wide">SCORE</div>
+                    <div id="hud-score" class="text-xl sm:text-2xl font-black text-white">000</div>
+                </div>
+                <div class="text-center border-l border-slate-700 pl-4">
+                    <div class="text-xs text-slate-400 font-bold uppercase tracking-wide">BEST</div>
+                    <div id="hud-best" class="text-xl sm:text-2xl font-black text-amber-400">000</div>
+                </div>
+            </div>
+
+            <!-- 남은 화살수 시각화 -->
+            <div class="flex items-center space-x-2">
+                <span class="text-xs font-bold text-slate-400">남은 화살:</span>
+                <div id="hud-arrows" class="flex space-x-1">
+                    <!-- JS로 동적 생성될 화살 아이콘들 -->
+                </div>
+            </div>
+
+            <!-- 바람 정보 인디케이터 -->
+            <div class="bg-slate-900/90 rounded-lg px-3 py-1.5 border border-slate-700/80 flex items-center space-x-3">
+                <div class="relative w-8 h-8 flex items-center justify-center bg-slate-800 rounded-full border border-slate-600">
+                    <div id="wind-arrow" class="wind-indicator text-amber-400 text-lg">
+                        <i class="fa-solid fa-arrow-up"></i>
+                    </div>
+                </div>
+                <div class="leading-none">
+                    <div class="text-[10px] text-slate-400 font-bold">풍향 / 풍속</div>
+                    <div id="hud-wind" class="text-sm font-black text-white mt-0.5">0.0 m/s</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 메인 게임 영역 (Canvas 및 가상 조이스틱/UI 오버레이) -->
+        <div class="relative flex-grow aspect-[16/9] w-full bg-slate-950">
+            <!-- 캔버스 엘리먼트 -->
+            <canvas id="gameCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+
+            <!-- 메인 메뉴 버튼 오버레이 (좌상단) -->
+            <button id="btn-back-to-menu" onclick="showMenu()" class="absolute top-4 left-4 z-10 px-3 py-1.5 bg-slate-900/80 hover:bg-slate-800 rounded-lg border border-slate-700/50 flex items-center space-x-1.5 text-xs text-slate-300 transition-colors hidden">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span class="font-bold">메인 메뉴</span>
+            </button>
+
+            <!-- 점수 팝업 피드백 메시지 (중앙) -->
+            <div id="score-popup" class="absolute inset-0 pointer-events-none flex items-center justify-center hidden">
+                <div class="transform scale-50 opacity-0 transition-all duration-300 flex flex-col items-center">
+                    <div id="popup-text" class="text-5xl sm:text-7xl font-black text-amber-400 drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)] italic">BULLSEYE!</div>
+                    <div id="popup-points" class="text-2xl sm:text-3xl font-bold text-white mt-1 drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">+10점</div>
+                </div>
+            </div>
+
+            <!-- 시작 대기 화면 오버레이 -->
+            <div id="menu-overlay" class="absolute inset-0 bg-slate-950/90 flex flex-col items-center justify-center p-6 z-20">
+                <div class="text-center max-w-md w-full">
+                    <div class="mb-4 inline-flex items-center justify-center w-20 h-20 rounded-full bg-amber-500/10 border-2 border-amber-500/30">
+                        <i class="fa-solid fa-bow-arrow text-4xl text-amber-500">🏹</i>
+                    </div>
+                    <h1 class="text-4xl font-black text-white mb-2 tracking-tight">궁수 마스터 <span class="text-amber-500">국궁</span></h1>
+                    <p class="text-slate-400 text-sm mb-6">바람의 방향과 중력을 계산해 과녁 한가운데를 명중시키세요!</p>
+
+                    <!-- 난이도 선택 -->
+                    <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700/50 mb-6 text-left">
+                        <label class="block text-xs font-bold text-slate-400 mb-2 uppercase tracking-wider">난이도 선택</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button onclick="setDifficulty('easy')" id="btn-diff-easy" class="py-2.5 rounded-lg text-sm font-bold border border-amber-500/40 bg-amber-500/10 text-amber-400 transition-all">
+                                쉬움 (가이드)
+                            </button>
+                            <button onclick="setDifficulty('medium')" id="btn-diff-medium" class="py-2.5 rounded-lg text-sm font-bold border border-slate-700 bg-slate-800 text-slate-300 transition-all">
+                                보통
+                            </button>
+                            <button onclick="setDifficulty('hard')" id="btn-diff-hard" class="py-2.5 rounded-lg text-sm font-bold border border-slate-700 bg-slate-800 text-slate-300 transition-all">
+                                어려움 (움직임)
+                            </button>
+                        </div>
+                        <!-- 조작법 설명 -->
+                        <div class="mt-4 pt-3 border-t border-slate-800 text-xs text-slate-400 flex items-start space-x-2">
+                            <i class="fa-solid fa-circle-info mt-0.5 text-amber-500"></i>
+                            <div>
+                                <span class="text-white font-semibold">조작법:</span> 화면을 클릭(또는 터치) 후 뒤로 잡아당겨 힘과 각도를 조절하고 손을 놓아 발사하세요!
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 게임 시작 버튼 -->
+                    <button id="btn-start" onclick="startGame()" class="w-full btn-premium py-4 bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white font-black rounded-xl text-lg tracking-wider">
+                        <i class="fa-solid fa-play mr-2"></i>게임 시작하기
+                    </button>
+                </div>
+            </div>
+
+            <!-- 게임 오버 오버레이 -->
+            <div id="gameover-overlay" class="absolute inset-0 bg-slate-950/95 flex flex-col items-center justify-center p-6 z-20 hidden">
+                <div class="text-center max-w-md w-full animate-fade-in">
+                    <div class="mb-4 inline-flex items-center justify-center w-16 h-16 rounded-full bg-red-500/10 border-2 border-red-500/30">
+                        <i class="fa-solid fa-trophy text-3xl text-red-500">🏆</i>
+                    </div>
+                    <h2 class="text-3xl font-black text-white mb-1">최종 점수</h2>
+                    <p class="text-slate-400 text-xs mb-6 uppercase tracking-wider">GAME OVER</p>
+
+                    <!-- 점수 리포트 보드 -->
+                    <div class="bg-slate-900/80 p-5 rounded-xl border border-slate-700/50 mb-6 space-y-3.5">
+                        <div class="flex justify-between items-center text-sm">
+                            <span class="text-slate-400">총 획득 점수</span>
+                            <span id="go-score" class="text-2xl font-black text-amber-400">120점</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm border-t border-slate-800 pt-3">
+                            <span class="text-slate-400">명중률 (과녁 내 적중)</span>
+                            <span id="go-accuracy" class="font-bold text-white">85%</span>
+                        </div>
+                        <div class="flex justify-between items-center text-sm border-t border-slate-800 pt-3">
+                            <span class="text-slate-400">최고 명중 점수 (최고 발)</span>
+                            <span id="go-best-shot" class="font-bold text-emerald-400">10점 (Bullseye!)</span>
+                        </div>
+                        <div id="go-new-record" class="hidden bg-amber-500/20 text-amber-300 border border-amber-500/40 text-center py-1.5 rounded text-xs font-bold mt-2">
+                            🎉 새로운 최고 기록을 달성했습니다! 🎉
+                        </div>
+                    </div>
+
+                    <!-- 액션 버튼 -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <button onclick="showMenu()" class="py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold rounded-lg text-sm transition-all">
+                            메인 메뉴로
+                        </button>
+                        <button onclick="startGame()" class="btn-premium py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-black rounded-lg text-sm">
+                            다시 도전하기
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 음소거 버튼 오버레이 (우상단) -->
+            <button onclick="toggleMute()" class="absolute top-4 right-4 z-10 w-9 h-9 bg-slate-900/80 hover:bg-slate-800 rounded-full border border-slate-700/50 flex items-center justify-center text-slate-300 transition-colors">
+                <i id="mute-icon" class="fa-solid fa-volume-high"></i>
+            </button>
+        </div>
+
+        <!-- 하단 조작 안내 패널 -->
+        <div class="bg-slate-900/60 p-3 text-center border-t border-slate-800 text-xs text-slate-400 flex flex-wrap items-center justify-around gap-2">
+            <div><span class="font-bold text-slate-300">물리 가이드:</span> 바람이 오른쪽으로 불면 활을 왼쪽으로 조준하세요.</div>
+            <div class="hidden sm:block">|</div>
+            <div><span class="font-bold text-slate-300">최고의 명궁:</span> 10점을 맞추면 불꽃놀이 이펙트가 발생합니다!</div>
+        </div>
+    </div>
+
+    <script>
+        // --- Web Audio API 기반 오디오 효과 생성기 ---
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        let isMuted = false;
+
+        function playSound(type) {
+            if (isMuted) return;
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            try {
+                switch(type) {
+                    case 'pull': // 시위 당기기 (점진적인 저음 우드 크레킹 노이즈 효과)
+                        const pullOsc = audioCtx.createOscillator();
+                        const pullGain = audioCtx.createGain();
+                        pullOsc.type = 'triangle';
+                        pullOsc.frequency.setValueAtTime(45, audioCtx.currentTime);
+                        pullOsc.frequency.exponentialRampToValueAtTime(15, audioCtx.currentTime + 0.8);
+                        
+                        pullGain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                        pullGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.8);
+                        
+                        pullOsc.connect(pullGain);
+                        pullGain.connect(audioCtx.destination);
+                        pullOsc.start();
+                        pullOsc.stop(audioCtx.currentTime + 0.8);
+                        break;
+
+                    case 'shoot': // 발사음 (바람 가르는 슈욱 소리)
+                        const bufferSize = audioCtx.sampleRate * 0.15;
+                        const buffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+                        const data = buffer.getChannelData(0);
+                        for (let i = 0; i < bufferSize; i++) {
+                            data[i] = Math.random() * 2 - 1;
+                        }
+                        const noise = audioCtx.createBufferSource();
+                        noise.buffer = buffer;
+
+                        const filter = audioCtx.createBiquadFilter();
+                        filter.type = 'bandpass';
+                        filter.frequency.setValueAtTime(1200, audioCtx.currentTime);
+                        filter.frequency.exponentialRampToValueAtTime(200, audioCtx.currentTime + 0.15);
+
+                        const noiseGain = audioCtx.createGain();
+                        noiseGain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                        noiseGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+
+                        noise.connect(filter);
+                        filter.connect(noiseGain);
+                        noiseGain.connect(audioCtx.destination);
+                        noise.start();
+                        break;
+
+                    case 'hit': // 일반 피격음 (투둑!)
+                        const hitOsc = audioCtx.createOscillator();
+                        const hitGain = audioCtx.createGain();
+                        hitOsc.type = 'sine';
+                        hitOsc.frequency.setValueAtTime(150, audioCtx.currentTime);
+                        hitOsc.frequency.exponentialRampToValueAtTime(30, audioCtx.currentTime + 0.15);
+
+                        hitGain.gain.setValueAtTime(0.6, audioCtx.currentTime);
+                        hitGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.18);
+
+                        hitOsc.connect(hitGain);
+                        hitGain.connect(audioCtx.destination);
+                        hitOsc.start();
+                        hitOsc.stop(audioCtx.currentTime + 0.2);
+                        break;
+
+                    case 'bullseye': // 골드 명중음 (경쾌한 금속성 차임 소리)
+                        const now = audioCtx.currentTime;
+                        [523.25, 659.25, 783.99, 1046.50].forEach((freq, idx) => {
+                            const chimeOsc = audioCtx.createOscillator();
+                            const chimeGain = audioCtx.createGain();
+                            chimeOsc.type = 'sine';
+                            chimeOsc.frequency.setValueAtTime(freq, now + idx * 0.05);
+
+                            chimeGain.gain.setValueAtTime(0.0, now);
+                            chimeGain.gain.linearRampToValueAtTime(0.15, now + idx * 0.05 + 0.02);
+                            chimeGain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.05 + 0.4);
+
+                            chimeOsc.connect(chimeGain);
+                            chimeGain.connect(audioCtx.destination);
+                            chimeOsc.start(now + idx * 0.05);
+                            chimeOsc.stop(now + idx * 0.05 + 0.4);
+                        });
+                        break;
+
+                    case 'miss': // 빗나감 (바닥에 툭 떨어지는 맥빠진 소리)
+                        const missOsc = audioCtx.createOscillator();
+                        const missGain = audioCtx.createGain();
+                        missOsc.type = 'sawtooth';
+                        missOsc.frequency.setValueAtTime(100, audioCtx.currentTime);
+                        missOsc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.3);
+
+                        missGain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                        missGain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+
+                        missOsc.connect(missGain);
+                        missGain.connect(audioCtx.destination);
+                        missOsc.start();
+                        missOsc.stop(audioCtx.currentTime + 0.4);
+                        break;
+                }
+            } catch(e) {
+                console.warn("Audio Context Error: ", e);
+            }
+        }
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            const muteIcon = document.getElementById('mute-icon');
+            if (isMuted) {
+                muteIcon.className = "fa-solid fa-volume-xmark";
+            } else {
+                muteIcon.className = "fa-solid fa-volume-high";
+            }
+        }
+
+        // --- 글로벌 게임 변수 선언 ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // 반응형 해상도 조절 함수
+        function resizeCanvas() {
+            const rect = canvas.parentNode.getBoundingClientRect();
+            canvas.width = rect.width;
+            canvas.height = rect.width * (9/16); // 16:9 고정 비율 유지
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // 난이도별 세팅 정의
+        const DIFFICULTIES = {
+            easy: { guide: true, dynamicTarget: false, windFactor: 0.3, maxWind: 3 },
+            medium: { guide: false, dynamicTarget: false, windFactor: 1.0, maxWind: 8 },
+            hard: { guide: false, dynamicTarget: true, windFactor: 1.8, maxWind: 14 }
+        };
+
+        // 기본 게임 상태 구조체
+        let gameState = {
+            currentDiff: 'easy',
+            score: 0,
+            bestScore: parseInt(localStorage.getItem('archery_best_score')) || 0,
+            arrowsRemaining: 5,
+            totalArrows: 5,
+            arrowsShot: 0,
+            arrowsHit: 0,
+            highestArrowScore: 0,
+            gameActive: false,
+            wind: { angle: 0, speed: 0 },
+            arrow: null,
+            target: { x: 0, y: 0, radius: 90, speedY: 1.5, dirY: 1 },
+            aiming: false,
+            aimStart: { x: 0, y: 0 },
+            aimCurrent: { x: 0, y: 0 },
+            particles: [],
+            leaves: [],
+            arrowsStuck: [], // 과녁에 박힌 화살 기록
+            cameraShake: 0
+        };
+
+        document.getElementById('hud-best').textContent = String(gameState.bestScore).padStart(3, '0');
+
+        // 배경에 날아다니는 나뭇잎 효과 이니셜라이징
+        function initLeaves() {
+            gameState.leaves = [];
+            for (let i = 0; i < 20; i++) {
+                gameState.leaves.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * (canvas.height - 100),
+                    size: Math.random() * 8 + 4,
+                    speedX: Math.random() * 1.5 + 0.5,
+                    speedY: Math.random() * 0.5 + 0.2,
+                    angle: Math.random() * Math.PI * 2,
+                    spin: Math.random() * 0.02 - 0.01,
+                    color: `hsla(${Math.random() * 40 + 80}, 60%, 40%, ${Math.random() * 0.4 + 0.3})`
+                });
+            }
+        }
+
+        // 과녁 초기 포지션 세팅
+        function initTarget() {
+            gameState.target.x = canvas.width * 0.85;
+            gameState.target.y = canvas.height * 0.5;
+            gameState.target.radius = canvas.height * 0.18; // 화면 크기에 비례해 타겟 설정
+            gameState.target.speedY = (Math.random() * 1.5 + 1.0) * (Math.random() > 0.5 ? 1 : -1);
+        }
+
+        // 새로운 무작위 바람 생성
+        function generateWind() {
+            const diffConfig = DIFFICULTIES[gameState.currentDiff];
+            gameState.wind.angle = Math.random() * Math.PI * 2; // 무작위 각도
+            gameState.wind.speed = Number((Math.random() * diffConfig.maxWind).toFixed(1));
+
+            // UI 풍향 풍속 연출 업데이트
+            const windArrow = document.getElementById('wind-arrow');
+            const hudWind = document.getElementById('hud-wind');
+
+            // CSS로 화살표 회전 변환 적용 (각도 회전 보정)
+            const angleDegrees = (gameState.wind.angle * 180) / Math.PI;
+            windArrow.style.transform = `rotate(${angleDegrees}deg)`;
+            hudWind.textContent = `${gameState.wind.speed} m/s`;
+        }
+
+        // HUD의 남은 화살 UI 동적 갱신
+        function updateArrowHUD() {
+            const container = document.getElementById('hud-arrows');
+            container.innerHTML = '';
+            for (let i = 0; i < gameState.totalArrows; i++) {
+                const arrowIcon = document.createElement('span');
+                arrowIcon.className = `inline-block transition-all duration-300 ${i < gameState.arrowsRemaining ? 'text-amber-500 scale-100' : 'text-slate-600 scale-75 opacity-30'}`;
+                arrowIcon.innerHTML = `<svg class="w-5 h-5 rotate-45 transform" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>`;
+                container.appendChild(arrowIcon);
+            }
+        }
+
+        // 난이도 변경 핸들러
+        function setDifficulty(diff) {
+            gameState.currentDiff = diff;
+            
+            // 모든 난이도 버튼 스타일 원복 후 선택한 버튼만 골드 활성화
+            ['easy', 'medium', 'hard'].forEach(d => {
+                const btn = document.getElementById(`btn-diff-${d}`);
+                btn.className = "py-2.5 rounded-lg text-sm font-bold border border-slate-700 bg-slate-800 text-slate-300 transition-all";
+            });
+
+            const activeBtn = document.getElementById(`btn-diff-${diff}`);
+            activeBtn.className = "py-2.5 rounded-lg text-sm font-bold border border-amber-500/40 bg-amber-500/10 text-amber-400 transition-all";
+
+            const hudMode = document.getElementById('hud-mode');
+            const names = { easy: "쉬움", medium: "보통", hard: "어려움" };
+            hudMode.textContent = names[diff];
+        }
+
+        // 메인 메뉴 표시
+        function showMenu() {
+            document.getElementById('menu-overlay').classList.remove('hidden');
+            document.getElementById('gameover-overlay').classList.add('hidden');
+            document.getElementById('btn-back-to-menu').classList.add('hidden'); // 메인 메뉴 버튼 숨김
+            gameState.gameActive = false;
+        }
+
+        // 새 게임 초기화 및 시작
+        function startGame() {
+            gameState.score = 0;
+            gameState.arrowsRemaining = 5;
+            gameState.totalArrows = 5;
+            gameState.arrowsShot = 0;
+            gameState.arrowsHit = 0;
+            gameState.highestArrowScore = 0;
+            gameState.arrowsStuck = [];
+            gameState.particles = [];
+            gameState.arrow = null;
+            gameState.gameActive = true;
+
+            document.getElementById('hud-score').textContent = "000";
+            
+            // 레이어 오버레이 은닉
+            document.getElementById('menu-overlay').classList.add('hidden');
+            document.getElementById('gameover-overlay').classList.add('hidden');
+            document.getElementById('btn-back-to-menu').classList.remove('hidden'); // 메인 메뉴 버튼 노출
+
+            // 기본 에셋 갱신 및 생성
+            resizeCanvas();
+            initTarget();
+            initLeaves();
+            generateWind();
+            updateArrowHUD();
+
+            // 첫 루프 강제 시동 (오버레이 해제 및 시작 후 최초 한 번 보장)
+            requestAnimationFrame(gameLoop);
+        }
+
+        // 파티클 스파크/폭죽 생성 함수
+        function createExplosion(x, y, color, count = 25, isFirework = false) {
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = isFirework ? (Math.random() * 8 + 3) : (Math.random() * 5 + 2);
+                gameState.particles.push({
+                    x: x,
+                    y: y,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    size: Math.random() * (isFirework ? 4 : 3) + 1,
+                    color: color,
+                    alpha: 1,
+                    decay: Math.random() * (isFirework ? 0.012 : 0.02) + 0.01,
+                    gravity: isFirework ? 0.08 : 0, // 불꽃놀이 파티클은 아래로 우아하게 떨어짐
+                    shimmer: isFirework, // 반짝임 활성화 여부
+                    isFirework: isFirework
+                });
+            }
+        }
+
+        // 점수 팝업 시각 효과 연출
+        function showScorePopup(scoreText, points) {
+            const popup = document.getElementById('score-popup');
+            const pText = document.getElementById('popup-text');
+            const pPoints = document.getElementById('popup-points');
+
+            let textColor = "text-amber-400";
+            if (points === 10) {
+                textColor = "text-yellow-300 animate-bounce";
+                pText.textContent = "🏅 신궁! BULLSEYE";
+            } else if (points >= 8) {
+                textColor = "text-emerald-400";
+                pText.textContent = "🎯 훌륭합니다!";
+            } else if (points >= 5) {
+                textColor = "text-sky-400";
+                pText.textContent = "좋은 솜씨!";
+            } else if (points > 0) {
+                textColor = "text-slate-300";
+                pText.textContent = "명중!";
+            } else {
+                textColor = "text-red-500";
+                pText.textContent = "아까비! MISS";
+            }
+
+            pText.className = `text-4xl sm:text-6xl font-black drop-shadow-[0_4px_8px_rgba(0,0,0,0.8)] italic ${textColor}`;
+            pPoints.textContent = points > 0 ? `+${points}점` : "0점";
+
+            popup.classList.remove('hidden');
+            
+            // 애니메이션 초기화 후 트리거
+            const container = popup.children[0];
+            container.style.transform = "scale(0.5) rotate(-5deg)";
+            container.style.opacity = "0";
+
+            setTimeout(() => {
+                container.style.transform = "scale(1.1) rotate(0deg)";
+                container.style.opacity = "1";
+            }, 10);
+
+            setTimeout(() => {
+                container.style.transform = "scale(0.9) translateY(-10px)";
+                container.style.opacity = "0";
+                setTimeout(() => {
+                    popup.classList.add('hidden');
+                }, 300);
+            }, 1200);
+        }
+
+        // 마우스 및 모바일 터치 통합 위치 계산기
+        function getEventPos(e) {
+            const rect = canvas.getBoundingClientRect();
+            // 터치 디바이스 호환성
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: (clientX - rect.left) * (canvas.width / rect.width),
+                y: (clientY - rect.top) * (canvas.height / rect.height)
+            };
+        }
+
+        // 활쏘기 제스처 시작 핸들러
+        function handleStart(e) {
+            if (!gameState.gameActive || gameState.arrow) return;
+            
+            const pos = getEventPos(e);
+            
+            // 활의 기본 위상 위치 (캔버스 좌측 하프존 부근 검사)
+            const bowX = canvas.width * 0.15;
+            const bowY = canvas.height * 0.55;
+            const dist = Math.hypot(pos.x - bowX, pos.y - bowY);
+
+            // 발사존 근처 터치 혹은 조준 드래그
+            if (dist < 150) {
+                gameState.aiming = true;
+                gameState.aimStart = { x: bowX, y: bowY };
+                gameState.aimCurrent = pos;
+                playSound('pull');
+            }
+        }
+
+        // 조준 도중 변하는 드래그 위치 갱신
+        function handleMove(e) {
+            if (!gameState.aiming) return;
+            // 스크롤 등 기본 동작 방지 (모바일 터치 멈춤)
+            if (e.cancelable) e.preventDefault();
+            gameState.aimCurrent = getEventPos(e);
+        }
+
+        // 최종 발사 손 놓기 핸들러
+        function handleEnd(e) {
+            if (!gameState.aiming) return;
+            gameState.aiming = false;
+
+            // 잡아당긴 거리(Tension) 계산 및 물리적 초기 발사 속도 지정
+            const dx = gameState.aimStart.x - gameState.aimCurrent.x;
+            const dy = gameState.aimStart.y - gameState.aimCurrent.y;
+            const tension = Math.min(Math.hypot(dx, dy), 160); // 최대 텐션 리미터 설정
+
+            // 조준 강도가 너무 약하면 발사 취소
+            if (tension < 15) return;
+
+            playSound('shoot');
+
+            // 물리 시뮬레이션을 위한 초기 앵글 및 화살 스피드 계산
+            const angle = Math.atan2(dy, dx);
+            const speedFactor = 0.16; // 화살 발사 세기 계수
+            const speed = tension * speedFactor;
+
+            gameState.arrow = {
+                x: gameState.aimStart.x,
+                y: gameState.aimStart.y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                angle: angle,
+                length: 50,
+                trail: [] // 아름다운 화살 비행 궤적 꼬리선 배열
+            };
+
+            gameState.arrowsRemaining--;
+            gameState.arrowsShot++;
+            updateArrowHUD();
+        }
+
+        // 마우스 및 터치 이벤트 리스너 마운팅
+        canvas.addEventListener('mousedown', handleStart);
+        window.addEventListener('mousemove', handleMove);
+        window.addEventListener('mouseup', handleEnd);
+
+        canvas.addEventListener('touchstart', handleStart, { passive: false });
+        window.addEventListener('touchmove', handleMove, { passive: false });
+        window.addEventListener('touchend', handleEnd);
+
+        // 물리 연산용 중력 및 바람 정의
+        const GRAVITY = 0.15;
+
+        // 가이드 라인 궤적 사전 계산
+        function drawAimGuide() {
+            if (!gameState.aiming) return;
+
+            const dx = gameState.aimStart.x - gameState.aimCurrent.x;
+            const dy = gameState.aimStart.y - gameState.aimCurrent.y;
+            const tension = Math.min(Math.hypot(dx, dy), 160);
+            if (tension < 15) return;
+
+            const angle = Math.atan2(dy, dx);
+            const speed = tension * 0.16;
+
+            // 가상 시뮬레이션용 화살 초기값 복사
+            let simX = gameState.aimStart.x;
+            let simY = gameState.aimStart.y;
+            let simVx = Math.cos(angle) * speed;
+            let simVy = Math.sin(angle) * speed;
+
+            // 난이도별 가이드라인 정확도 및 거리 보정
+            const diffConfig = DIFFICULTIES[gameState.currentDiff];
+            if (!diffConfig.guide) return; // 보통/어려움 모드는 가이드 미출력
+
+            ctx.beginPath();
+            ctx.setLineDash([4, 6]);
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = "rgba(245, 158, 11, 0.6)"; // 은은한 골드색 가이드선
+            ctx.moveTo(simX, simY);
+
+            // 60 프레임의 가상 궤적 계산선 렌더링
+            for (let i = 0; i < 40; i++) {
+                simX += simVx;
+                simY += simVy;
+                
+                // 가속도 가산 (중력 및 바람 저항)
+                simVy += GRAVITY;
+                simVx += Math.cos(gameState.wind.angle) * gameState.wind.speed * diffConfig.windFactor * 0.003;
+                simVy += Math.sin(gameState.wind.angle) * gameState.wind.speed * diffConfig.windFactor * 0.003;
+
+                ctx.lineTo(simX, simY);
+                if (simX > canvas.width || simY > canvas.height) break;
+            }
+            ctx.stroke();
+            ctx.setLineDash([]); // 대시 포맷 원상복구
+        }
+
+        // 게임 오버 트리거 처리
+        function triggerGameOver() {
+            gameState.gameActive = false;
+            document.getElementById('btn-back-to-menu').classList.add('hidden'); // 게임 종료 시 버튼 숨김
+            
+            // 로컬 스토리지에 최고 점수 갱신 판별 및 저장
+            let isNewBest = false;
+            if (gameState.score > gameState.bestScore) {
+                gameState.bestScore = gameState.score;
+                localStorage.setItem('archery_best_score', gameState.bestScore);
+                document.getElementById('hud-best').textContent = String(gameState.bestScore).padStart(3, '0');
+                isNewBest = true;
+            }
+
+            // 게임 오버 오버레이 시각화
+            document.getElementById('go-score').textContent = `${gameState.score}점`;
+            
+            // 적중률 계산
+            const accuracy = gameState.arrowsShot > 0 ? Math.round((gameState.arrowsHit / gameState.arrowsShot) * 100) : 0;
+            document.getElementById('go-accuracy').textContent = `${accuracy}%`;
+            
+            // 최고 발 점수 피드백
+            document.getElementById('go-best-shot').textContent = `${gameState.highestArrowScore}점 ${gameState.highestArrowScore === 10 ? '(신궁!)' : ''}`;
+
+            const recordBadge = document.getElementById('go-new-record');
+            if (isNewBest && gameState.score > 0) {
+                recordBadge.classList.remove('hidden');
+            } else {
+                recordBadge.classList.add('hidden');
+            }
+
+            document.getElementById('gameover-overlay').classList.remove('hidden');
+        }
+
+        // 메인 업데이트 및 그리기 루프
+        function gameLoop() {
+            if (!gameState.gameActive) return;
+
+            // 카메라 흔들림 계산용 팩터 차감
+            if (gameState.cameraShake > 0) {
+                gameState.cameraShake -= 0.1;
+                if (gameState.cameraShake < 0) gameState.cameraShake = 0;
+            }
+
+            // 카메라 세이브-복구 컨텍스트 매트릭스 변환 (쉐이크 구현)
+            ctx.save();
+            if (gameState.cameraShake > 0) {
+                const shakeX = (Math.random() - 0.5) * gameState.cameraShake * 5;
+                const shakeY = (Math.random() - 0.5) * gameState.cameraShake * 5;
+                ctx.translate(shakeX, shakeY);
+            }
+
+            // 1. 화면 비우기 및 미려한 한국형 수묵화 느낌 풍경 그리기
+            drawBackground();
+
+            // 2. 환경 이파리 업데이트 및 그리기
+            updateAndDrawLeaves();
+
+            // 3. 과녁(타겟) 상하 운동 제어 및 그리기
+            updateAndDrawTarget();
+
+            // 4. 박힌 화살들 그리기
+            drawStuckArrows();
+
+            // 5. 활 시위 드래그 연출 및 조준선 그리기
+            drawBowAndAim();
+
+            // 6. 가이드라인 그리기
+            drawAimGuide();
+
+            // 7. 실시간 비행 중인 화살 업데이트 및 충돌 판정 연산
+            updateAndDrawFlyingArrow();
+
+            // 8. 스파크 파티클 효과 업데이트
+            updateAndDrawParticles();
+
+            // 카메라 컨텍스트 원복
+            ctx.restore();
+
+            // 다음 프레임 요청
+            requestAnimationFrame(gameLoop);
+        }
+
+        // 한국 전통적인 산등성이와 평원 풍경 드로잉
+        function drawBackground() {
+            // 그라데이션 하늘 (아름다운 전통 한지/노을 새벽 하늘색 표현)
+            const skyGrad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            skyGrad.addColorStop(0, '#0f172a'); // 짙은 밤하늘 남색
+            skyGrad.addColorStop(0.6, '#1e293b');
+            skyGrad.addColorStop(1, '#334155'); // 지평선 새벽빛
+            ctx.fillStyle = skyGrad;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 멀리 있는 은은한 새벽녘 태양/달
+            ctx.beginPath();
+            ctx.arc(canvas.width * 0.45, canvas.height * 0.35, 65, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(251, 191, 36, 0.12)';
+            ctx.shadowBlur = 40;
+            ctx.shadowColor = '#fbbf24';
+            ctx.fill();
+            ctx.shadowBlur = 0; // 섀도우 영향 초기화
+
+            // 원경 산맥 (수묵 느낌)
+            ctx.fillStyle = '#1e293b';
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height);
+            ctx.quadraticCurveTo(canvas.width * 0.25, canvas.height * 0.55, canvas.width * 0.5, canvas.height * 0.75);
+            ctx.quadraticCurveTo(canvas.width * 0.75, canvas.height * 0.45, canvas.width, canvas.height);
+            ctx.fill();
+
+            // 근경 지평선 언덕 및 평원 바닥
+            ctx.fillStyle = '#0f172a';
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height);
+            ctx.quadraticCurveTo(canvas.width * 0.3, canvas.height * 0.78, canvas.width * 0.7, canvas.height * 0.85);
+            ctx.quadraticCurveTo(canvas.width * 0.85, canvas.height * 0.82, canvas.width, canvas.height * 0.9);
+            ctx.lineTo(canvas.width, canvas.height);
+            ctx.lineTo(0, canvas.height);
+            ctx.fill();
+
+            // 전통 한옥 문양풍 깃대 장식 데코레이션 그리기
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#334155';
+            ctx.beginPath();
+            ctx.moveTo(canvas.width * 0.85, canvas.height * 0.85);
+            ctx.lineTo(canvas.width * 0.85, canvas.height);
+            ctx.stroke();
+        }
+
+        // 환경 효과 (떨어지는 단풍/대나무 잎사귀) 처리
+        function updateAndDrawLeaves() {
+            const diffConfig = DIFFICULTIES[gameState.currentDiff];
+            const wEffectX = Math.cos(gameState.wind.angle) * gameState.wind.speed * diffConfig.windFactor * 0.1;
+            const wEffectY = Math.sin(gameState.wind.angle) * gameState.wind.speed * diffConfig.windFactor * 0.05;
+
+            gameState.leaves.forEach(leaf => {
+                // 바람 및 기본 움직임 가미
+                leaf.x += leaf.speedX + wEffectX;
+                leaf.y += leaf.speedY + wEffectY;
+                leaf.angle += leaf.spin;
+
+                // 화면 탈출 시 리스폰 처리
+                if (leaf.x > canvas.width) {
+                    leaf.x = -20;
+                    leaf.y = Math.random() * (canvas.height - 100);
+                }
+                if (leaf.y > canvas.height) {
+                    leaf.y = -20;
+                    leaf.x = Math.random() * canvas.width;
+                }
+
+                ctx.save();
+                ctx.translate(leaf.x, leaf.y);
+                ctx.rotate(leaf.angle);
+                ctx.fillStyle = leaf.color;
+                
+                // 나뭇잎 형태 유기적 곡선 드로잉
+                ctx.beginPath();
+                ctx.ellipse(0, 0, leaf.size, leaf.size / 2.5, 0, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            });
+        }
+
+        // 과녁 업데이트 및 드로잉
+        function updateAndDrawTarget() {
+            const diffConfig = DIFFICULTIES[gameState.currentDiff];
+
+            // 어려움 모드일 때만 과녁 상하 슬라이딩 왕복 작동
+            if (diffConfig.dynamicTarget) {
+                gameState.target.y += gameState.target.speedY;
+
+                // 가용 왕복 한계선 가이드라인 연산
+                const minY = canvas.height * 0.25;
+                const maxY = canvas.height * 0.75;
+                if (gameState.target.y < minY || gameState.target.y > maxY) {
+                    gameState.target.speedY *= -1; // 방향 반전
+                    gameState.target.y = Math.max(minY, Math.min(gameState.target.y, maxY));
+                }
+            }
+
+            const tx = gameState.target.x;
+            const ty = gameState.target.y;
+            const radius = gameState.target.radius;
+
+            // 과녁 기둥 지지대 나무 그리기
+            ctx.lineWidth = 8;
+            ctx.strokeStyle = '#451a03'; // 진한 다크 오크 우드색
+            ctx.beginPath();
+            ctx.moveTo(tx, ty);
+            ctx.lineTo(tx, canvas.height * 0.85);
+            ctx.lineTo(tx - 25, canvas.height * 0.95);
+            ctx.moveTo(tx, canvas.height * 0.85);
+            ctx.lineTo(tx + 25, canvas.height * 0.95);
+            ctx.stroke();
+
+            // 전통 원형 과녁 컬러 링 드로잉 (외곽에서 중앙 순으로 레이어링)
+            // 규격 점수: 흰색(1-2), 검정(3-4), 파랑(5-6), 빨강(7-8), 노랑(9-10)
+            const rings = [
+                { r: 1.0, color: '#f8fafc', stroke: '#cbd5e1' }, // 1~2점 (White)
+                { r: 0.8, color: '#1e293b', stroke: '#334155' }, // 3~4점 (Black)
+                { r: 0.6, color: '#2563eb', stroke: '#1d4ed8' }, // 5~6점 (Blue)
+                { r: 0.4, color: '#dc2626', stroke: '#b91c1c' }, // 7~8점 (Red)
+                { r: 0.2, color: '#eab308', stroke: '#ca8a04' }  // 9~10점 (Yellow, Center)
+            ];
+
+            rings.forEach(ring => {
+                ctx.beginPath();
+                ctx.arc(tx, ty, radius * ring.r, 0, Math.PI * 2);
+                ctx.fillStyle = ring.color;
+                ctx.fill();
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = ring.stroke;
+                ctx.stroke();
+            });
+
+            // 가장 가운데 정중앙 10점 핵심부 작은 십자 표시
+            ctx.beginPath();
+            ctx.arc(tx, ty, radius * 0.05, 0, Math.PI * 2);
+            ctx.fillStyle = '#b45309';
+            ctx.fill();
+        }
+
+        // 활 드로잉 및 드래그 줄 팽팽함 연출
+        function drawBowAndAim() {
+            const bowX = canvas.width * 0.15;
+            const bowY = canvas.height * 0.55;
+
+            ctx.save();
+
+            let angle = 0;
+            let pullDist = 0;
+
+            if (gameState.aiming) {
+                const dx = gameState.aimStart.x - gameState.aimCurrent.x;
+                const dy = gameState.aimStart.y - gameState.aimCurrent.y;
+                pullDist = Math.min(Math.hypot(dx, dy), 160);
+                angle = Math.atan2(dy, dx);
+            }
+
+            // 활의 전체 회전축 변환 적용
+            ctx.translate(bowX, bowY);
+            ctx.rotate(angle);
+
+            // 1. 활 대 그리기 (국궁 특유의 아름다운 곡선)
+            // 텐션 강도에 따라 탄력적으로 안쪽으로 휘어지는 곡률 조정
+            const curveFactor = pullDist * 0.15;
+            ctx.beginPath();
+            ctx.lineWidth = 4.5;
+            ctx.strokeStyle = '#b45309'; // 옻칠한 전통 나무 고유색
+            
+            // 상부 활 날
+            ctx.moveTo(0, -65);
+            ctx.quadraticCurveTo(15 - curveFactor, -35, 10 - curveFactor * 0.5, 0);
+            // 하부 활 날
+            ctx.quadraticCurveTo(15 - curveFactor, 35, 0, 65);
+            ctx.stroke();
+
+            // 활 양 끝단 고리 장식
+            ctx.fillStyle = '#1e293b';
+            ctx.beginPath();
+            ctx.arc(0, -65, 3.5, 0, Math.PI * 2);
+            ctx.arc(0, 65, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 2. 활시위(줄) 그리기
+            ctx.beginPath();
+            ctx.lineWidth = 1.2;
+            ctx.strokeStyle = '#f8fafc'; // 비단 실 색상 표현
+
+            if (gameState.aiming) {
+                // 당기는 손 위치까지 팽팽하게 꺾인 시위 드로잉
+                ctx.moveTo(0, -65);
+                ctx.lineTo(-pullDist * 0.85, 0);
+                ctx.lineTo(0, 65);
+            } else {
+                // 평상시 일자 팽팽한 상태
+                ctx.moveTo(0, -65);
+                ctx.lineTo(0, 65);
+            }
+            ctx.stroke();
+
+            // 3. 조준 중일 때 대기 중인 장전 화살 그리기
+            if (gameState.aiming) {
+                ctx.beginPath();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#cbd5e1'; // 대나무 화살대 색
+                
+                const arrowLength = 65;
+                // 화살 깃대 시작점
+                const arrowStartX = -pullDist * 0.85;
+                const arrowEndX = arrowStartX + arrowLength;
+
+                ctx.moveTo(arrowStartX, 0);
+                ctx.lineTo(arrowEndX, 0);
+                ctx.stroke();
+
+                // 뾰족한 화살촉
+                ctx.beginPath();
+                ctx.fillStyle = '#64748b';
+                ctx.moveTo(arrowEndX, -3);
+                ctx.lineTo(arrowEndX + 8, 0);
+                ctx.lineTo(arrowEndX, 3);
+                ctx.fill();
+
+                // 꿩 깃털 화살깃 표현 (뒤쪽)
+                ctx.beginPath();
+                ctx.fillStyle = 'rgba(239, 68, 68, 0.9)'; // 주홍색 고운 깃
+                ctx.moveTo(arrowStartX + 2, 0);
+                ctx.lineTo(arrowStartX - 8, -6);
+                ctx.lineTo(arrowStartX - 2, 0);
+                ctx.lineTo(arrowStartX - 8, 6);
+                ctx.fill();
+            }
+
+            ctx.restore();
+        }
+
+        // 공중을 나르는 화살 물리 업데이트 및 렌더링
+        function updateAndDrawFlyingArrow() {
+            if (!gameState.arrow) return;
+
+            const arr = gameState.arrow;
+            const diffConfig = DIFFICULTIES[gameState.currentDiff];
+
+            // 궤적 이력 기록 (꼬리 잔상용)
+            arr.trail.push({ x: arr.x, y: arr.y });
+            if (arr.trail.length > 12) arr.trail.shift();
+
+            // 꼬리 잔상(바람줄) 그리기
+            if (arr.trail.length > 1) {
+                ctx.beginPath();
+                ctx.lineWidth = 1.8;
+                ctx.strokeStyle = 'rgba(226, 232, 240, 0.35)';
+                ctx.moveTo(arr.trail[0].x, arr.trail[0].y);
+                for (let i = 1; i < arr.trail.length; i++) {
+                    ctx.lineTo(arr.trail[i].x, arr.trail[i].y);
+                }
+                ctx.stroke();
+            }
+
+            // 물리식 업데이트: 가속도 변화
+            const lastX = arr.x;
+            const lastY = arr.y;
+
+            arr.x += arr.vx;
+            arr.y += arr.vy;
+
+            // 중력 적용
+            arr.vy += GRAVITY;
+
+            // 바람 영항 적용 (매 프레임 미세 가감속)
+            const windForceX = Math.cos(gameState.wind.angle) * gameState.wind.speed * diffConfig.windFactor * 0.003;
+            const windForceY = Math.sin(gameState.wind.angle) * gameState.wind.speed * diffConfig.windFactor * 0.003;
+            arr.vx += windForceX;
+            arr.vy += windForceY;
+
+            // 속도 방향에 맞춰 화살 회전 각도 계산
+            arr.angle = Math.atan2(arr.vy, arr.vx);
+
+            // 화살 몸체 드로잉
+            ctx.save();
+            ctx.translate(arr.x, arr.y);
+            ctx.rotate(arr.angle);
+
+            ctx.beginPath();
+            ctx.lineWidth = 3;
+            ctx.strokeStyle = '#e2e8f0'; // 백색 가공된 화살대
+            ctx.moveTo(-arr.length / 2, 0);
+            ctx.lineTo(arr.length / 2, 0);
+            ctx.stroke();
+
+            // 화살촉
+            ctx.beginPath();
+            ctx.fillStyle = '#94a3b8';
+            ctx.moveTo(arr.length / 2, -3);
+            ctx.lineTo(arr.length / 2 + 7, 0);
+            ctx.lineTo(arr.length / 2, 3);
+            ctx.fill();
+
+            // 화살깃
+            ctx.beginPath();
+            ctx.fillStyle = '#ef4444';
+            ctx.moveTo(-arr.length / 2 + 5, 0);
+            ctx.lineTo(-arr.length / 2 - 5, -6);
+            ctx.lineTo(-arr.length / 2, 0);
+            ctx.lineTo(-arr.length / 2 - 5, 6);
+            ctx.fill();
+
+            ctx.restore();
+
+            // --- 정교한 라인 세그먼트 충돌 연산 (과녁 관통 판정) ---
+            const targetX = gameState.target.x;
+            const targetY = gameState.target.y;
+            const targetRad = gameState.target.radius;
+
+            // 화살 촉 선단이 과녁 면(수직 평면)을 통과했는지 판단
+            if (lastX <= targetX && arr.x >= targetX) {
+                // 선형 보간법(LERP)을 이용해 정확한 관통 시점의 Y 좌표 계산
+                const t = (targetX - lastX) / (arr.x - lastX);
+                const hitY = lastY + (arr.y - lastY) * t;
+
+                // 중심부로부터의 거리 계산
+                const distToCenter = Math.abs(hitY - targetY);
+
+                if (distToCenter <= targetRad) {
+                    // 과녁 적중 성공!
+                    const ratio = distToCenter / targetRad;
+                    let points = 0;
+
+                    // 링 경계별 명중 점수 산정
+                    if (ratio <= 0.2) points = 10;
+                    else if (ratio <= 0.4) points = 8;
+                    else if (ratio <= 0.6) points = 6;
+                    else if (ratio <= 0.8) points = 4;
+                    else points = 2;
+
+                    // 점수 및 상태 누적
+                    gameState.score += points;
+                    gameState.arrowsHit++;
+                    if (points > gameState.highestArrowScore) {
+                        gameState.highestArrowScore = points;
+                    }
+
+                    document.getElementById('hud-score').textContent = String(gameState.score).padStart(3, '0');
+
+                    // 카메라 셰이크 강도 결정 (가까울수록 강력)
+                    gameState.cameraShake = points * 0.7;
+
+                    // 골드 명중 여부에 따른 전용 음향 및 불꽃 스파크 연출
+                    if (points === 10) {
+                        playSound('bullseye');
+                        
+                        // 최고급 멀티 스테이지 불꽃놀이 (화려함 대폭 강화)
+                        createExplosion(targetX, hitY, '#fbbf24', 55, true); // 황금빛 메인 폭죽
+                        createExplosion(targetX, hitY, '#f43f5e', 35, true); // 루비 핑크 폭죽
+                        createExplosion(targetX, hitY, '#38bdf8', 30, true); // 청량한 아쿠아 블루 폭죽
+
+                        // 시간차 은하수 별가루 서브 폭죽 연출 (3단계 폭발 구현)
+                        for (let j = 0; j < 3; j++) {
+                            const offsetX = (Math.random() - 0.5) * 80;
+                            const offsetY = (Math.random() - 0.5) * 80 - 40; // 중심 기준 약간 위쪽 분포
+                            setTimeout(() => {
+                                if (gameState.gameActive) {
+                                    createExplosion(targetX + offsetX, hitY + offsetY, '#c084fc', 20, true); // 네온 퍼플
+                                    createExplosion(targetX + offsetX, hitY + offsetY, '#34d399', 20, true); // 에메랄드 그린
+                                }
+                            }, 150 + j * 120);
+                        }
+                    } else {
+                        playSound('hit');
+                        createExplosion(targetX, hitY, '#cbd5e1', 15); // 백색 피격 파편
+                    }
+
+                    showScorePopup(points === 10 ? "BULLSEYE!" : "HIT", points);
+
+                    // 과녁에 화살 박힘 상태 기록 추가 (과녁 프레임 내 상대적 로컬 높이 저장)
+                    gameState.arrowsStuck.push({
+                        offsetY: hitY - targetY, // 과녁의 움직임에 동적으로 따라오게 함
+                        angle: arr.angle,
+                        length: arr.length
+                    });
+
+                    // 비행 중 화살 인스턴스 파기 및 즉시 신규 흐름 대기
+                    gameState.arrow = null;
+                    checkRoundEnd();
+                }
+            }
+
+            // 화면을 벗어나 빗나갔을 때의 추락(Miss) 예외 처리
+            if (arr.x > canvas.width + 100 || arr.y > canvas.height + 100 || arr.x < -100) {
+                playSound('miss');
+                showScorePopup("MISS", 0);
+                gameState.arrow = null;
+                checkRoundEnd();
+            }
+        }
+
+        // 과녁에 기존에 박혀서 남아있는 화살들 그리기
+        function drawStuckArrows() {
+            const targetX = gameState.target.x;
+            const targetY = gameState.target.y;
+
+            gameState.arrowsStuck.forEach(stuck => {
+                // 현재 시점의 과녁 Y 좌표 기반으로 박힌 화살 상대 렌더링
+                const arrY = targetY + stuck.offsetY;
+
+                ctx.save();
+                ctx.translate(targetX, arrY);
+                ctx.rotate(stuck.angle);
+
+                ctx.beginPath();
+                ctx.lineWidth = 2.5;
+                // 과녁 깊숙이 박힌 듯한 단축 연출
+                ctx.strokeStyle = 'rgba(203, 213, 225, 0.85)';
+                ctx.moveTo(-stuck.length / 1.4, 0);
+                ctx.lineTo(0, 0); // 화살촉 끝점이 과녁에 딱 붙음
+                ctx.stroke();
+
+                // 붉은 화살 깃대
+                ctx.beginPath();
+                ctx.fillStyle = 'rgba(239, 68, 68, 0.8)';
+                ctx.moveTo(-stuck.length / 1.4 + 4, 0);
+                ctx.lineTo(-stuck.length / 1.4 - 4, -4);
+                ctx.lineTo(-stuck.length / 1.4, 0);
+                ctx.lineTo(-stuck.length / 1.4 - 4, 4);
+                ctx.fill();
+
+                ctx.restore();
+            });
+        }
+
+        // 화살 발사 완료 시 다음 단계 전환 및 기회 체크
+        function checkRoundEnd() {
+            if (gameState.arrowsRemaining > 0) {
+                // 화살 기회가 아직 남았으므로 풍향 다시 바꾸기
+                setTimeout(() => {
+                    generateWind();
+                }, 1000);
+            } else {
+                // 화살 다 씀 -> 게임 오버 트리거
+                setTimeout(() => {
+                    triggerGameOver();
+                }, 1500);
+            }
+        }
+
+        // 활성화된 파티클 프레임 업데이트 연산
+        function updateAndDrawParticles() {
+            for (let i = gameState.particles.length - 1; i >= 0; i--) {
+                const p = gameState.particles[i];
+                
+                // 공기 저항 및 물리 연산 적용 (낙하하는 불꽃놀이 물리 연출)
+                if (p.isFirework) {
+                    p.vx *= 0.98;
+                    p.vy *= 0.98;
+                    p.vy += p.gravity; // 서서히 중력의 영향을 받아 휘어짐
+                }
+                
+                p.x += p.vx;
+                p.y += p.vy;
+                p.alpha -= p.decay;
+
+                if (p.alpha <= 0) {
+                    gameState.particles.splice(i, 1);
+                    continue;
+                }
+
+                ctx.save();
+                ctx.globalAlpha = p.alpha;
+                
+                // 불꽃놀이 전용 밤하늘 글로우 & 쉬머링(반짝임) 효과 부여
+                let renderSize = p.size;
+                if (p.shimmer) {
+                    renderSize = p.size * (0.5 + Math.random() * 0.8);
+                    ctx.shadowBlur = 10;
+                    ctx.shadowColor = p.color;
+                }
+                
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, renderSize, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        window.onload = function() {
+            // 최초 기동 시점 화면 로딩 대기
+            resizeCanvas();
+        };
+    </script>
+</body>
+</html>
