@@ -18,7 +18,7 @@
             font-family: 'Inter', sans-serif;
             background-color: #05030a;
             color: #f3f4f6;
-            overflow-x: hidden;
+            overflow: hidden;
             -webkit-tap-highlight-color: transparent;
         }
         .arcade-font {
@@ -56,39 +56,36 @@
         }
     </style>
 </head>
-<body class="flex flex-col items-center justify-between min-h-screen p-2 md:p-4 bg-radial-gradient">
+<body class="flex flex-col items-center justify-between min-h-screen p-1 md:p-4" style="background: radial-gradient(circle, #120c24 0%, #05030a 100%);">
 
     <!-- Main Arcade Cabinet Container -->
     <div class="w-full max-w-4xl flex flex-col items-center justify-center my-auto">
         <!-- Arcade Header -->
-        <header class="w-full max-w-md md:max-w-4xl flex justify-between items-center px-4 py-2 mb-2 bg-[#0d091a]/80 border-b border-pink-500/30 rounded-t-xl shadow-lg shadow-pink-950/20">
+        <header class="w-full max-w-md md:max-w-4xl flex justify-between items-center px-3 py-1.5 mb-1.5 bg-[#0d091a]/80 border-b border-pink-500/30 rounded-t-xl shadow-lg shadow-pink-950/20">
             <div class="flex items-center space-x-2">
-                <i class="fa-solid fa-gem text-pink-500 animate-pulse text-xl"></i>
-                <h1 class="arcade-font font-black tracking-widest text-lg md:text-2xl text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400">
+                <i class="fa-solid fa-gem text-pink-500 animate-pulse text-base md:text-xl"></i>
+                <h1 class="arcade-font font-black tracking-widest text-sm md:text-2xl text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400">
                     HEXA ARCADE
                 </h1>
             </div>
             <!-- Top Controls/Status -->
-            <div class="flex items-center space-x-3">
-                <button id="btn-sound" class="text-gray-400 hover:text-cyan-400 transition-colors p-2 text-sm md:text-base focus:outline-none" title="소리 토글">
-                    <i class="fa-solid fa-volume-high text-lg" id="sound-icon"></i>
+            <div class="flex items-center space-x-2">
+                <button id="btn-sound" class="text-gray-400 hover:text-cyan-400 transition-colors p-1.5 text-xs md:text-base focus:outline-none" title="소리 토글">
+                    <i class="fa-solid fa-volume-high text-base" id="sound-icon"></i>
                 </button>
-                <button id="btn-help" class="text-gray-400 hover:text-cyan-400 transition-colors p-2 text-sm md:text-base focus:outline-none" title="도움말">
-                    <i class="fa-solid fa-circle-question text-lg"></i>
+                <button id="btn-help" class="text-gray-400 hover:text-cyan-400 transition-colors p-1.5 text-xs md:text-base focus:outline-none" title="도움말">
+                    <i class="fa-solid fa-circle-question text-base"></i>
                 </button>
             </div>
         </header>
 
-        <!-- Main Body Wrapper: Holds screen, stats, side-bar -->
-        <div class="w-full flex flex-col md:flex-row items-center md:items-stretch justify-center gap-4 md:gap-6 bg-[#0c0817] p-3 md:p-6 rounded-b-xl border border-purple-950/40 shadow-2xl relative">
+        <!-- Main Body Wrapper: Holds screen, stats, side-bar in a strict row layout -->
+        <div class="w-full flex flex-row items-stretch justify-center gap-2 md:gap-6 bg-[#0c0817] p-2 md:p-6 rounded-b-xl border border-purple-950/40 shadow-2xl relative max-w-md md:max-w-4xl">
             
-            <!-- Left Side Panel (Desktop only: Combo & Level Indicator) -->
-            <div class="hidden md:flex flex-col justify-between w-48 p-4 bg-[#140d24]/90 rounded-lg border border-purple-900/30 text-center">
+            <!-- Left Side Panel (Desktop only: Jewel Matrix) -->
+            <div class="hidden lg:flex flex-col justify-between w-40 p-4 bg-[#140d24]/90 rounded-lg border border-purple-900/30 text-center">
                 <div>
-                    <h3 class="arcade-font text-xs tracking-wider text-purple-400 mb-2">SCORE BOARD</h3>
-                    <div class="retro-mono text-3xl font-bold text-yellow-400 neon-text-yellow mb-4" id="left-score">000000</div>
-                    
-                    <h3 class="arcade-font text-xs tracking-wider text-purple-400 mb-2">LINES CLEARED</h3>
+                    <h3 class="arcade-font text-[10px] tracking-wider text-purple-400 mb-2">LINES CLEARED</h3>
                     <div class="retro-mono text-2xl font-bold text-cyan-400" id="left-lines">0</div>
                 </div>
 
@@ -105,143 +102,143 @@
                     </div>
                 </div>
 
-                <div class="text-xs text-gray-500 border-t border-purple-900/30 pt-3 leading-relaxed">
+                <div class="text-[10px] text-gray-500 border-t border-purple-900/30 pt-3 leading-relaxed">
                     <p class="font-bold text-pink-500 mb-1">COMBO BONUS</p>
-                    콤보 달성 시 추가 점수가 기하급수적으로 증가합니다!
+                    연쇄 폭발 시 점수가 대폭 증가합니다!
                 </div>
             </div>
 
             <!-- Middle Column: Main Canvas Grid Screen -->
-            <div class="relative flex flex-col items-center">
+            <div class="relative flex flex-col items-center justify-center flex-1">
                 <!-- Screen Bezel/Frame -->
-                <div class="p-2 md:p-3 bg-[#110c22] rounded-xl neon-border-pink relative shadow-xl overflow-hidden">
+                <div class="p-1.5 md:p-3 bg-[#110c22] rounded-xl neon-border-pink relative shadow-xl overflow-hidden">
                     <!-- Retro Scanlines Overlay -->
-                    <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%)] bg-[length:100%_4px] z-10 opacity-40"></div>
+                    <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%)] bg-[length:100%_4px] z-10 opacity-30"></div>
                     
                     <canvas id="game-canvas" class="block bg-[#080512] rounded-lg transition-all" style="max-width: 100%; height: auto;"></canvas>
 
                     <!-- Game Overlay States -->
                     <!-- Start/Menu Overlay -->
-                    <div id="start-overlay" class="absolute inset-2 flex flex-col items-center justify-center bg-black/90 rounded-lg z-20 transition-all p-4 text-center">
-                        <div class="w-16 h-16 rounded-full flex items-center justify-center bg-pink-500/20 border border-pink-500 mb-4 animate-bounce">
-                            <i class="fa-solid fa-gem text-3xl text-pink-500"></i>
+                    <div id="start-overlay" class="absolute inset-1.5 flex flex-col items-center justify-center bg-black/95 rounded-lg z-20 transition-all p-3 text-center">
+                        <div class="w-12 h-12 rounded-full flex items-center justify-center bg-pink-500/20 border border-pink-500 mb-3 animate-bounce">
+                            <i class="fa-solid fa-gem text-xl text-pink-500"></i>
                         </div>
-                        <h2 class="arcade-font text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-cyan-400 mb-1">HEXA ARCADE</h2>
-                        <p class="text-xs text-gray-400 mb-6 max-w-xs">보석들을 정렬하여 연속 매칭을 유도해 최고 점수를 기록하세요!</p>
+                        <h2 class="arcade-font text-lg md:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-cyan-400 mb-1">HEXA ARCADE</h2>
+                        <p class="text-[10px] md:text-xs text-gray-400 mb-4 max-w-xs leading-tight">보석들을 정렬하여 연속 매칭을 유도해 최고 점수를 기록하세요!</p>
                         
                         <!-- Difficulty Select -->
-                        <div class="flex flex-col space-y-1 mb-6 w-full max-w-xs">
-                            <label class="text-[10px] text-gray-500 arcade-font text-left pl-1">DIFFICULTY</label>
-                            <div class="grid grid-cols-3 gap-2">
-                                <button onclick="setDifficulty('easy')" id="diff-easy" class="py-1 px-2 text-xs font-semibold rounded bg-purple-900/40 text-purple-200 border border-purple-800 transition-all active:scale-95 focus:outline-none">EASY</button>
-                                <button onclick="setDifficulty('normal')" id="diff-normal" class="py-1 px-2 text-xs font-semibold rounded bg-pink-500 text-white border border-pink-400 shadow-md shadow-pink-500/30 transition-all active:scale-95 focus:outline-none">NORMAL</button>
-                                <button onclick="setDifficulty('hard')" id="diff-hard" class="py-1 px-2 text-xs font-semibold rounded bg-purple-900/40 text-purple-200 border border-purple-800 transition-all active:scale-95 focus:outline-none">HARD</button>
+                        <div class="flex flex-col space-y-1 mb-4 w-full max-w-xs">
+                            <label class="text-[9px] text-gray-500 arcade-font text-left pl-1">DIFFICULTY</label>
+                            <div class="grid grid-cols-3 gap-1.5">
+                                <button onclick="setDifficulty('easy')" id="diff-easy" class="py-1 px-1 text-[10px] font-semibold rounded bg-purple-900/40 text-purple-200 border border-purple-800 transition-all active:scale-95 focus:outline-none">EASY</button>
+                                <button onclick="setDifficulty('normal')" id="diff-normal" class="py-1 px-1 text-[10px] font-semibold rounded bg-pink-500 text-white border border-pink-400 shadow-md shadow-pink-500/30 transition-all active:scale-95 focus:outline-none">NORMAL</button>
+                                <button onclick="setDifficulty('hard')" id="diff-hard" class="py-1 px-1 text-[10px] font-semibold rounded bg-purple-900/40 text-purple-200 border border-purple-800 transition-all active:scale-95 focus:outline-none">HARD</button>
                             </div>
                         </div>
 
-                        <button id="btn-start" class="arcade-font px-8 py-3 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white font-bold rounded-lg shadow-lg shadow-pink-500/40 hover:shadow-pink-400/50 transition-all transform active:scale-95 focus:outline-none">
+                        <button id="btn-start" class="arcade-font text-xs md:text-sm px-5 py-2.5 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white font-bold rounded-lg shadow-lg shadow-pink-500/40 hover:shadow-pink-400/50 transition-all transform active:scale-95 focus:outline-none">
                             INSERT COIN / PLAY
                         </button>
                     </div>
 
                     <!-- Pause Overlay -->
-                    <div id="pause-overlay" class="absolute inset-2 flex flex-col items-center justify-center bg-black/80 rounded-lg z-20 hidden transition-all">
-                        <i class="fa-solid fa-pause text-cyan-400 text-4xl mb-4 animate-pulse"></i>
-                        <h2 class="arcade-font text-2xl font-bold text-cyan-400 tracking-wider mb-6">GAME PAUSED</h2>
-                        <button id="btn-resume" class="arcade-font px-6 py-2 bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold rounded-lg shadow-md shadow-cyan-400/30 transition-all transform active:scale-95 focus:outline-none">
+                    <div id="pause-overlay" class="absolute inset-1.5 flex flex-col items-center justify-center bg-black/80 rounded-lg z-20 hidden transition-all">
+                        <i class="fa-solid fa-pause text-cyan-400 text-3xl mb-3 animate-pulse"></i>
+                        <h2 class="arcade-font text-lg md:text-2xl font-bold text-cyan-400 tracking-wider mb-4">GAME PAUSED</h2>
+                        <button id="btn-resume" class="arcade-font text-xs px-5 py-2 bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold rounded-lg shadow-md shadow-cyan-400/30 transition-all transform active:scale-95 focus:outline-none">
                             RESUME GAME
                         </button>
                     </div>
 
                     <!-- Game Over Overlay -->
-                    <div id="gameover-overlay" class="absolute inset-2 flex flex-col items-center justify-center bg-black/90 rounded-lg z-20 hidden transition-all p-4 text-center">
-                        <i class="fa-solid fa-skull-crossbones text-red-500 text-4xl mb-3 animate-bounce"></i>
-                        <h2 class="arcade-font text-2xl font-black text-red-500 tracking-widest mb-1 neon-text-pink">GAME OVER</h2>
-                        <p class="text-xs text-gray-400 mb-4">보석 타워가 최상단에 도달했습니다.</p>
+                    <div id="gameover-overlay" class="absolute inset-1.5 flex flex-col items-center justify-center bg-black/95 rounded-lg z-20 hidden transition-all p-3 text-center">
+                        <i class="fa-solid fa-skull-crossbones text-red-500 text-3xl mb-2 animate-bounce"></i>
+                        <h2 class="arcade-font text-lg md:text-2xl font-black text-red-500 tracking-widest mb-1 neon-text-pink">GAME OVER</h2>
+                        <p class="text-[10px] text-gray-400 mb-3">보석 타워가 최상단에 도달했습니다.</p>
                         
                         <!-- Highscore Display -->
-                        <div class="bg-purple-950/40 border border-purple-900/60 rounded p-3 w-full max-w-xs mb-6">
-                            <div class="flex justify-between items-center text-xs text-gray-400 mb-1">
+                        <div class="bg-purple-950/40 border border-purple-900/60 rounded p-2 w-full max-w-xs mb-4">
+                            <div class="flex justify-between items-center text-[10px] text-gray-400 mb-1">
                                 <span>최종 점수:</span>
-                                <span class="font-bold text-yellow-400 text-base retro-mono" id="final-score">000000</span>
+                                <span class="font-bold text-yellow-400 text-xs md:text-base retro-mono" id="final-score">000000</span>
                             </div>
-                            <div class="flex justify-between items-center text-xs text-gray-400">
+                            <div class="flex justify-between items-center text-[10px] text-gray-400">
                                 <span>최고 기록:</span>
-                                <span class="font-bold text-pink-400 text-sm retro-mono" id="final-best">000000</span>
+                                <span class="font-bold text-pink-400 text-xs md:text-sm retro-mono" id="final-best">000000</span>
                             </div>
                         </div>
 
-                        <button id="btn-restart" class="arcade-font px-6 py-3 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-400 hover:to-pink-400 text-white font-bold rounded-lg shadow-lg shadow-red-500/40 transition-all transform active:scale-95 focus:outline-none">
+                        <button id="btn-restart" class="arcade-font text-xs px-5 py-2.5 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-400 hover:to-pink-400 text-white font-bold rounded-lg shadow-lg shadow-red-500/40 transition-all transform active:scale-95 focus:outline-none">
                             PLAY AGAIN
                         </button>
                     </div>
                 </div>
             </div>
 
-            <!-- Right Side Panel: Stats Info & Next Queue -->
-            <div class="w-full md:w-48 flex md:flex-col justify-between items-stretch gap-3 md:gap-4">
+            <!-- Right Side Panel: Stats Info & Next Queue (Now always aligned right of the canvas) -->
+            <div class="w-24 xs:w-28 md:w-48 flex flex-col justify-between items-stretch gap-2 md:gap-4 flex-shrink-0">
                 <!-- Next Block Preview -->
-                <div class="flex-1 md:flex-none bg-[#140d24]/90 p-3 md:p-4 rounded-lg border border-purple-900/30 flex flex-col items-center justify-center text-center">
-                    <h3 class="arcade-font text-[10px] md:text-xs tracking-wider text-purple-400 mb-2">NEXT PIECE</h3>
-                    <div class="p-2 bg-[#080512] rounded border border-purple-950/80">
-                        <canvas id="next-canvas" width="60" height="150" class="block"></canvas>
+                <div class="bg-[#140d24]/90 p-1.5 md:p-4 rounded-lg border border-purple-900/30 flex flex-col items-center justify-center text-center">
+                    <h3 class="arcade-font text-[8px] md:text-xs tracking-wider text-purple-400 mb-1 md:mb-2">NEXT</h3>
+                    <div class="p-1 bg-[#080512] rounded border border-purple-950/80">
+                        <canvas id="next-canvas" class="block"></canvas>
                     </div>
                 </div>
 
-                <!-- Stats: Mobile and Desktop -->
-                <div class="flex-1 md:flex-none flex flex-col justify-center space-y-2 md:space-y-4 bg-[#140d24]/90 p-3 md:p-4 rounded-lg border border-purple-900/30">
-                    <div class="flex md:flex-col justify-between items-center md:items-start">
-                        <span class="arcade-font text-[10px] md:text-xs tracking-wider text-purple-400">SCORE</span>
-                        <span class="retro-mono text-xl md:text-3xl font-bold text-yellow-400 neon-text-yellow" id="stat-score">000000</span>
+                <!-- Stats panel -->
+                <div class="flex flex-col justify-center space-y-1.5 md:space-y-4 bg-[#140d24]/90 p-1.5 md:p-4 rounded-lg border border-purple-900/30">
+                    <div class="flex flex-col items-center md:items-start text-center md:text-left">
+                        <span class="arcade-font text-[8px] md:text-xs tracking-wider text-purple-400">SCORE</span>
+                        <span class="retro-mono text-sm xs:text-base md:text-3xl font-bold text-yellow-400 neon-text-yellow leading-none" id="stat-score">000000</span>
                     </div>
 
-                    <div class="flex md:flex-col justify-between items-center md:items-start border-t border-purple-950/60 pt-2 md:pt-3">
-                        <span class="arcade-font text-[10px] md:text-xs tracking-wider text-purple-400">LEVEL</span>
-                        <span class="retro-mono text-lg md:text-2xl font-bold text-green-400 neon-text-green" id="stat-level">01</span>
+                    <div class="flex flex-col items-center md:items-start text-center md:text-left border-t border-purple-950/60 pt-1.5 md:pt-3">
+                        <span class="arcade-font text-[8px] md:text-xs tracking-wider text-purple-400">LEVEL</span>
+                        <span class="retro-mono text-xs xs:text-sm md:text-2xl font-bold text-green-400 neon-text-green leading-none" id="stat-level">01</span>
                     </div>
 
-                    <div class="flex md:flex-col justify-between items-center md:items-start border-t border-purple-950/60 pt-2 md:pt-3">
-                        <span class="arcade-font text-[10px] md:text-xs tracking-wider text-purple-400">HI-SCORE</span>
-                        <span class="retro-mono text-base md:text-lg font-bold text-pink-400" id="stat-best">000000</span>
+                    <div class="flex flex-col items-center md:items-start text-center md:text-left border-t border-purple-950/60 pt-1.5 md:pt-3">
+                        <span class="arcade-font text-[8px] md:text-xs tracking-wider text-purple-400">HI-SCORE</span>
+                        <span class="retro-mono text-[10px] xs:text-xs md:text-lg font-bold text-pink-400 leading-none" id="stat-best">000000</span>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Mobile/Tactile Touch Controller Panel -->
-        <div class="w-full max-w-md md:max-w-4xl mt-4 p-3 bg-[#0d091a] border border-purple-900/40 rounded-xl shadow-xl flex flex-col space-y-3">
+        <div class="w-full max-w-md md:max-w-4xl mt-2 p-2 bg-[#0d091a] border border-purple-900/40 rounded-xl shadow-xl flex flex-col space-y-1.5 md:space-y-3">
             <div class="flex justify-between items-center px-1">
-                <span class="arcade-font text-[10px] text-purple-500 tracking-wider">TACTILE CONTROL PAD</span>
-                <span class="text-[10px] text-gray-500 retro-mono hidden sm:inline">KEYBOARD: ◀ ▶ (Move) / ▲ or Space (Cycle) / ▼ (Soft Drop) / X (Hard Drop)</span>
+                <span class="arcade-font text-[8px] md:text-[10px] text-purple-500 tracking-wider">TACTILE CONTROL PAD</span>
+                <span class="text-[8px] md:text-[10px] text-gray-500 retro-mono hidden sm:inline">KEYBOARD: ◀ ▶ (Move) / ▲ or Space (Cycle) / ▼ (Soft Drop) / X (Hard Drop)</span>
             </div>
 
             <!-- Multi-touch Layout Panel -->
-            <div class="grid grid-cols-12 gap-2">
+            <div class="grid grid-cols-12 gap-1.5 md:gap-2">
                 <!-- Left D-PAD Side -->
-                <div class="col-span-7 grid grid-cols-3 gap-2">
-                    <button id="ctrl-left" class="control-btn col-span-1 h-14 md:h-16 flex items-center justify-center bg-gradient-to-b from-[#1c1435] to-[#120c24] border border-purple-800/40 rounded-xl shadow-md text-cyan-400 hover:text-cyan-300 focus:outline-none">
-                        <i class="fa-solid fa-caret-left text-2xl"></i>
+                <div class="col-span-7 grid grid-cols-3 gap-1.5 md:gap-2">
+                    <button id="ctrl-left" class="control-btn col-span-1 h-12 md:h-16 flex items-center justify-center bg-gradient-to-b from-[#1c1435] to-[#120c24] border border-purple-800/40 rounded-xl shadow-md text-cyan-400 hover:text-cyan-300 focus:outline-none">
+                        <i class="fa-solid fa-caret-left text-xl md:text-2xl"></i>
                     </button>
-                    <button id="ctrl-drop" class="control-btn col-span-1 h-14 md:h-16 flex flex-col items-center justify-center bg-gradient-to-b from-[#1c1435] to-[#120c24] border border-purple-800/40 rounded-xl shadow-md text-yellow-400 hover:text-yellow-300 focus:outline-none">
-                        <i class="fa-solid fa-caret-down text-xl"></i>
-                        <span class="text-[9px] uppercase font-bold text-gray-500 mt-0.5">Drop</span>
+                    <button id="ctrl-drop" class="control-btn col-span-1 h-12 md:h-16 flex flex-col items-center justify-center bg-gradient-to-b from-[#1c1435] to-[#120c24] border border-purple-800/40 rounded-xl shadow-md text-yellow-400 hover:text-yellow-300 focus:outline-none">
+                        <i class="fa-solid fa-caret-down text-base md:text-xl"></i>
+                        <span class="text-[8px] uppercase font-bold text-gray-500 mt-0.5">Drop</span>
                     </button>
-                    <button id="ctrl-right" class="control-btn col-span-1 h-14 md:h-16 flex items-center justify-center bg-gradient-to-b from-[#1c1435] to-[#120c24] border border-purple-800/40 rounded-xl shadow-md text-cyan-400 hover:text-cyan-300 focus:outline-none">
-                        <i class="fa-solid fa-caret-right text-2xl"></i>
+                    <button id="ctrl-right" class="control-btn col-span-1 h-12 md:h-16 flex items-center justify-center bg-gradient-to-b from-[#1c1435] to-[#120c24] border border-purple-800/40 rounded-xl shadow-md text-cyan-400 hover:text-cyan-300 focus:outline-none">
+                        <i class="fa-solid fa-caret-right text-xl md:text-2xl"></i>
                     </button>
                 </div>
 
                 <!-- Right Action Side -->
-                <div class="col-span-5 grid grid-cols-2 gap-2">
+                <div class="col-span-5 grid grid-cols-2 gap-1.5 md:gap-2">
                     <!-- Cycle/Rotate Jewels order inside dropping column -->
-                    <button id="ctrl-cycle" class="control-btn col-span-1 h-14 md:h-16 flex flex-col items-center justify-center bg-gradient-to-b from-pink-600 to-pink-800 border border-pink-500/30 rounded-xl shadow-lg shadow-pink-950/50 text-white focus:outline-none">
-                        <i class="fa-solid fa-rotate text-lg"></i>
-                        <span class="text-[9px] uppercase font-bold text-pink-200 mt-0.5">Cycle</span>
+                    <button id="ctrl-cycle" class="control-btn col-span-1 h-12 md:h-16 flex flex-col items-center justify-center bg-gradient-to-b from-pink-600 to-pink-800 border border-pink-500/30 rounded-xl shadow-lg shadow-pink-950/50 text-white focus:outline-none">
+                        <i class="fa-solid fa-rotate text-sm md:text-lg"></i>
+                        <span class="text-[8px] uppercase font-bold text-pink-200 mt-0.5">Cycle</span>
                     </button>
                     <!-- Hard Drop straight to the bottom -->
-                    <button id="ctrl-hard" class="control-btn col-span-1 h-14 md:h-16 flex flex-col items-center justify-center bg-gradient-to-b from-purple-700 to-purple-900 border border-purple-600/30 rounded-xl shadow-lg shadow-purple-950/50 text-white focus:outline-none">
-                        <i class="fa-solid fa-angles-down text-lg"></i>
-                        <span class="text-[9px] uppercase font-bold text-purple-200 mt-0.5">Quick</span>
+                    <button id="ctrl-hard" class="control-btn col-span-1 h-12 md:h-16 flex flex-col items-center justify-center bg-gradient-to-b from-purple-700 to-purple-900 border border-purple-600/30 rounded-xl shadow-lg shadow-purple-950/50 text-white focus:outline-none">
+                        <i class="fa-solid fa-angles-down text-sm md:text-lg"></i>
+                        <span class="text-[8px] uppercase font-bold text-purple-200 mt-0.5">Quick</span>
                     </button>
                 </div>
             </div>
@@ -249,50 +246,52 @@
     </div>
 
     <!-- Instructions Overlay / Tutorial -->
-    <div id="tutorial-modal" class="fixed inset-0 flex items-center justify-center bg-black/90 z-50 p-4 hidden">
-        <div class="bg-[#120c24] border-2 border-cyan-500 rounded-xl max-w-md w-full p-6 text-sm relative">
+    <div id="tutorial-modal" class="fixed inset-0 flex items-center justify-center bg-black/95 z-50 p-4 hidden">
+        <div class="bg-[#120c24] border-2 border-cyan-500 rounded-xl max-w-md w-full p-4 md:p-6 text-xs md:text-sm relative">
             <button id="btn-close-help" class="absolute top-4 right-4 text-gray-400 hover:text-white focus:outline-none">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
-            <h3 class="arcade-font text-xl text-cyan-400 mb-4 border-b border-purple-900/60 pb-2"><i class="fa-solid fa-circle-info mr-2"></i>HEXA 플레이 가이드</h3>
+            <h3 class="arcade-font text-base md:text-xl text-cyan-400 mb-3 border-b border-purple-900/60 pb-2"><i class="fa-solid fa-circle-info mr-2"></i>HEXA 플레이 가이드</h3>
             
-            <div class="space-y-4 text-gray-300">
-                <div class="flex items-start space-x-3">
-                    <span class="flex-shrink-0 w-6 h-6 rounded-full bg-pink-500 flex items-center justify-center text-xs font-bold text-white">1</span>
+            <div class="space-y-2.5 md:space-y-4 text-gray-300 leading-tight">
+                <div class="flex items-start space-x-2 md:space-x-3">
+                    <span class="flex-shrink-0 w-5 h-5 rounded-full bg-pink-500 flex items-center justify-center text-[10px] font-bold text-white">1</span>
                     <p>화면 상단에서 <strong>3개 보석으로 구성된 수직 기둥</strong>이 낙하합니다.</p>
                 </div>
-                <div class="flex items-start space-x-3">
-                    <span class="flex-shrink-0 w-6 h-6 rounded-full bg-pink-500 flex items-center justify-center text-xs font-bold text-white">2</span>
+                <div class="flex items-start space-x-2 md:space-x-3">
+                    <span class="flex-shrink-0 w-5 h-5 rounded-full bg-pink-500 flex items-center justify-center text-[10px] font-bold text-white">2</span>
                     <p>낙하하는 동안 <strong>회전(Cycle/Space) 키</strong>를 눌러 세 개 보석의 배치 순서를 바꿀 수 있습니다.</p>
                 </div>
-                <div class="flex items-start space-x-3">
-                    <span class="flex-shrink-0 w-6 h-6 rounded-full bg-pink-500 flex items-center justify-center text-xs font-bold text-white">3</span>
+                <div class="flex items-start space-x-2 md:space-x-3">
+                    <span class="flex-shrink-0 w-5 h-5 rounded-full bg-pink-500 flex items-center justify-center text-[10px] font-bold text-white">3</span>
                     <p>동일한 보석을 <strong>가로, 세로, 혹은 대각선(양방향)</strong>으로 3개 이상 정렬시키면 폭발하며 점수를 획득합니다.</p>
                 </div>
-                <div class="flex items-start space-x-3">
-                    <span class="flex-shrink-0 w-6 h-6 rounded-full bg-pink-500 flex items-center justify-center text-xs font-bold text-white">4</span>
+                <div class="flex items-start space-x-2 md:space-x-3">
+                    <span class="flex-shrink-0 w-5 h-5 rounded-full bg-pink-500 flex items-center justify-center text-[10px] font-bold text-white">4</span>
                     <p>터진 보석 자리에 위에 있던 다른 보석들이 낙하하며 <strong>연쇄(콤보) 폭발</strong>이 일어나면 기하급수적으로 고득점을 획득합니다!</p>
                 </div>
-                <div class="flex items-start space-x-3">
-                    <span class="flex-shrink-0 w-6 h-6 rounded-full bg-pink-500 flex items-center justify-center text-xs font-bold text-white">5</span>
-                    <p class="text-yellow-400 font-semibold"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>마법 보석(블링블링):</p>
-                    <p class="text-xs">바닥에 맞닿는 아래 보석과 똑같은 보석들을 화면 전체에서 말끔히 지워주는 특수 기회 보석입니다.</p>
+                <div class="flex items-start space-x-2 md:space-x-3">
+                    <span class="flex-shrink-0 w-5 h-5 rounded-full bg-pink-500 flex items-center justify-center text-[10px] font-bold text-white">5</span>
+                    <div>
+                        <p class="text-yellow-400 font-semibold"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>마법 보석(블링블링):</p>
+                        <p class="text-[10px] md:text-xs">바닥에 맞닿는 아래 보석과 똑같은 보석들을 화면 전체에서 말끔히 지워주는 특수 기회 보석입니다.</p>
+                    </div>
                 </div>
             </div>
 
             <!-- Key Table -->
-            <div class="mt-5 p-3 bg-black/40 rounded border border-purple-900/40 text-xs">
-                <h4 class="font-bold mb-2 text-cyan-400">PC 키보드 단축키</h4>
+            <div class="mt-4 p-2.5 bg-black/40 rounded border border-purple-900/40 text-[10px] md:text-xs">
+                <h4 class="font-bold mb-1.5 text-cyan-400">PC 키보드 단축키</h4>
                 <div class="grid grid-cols-2 gap-y-1">
-                    <div><kbd class="px-1.5 py-0.5 bg-purple-900 text-white rounded">◀</kbd> <kbd class="px-1.5 py-0.5 bg-purple-900 text-white rounded">▶</kbd> : 좌우 이동</div>
-                    <div><kbd class="px-1.5 py-0.5 bg-purple-900 text-white rounded">▲</kbd> 또는 <kbd class="px-1.5 py-0.5 bg-purple-900 text-white rounded">Space</kbd> : 순서 회전</div>
-                    <div><kbd class="px-1.5 py-0.5 bg-purple-900 text-white rounded">▼</kbd> : 소프트 드롭</div>
-                    <div><kbd class="px-1.5 py-0.5 bg-purple-900 text-white rounded">X</kbd> : 퀵 하드 드롭</div>
-                    <div><kbd class="px-1.5 py-0.5 bg-purple-900 text-white rounded">P</kbd> : 게임 일시정지</div>
+                    <div><kbd class="px-1 py-0.5 bg-purple-900 text-white rounded">◀</kbd> <kbd class="px-1 py-0.5 bg-purple-900 text-white rounded">▶</kbd> : 좌우 이동</div>
+                    <div><kbd class="px-1 py-0.5 bg-purple-900 text-white rounded">▲</kbd> 또는 <kbd class="px-1 py-0.5 bg-purple-900 text-white rounded">Space</kbd> : 순서 회전</div>
+                    <div><kbd class="px-1 py-0.5 bg-purple-900 text-white rounded">▼</kbd> : 소프트 드롭</div>
+                    <div><kbd class="px-1 py-0.5 bg-purple-900 text-white rounded">X</kbd> : 퀵 하드 드롭</div>
+                    <div><kbd class="px-1 py-0.5 bg-purple-900 text-white rounded">P</kbd> : 게임 일시정지</div>
                 </div>
             </div>
 
-            <button id="btn-close-help-confirm" class="w-full mt-5 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-black font-extrabold rounded-lg hover:from-cyan-400 hover:to-blue-400 focus:outline-none">
+            <button id="btn-close-help-confirm" class="w-full mt-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-black font-extrabold rounded-lg hover:from-cyan-400 hover:to-blue-400 focus:outline-none">
                 이해했습니다!
             </button>
         </div>
@@ -480,7 +479,7 @@
         // Core Grid Definition (Standard Column Specs)
         const COLS = 6;
         const ROWS = 14;
-        let CELL_SIZE = 32; // Rescaled dynamically on load/resize
+        let CELL_SIZE = 26; // Rescaled dynamically on load/resize
 
         // Canvas Setup
         const canvas = document.getElementById('game-canvas');
@@ -489,9 +488,6 @@
         const nextCtx = nextCanvas.getContext('next-2d') || nextCanvas.getContext('2d');
 
         // Color & Gem Custom Renderings
-        // Index mapping:
-        // 1: Red (Ruby), 2: Green (Emerald), 3: Blue (Sapphire), 4: Yellow (Topaz), 5: Purple (Amethyst), 6: Cyan (Diamond)
-        // 7: Magic Wildcard Gem (Flashing Multi-color)
         const GEM_COLOURS = {
             1: '#ef4444', // Red
             2: '#22c55e', // Green
@@ -517,7 +513,6 @@
         let dropInterval = null;
         let difficulty = 'normal';
 
-        // Highscore Localstorage key
         const LOCAL_STORAGE_KEY = 'hexa_high_score_01';
 
         // Game States Variables
@@ -543,7 +538,6 @@
             [[1, -1], [2, -2]]     // Diag left-down
         ];
 
-        // Particle class for juice-level matching feedback
         class Particle {
             constructor(x, y, color) {
                 this.x = x;
@@ -552,7 +546,7 @@
                 this.vx = (Math.random() - 0.5) * 8;
                 this.vy = (Math.random() - 0.5) * 8;
                 this.alpha = 1;
-                this.size = Math.random() * 4 + 2;
+                this.size = Math.random() * 3 + 1.5;
                 this.life = 1.0;
                 this.decay = Math.random() * 0.04 + 0.02;
             }
@@ -569,7 +563,7 @@
                 targetCtx.save();
                 targetCtx.globalAlpha = Math.max(0, this.alpha);
                 targetCtx.fillStyle = this.color;
-                targetCtx.shadowBlur = 8;
+                targetCtx.shadowBlur = 6;
                 targetCtx.shadowColor = this.color;
                 targetCtx.beginPath();
                 targetCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
@@ -578,19 +572,35 @@
             }
         }
 
-        // Initialize display dimensions dynamically based on mobile constraints
+        /**
+         * Initialize display dimensions dynamically based on mobile constraints (Avoid vertical scrolling)
+         */
         function resizeScreen() {
-            const containerWidth = Math.min(window.innerWidth - 32, 340);
-            const containerHeight = window.innerHeight * 0.55;
+            const isMobile = window.innerWidth < 768;
             
-            // Grid fits perfectly in typical retro layout
+            // Side-by-side spacing computation
+            const rightPanelWidth = isMobile ? 110 : 192; // 110px on mobile, 192px on PC (w-48)
+            const padding = isMobile ? 16 : 48;
+            
+            // Width budget for canvas
+            const containerWidth = Math.min(window.innerWidth - rightPanelWidth - padding, 320);
+            
+            // Height budget to ensure all elements (header, tactile pad, margins) fit inside the viewport height
+            // Header: ~45px, Tactile controller: ~125px, general paddings: ~50px. Remaining height is game area.
+            const containerHeight = Math.max(240, window.innerHeight - 220);
+            
             CELL_SIZE = Math.floor(Math.min(containerWidth / COLS, containerHeight / ROWS));
-            if (CELL_SIZE < 24) CELL_SIZE = 24;
+            if (CELL_SIZE < 16) CELL_SIZE = 16; // Maintain absolute minimum scale
             
             canvas.width = COLS * CELL_SIZE;
             canvas.height = ROWS * CELL_SIZE;
             
+            // Set scale for Next Block Canvas dynamically
+            nextCanvas.width = isMobile ? 50 : 64;
+            nextCanvas.height = isMobile ? 100 : 140;
+            
             drawGame();
+            drawNextPreview();
         }
 
         window.addEventListener('resize', resizeScreen);
@@ -607,15 +617,12 @@
             const rad = size * 0.44;
 
             targetCtx.save();
-            
-            // Set glowing neon shadow
-            targetCtx.shadowBlur = 8;
+            targetCtx.shadowBlur = 6;
             targetCtx.shadowColor = GEM_GLOWS[gemType] || 'white';
 
-            // Custom design vectors depending on jewel indexing
             switch(gemType) {
                 case 1: // Ruby (Red Hexagon)
-                    targetCtx.fillStyle = '#b91c1c'; // Deep Red base
+                    targetCtx.fillStyle = '#b91c1c';
                     targetCtx.beginPath();
                     for (let i = 0; i < 6; i++) {
                         const angle = (i * Math.PI) / 3;
@@ -624,9 +631,8 @@
                     targetCtx.closePath();
                     targetCtx.fill();
                     
-                    // Highlights Facets
                     targetCtx.strokeStyle = '#fca5a5';
-                    targetCtx.lineWidth = 1.2;
+                    targetCtx.lineWidth = 1;
                     targetCtx.beginPath();
                     for (let i = 0; i < 6; i++) {
                         const angle = (i * Math.PI) / 3;
@@ -637,7 +643,7 @@
                     targetCtx.stroke();
                     break;
 
-                case 2: // Emerald (Green Octagon/Emerald-Cut)
+                case 2: // Emerald (Green Octagon)
                     targetCtx.fillStyle = '#047857';
                     targetCtx.beginPath();
                     const pts = [
@@ -650,9 +656,8 @@
                     targetCtx.closePath();
                     targetCtx.fill();
 
-                    // Inner facet lines
                     targetCtx.strokeStyle = '#86efac';
-                    targetCtx.lineWidth = 1.2;
+                    targetCtx.lineWidth = 1;
                     targetCtx.beginPath();
                     pts.forEach(([px, py]) => {
                         targetCtx.moveTo(cx + px * 0.5 * size, cy + py * 0.5 * size);
@@ -664,14 +669,13 @@
                 case 3: // Sapphire (Blue Diamond)
                     targetCtx.fillStyle = '#1d4ed8';
                     targetCtx.beginPath();
-                    targetCtx.moveTo(cx, cy - rad); // Top
-                    targetCtx.lineTo(cx + rad, cy);  // Right
-                    targetCtx.lineTo(cx, cy + rad); // Bottom
-                    targetCtx.lineTo(cx - rad, cy);  // Left
+                    targetCtx.moveTo(cx, cy - rad);
+                    targetCtx.lineTo(cx + rad, cy);
+                    targetCtx.lineTo(cx, cy + rad);
+                    targetCtx.lineTo(cx - rad, cy);
                     targetCtx.closePath();
                     targetCtx.fill();
 
-                    // Facets
                     targetCtx.strokeStyle = '#93c5fd';
                     targetCtx.lineWidth = 1;
                     targetCtx.beginPath();
@@ -691,7 +695,6 @@
                     targetCtx.closePath();
                     targetCtx.fill();
 
-                    // Inner triangle lines
                     targetCtx.strokeStyle = '#fde047';
                     targetCtx.lineWidth = 1;
                     targetCtx.beginPath();
@@ -704,7 +707,7 @@
                     targetCtx.stroke();
                     break;
 
-                case 5: // Amethyst (Purple Inverted Diamond Pentagram)
+                case 5: // Amethyst (Purple Pentagram)
                     targetCtx.fillStyle = '#6d28d9';
                     targetCtx.beginPath();
                     targetCtx.moveTo(cx, cy + rad);
@@ -724,7 +727,7 @@
                     targetCtx.stroke();
                     break;
 
-                case 6: // Cyan Diamond (Classic kite shape)
+                case 6: // Cyan Diamond (Kite shape)
                     targetCtx.fillStyle = '#0e7490';
                     targetCtx.beginPath();
                     targetCtx.moveTo(cx - rad * 0.8, cy - rad * 0.4);
@@ -733,7 +736,6 @@
                     targetCtx.closePath();
                     targetCtx.fill();
 
-                    // Crown facets
                     targetCtx.fillStyle = '#06b6d4';
                     targetCtx.beginPath();
                     targetCtx.moveTo(cx - rad * 0.8, cy - rad * 0.4);
@@ -752,22 +754,19 @@
                     targetCtx.stroke();
                     break;
 
-                case 7: // Magic Wildcard Blinking Multi-Color Gem
-                    // Alternate colors rapidly
+                case 7: // Magic Wildcard Blinking Gem
                     const hues = ['#ef4444', '#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#06b6d4'];
                     const currentHueIndex = Math.floor(frameCount / 4) % hues.length;
                     
                     targetCtx.fillStyle = hues[currentHueIndex];
                     targetCtx.strokeStyle = '#ffffff';
-                    targetCtx.lineWidth = 1.5;
+                    targetCtx.lineWidth = 1.2;
 
-                    // Draw sparkling star/circle
                     targetCtx.beginPath();
                     targetCtx.arc(cx, cy, rad, 0, Math.PI * 2);
                     targetCtx.fill();
                     targetCtx.stroke();
 
-                    // Inner magical core shape (Small star/sparkle)
                     targetCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
                     targetCtx.beginPath();
                     for(let i = 0; i < 8; i++) {
@@ -783,21 +782,15 @@
             targetCtx.restore();
         }
 
-        /**
-         * Scan the complete grid to discover alignment of matching colored gems
-         */
         function scanMatches() {
             let matchesFound = false;
             let matchMap = Array.from({length: ROWS}, () => Array(COLS).fill(false));
 
-            // Standard color-matching
             for (let r = 0; r < ROWS; r++) {
                 for (let c = 0; c < COLS; c++) {
                     const gem = board[r][c];
-                    // Skip empty block, falling animations, and magic wildcard gem (scanned separately)
                     if (gem === 0 || gem === 7) continue;
 
-                    // Check all directions
                     MATCH_DIR_OFFSETS.forEach(offset => {
                         const [[dr1, dc1], [dr2, dc2]] = offset;
                         
@@ -807,7 +800,6 @@
                         if (r1 >= 0 && r1 < ROWS && c1 >= 0 && c1 < COLS &&
                             r2 >= 0 && r2 < ROWS && c2 >= 0 && c2 < COLS) {
                             
-                            // 3-matching condition
                             if (board[r1][c1] === gem && board[r2][c2] === gem) {
                                 matchMap[r][c] = true;
                                 matchMap[r1][c1] = true;
@@ -819,7 +811,6 @@
                 }
             }
 
-            // Convert map to matched cell coordinate index list
             matchingCells = [];
             for (let r = 0; r < ROWS; r++) {
                 for (let c = 0; c < COLS; c++) {
@@ -832,16 +823,11 @@
             return matchesFound;
         }
 
-        /**
-         * Handle gravity of gems above suspended spaces
-         */
         function applyGravity() {
             let moved = false;
             for (let c = 0; c < COLS; c++) {
-                // Read columns bottom-up
                 for (let r = ROWS - 1; r > 0; r--) {
                     if (board[r][c] === 0) {
-                        // Look upwards for nearest solid block
                         let searchRow = r - 1;
                         while (searchRow >= 0 && board[searchRow][c] === 0) {
                             searchRow--;
@@ -857,40 +843,33 @@
             return moved;
         }
 
-        /**
-         * Spawns a randomized 3-gem dropping column
-         */
         function spawnGems() {
             const colorsCount = difficulty === 'easy' ? 4 : (difficulty === 'normal' ? 5 : 6);
             
-            // Randomly decide if next column is preset or generated
             if (!nextCol) {
                 nextCol = generateRandomColumn(colorsCount);
             }
 
             droppingCol = {
-                x: 2, // Spawn in middle
-                y: -3, // Animate entry into top
+                x: 2,
+                y: -3,
                 gems: nextCol
             };
 
-            // Prepare next up preview queue
             nextCol = generateRandomColumn(colorsCount);
             drawNextPreview();
 
-            // Collision immediately at spawn implies Game Over
             if (board[0][2] !== 0 || board[1][2] !== 0 || board[2][2] !== 0) {
                 endGame();
             }
         }
 
         function generateRandomColumn(colorsCount) {
-            // 5% chance of spawning the Magic Gem
             const magicChance = Math.random() < 0.05;
             const gems = [];
             for (let i = 0; i < 3; i++) {
                 if (magicChance && i === 2) {
-                    gems.push(7); // Place magic gem at bottom position
+                    gems.push(7); // Spawns magical wild jewel
                 } else {
                     gems.push(Math.floor(Math.random() * colorsCount) + 1);
                 }
@@ -898,18 +877,13 @@
             return gems;
         }
 
-        /**
-         * Core game update loop tick
-         */
         function gameTick() {
             if (gameState !== 'PLAYING') return;
 
-            // Move the dropping column down
             if (canMove(droppingCol.x, droppingCol.y + 1)) {
                 droppingCol.y++;
                 sound.playMove();
             } else {
-                // Column has landed
                 lockDroppingGroup();
             }
             drawGame();
@@ -922,7 +896,6 @@
             const x = droppingCol.x;
             const y = Math.round(droppingCol.y);
 
-            // Lay the 3 gems inside the stable grid matrix
             for (let i = 0; i < 3; i++) {
                 const targetRow = y + i;
                 if (targetRow >= 0 && targetRow < ROWS) {
@@ -932,7 +905,6 @@
 
             droppingCol = null;
 
-            // Check if magic gem landed (it sits at bottom of column usually, let's find if a 7 is placed)
             let magicTriggered = false;
             for (let i = 0; i < 3; i++) {
                 const targetRow = y + i;
@@ -943,35 +915,27 @@
             }
 
             if (magicTriggered) {
-                // Apply post-magic physics
                 setTimeout(() => {
                     sound.playMagicClear();
                     applyGravity();
                     checkMatchCascade();
                 }, 400);
             } else {
-                // Standard match scanning cascade cycle
                 checkMatchCascade();
             }
         }
 
-        /**
-         * Magic Gem land action: Clear all matching elements of the gem instantly beneath it
-         */
         function triggerMagicGem(row, col) {
-            // Find target jewel color directly beneath
             let targetColor = 0;
             if (row + 1 < ROWS && board[row + 1][col] > 0 && board[row + 1][col] < 7) {
                 targetColor = board[row + 1][col];
             } else {
-                // Sits at very floor, pick a random present color on grid to shatter
                 const colorsOnBoard = [...new Set(board.flat())].filter(g => g > 0 && g < 7);
                 if (colorsOnBoard.length > 0) {
                     targetColor = colorsOnBoard[Math.floor(Math.random() * colorsOnBoard.length)];
                 }
             }
 
-            // Create blast sparkles in matching elements
             for (let r = 0; r < ROWS; r++) {
                 for (let c = 0; c < COLS; c++) {
                     if (board[r][c] === targetColor || (r === row && c === col)) {
@@ -985,32 +949,24 @@
             updateScores();
         }
 
-        /**
-         * Cascade matcher loop supporting multiple consecutive chain explosions
-         */
         function checkMatchCascade() {
             const hasMatches = scanMatches();
 
             if (hasMatches) {
                 combo++;
-                // Flash matches first
                 drawGame();
                 sound.playMatch(combo);
 
-                // Wait for flash animation frame sequence
                 setTimeout(() => {
-                    // Explode jewels
                     matchingCells.forEach(cell => {
                         createShatterParticles(cell.r, cell.c, cell.color);
                         board[cell.r][cell.c] = 0;
                     });
 
-                    // Update parameters
                     const scoreReward = matchingCells.length * 10 * combo;
                     score += scoreReward;
                     linesCleared += matchingCells.length;
 
-                    // Level Up progression every 30 cleared lines
                     const oldLevel = level;
                     level = Math.floor(linesCleared / 30) + 1;
                     if (level > oldLevel) {
@@ -1023,7 +979,6 @@
                     updateScores();
                     matchingCells = [];
 
-                    // Apply gravity & recursively sweep matches again
                     applyGravity();
                     drawGame();
 
@@ -1034,7 +989,6 @@
                 }, 200);
 
             } else {
-                // Loop ends, spawn next falling piece
                 gameState = 'PLAYING';
                 spawnGems();
                 drawGame();
@@ -1042,10 +996,9 @@
         }
 
         function canMove(tx, ty) {
-            // Check if column can transition to proposed destination coords
             for (let i = 0; i < 3; i++) {
                 const targetY = ty + i;
-                if (targetY < 0) continue; // Allow spawning above visible ceiling
+                if (targetY < 0) continue;
 
                 if (targetY >= ROWS || tx < 0 || tx >= COLS) {
                     return false;
@@ -1060,19 +1013,15 @@
         function createShatterParticles(row, col, color) {
             const startX = col * CELL_SIZE + CELL_SIZE / 2;
             const startY = row * CELL_SIZE + CELL_SIZE / 2;
-            for (let i = 0; i < 15; i++) {
+            for (let i = 0; i < 10; i++) {
                 animations.push(new Particle(startX, startY, color));
             }
         }
 
-        /**
-         * Cycles the order of the 3 jewels in the falling column (bottom -> top)
-         */
         function cycleGems() {
             if (!droppingCol || gameState !== 'PLAYING') return;
             sound.playRotate();
             
-            // Shift gems elements: Index [0, 1, 2] -> [2, 0, 1]
             const gems = droppingCol.gems;
             const last = gems[2];
             gems[2] = gems[1];
@@ -1123,14 +1072,13 @@
             lockDroppingGroup();
         }
 
-        // Global animation frame count to support flashing/sparkle cycles
         let globalFrameCount = 0;
 
         function drawGame() {
             globalFrameCount++;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw Background Grids
+            // Grid backgrounds
             ctx.strokeStyle = '#1e1b4b';
             ctx.lineWidth = 0.5;
             for (let r = 0; r < ROWS; r++) {
@@ -1139,15 +1087,13 @@
                 }
             }
 
-            // Draw Stable Stacked Grid Gems
+            // Fixed elements
             for (let r = 0; r < ROWS; r++) {
                 for (let c = 0; c < COLS; c++) {
                     const gemType = board[r][c];
                     if (gemType > 0) {
-                        // Flashing match overlay effect
                         const isMatching = matchingCells.some(cell => cell.r === r && cell.c === c);
                         if (isMatching && Math.floor(globalFrameCount / 3) % 2 === 0) {
-                            // Flash pure white shine
                             ctx.fillStyle = '#ffffff';
                             ctx.fillRect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
                         } else {
@@ -1157,19 +1103,18 @@
                 }
             }
 
-            // Draw Falling Drop Column Group
+            // Falling drop group
             if (droppingCol && gameState === 'PLAYING') {
                 for (let i = 0; i < 3; i++) {
                     const renderY = (droppingCol.y + i) * CELL_SIZE;
                     const renderX = droppingCol.x * CELL_SIZE;
-                    // Only draw if within bounds
                     if (renderY >= 0) {
                         drawGem(ctx, renderX, renderY, CELL_SIZE, droppingCol.gems[i], globalFrameCount);
                     }
                 }
             }
 
-            // Draw Particles & Explosions
+            // Burst particles
             animations = animations.filter(p => p.life > 0);
             animations.forEach(p => {
                 p.update();
@@ -1177,30 +1122,25 @@
             });
         }
 
-        /**
-         * Render next queued block in sidebar canvas
-         */
         function drawNextPreview() {
             nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
             
-            // Layout Next Column Vertically in Box
             if (nextCol) {
-                const margin = 10;
-                const size = 35;
+                const isMobile = window.innerWidth < 768;
+                const size = isMobile ? 22 : 32;
+                const gap = isMobile ? 3 : 5;
+                const margin = isMobile ? 5 : 10;
                 for (let i = 0; i < 3; i++) {
-                    drawGem(nextCtx, (nextCanvas.width - size) / 2, margin + i * (size + 5), size, nextCol[i], globalFrameCount);
+                    drawGem(nextCtx, (nextCanvas.width - size) / 2, margin + i * (size + gap), size, nextCol[i], globalFrameCount);
                 }
             }
         }
 
-        // UI Action States Trigger Updates
         function updateScores() {
-            // Pad scores with leading zeros for retro arcade retro-mono looks
             const padScore = String(score).padStart(6, '0');
             const padBest = String(highscore).padStart(6, '0');
 
             document.getElementById('stat-score').innerText = padScore;
-            document.getElementById('left-score').innerText = padScore;
             document.getElementById('stat-best').innerText = padBest;
             document.getElementById('left-lines').innerText = linesCleared;
             document.getElementById('stat-level').innerText = String(level).padStart(2, '0');
@@ -1208,14 +1148,12 @@
 
         function setDifficulty(diff) {
             difficulty = diff;
-            // Deselect all
             ['easy', 'normal', 'hard'].forEach(d => {
                 const btn = document.getElementById(`diff-${d}`);
-                btn.className = "py-1 px-2 text-xs font-semibold rounded bg-purple-900/40 text-purple-200 border border-purple-800 transition-all active:scale-95";
+                btn.className = "py-1 px-1 text-[10px] font-semibold rounded bg-purple-900/40 text-purple-200 border border-purple-800 transition-all active:scale-95";
             });
-            // Select active
             const activeBtn = document.getElementById(`diff-${diff}`);
-            activeBtn.className = "py-1 px-2 text-xs font-semibold rounded bg-pink-500 text-white border border-pink-400 shadow-md shadow-pink-500/30 transition-all active:scale-95";
+            activeBtn.className = "py-1 px-1 text-[10px] font-semibold rounded bg-pink-500 text-white border border-pink-400 shadow-md shadow-pink-500/30 transition-all active:scale-95";
         }
 
         function togglePause() {
@@ -1233,7 +1171,6 @@
         function startGame() {
             sound.init();
             
-            // Reset Matrices
             board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
             score = 0;
             level = 1;
@@ -1246,7 +1183,6 @@
             
             gameSpeed = difficulty === 'easy' ? 950 : (difficulty === 'normal' ? 800 : 600);
 
-            // Hide overlays
             document.getElementById('start-overlay').classList.add('hidden');
             document.getElementById('gameover-overlay').classList.add('hidden');
             document.getElementById('pause-overlay').classList.add('hidden');
@@ -1265,22 +1201,19 @@
             clearInterval(dropInterval);
             sound.playGameOver();
 
-            // Store high scores
             if (score > highscore) {
                 highscore = score;
                 localStorage.setItem(LOCAL_STORAGE_KEY, highscore);
             }
 
-            // Update stats
             document.getElementById('final-score').innerText = String(score).padStart(6, '0');
             document.getElementById('final-best').innerText = String(highscore).padStart(6, '0');
             document.getElementById('gameover-overlay').classList.remove('hidden');
         }
 
-        // Handle controls inputs (Keyboard map)
         window.addEventListener('keydown', e => {
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
-                e.preventDefault(); // Lock browser scrolling
+                e.preventDefault();
             }
 
             if (gameState !== 'PLAYING') {
@@ -1315,14 +1248,12 @@
             }
         });
 
-        // Touch Controllers Trigger Events
         const bindControl = (elementId, action) => {
             const btn = document.getElementById(elementId);
             const triggerAction = (e) => {
                 e.preventDefault();
                 action();
-                // Play lightweight haptic vibration if supported
-                if (navigator.vibrate) navigator.vibrate(20);
+                if (navigator.vibrate) navigator.vibrate(15);
             };
             btn.addEventListener('touchstart', triggerAction, { passive: false });
             btn.addEventListener('mousedown', triggerAction);
@@ -1334,19 +1265,17 @@
         bindControl('ctrl-drop', softDrop);
         bindControl('ctrl-hard', hardDrop);
 
-        // Sound volume controller toggler
         document.getElementById('btn-sound').addEventListener('click', () => {
             sound.muted = !sound.muted;
             const icon = document.getElementById('sound-icon');
             if (sound.muted) {
-                icon.className = "fa-solid fa-volume-xmark text-lg text-red-500";
+                icon.className = "fa-solid fa-volume-xmark text-base text-red-500";
             } else {
-                icon.className = "fa-solid fa-volume-high text-lg text-cyan-400";
+                icon.className = "fa-solid fa-volume-high text-base text-cyan-400";
                 sound.init();
             }
         });
 
-        // Modals / Guides Hooks
         const modal = document.getElementById('tutorial-modal');
         document.getElementById('btn-help').addEventListener('click', () => {
             modal.classList.remove('hidden');
@@ -1358,19 +1287,16 @@
             modal.classList.add('hidden');
         });
 
-        // Static Page Hooks
         document.getElementById('btn-start').addEventListener('click', startGame);
         document.getElementById('btn-resume').addEventListener('click', togglePause);
         document.getElementById('btn-restart').addEventListener('click', startGame);
 
-        // Persistent Animation Rendering Frame
         function animationLoop() {
             drawGame();
             drawNextPreview();
             requestAnimationFrame(animationLoop);
         }
 
-        // Initialize window context on load
         window.onload = function() {
             resizeScreen();
             updateScores();
