@@ -1,1 +1,923 @@
+<!DOCTYPE html>
+<html lang="ko" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>지뢰찾기 마스터 (Minesweeper Master)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts Inter & Playfair -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Noto Sans KR', 'Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        /* Grid smooth scale animations */
+        .cell-appear {
+            animation: popIn 0.15s ease-out forwards;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0.85); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        /* Custom scrollbar for game board */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(156, 163, 175, 0.5);
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(156, 163, 175, 0.8);
+        }
+        /* Cyberpunk theme custom styles */
+        .theme-cyberpunk {
+            --bg-main: #0a0e17;
+            --bg-card: #121824;
+            --accent: #ff007f;
+            --accent-glow: 0 0 10px #ff007f;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 min-h-full font-sans transition-colors duration-300">
 
+    <div class="max-w-4xl mx-auto p-4 md:py-8 flex flex-col min-h-screen">
+        
+        <!-- Header / Logo -->
+        <header class="mb-6 flex flex-col sm:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <div class="bg-gradient-to-tr from-red-500 to-amber-500 text-white p-2.5 rounded-2xl shadow-md shadow-red-500/20">
+                    <i class="fa-solid fa-bomb text-2xl animate-pulse"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-black tracking-tight flex items-center gap-2">
+                        지뢰찾기 <span class="text-xs px-2 py-0.5 bg-red-100 text-red-600 dark:bg-red-950/50 dark:text-red-400 rounded-full font-bold">PRO</span>
+                    </h1>
+                    <p class="text-xs text-slate-500 dark:text-slate-400">Minesweeper Premium Edition</p>
+                </div>
+            </div>
+            
+            <!-- Quick controls (Theme, Stats, Volume) -->
+            <div class="flex items-center gap-2">
+                <button id="btn-stats" class="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="통계 보기">
+                    <i class="fa-solid fa-trophy text-amber-500"></i>
+                </button>
+                <button id="btn-volume" class="p-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm hover:bg-slate-100 dark:hover:bg-slate-700 transition" title="음소거 토글">
+                    <i id="volume-icon" class="fa-solid fa-volume-high text-slate-500 dark:text-slate-400"></i>
+                </button>
+                <select id="theme-selector" class="px-3 py-2.5 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="modern-light">💡 라이트 테마</option>
+                    <option value="modern-dark" selected>🌙 다크 테마</option>
+                    <option value="retro">📟 레트로 클래식</option>
+                    <option value="cyberpunk">👾 네온 사이버펑크</option>
+                </select>
+            </div>
+        </header>
+
+        <!-- Difficulty & Settings Card -->
+        <section class="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5 shadow-sm mb-6">
+            <div class="flex flex-wrap items-center justify-between gap-4 mb-4">
+                <div class="flex items-center gap-2 text-sm font-semibold text-slate-500 dark:text-slate-400">
+                    <i class="fa-solid fa-sliders"></i> 난이도 선택
+                </div>
+                <div id="difficulty-badge" class="px-2.5 py-1 rounded-lg text-xs font-bold uppercase bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
+                    초급
+                </div>
+            </div>
+            
+            <!-- Difficulty Buttons Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+                <button onclick="setDifficulty('beginner')" id="diff-beginner" class="diff-btn py-2.5 px-3 rounded-xl border text-sm font-bold flex flex-col items-center justify-center transition-all bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900 text-blue-600 dark:text-blue-400 shadow-sm">
+                    <span>초급</span>
+                    <span class="text-[10px] font-normal text-slate-500 mt-0.5">9x9 (지뢰 10)</span>
+                </button>
+                <button onclick="setDifficulty('intermediate')" id="diff-intermediate" class="diff-btn py-2.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 text-sm font-bold flex flex-col items-center justify-center transition-all hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                    <span>중급</span>
+                    <span class="text-[10px] font-normal text-slate-500 mt-0.5">16x16 (지뢰 40)</span>
+                </button>
+                <button onclick="setDifficulty('expert')" id="diff-expert" class="diff-btn py-2.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 text-sm font-bold flex flex-col items-center justify-center transition-all hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                    <span>상급</span>
+                    <span class="text-[10px] font-normal text-slate-500 mt-0.5">30x16 (지뢰 99)</span>
+                </button>
+                <button onclick="openCustomSettings()" id="diff-custom" class="diff-btn py-2.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 text-sm font-bold flex flex-col items-center justify-center transition-all hover:bg-slate-50 dark:hover:bg-slate-700/50">
+                    <span>사용자 지정</span>
+                    <span class="text-[10px] font-normal text-slate-500 mt-0.5">직접 설정</span>
+                </button>
+            </div>
+
+            <!-- Custom Settings Sub-pane (Hidden by default) -->
+            <div id="custom-pane" class="hidden border-t border-dashed border-slate-200 dark:border-slate-700 pt-4 mt-4 animate-fadeIn">
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">행 (Row, 8~24)</label>
+                        <input type="number" id="custom-rows" value="10" min="8" max="24" class="w-full px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-900 border-none focus:ring-2 focus:ring-blue-500 text-sm text-center">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">열 (Col, 8~30)</label>
+                        <input type="number" id="custom-cols" value="10" min="8" max="30" class="w-full px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-900 border-none focus:ring-2 focus:ring-blue-500 text-sm text-center">
+                    </div>
+                    <div>
+                        <label class="block text-xs text-slate-500 dark:text-slate-400 mb-1">지뢰 개수 (10~99)</label>
+                        <input type="number" id="custom-mines" value="15" min="10" max="99" class="w-full px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-900 border-none focus:ring-2 focus:ring-blue-500 text-sm text-center">
+                    </div>
+                </div>
+                <button onclick="applyCustomSettings()" class="w-full mt-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg text-xs transition">
+                    사용자 지정 게임 시작
+                </button>
+            </div>
+        </section>
+
+        <!-- Main Game Area -->
+        <main class="flex-grow flex flex-col bg-white dark:bg-slate-800 rounded-3xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-md">
+            
+            <!-- Status Board -->
+            <div class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                <!-- Mines Left -->
+                <div class="flex items-center gap-2">
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Mines Left</span>
+                    <div id="mines-counter" class="bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 px-3 py-1.5 rounded-xl font-black text-lg tracking-wider min-w-[3.5rem] text-center shadow-inner font-mono">
+                        010
+                    </div>
+                </div>
+
+                <!-- Face Emoji (Status) -->
+                <button id="face-btn" onclick="initGame()" class="w-12 h-12 rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-2xl flex items-center justify-center hover:scale-105 active:scale-95 transition shadow-sm hover:shadow-md">
+                    😊
+                </button>
+
+                <!-- Timer -->
+                <div class="flex items-center gap-2">
+                    <div id="timer" class="bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 px-3 py-1.5 rounded-xl font-black text-lg tracking-wider min-w-[3.5rem] text-center shadow-inner font-mono">
+                        000
+                    </div>
+                    <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">Seconds</span>
+                </div>
+            </div>
+
+            <!-- Controls Toolbar (Zoom & Mobile flag mode) -->
+            <div class="px-6 py-3 border-b border-slate-100 dark:border-slate-700/50 flex flex-wrap justify-between items-center gap-3 bg-white dark:bg-slate-800">
+                <div class="flex items-center gap-3">
+                    <span class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                        <i class="fa-solid fa-magnifying-glass-plus"></i> 크기 조절:
+                    </span>
+                    <input type="range" id="zoom-slider" min="20" max="45" value="32" class="w-24 accent-blue-600">
+                    <span id="zoom-value" class="text-xs font-mono font-bold text-slate-400">32px</span>
+                </div>
+
+                <!-- Mobile Action Mode Toggle -->
+                <div class="flex items-center bg-slate-100 dark:bg-slate-900 rounded-xl p-1 gap-1">
+                    <button id="mode-mine" onclick="setMobileMode('reveal')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-white dark:bg-slate-800 shadow-sm text-blue-600 dark:text-blue-400">
+                        <i class="fa-solid fa-hand-pointer"></i> 열기
+                    </button>
+                    <button id="mode-flag" onclick="setMobileMode('flag')" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 dark:text-slate-400 transition-all hover:text-slate-700 dark:hover:text-slate-200">
+                        <i class="fa-solid fa-flag text-red-500"></i> 깃발
+                    </button>
+                </div>
+            </div>
+
+            <!-- Game Grid Viewport -->
+            <div class="p-6 overflow-auto max-h-[60vh] flex justify-center items-start custom-scrollbar bg-slate-100/50 dark:bg-slate-900/30" id="board-container">
+                <div id="board" class="grid gap-[2px] bg-slate-200 dark:bg-slate-700 p-[2px] rounded-xl shadow-lg transition-transform duration-200 mx-auto">
+                    <!-- Dynamic Cells loaded by JS -->
+                </div>
+            </div>
+            
+            <!-- Quick Help Hint -->
+            <div class="px-6 py-3 text-center text-[11px] text-slate-400 border-t border-slate-100 dark:border-slate-700/50 bg-white dark:bg-slate-800">
+                <span class="hidden md:inline"><i class="fa-regular fa-lightbulb"></i> PC: 우클릭으로 깃발을 설치하고 좌클릭으로 안전 지대를 찾으세요. 숫자칸을 더블 클릭하면 주변의 칸이 모두 열립니다!</span>
+                <span class="inline md:hidden"><i class="fa-regular fa-lightbulb"></i> 모바일: 길게 누르면 깃발이 꽂히고, 하단 깃발 전환기로 조작할 수 있습니다.</span>
+            </div>
+        </main>
+    </div>
+
+    <!-- Win Game Overlay Alert -->
+    <div id="win-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-sm w-full p-6 text-center shadow-2xl border border-slate-200 dark:border-slate-700 transform scale-95 transition-transform duration-300">
+            <div class="w-20 h-20 bg-emerald-100 dark:bg-emerald-950 text-emerald-500 dark:text-emerald-400 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl shadow-inner animate-bounce">
+                🎉
+            </div>
+            <h2 class="text-2xl font-black mb-1">임무 성공!</h2>
+            <p class="text-slate-500 dark:text-slate-400 text-sm mb-4">모든 지뢰를 성공적으로 제거했습니다.</p>
+            
+            <div class="bg-slate-50 dark:bg-slate-900/50 rounded-2xl p-4 mb-6 grid grid-cols-2 gap-4">
+                <div>
+                    <span class="block text-xs text-slate-400 font-semibold mb-1">클리어 시간</span>
+                    <span id="win-time" class="text-xl font-mono font-extrabold text-blue-600 dark:text-blue-400">0초</span>
+                </div>
+                <div>
+                    <span class="block text-xs text-slate-400 font-semibold mb-1">최고 기록 갱신</span>
+                    <span id="win-best" class="text-xl font-semibold text-amber-500">-</span>
+                </div>
+            </div>
+
+            <button onclick="closeWinModal(); initGame();" class="w-full py-3 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-2xl shadow-lg shadow-emerald-500/20 active:scale-95 transition">
+                새 게임 시작
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Modal overlay -->
+    <div id="stats-overlay" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white dark:bg-slate-800 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-700">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold flex items-center gap-2">
+                    <i class="fa-solid fa-chart-simple text-amber-500"></i> 개인 기록실
+                </h2>
+                <button onclick="toggleStatsModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            
+            <!-- Statistics Contents -->
+            <div class="space-y-3 mb-6">
+                <!-- Beginner stats -->
+                <div class="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl flex justify-between items-center">
+                    <div>
+                        <span class="block font-bold text-sm">초급 기록 (9x9)</span>
+                        <span class="text-xs text-slate-400">지뢰 10개 완주 기록</span>
+                    </div>
+                    <span id="best-beginner" class="text-lg font-mono font-bold text-amber-500">-</span>
+                </div>
+                <!-- Intermediate stats -->
+                <div class="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl flex justify-between items-center">
+                    <div>
+                        <span class="block font-bold text-sm">중급 기록 (16x16)</span>
+                        <span class="text-xs text-slate-400">지뢰 40개 완주 기록</span>
+                    </div>
+                    <span id="best-intermediate" class="text-lg font-mono font-bold text-amber-500">-</span>
+                </div>
+                <!-- Expert stats -->
+                <div class="p-3 bg-slate-50 dark:bg-slate-900/50 rounded-xl flex justify-between items-center">
+                    <div>
+                        <span class="block font-bold text-sm">상급 기록 (30x16)</span>
+                        <span class="text-xs text-slate-400">지뢰 99개 완주 기록</span>
+                    </div>
+                    <span id="best-expert" class="text-lg font-mono font-bold text-amber-500">-</span>
+                </div>
+            </div>
+
+            <div class="flex gap-2">
+                <button onclick="resetStats()" class="flex-1 py-2.5 bg-red-100 hover:bg-red-200 dark:bg-red-950/40 dark:hover:bg-red-900/40 text-red-600 dark:text-red-400 font-bold rounded-xl text-xs transition">
+                    모든 기록 초기화
+                </button>
+                <button onclick="toggleStatsModal()" class="flex-1 py-2.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 font-bold rounded-xl text-xs transition">
+                    닫기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Game Presets config
+        const PRESETS = {
+            beginner: { rows: 9, cols: 9, mines: 10, label: '초급' },
+            intermediate: { rows: 16, cols: 16, mines: 40, label: '중급' },
+            expert: { rows: 16, cols: 30, mines: 99, label: '상급' }
+        };
+
+        // Current game states
+        let currentDifficulty = 'beginner';
+        let config = { ...PRESETS.beginner };
+        let boardState = []; // 2D Array of Cell Objects
+        let isFirstClick = true;
+        let isGameOver = false;
+        let minesLeft = config.mines;
+        let flagsCount = 0;
+        let elapsedSeconds = 0;
+        let timerInterval = null;
+        let isMuted = false;
+        let mobileMode = 'reveal'; // 'reveal' or 'flag'
+        let touchTimer = null; // Long-press check
+
+        // Web Audio API Synthesizer Context
+        let audioCtx = null;
+
+        // Initialize App on Window Load
+        window.onload = function() {
+            loadStats();
+            initGame();
+            setupEventListeners();
+            applyTheme('modern-dark');
+        }
+
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (isMuted) return;
+            initAudio();
+            if (!audioCtx) return;
+
+            try {
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+
+                const now = audioCtx.currentTime;
+
+                if (type === 'click') {
+                    // Quick digital blip on clean reveal
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(100, now + 0.08);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'flag') {
+                    // Soft synthetic swoop on placing flag
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.exponentialRampToValueAtTime(600, now + 0.12);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.12);
+                    osc.start(now);
+                    osc.stop(now + 0.12);
+                } else if (type === 'explosion') {
+                    // Deep distortion explosion sound effect
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(120, now);
+                    osc.frequency.linearRampToValueAtTime(30, now + 0.5);
+                    gain.gain.setValueAtTime(0.5, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+                    osc.start(now);
+                    osc.stop(now + 0.5);
+                } else if (type === 'win') {
+                    // Uplifting musical triad fanfare
+                    const notes = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5
+                    notes.forEach((freq, idx) => {
+                        const noteOsc = audioCtx.createOscillator();
+                        const noteGain = audioCtx.createGain();
+                        noteOsc.connect(noteGain);
+                        noteGain.connect(audioCtx.destination);
+                        
+                        noteOsc.frequency.setValueAtTime(freq, now + idx * 0.12);
+                        noteGain.gain.setValueAtTime(0.2, now + idx * 0.12);
+                        noteGain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.12 + 0.4);
+                        
+                        noteOsc.start(now + idx * 0.12);
+                        noteOsc.stop(now + idx * 0.12 + 0.45);
+                    });
+                }
+            } catch (e) {
+                console.warn("Audio Context execution halted:", e);
+            }
+        }
+
+        function initGame() {
+            // Halt current active timers
+            clearInterval(timerInterval);
+            timerInterval = null;
+            
+            // Re-sync basic values
+            isFirstClick = true;
+            isGameOver = false;
+            elapsedSeconds = 0;
+            flagsCount = 0;
+            minesLeft = config.mines;
+            
+            // Re-render display boards
+            updateTimerDisplay();
+            updateMinesDisplay();
+            
+            // Reset emoji status
+            const faceBtn = document.getElementById('face-btn');
+            faceBtn.innerHTML = '😊';
+
+            // Generate structural empty coordinates
+            boardState = [];
+            for (let r = 0; r < config.rows; r++) {
+                const row = [];
+                for (let c = 0; c < config.cols; c++) {
+                    row.push({
+                        row: r,
+                        col: c,
+                        isMine: false,
+                        isRevealed: false,
+                        isFlagged: false,
+                        neighborMines: 0
+                    });
+                }
+                boardState.push(row);
+            }
+
+            renderBoard();
+        }
+
+        // Apply visual configurations for different board difficulties
+        function setDifficulty(diff) {
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                btn.className = "diff-btn py-2.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 text-sm font-bold flex flex-col items-center justify-center transition-all hover:bg-slate-50 dark:hover:bg-slate-700/50";
+            });
+            
+            const badge = document.getElementById('difficulty-badge');
+            const customPane = document.getElementById('custom-pane');
+
+            if (diff !== 'custom') {
+                customPane.classList.add('hidden');
+                currentDifficulty = diff;
+                config = { ...PRESETS[diff] };
+                
+                // Color mapping highlight
+                const btn = document.getElementById(`diff-${diff}`);
+                btn.className = "diff-btn py-2.5 px-3 rounded-xl border text-sm font-bold flex flex-col items-center justify-center transition-all bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900 text-blue-600 dark:text-blue-400 shadow-sm";
+                badge.innerText = PRESETS[diff].label;
+                badge.className = "px-2.5 py-1 rounded-lg text-xs font-bold uppercase bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400";
+                
+                initGame();
+            } else {
+                openCustomSettings();
+            }
+        }
+
+        function openCustomSettings() {
+            document.querySelectorAll('.diff-btn').forEach(btn => btn.className = "diff-btn py-2.5 px-3 rounded-xl border border-slate-200 dark:border-slate-700 hover:border-slate-300 text-sm font-bold flex flex-col items-center justify-center transition-all hover:bg-slate-50 dark:hover:bg-slate-700/50");
+            document.getElementById('diff-custom').className = "diff-btn py-2.5 px-3 rounded-xl border text-sm font-bold flex flex-col items-center justify-center transition-all bg-purple-50 dark:bg-purple-950/20 border-purple-200 dark:border-purple-900 text-purple-600 dark:text-purple-400 shadow-sm";
+            
+            const badge = document.getElementById('difficulty-badge');
+            badge.innerText = "사용자 지정";
+            badge.className = "px-2.5 py-1 rounded-lg text-xs font-bold uppercase bg-purple-100 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400";
+            
+            document.getElementById('custom-pane').classList.remove('hidden');
+        }
+
+        function applyCustomSettings() {
+            const rows = Math.max(8, Math.min(24, parseInt(document.getElementById('custom-rows').value) || 10));
+            const cols = Math.max(8, Math.min(30, parseInt(document.getElementById('custom-cols').value) || 10));
+            const maxAllowedMines = Math.floor((rows * cols) * 0.4); // max 40% mine coverage
+            const mines = Math.max(5, Math.min(maxAllowedMines, parseInt(document.getElementById('custom-mines').value) || 15));
+
+            config = { rows, cols, mines };
+            currentDifficulty = 'custom';
+            initGame();
+        }
+
+        function renderBoard() {
+            const board = document.getElementById('board');
+            board.innerHTML = '';
+            
+            // Adjust CSS grid dimensions
+            board.style.gridTemplateColumns = `repeat(${config.cols}, var(--cell-size, 32px))`;
+            
+            const cellSize = document.getElementById('zoom-slider').value + 'px';
+            document.documentElement.style.setProperty('--cell-size', cellSize);
+
+            for (let r = 0; r < config.rows; r++) {
+                for (let c = 0; c < config.cols; c++) {
+                    const cellData = boardState[r][c];
+                    const cellElement = document.createElement('div');
+                    cellElement.id = `cell-${r}-${c}`;
+                    cellElement.className = `cell-appear select-none relative aspect-square flex items-center justify-center text-sm font-extrabold cursor-pointer rounded transition-all duration-100 bg-slate-300 dark:bg-slate-600 shadow-sm border border-slate-400/20 hover:brightness-105 active:scale-95`;
+                    cellElement.style.width = '100%';
+                    cellElement.style.height = '100%';
+
+                    // Event handlers for Desktop + Mobile fallback
+                    cellElement.addEventListener('click', (e) => handleCellClick(r, c));
+                    cellElement.addEventListener('contextmenu', (e) => {
+                        e.preventDefault();
+                        handleCellRightClick(r, c);
+                    });
+
+                    // Chord (reveal neighbors) on double click
+                    cellElement.addEventListener('dblclick', (e) => {
+                        handleCellDblClick(r, c);
+                    });
+
+                    // Mobile long-press feature emulation for flagged triggers
+                    cellElement.addEventListener('touchstart', (e) => {
+                        touchTimer = setTimeout(() => {
+                            playSound('flag');
+                            handleCellRightClick(r, c);
+                            touchTimer = null;
+                        }, 550); // Hold for 550ms to toggle flag
+                    });
+
+                    cellElement.addEventListener('touchend', (e) => {
+                        if (touchTimer) {
+                            clearTimeout(touchTimer);
+                        }
+                    });
+
+                    board.appendChild(cellElement);
+                }
+            }
+        }
+
+        function handleCellClick(r, c) {
+            if (isGameOver) return;
+
+            // Direct route to flag if user is in Mobile Flag Mode
+            if (mobileMode === 'flag') {
+                handleCellRightClick(r, c);
+                return;
+            }
+
+            const cell = boardState[r][c];
+            if (cell.isFlagged || cell.isRevealed) return;
+
+            // First click safety engine block
+            if (isFirstClick) {
+                isFirstClick = false;
+                startTimer();
+                generateMines(r, c);
+                calculateNeighbors();
+            }
+
+            revealCell(r, c);
+            checkWinCondition();
+        }
+
+        function handleCellRightClick(r, c) {
+            if (isGameOver) return;
+            // Prevent marking flagged if first click timer hasn't started
+            if (isFirstClick) {
+                startTimer();
+                isFirstClick = false;
+                generateMines(r, c);
+                calculateNeighbors();
+            }
+
+            const cell = boardState[r][c];
+            if (cell.isRevealed) return;
+
+            cell.isFlagged = !cell.isFlagged;
+            flagsCount += cell.isFlagged ? 1 : -1;
+            minesLeft = config.mines - flagsCount;
+
+            updateMinesDisplay();
+            playSound('flag');
+            updateCellVisual(r, c);
+        }
+
+        // Chord reveal: Reveals surrounding unflagged blocks if surrounding flags equal to self digit value
+        function handleCellDblClick(r, c) {
+            if (isGameOver) return;
+            const cell = boardState[r][c];
+            if (!cell.isRevealed || cell.neighborMines === 0) return;
+
+            // Count flags around
+            let surroundingFlags = 0;
+            getNeighbors(r, c).forEach(n => {
+                if (boardState[n.r][n.c].isFlagged) {
+                    surroundingFlags++;
+                }
+            });
+
+            if (surroundingFlags === cell.neighborMines) {
+                getNeighbors(r, c).forEach(n => {
+                    const target = boardState[n.r][n.c];
+                    if (!target.isRevealed && !target.isFlagged) {
+                        revealCell(n.r, n.c);
+                    }
+                });
+                checkWinCondition();
+            }
+        }
+
+        function generateMines(safeRow, safeCol) {
+            let placedMines = 0;
+            while (placedMines < config.mines) {
+                const randomRow = Math.floor(Math.random() * config.rows);
+                const randomCol = Math.floor(Math.random() * config.cols);
+
+                // Safe click radius checking logic - Avoid mine block in safeRow/Col and immediate boundaries
+                const isWithinSafeZone = Math.abs(randomRow - safeRow) <= 1 && Math.abs(randomCol - safeCol) <= 1;
+
+                if (!boardState[randomRow][randomCol].isMine && !isWithinSafeZone) {
+                    boardState[randomRow][randomCol].isMine = true;
+                    placedMines++;
+                }
+            }
+        }
+
+        function calculateNeighbors() {
+            for (let r = 0; r < config.rows; r++) {
+                for (let c = 0; c < config.cols; c++) {
+                    if (boardState[r][c].isMine) continue;
+                    
+                    let mineCount = 0;
+                    getNeighbors(r, c).forEach(n => {
+                        if (boardState[n.r][n.c].isMine) {
+                            mineCount++;
+                        }
+                    });
+                    boardState[r][c].neighborMines = mineCount;
+                }
+            }
+        }
+
+        function getNeighbors(r, c) {
+            const neighbors = [];
+            for (let i = -1; i <= 1; i++) {
+                for (let j = -1; j <= 1; j++) {
+                    if (i === 0 && j === 0) continue;
+                    const nr = r + i;
+                    const nc = c + j;
+                    if (nr >= 0 && nr < config.rows && nc >= 0 && nc < config.cols) {
+                        neighbors.push({ r: nr, c: nc });
+                    }
+                }
+            }
+            return neighbors;
+        }
+
+        function revealCell(r, c) {
+            const cell = boardState[r][c];
+            if (cell.isRevealed || cell.isFlagged) return;
+
+            cell.isRevealed = true;
+            updateCellVisual(r, c);
+
+            if (cell.isMine) {
+                triggerGameOver(r, c);
+                return;
+            }
+
+            playSound('click');
+
+            if (cell.neighborMines === 0) {
+                // Instantly spill into all nearby zeroes using flood recursion
+                getNeighbors(r, c).forEach(n => {
+                    revealCell(n.r, n.c);
+                });
+            }
+        }
+
+        function updateCellVisual(r, c) {
+            const cell = boardState[r][c];
+            const el = document.getElementById(`cell-${r}-${c}`);
+            if (!el) return;
+
+            // Clear class lists back to baseline structure first
+            el.className = `cell-appear select-none relative aspect-square flex items-center justify-center text-sm font-black cursor-pointer rounded shadow-sm border border-slate-400/10 transition-all duration-100`;
+
+            if (cell.isRevealed) {
+                if (cell.isMine) {
+                    el.classList.add('bg-red-500', 'text-white', 'animate-shake');
+                    el.innerHTML = '<i class="fa-solid fa-bomb"></i>';
+                } else {
+                    el.classList.add('bg-slate-100', 'dark:bg-slate-700/40', 'border-slate-300/40', 'text-slate-600', 'dark:text-slate-300');
+                    if (cell.neighborMines > 0) {
+                        el.innerText = cell.neighborMines;
+                        // Color scale depending on count
+                        const colors = [
+                            '', 
+                            'text-blue-600 dark:text-blue-400', 
+                            'text-emerald-600 dark:text-emerald-400', 
+                            'text-red-500 dark:text-red-400', 
+                            'text-violet-600 dark:text-violet-400', 
+                            'text-amber-600 dark:text-amber-500', 
+                            'text-teal-600 dark:text-teal-400', 
+                            'text-gray-900 dark:text-white', 
+                            'text-slate-500'
+                        ];
+                        el.className += ` ${colors[cell.neighborMines]}`;
+                    } else {
+                        el.innerText = '';
+                    }
+                }
+            } else {
+                // Not revealed logic (flagged/unrevealed blocks)
+                el.classList.add('bg-slate-300', 'dark:bg-slate-600', 'hover:brightness-105', 'active:scale-95');
+                if (cell.isFlagged) {
+                    el.innerHTML = '<i class="fa-solid fa-flag text-red-500 animate-bounce"></i>';
+                } else {
+                    el.innerHTML = '';
+                }
+            }
+        }
+
+        function startTimer() {
+            if (timerInterval) return;
+            timerInterval = setInterval(() => {
+                elapsedSeconds++;
+                if (elapsedSeconds > 999) {
+                    elapsedSeconds = 999;
+                    clearInterval(timerInterval);
+                }
+                updateTimerDisplay();
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const formatted = String(elapsedSeconds).padStart(3, '0');
+            document.getElementById('timer').innerText = formatted;
+        }
+
+        function updateMinesDisplay() {
+            const display = Math.max(-99, Math.min(999, minesLeft));
+            const sign = display < 0 ? '-' : '';
+            const absVal = Math.abs(display);
+            const formatted = sign + String(absVal).padStart(sign ? 2 : 3, '0');
+            document.getElementById('mines-counter').innerText = formatted;
+        }
+
+        function triggerGameOver(hitRow, hitCol) {
+            isGameOver = true;
+            clearInterval(timerInterval);
+            playSound('explosion');
+
+            document.getElementById('face-btn').innerHTML = '😵';
+
+            // Uncover all other hidden mines for analysis
+            for (let r = 0; r < config.rows; r++) {
+                for (let c = 0; c < config.cols; c++) {
+                    const cell = boardState[r][c];
+                    const el = document.getElementById(`cell-${r}-${c}`);
+                    
+                    if (cell.isMine) {
+                        if (!cell.isRevealed) {
+                            cell.isRevealed = true;
+                            if (cell.isFlagged) {
+                                // Correct flag
+                                el.innerHTML = '<i class="fa-solid fa-flag text-emerald-500"></i>';
+                            } else {
+                                // Revealed bomb
+                                el.className += ' bg-red-400 dark:bg-red-950/60 text-white';
+                                el.innerHTML = '<i class="fa-solid fa-bomb"></i>';
+                            }
+                        }
+                    } else if (cell.isFlagged) {
+                        // Flag on safe coordinate = Wrong mark
+                        el.className += ' bg-amber-100 dark:bg-amber-950/30 border border-amber-500';
+                        el.innerHTML = '<i class="fa-solid fa-ban text-red-500"></i>';
+                    }
+                }
+            }
+        }
+
+        function checkWinCondition() {
+            let revealedCount = 0;
+            const totalMines = config.mines;
+            const totalCells = config.rows * config.cols;
+
+            for (let r = 0; r < config.rows; r++) {
+                for (let c = 0; c < config.cols; c++) {
+                    if (boardState[r][c].isRevealed && !boardState[r][c].isMine) {
+                        revealedCount++;
+                    }
+                }
+            }
+
+            if (revealedCount === totalCells - totalMines) {
+                triggerWin();
+            }
+        }
+
+        function triggerWin() {
+            isGameOver = true;
+            clearInterval(timerInterval);
+            playSound('win');
+            
+            document.getElementById('face-btn').innerHTML = '😎';
+
+            // Mark all safe flags
+            for (let r = 0; r < config.rows; r++) {
+                for (let c = 0; c < config.cols; c++) {
+                    if (boardState[r][c].isMine) {
+                        boardState[r][c].isFlagged = true;
+                        updateCellVisual(r, c);
+                    }
+                }
+            }
+
+            // Highscore registration checks
+            const isBest = saveHighscore(currentDifficulty, elapsedSeconds);
+            
+            document.getElementById('win-time').innerText = `${elapsedSeconds}초`;
+            document.getElementById('win-best').innerText = isBest ? '새 기록 달성! 👑' : '완료';
+            
+            // Pop the dynamic celebration modal overlay
+            setTimeout(() => {
+                document.getElementById('win-overlay').classList.remove('hidden');
+                document.getElementById('win-overlay').firstElementChild.classList.remove('scale-95');
+                document.getElementById('win-overlay').firstElementChild.classList.add('scale-100');
+            }, 500);
+
+            loadStats(); // refresh database scores
+        }
+
+        function closeWinModal() {
+            document.getElementById('win-overlay').classList.add('hidden');
+            document.getElementById('win-overlay').firstElementChild.classList.remove('scale-100');
+            document.getElementById('win-overlay').firstElementChild.classList.add('scale-95');
+        }
+
+        function saveHighscore(diff, score) {
+            if (diff === 'custom') return false;
+            const key = `minesweeper_best_${diff}`;
+            const currentBest = localStorage.getItem(key);
+            
+            if (currentBest === null || score < parseInt(currentBest)) {
+                localStorage.setItem(key, score);
+                return true;
+            }
+            return false;
+        }
+
+        function loadStats() {
+            const diffs = ['beginner', 'intermediate', 'expert'];
+            diffs.forEach(diff => {
+                const score = localStorage.getItem(`minesweeper_best_${diff}`);
+                document.getElementById(`best-${diff}`).innerText = score ? `${score}초` : '기록 없음';
+            });
+        }
+
+        function resetStats() {
+            const diffs = ['beginner', 'intermediate', 'expert'];
+            diffs.forEach(diff => localStorage.removeItem(`minesweeper_best_${diff}`));
+            loadStats();
+        }
+
+        function toggleStatsModal() {
+            const overlay = document.getElementById('stats-overlay');
+            overlay.classList.toggle('hidden');
+        }
+
+        function setMobileMode(mode) {
+            mobileMode = mode;
+            const mineBtn = document.getElementById('mode-mine');
+            const flagBtn = document.getElementById('mode-flag');
+
+            if (mode === 'reveal') {
+                mineBtn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-white dark:bg-slate-800 shadow-sm text-blue-600 dark:text-blue-400";
+                flagBtn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 dark:text-slate-400 transition-all hover:text-slate-700 dark:hover:text-slate-200";
+            } else {
+                flagBtn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all bg-white dark:bg-slate-800 shadow-sm text-red-500";
+                mineBtn.className = "flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-slate-500 dark:text-slate-400 transition-all hover:text-slate-700 dark:hover:text-slate-200";
+            }
+        }
+
+        function setupEventListeners() {
+            // Theme Select Box Toggle
+            document.getElementById('theme-selector').addEventListener('change', (e) => {
+                applyTheme(e.target.value);
+            });
+
+            // Zoom Controller Scale Event
+            const zoomSlider = document.getElementById('zoom-slider');
+            zoomSlider.addEventListener('input', (e) => {
+                const val = e.target.value;
+                document.getElementById('zoom-value').innerText = `${val}px`;
+                document.documentElement.style.setProperty('--cell-size', `${val}px`);
+            });
+
+            // Stats modal triggers
+            document.getElementById('btn-stats').addEventListener('click', toggleStatsModal);
+
+            // Audio Level Control toggle icon
+            document.getElementById('btn-volume').addEventListener('click', () => {
+                isMuted = !isMuted;
+                const icon = document.getElementById('volume-icon');
+                if (isMuted) {
+                    icon.className = "fa-solid fa-volume-xmark text-red-500";
+                } else {
+                    icon.className = "fa-solid fa-volume-high text-slate-500 dark:text-slate-400";
+                }
+            });
+        }
+
+        function applyTheme(theme) {
+            const body = document.body;
+            // Clean up dark/light configs
+            body.classList.remove('dark', 'bg-slate-50', 'bg-slate-900', 'bg-[#0a0e17]', 'bg-[#151515]');
+            
+            if (theme === 'modern-dark') {
+                body.classList.add('dark', 'bg-slate-900');
+            } else if (theme === 'modern-light') {
+                body.classList.add('bg-slate-50');
+            } else if (theme === 'retro') {
+                body.classList.add('bg-slate-100');
+                // Retrolize styles dynamically
+            } else if (theme === 'cyberpunk') {
+                body.classList.add('dark', 'bg-[#0a0e17]');
+            }
+        }
+    </script>
+</body>
+</html>
