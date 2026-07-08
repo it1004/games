@@ -1,1 +1,1381 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Retro Hexa Arcade</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons for Arcade UI -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts (Inter & Orbitron for Arcade look) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #05030a;
+            color: #f3f4f6;
+            overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .arcade-font {
+            font-family: 'Orbitron', sans-serif;
+        }
+        .retro-mono {
+            font-family: 'Share Tech Mono', monospace;
+        }
+        /* Neon effects */
+        .neon-border-pink {
+            box-shadow: 0 0 10px rgba(236, 72, 153, 0.5), inset 0 0 5px rgba(236, 72, 153, 0.3);
+            border: 2px solid rgba(236, 72, 153, 0.8);
+        }
+        .neon-border-blue {
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5), inset 0 0 5px rgba(59, 130, 246, 0.3);
+            border: 2px solid rgba(59, 130, 246, 0.8);
+        }
+        .neon-text-green {
+            text-shadow: 0 0 8px rgba(34, 197, 94, 0.8);
+        }
+        .neon-text-pink {
+            text-shadow: 0 0 8px rgba(236, 72, 153, 0.8);
+        }
+        .neon-text-cyan {
+            text-shadow: 0 0 8px rgba(6, 182, 212, 0.8);
+        }
+        /* Controller Button active press animation */
+        .control-btn:active {
+            transform: scale(0.92);
+            filter: brightness(1.2);
+        }
+        /* Hide scrollbars on control pads */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+    </style>
+</head>
+<body class="flex flex-col items-center justify-between min-h-screen p-2 md:p-4 bg-radial-gradient">
 
+    <!-- Main Arcade Cabinet Container -->
+    <div class="w-full max-w-4xl flex flex-col items-center justify-center my-auto">
+        <!-- Arcade Header -->
+        <header class="w-full max-w-md md:max-w-4xl flex justify-between items-center px-4 py-2 mb-2 bg-[#0d091a]/80 border-b border-pink-500/30 rounded-t-xl shadow-lg shadow-pink-950/20">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-gem text-pink-500 animate-pulse text-xl"></i>
+                <h1 class="arcade-font font-black tracking-widest text-lg md:text-2xl text-transparent bg-clip-text bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-400">
+                    HEXA ARCADE
+                </h1>
+            </div>
+            <!-- Top Controls/Status -->
+            <div class="flex items-center space-x-3">
+                <button id="btn-sound" class="text-gray-400 hover:text-cyan-400 transition-colors p-2 text-sm md:text-base focus:outline-none" title="소리 토글">
+                    <i class="fa-solid fa-volume-high text-lg" id="sound-icon"></i>
+                </button>
+                <button id="btn-help" class="text-gray-400 hover:text-cyan-400 transition-colors p-2 text-sm md:text-base focus:outline-none" title="도움말">
+                    <i class="fa-solid fa-circle-question text-lg"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Body Wrapper: Holds screen, stats, side-bar -->
+        <div class="w-full flex flex-col md:flex-row items-center md:items-stretch justify-center gap-4 md:gap-6 bg-[#0c0817] p-3 md:p-6 rounded-b-xl border border-purple-950/40 shadow-2xl relative">
+            
+            <!-- Left Side Panel (Desktop only: Combo & Level Indicator) -->
+            <div class="hidden md:flex flex-col justify-between w-48 p-4 bg-[#140d24]/90 rounded-lg border border-purple-900/30 text-center">
+                <div>
+                    <h3 class="arcade-font text-xs tracking-wider text-purple-400 mb-2">SCORE BOARD</h3>
+                    <div class="retro-mono text-3xl font-bold text-yellow-400 neon-text-yellow mb-4" id="left-score">000000</div>
+                    
+                    <h3 class="arcade-font text-xs tracking-wider text-purple-400 mb-2">LINES CLEARED</h3>
+                    <div class="retro-mono text-2xl font-bold text-cyan-400" id="left-lines">0</div>
+                </div>
+
+                <!-- Live Jewel Palette Showcase -->
+                <div class="py-4 border-t border-purple-900/30">
+                    <h4 class="arcade-font text-[10px] text-gray-400 mb-2">JEWEL MATRIX</h4>
+                    <div class="grid grid-cols-3 gap-2 justify-items-center">
+                        <span class="inline-block w-4 h-4 rounded-full bg-red-500 shadow-lg shadow-red-500/50" title="Ruby"></span>
+                        <span class="inline-block w-4 h-4 rounded-full bg-green-500 shadow-lg shadow-green-500/50" title="Emerald"></span>
+                        <span class="inline-block w-4 h-4 rounded-full bg-blue-500 shadow-lg shadow-blue-500/50" title="Sapphire"></span>
+                        <span class="inline-block w-4 h-4 rounded-full bg-yellow-400 shadow-lg shadow-yellow-400/50" title="Topaz"></span>
+                        <span class="inline-block w-4 h-4 rounded-full bg-purple-500 shadow-lg shadow-purple-500/50" title="Amethyst"></span>
+                        <span class="inline-block w-4 h-4 rounded-full bg-cyan-400 shadow-lg shadow-cyan-400/50" title="Diamond"></span>
+                    </div>
+                </div>
+
+                <div class="text-xs text-gray-500 border-t border-purple-900/30 pt-3 leading-relaxed">
+                    <p class="font-bold text-pink-500 mb-1">COMBO BONUS</p>
+                    콤보 달성 시 추가 점수가 기하급수적으로 증가합니다!
+                </div>
+            </div>
+
+            <!-- Middle Column: Main Canvas Grid Screen -->
+            <div class="relative flex flex-col items-center">
+                <!-- Screen Bezel/Frame -->
+                <div class="p-2 md:p-3 bg-[#110c22] rounded-xl neon-border-pink relative shadow-xl overflow-hidden">
+                    <!-- Retro Scanlines Overlay -->
+                    <div class="pointer-events-none absolute inset-0 bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%)] bg-[length:100%_4px] z-10 opacity-40"></div>
+                    
+                    <canvas id="game-canvas" class="block bg-[#080512] rounded-lg transition-all" style="max-width: 100%; height: auto;"></canvas>
+
+                    <!-- Game Overlay States -->
+                    <!-- Start/Menu Overlay -->
+                    <div id="start-overlay" class="absolute inset-2 flex flex-col items-center justify-center bg-black/90 rounded-lg z-20 transition-all p-4 text-center">
+                        <div class="w-16 h-16 rounded-full flex items-center justify-center bg-pink-500/20 border border-pink-500 mb-4 animate-bounce">
+                            <i class="fa-solid fa-gem text-3xl text-pink-500"></i>
+                        </div>
+                        <h2 class="arcade-font text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-cyan-400 mb-1">HEXA ARCADE</h2>
+                        <p class="text-xs text-gray-400 mb-6 max-w-xs">보석들을 정렬하여 연속 매칭을 유도해 최고 점수를 기록하세요!</p>
+                        
+                        <!-- Difficulty Select -->
+                        <div class="flex flex-col space-y-1 mb-6 w-full max-w-xs">
+                            <label class="text-[10px] text-gray-500 arcade-font text-left pl-1">DIFFICULTY</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                <button onclick="setDifficulty('easy')" id="diff-easy" class="py-1 px-2 text-xs font-semibold rounded bg-purple-900/40 text-purple-200 border border-purple-800 transition-all active:scale-95 focus:outline-none">EASY</button>
+                                <button onclick="setDifficulty('normal')" id="diff-normal" class="py-1 px-2 text-xs font-semibold rounded bg-pink-500 text-white border border-pink-400 shadow-md shadow-pink-500/30 transition-all active:scale-95 focus:outline-none">NORMAL</button>
+                                <button onclick="setDifficulty('hard')" id="diff-hard" class="py-1 px-2 text-xs font-semibold rounded bg-purple-900/40 text-purple-200 border border-purple-800 transition-all active:scale-95 focus:outline-none">HARD</button>
+                            </div>
+                        </div>
+
+                        <button id="btn-start" class="arcade-font px-8 py-3 bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-400 hover:to-purple-500 text-white font-bold rounded-lg shadow-lg shadow-pink-500/40 hover:shadow-pink-400/50 transition-all transform active:scale-95 focus:outline-none">
+                            INSERT COIN / PLAY
+                        </button>
+                    </div>
+
+                    <!-- Pause Overlay -->
+                    <div id="pause-overlay" class="absolute inset-2 flex flex-col items-center justify-center bg-black/80 rounded-lg z-20 hidden transition-all">
+                        <i class="fa-solid fa-pause text-cyan-400 text-4xl mb-4 animate-pulse"></i>
+                        <h2 class="arcade-font text-2xl font-bold text-cyan-400 tracking-wider mb-6">GAME PAUSED</h2>
+                        <button id="btn-resume" class="arcade-font px-6 py-2 bg-cyan-500 hover:bg-cyan-400 text-black font-extrabold rounded-lg shadow-md shadow-cyan-400/30 transition-all transform active:scale-95 focus:outline-none">
+                            RESUME GAME
+                        </button>
+                    </div>
+
+                    <!-- Game Over Overlay -->
+                    <div id="gameover-overlay" class="absolute inset-2 flex flex-col items-center justify-center bg-black/90 rounded-lg z-20 hidden transition-all p-4 text-center">
+                        <i class="fa-solid fa-skull-crossbones text-red-500 text-4xl mb-3 animate-bounce"></i>
+                        <h2 class="arcade-font text-2xl font-black text-red-500 tracking-widest mb-1 neon-text-pink">GAME OVER</h2>
+                        <p class="text-xs text-gray-400 mb-4">보석 타워가 최상단에 도달했습니다.</p>
+                        
+                        <!-- Highscore Display -->
+                        <div class="bg-purple-950/40 border border-purple-900/60 rounded p-3 w-full max-w-xs mb-6">
+                            <div class="flex justify-between items-center text-xs text-gray-400 mb-1">
+                                <span>최종 점수:</span>
+                                <span class="font-bold text-yellow-400 text-base retro-mono" id="final-score">000000</span>
+                            </div>
+                            <div class="flex justify-between items-center text-xs text-gray-400">
+                                <span>최고 기록:</span>
+                                <span class="font-bold text-pink-400 text-sm retro-mono" id="final-best">000000</span>
+                            </div>
+                        </div>
+
+                        <button id="btn-restart" class="arcade-font px-6 py-3 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-400 hover:to-pink-400 text-white font-bold rounded-lg shadow-lg shadow-red-500/40 transition-all transform active:scale-95 focus:outline-none">
+                            PLAY AGAIN
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side Panel: Stats Info & Next Queue -->
+            <div class="w-full md:w-48 flex md:flex-col justify-between items-stretch gap-3 md:gap-4">
+                <!-- Next Block Preview -->
+                <div class="flex-1 md:flex-none bg-[#140d24]/90 p-3 md:p-4 rounded-lg border border-purple-900/30 flex flex-col items-center justify-center text-center">
+                    <h3 class="arcade-font text-[10px] md:text-xs tracking-wider text-purple-400 mb-2">NEXT PIECE</h3>
+                    <div class="p-2 bg-[#080512] rounded border border-purple-950/80">
+                        <canvas id="next-canvas" width="60" height="150" class="block"></canvas>
+                    </div>
+                </div>
+
+                <!-- Stats: Mobile and Desktop -->
+                <div class="flex-1 md:flex-none flex flex-col justify-center space-y-2 md:space-y-4 bg-[#140d24]/90 p-3 md:p-4 rounded-lg border border-purple-900/30">
+                    <div class="flex md:flex-col justify-between items-center md:items-start">
+                        <span class="arcade-font text-[10px] md:text-xs tracking-wider text-purple-400">SCORE</span>
+                        <span class="retro-mono text-xl md:text-3xl font-bold text-yellow-400 neon-text-yellow" id="stat-score">000000</span>
+                    </div>
+
+                    <div class="flex md:flex-col justify-between items-center md:items-start border-t border-purple-950/60 pt-2 md:pt-3">
+                        <span class="arcade-font text-[10px] md:text-xs tracking-wider text-purple-400">LEVEL</span>
+                        <span class="retro-mono text-lg md:text-2xl font-bold text-green-400 neon-text-green" id="stat-level">01</span>
+                    </div>
+
+                    <div class="flex md:flex-col justify-between items-center md:items-start border-t border-purple-950/60 pt-2 md:pt-3">
+                        <span class="arcade-font text-[10px] md:text-xs tracking-wider text-purple-400">HI-SCORE</span>
+                        <span class="retro-mono text-base md:text-lg font-bold text-pink-400" id="stat-best">000000</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile/Tactile Touch Controller Panel -->
+        <div class="w-full max-w-md md:max-w-4xl mt-4 p-3 bg-[#0d091a] border border-purple-900/40 rounded-xl shadow-xl flex flex-col space-y-3">
+            <div class="flex justify-between items-center px-1">
+                <span class="arcade-font text-[10px] text-purple-500 tracking-wider">TACTILE CONTROL PAD</span>
+                <span class="text-[10px] text-gray-500 retro-mono hidden sm:inline">KEYBOARD: ◀ ▶ (Move) / ▲ or Space (Cycle) / ▼ (Soft Drop) / X (Hard Drop)</span>
+            </div>
+
+            <!-- Multi-touch Layout Panel -->
+            <div class="grid grid-cols-12 gap-2">
+                <!-- Left D-PAD Side -->
+                <div class="col-span-7 grid grid-cols-3 gap-2">
+                    <button id="ctrl-left" class="control-btn col-span-1 h-14 md:h-16 flex items-center justify-center bg-gradient-to-b from-[#1c1435] to-[#120c24] border border-purple-800/40 rounded-xl shadow-md text-cyan-400 hover:text-cyan-300 focus:outline-none">
+                        <i class="fa-solid fa-caret-left text-2xl"></i>
+                    </button>
+                    <button id="ctrl-drop" class="control-btn col-span-1 h-14 md:h-16 flex flex-col items-center justify-center bg-gradient-to-b from-[#1c1435] to-[#120c24] border border-purple-800/40 rounded-xl shadow-md text-yellow-400 hover:text-yellow-300 focus:outline-none">
+                        <i class="fa-solid fa-caret-down text-xl"></i>
+                        <span class="text-[9px] uppercase font-bold text-gray-500 mt-0.5">Drop</span>
+                    </button>
+                    <button id="ctrl-right" class="control-btn col-span-1 h-14 md:h-16 flex items-center justify-center bg-gradient-to-b from-[#1c1435] to-[#120c24] border border-purple-800/40 rounded-xl shadow-md text-cyan-400 hover:text-cyan-300 focus:outline-none">
+                        <i class="fa-solid fa-caret-right text-2xl"></i>
+                    </button>
+                </div>
+
+                <!-- Right Action Side -->
+                <div class="col-span-5 grid grid-cols-2 gap-2">
+                    <!-- Cycle/Rotate Jewels order inside dropping column -->
+                    <button id="ctrl-cycle" class="control-btn col-span-1 h-14 md:h-16 flex flex-col items-center justify-center bg-gradient-to-b from-pink-600 to-pink-800 border border-pink-500/30 rounded-xl shadow-lg shadow-pink-950/50 text-white focus:outline-none">
+                        <i class="fa-solid fa-rotate text-lg"></i>
+                        <span class="text-[9px] uppercase font-bold text-pink-200 mt-0.5">Cycle</span>
+                    </button>
+                    <!-- Hard Drop straight to the bottom -->
+                    <button id="ctrl-hard" class="control-btn col-span-1 h-14 md:h-16 flex flex-col items-center justify-center bg-gradient-to-b from-purple-700 to-purple-900 border border-purple-600/30 rounded-xl shadow-lg shadow-purple-950/50 text-white focus:outline-none">
+                        <i class="fa-solid fa-angles-down text-lg"></i>
+                        <span class="text-[9px] uppercase font-bold text-purple-200 mt-0.5">Quick</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Instructions Overlay / Tutorial -->
+    <div id="tutorial-modal" class="fixed inset-0 flex items-center justify-center bg-black/90 z-50 p-4 hidden">
+        <div class="bg-[#120c24] border-2 border-cyan-500 rounded-xl max-w-md w-full p-6 text-sm relative">
+            <button id="btn-close-help" class="absolute top-4 right-4 text-gray-400 hover:text-white focus:outline-none">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+            <h3 class="arcade-font text-xl text-cyan-400 mb-4 border-b border-purple-900/60 pb-2"><i class="fa-solid fa-circle-info mr-2"></i>HEXA 플레이 가이드</h3>
+            
+            <div class="space-y-4 text-gray-300">
+                <div class="flex items-start space-x-3">
+                    <span class="flex-shrink-0 w-6 h-6 rounded-full bg-pink-500 flex items-center justify-center text-xs font-bold text-white">1</span>
+                    <p>화면 상단에서 <strong>3개 보석으로 구성된 수직 기둥</strong>이 낙하합니다.</p>
+                </div>
+                <div class="flex items-start space-x-3">
+                    <span class="flex-shrink-0 w-6 h-6 rounded-full bg-pink-500 flex items-center justify-center text-xs font-bold text-white">2</span>
+                    <p>낙하하는 동안 <strong>회전(Cycle/Space) 키</strong>를 눌러 세 개 보석의 배치 순서를 바꿀 수 있습니다.</p>
+                </div>
+                <div class="flex items-start space-x-3">
+                    <span class="flex-shrink-0 w-6 h-6 rounded-full bg-pink-500 flex items-center justify-center text-xs font-bold text-white">3</span>
+                    <p>동일한 보석을 <strong>가로, 세로, 혹은 대각선(양방향)</strong>으로 3개 이상 정렬시키면 폭발하며 점수를 획득합니다.</p>
+                </div>
+                <div class="flex items-start space-x-3">
+                    <span class="flex-shrink-0 w-6 h-6 rounded-full bg-pink-500 flex items-center justify-center text-xs font-bold text-white">4</span>
+                    <p>터진 보석 자리에 위에 있던 다른 보석들이 낙하하며 <strong>연쇄(콤보) 폭발</strong>이 일어나면 기하급수적으로 고득점을 획득합니다!</p>
+                </div>
+                <div class="flex items-start space-x-3">
+                    <span class="flex-shrink-0 w-6 h-6 rounded-full bg-pink-500 flex items-center justify-center text-xs font-bold text-white">5</span>
+                    <p class="text-yellow-400 font-semibold"><i class="fa-solid fa-wand-magic-sparkles mr-1"></i>마법 보석(블링블링):</p>
+                    <p class="text-xs">바닥에 맞닿는 아래 보석과 똑같은 보석들을 화면 전체에서 말끔히 지워주는 특수 기회 보석입니다.</p>
+                </div>
+            </div>
+
+            <!-- Key Table -->
+            <div class="mt-5 p-3 bg-black/40 rounded border border-purple-900/40 text-xs">
+                <h4 class="font-bold mb-2 text-cyan-400">PC 키보드 단축키</h4>
+                <div class="grid grid-cols-2 gap-y-1">
+                    <div><kbd class="px-1.5 py-0.5 bg-purple-900 text-white rounded">◀</kbd> <kbd class="px-1.5 py-0.5 bg-purple-900 text-white rounded">▶</kbd> : 좌우 이동</div>
+                    <div><kbd class="px-1.5 py-0.5 bg-purple-900 text-white rounded">▲</kbd> 또는 <kbd class="px-1.5 py-0.5 bg-purple-900 text-white rounded">Space</kbd> : 순서 회전</div>
+                    <div><kbd class="px-1.5 py-0.5 bg-purple-900 text-white rounded">▼</kbd> : 소프트 드롭</div>
+                    <div><kbd class="px-1.5 py-0.5 bg-purple-900 text-white rounded">X</kbd> : 퀵 하드 드롭</div>
+                    <div><kbd class="px-1.5 py-0.5 bg-purple-900 text-white rounded">P</kbd> : 게임 일시정지</div>
+                </div>
+            </div>
+
+            <button id="btn-close-help-confirm" class="w-full mt-5 py-2 bg-gradient-to-r from-cyan-500 to-blue-500 text-black font-extrabold rounded-lg hover:from-cyan-400 hover:to-blue-400 focus:outline-none">
+                이해했습니다!
+            </button>
+        </div>
+    </div>
+
+    <!-- Sound Notice Toast (Appears initially) -->
+    <div id="toast-audio" class="fixed bottom-4 left-4 right-4 md:left-auto md:w-80 bg-cyan-950/90 border border-cyan-500 text-cyan-200 p-3 rounded-lg z-50 text-xs flex justify-between items-center shadow-lg transition-transform translate-y-32">
+        <div class="flex items-center space-x-2">
+            <i class="fa-solid fa-volume-high animate-bounce text-base"></i>
+            <span>배경 음악 및 게임 효과음 연동 완료!</span>
+        </div>
+        <button onclick="document.getElementById('toast-audio').classList.add('translate-y-32')" class="text-cyan-400 font-bold hover:text-white px-2">확인</button>
+    </div>
+
+    <script>
+        /**
+         * Sound Effects Synthesizer using Web Audio API
+         */
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+
+            init() {
+                if (this.ctx) return;
+                try {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                    this.showAudioToast();
+                } catch (e) {
+                    console.error("Audio API init error: ", e);
+                }
+            }
+
+            showAudioToast() {
+                const toast = document.getElementById('toast-audio');
+                toast.classList.remove('translate-y-32');
+                setTimeout(() => {
+                    toast.classList.add('translate-y-32');
+                }, 4000);
+            }
+
+            playMove() {
+                if (this.muted || !this.ctx) return;
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(140, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(70, this.ctx.currentTime + 0.08);
+
+                gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.08);
+
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.08);
+            }
+
+            playRotate() {
+                if (this.muted || !this.ctx) return;
+                this.init();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(440, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(880, this.ctx.currentTime + 0.06);
+
+                gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.06);
+
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.06);
+            }
+
+            playMatch(comboCount = 1) {
+                if (this.muted || !this.ctx) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                
+                // Construct sparkle arpeggio
+                const scale = [261.63, 329.63, 392.00, 523.25, 659.25, 783.99, 1046.50]; // C Major scale
+                const step = 0.06;
+                const multiplier = Math.min(comboCount, 4);
+
+                scale.forEach((freq, i) => {
+                    if (i > 3 + multiplier) return;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.type = 'square';
+                    // Pitch increases with combo factor
+                    osc.frequency.setValueAtTime(freq * (1 + (comboCount - 1) * 0.1), now + i * step);
+                    
+                    gain.gain.setValueAtTime(0.08, now + i * step);
+                    gain.gain.exponentialRampToValueAtTime(0.005, now + i * step + 0.12);
+
+                    osc.start(now + i * step);
+                    osc.stop(now + i * step + 0.15);
+                });
+            }
+
+            playMagicClear() {
+                if (this.muted || !this.ctx) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                
+                // Retro sci-fi sweep up and down
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(100, now);
+                osc.frequency.exponentialRampToValueAtTime(1200, now + 0.2);
+                osc.frequency.exponentialRampToValueAtTime(200, now + 0.5);
+
+                gain.gain.setValueAtTime(0.12, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+
+                osc.start();
+                osc.stop(now + 0.5);
+            }
+
+            playLevelUp() {
+                if (this.muted || !this.ctx) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const notes = [523.25, 659.25, 783.99, 1046.50, 783.99, 1046.50]; // Victory notes
+                
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+                    
+                    gain.gain.setValueAtTime(0.12, now + idx * 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.005, now + idx * 0.1 + 0.25);
+
+                    osc.start(now + idx * 0.1);
+                    osc.stop(now + idx * 0.1 + 0.28);
+                });
+            }
+
+            playGameOver() {
+                if (this.muted || !this.ctx) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const notes = [392.00, 349.23, 311.13, 261.63, 196.00]; // Sad melody down
+
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.2);
+                    
+                    gain.gain.setValueAtTime(0.15, now + idx * 0.2);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.2 + 0.35);
+
+                    osc.start(now + idx * 0.2);
+                    osc.stop(now + idx * 0.2 + 0.4);
+                });
+            }
+        }
+
+        const sound = new SoundEngine();
+    </script>
+
+    <script>
+        // Core Grid Definition (Standard Column Specs)
+        const COLS = 6;
+        const ROWS = 14;
+        let CELL_SIZE = 32; // Rescaled dynamically on load/resize
+
+        // Canvas Setup
+        const canvas = document.getElementById('game-canvas');
+        const ctx = canvas.getContext('2d');
+        const nextCanvas = document.getElementById('next-canvas');
+        const nextCtx = nextCanvas.getContext('next-2d') || nextCanvas.getContext('2d');
+
+        // Color & Gem Custom Renderings
+        // Index mapping:
+        // 1: Red (Ruby), 2: Green (Emerald), 3: Blue (Sapphire), 4: Yellow (Topaz), 5: Purple (Amethyst), 6: Cyan (Diamond)
+        // 7: Magic Wildcard Gem (Flashing Multi-color)
+        const GEM_COLOURS = {
+            1: '#ef4444', // Red
+            2: '#22c55e', // Green
+            3: '#3b82f6', // Blue
+            4: '#eab308', // Yellow
+            5: '#a855f7', // Purple
+            6: '#06b6d4', // Cyan
+            7: '#ffffff'  // Wildcard Base
+        };
+
+        const GEM_GLOWS = {
+            1: 'rgba(239, 68, 68, 0.4)',
+            2: 'rgba(34, 197, 94, 0.4)',
+            3: 'rgba(59, 130, 246, 0.4)',
+            4: 'rgba(234, 179, 8, 0.4)',
+            5: 'rgba(168, 85, 247, 0.4)',
+            6: 'rgba(6, 182, 212, 0.4)',
+            7: 'rgba(255, 255, 255, 0.6)'
+        };
+
+        // Game Speed & Physics
+        let gameSpeed = 800; // ms per drop tick
+        let dropInterval = null;
+        let difficulty = 'normal';
+
+        // Highscore Localstorage key
+        const LOCAL_STORAGE_KEY = 'hexa_high_score_01';
+
+        // Game States Variables
+        let board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
+        let droppingCol = null; // Coordinates of falling group {x, y, gems: [top, mid, bottom]}
+        let nextCol = null;     // Preview group [top, mid, bottom]
+        
+        let score = 0;
+        let highscore = parseInt(localStorage.getItem(LOCAL_STORAGE_KEY)) || 0;
+        let level = 1;
+        let linesCleared = 0;
+        let combo = 0;
+
+        let gameState = 'START'; // START, PLAYING, MATCH_WAIT, CASCADE_WAIT, GAME_OVER, PAUSED
+        let animations = []; // Sparkle/Gem explosion particles container
+        let matchingCells = []; // Buffer to flash matches prior to erasure
+
+        // Match scan coordinates offsets (Horizontal, Vertical, Diagonals)
+        const MATCH_DIR_OFFSETS = [
+            [[0, 1], [0, 2]],      // Horiz right
+            [[1, 0], [2, 0]],      // Vert down
+            [[1, 1], [2, 2]],      // Diag right-down
+            [[1, -1], [2, -2]]     // Diag left-down
+        ];
+
+        // Particle class for juice-level matching feedback
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.vx = (Math.random() - 0.5) * 8;
+                this.vy = (Math.random() - 0.5) * 8;
+                this.alpha = 1;
+                this.size = Math.random() * 4 + 2;
+                this.life = 1.0;
+                this.decay = Math.random() * 0.04 + 0.02;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.vy += 0.15; // Gravity
+                this.alpha -= this.decay;
+                this.life -= this.decay;
+            }
+
+            draw(targetCtx) {
+                targetCtx.save();
+                targetCtx.globalAlpha = Math.max(0, this.alpha);
+                targetCtx.fillStyle = this.color;
+                targetCtx.shadowBlur = 8;
+                targetCtx.shadowColor = this.color;
+                targetCtx.beginPath();
+                targetCtx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                targetCtx.fill();
+                targetCtx.restore();
+            }
+        }
+
+        // Initialize display dimensions dynamically based on mobile constraints
+        function resizeScreen() {
+            const containerWidth = Math.min(window.innerWidth - 32, 340);
+            const containerHeight = window.innerHeight * 0.55;
+            
+            // Grid fits perfectly in typical retro layout
+            CELL_SIZE = Math.floor(Math.min(containerWidth / COLS, containerHeight / ROWS));
+            if (CELL_SIZE < 24) CELL_SIZE = 24;
+            
+            canvas.width = COLS * CELL_SIZE;
+            canvas.height = ROWS * CELL_SIZE;
+            
+            drawGame();
+        }
+
+        window.addEventListener('resize', resizeScreen);
+
+        /**
+         * Render individual custom facet cut jewel vectors onto canvas context
+         */
+        function drawGem(targetCtx, x, y, size, gemType, frameCount = 0) {
+            if (gemType === 0) return;
+
+            const half = size / 2;
+            const cx = x + half;
+            const cy = y + half;
+            const rad = size * 0.44;
+
+            targetCtx.save();
+            
+            // Set glowing neon shadow
+            targetCtx.shadowBlur = 8;
+            targetCtx.shadowColor = GEM_GLOWS[gemType] || 'white';
+
+            // Custom design vectors depending on jewel indexing
+            switch(gemType) {
+                case 1: // Ruby (Red Hexagon)
+                    targetCtx.fillStyle = '#b91c1c'; // Deep Red base
+                    targetCtx.beginPath();
+                    for (let i = 0; i < 6; i++) {
+                        const angle = (i * Math.PI) / 3;
+                        targetCtx.lineTo(cx + rad * Math.cos(angle), cy + rad * Math.sin(angle));
+                    }
+                    targetCtx.closePath();
+                    targetCtx.fill();
+                    
+                    // Highlights Facets
+                    targetCtx.strokeStyle = '#fca5a5';
+                    targetCtx.lineWidth = 1.2;
+                    targetCtx.beginPath();
+                    for (let i = 0; i < 6; i++) {
+                        const angle = (i * Math.PI) / 3;
+                        targetCtx.moveTo(cx + rad * 0.5 * Math.cos(angle), cy + rad * 0.5 * Math.sin(angle));
+                        targetCtx.lineTo(cx + rad * Math.cos(angle), cy + rad * Math.sin(angle));
+                    }
+                    targetCtx.closePath();
+                    targetCtx.stroke();
+                    break;
+
+                case 2: // Emerald (Green Octagon/Emerald-Cut)
+                    targetCtx.fillStyle = '#047857';
+                    targetCtx.beginPath();
+                    const pts = [
+                        [-0.3, -0.45], [0.3, -0.45], [0.45, -0.3], [0.45, 0.3],
+                        [0.3, 0.45], [-0.3, 0.45], [-0.45, 0.3], [-0.45, -0.3]
+                    ];
+                    pts.forEach(([px, py], idx) => {
+                        targetCtx[idx === 0 ? 'moveTo' : 'lineTo'](cx + px * size, cy + py * size);
+                    });
+                    targetCtx.closePath();
+                    targetCtx.fill();
+
+                    // Inner facet lines
+                    targetCtx.strokeStyle = '#86efac';
+                    targetCtx.lineWidth = 1.2;
+                    targetCtx.beginPath();
+                    pts.forEach(([px, py]) => {
+                        targetCtx.moveTo(cx + px * 0.5 * size, cy + py * 0.5 * size);
+                        targetCtx.lineTo(cx + px * size, cy + py * size);
+                    });
+                    targetCtx.stroke();
+                    break;
+
+                case 3: // Sapphire (Blue Diamond)
+                    targetCtx.fillStyle = '#1d4ed8';
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(cx, cy - rad); // Top
+                    targetCtx.lineTo(cx + rad, cy);  // Right
+                    targetCtx.lineTo(cx, cy + rad); // Bottom
+                    targetCtx.lineTo(cx - rad, cy);  // Left
+                    targetCtx.closePath();
+                    targetCtx.fill();
+
+                    // Facets
+                    targetCtx.strokeStyle = '#93c5fd';
+                    targetCtx.lineWidth = 1;
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(cx, cy - rad);
+                    targetCtx.lineTo(cx, cy + rad);
+                    targetCtx.moveTo(cx - rad, cy);
+                    targetCtx.lineTo(cx + rad, cy);
+                    targetCtx.stroke();
+                    break;
+
+                case 4: // Topaz (Yellow Triangle)
+                    targetCtx.fillStyle = '#b45309';
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(cx, cy - rad);
+                    targetCtx.lineTo(cx + rad * 1.1, cy + rad * 0.9);
+                    targetCtx.lineTo(cx - rad * 1.1, cy + rad * 0.9);
+                    targetCtx.closePath();
+                    targetCtx.fill();
+
+                    // Inner triangle lines
+                    targetCtx.strokeStyle = '#fde047';
+                    targetCtx.lineWidth = 1;
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(cx, cy - rad);
+                    targetCtx.lineTo(cx, cy + rad * 0.3);
+                    targetCtx.moveTo(cx + rad * 1.1, cy + rad * 0.9);
+                    targetCtx.lineTo(cx + rad * 0.3, cy + rad * 0.3);
+                    targetCtx.moveTo(cx - rad * 1.1, cy + rad * 0.9);
+                    targetCtx.lineTo(cx - rad * 0.3, cy + rad * 0.3);
+                    targetCtx.stroke();
+                    break;
+
+                case 5: // Amethyst (Purple Inverted Diamond Pentagram)
+                    targetCtx.fillStyle = '#6d28d9';
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(cx, cy + rad);
+                    targetCtx.lineTo(cx + rad, cy - rad * 0.4);
+                    targetCtx.lineTo(cx + rad * 0.5, cy - rad * 0.9);
+                    targetCtx.lineTo(cx - rad * 0.5, cy - rad * 0.9);
+                    targetCtx.lineTo(cx - rad, cy - rad * 0.4);
+                    targetCtx.closePath();
+                    targetCtx.fill();
+
+                    targetCtx.strokeStyle = '#d8b4fe';
+                    targetCtx.lineWidth = 1;
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(cx, cy + rad);
+                    targetCtx.lineTo(cx, cy - rad * 0.3);
+                    targetCtx.lineTo(cx - rad * 0.5, cy - rad * 0.9);
+                    targetCtx.stroke();
+                    break;
+
+                case 6: // Cyan Diamond (Classic kite shape)
+                    targetCtx.fillStyle = '#0e7490';
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(cx - rad * 0.8, cy - rad * 0.4);
+                    targetCtx.lineTo(cx + rad * 0.8, cy - rad * 0.4);
+                    targetCtx.lineTo(cx, cy + rad);
+                    targetCtx.closePath();
+                    targetCtx.fill();
+
+                    // Crown facets
+                    targetCtx.fillStyle = '#06b6d4';
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(cx - rad * 0.8, cy - rad * 0.4);
+                    targetCtx.lineTo(cx - rad * 0.5, cy - rad * 0.9);
+                    targetCtx.lineTo(cx + rad * 0.5, cy - rad * 0.9);
+                    targetCtx.lineTo(cx + rad * 0.8, cy - rad * 0.4);
+                    targetCtx.closePath();
+                    targetCtx.fill();
+
+                    targetCtx.strokeStyle = '#67e8f9';
+                    targetCtx.lineWidth = 1;
+                    targetCtx.beginPath();
+                    targetCtx.moveTo(cx - rad * 0.8, cy - rad * 0.4);
+                    targetCtx.lineTo(cx, cy + rad);
+                    targetCtx.lineTo(cx + rad * 0.8, cy - rad * 0.4);
+                    targetCtx.stroke();
+                    break;
+
+                case 7: // Magic Wildcard Blinking Multi-Color Gem
+                    // Alternate colors rapidly
+                    const hues = ['#ef4444', '#10b981', '#3b82f6', '#f59e0b', '#ec4899', '#06b6d4'];
+                    const currentHueIndex = Math.floor(frameCount / 4) % hues.length;
+                    
+                    targetCtx.fillStyle = hues[currentHueIndex];
+                    targetCtx.strokeStyle = '#ffffff';
+                    targetCtx.lineWidth = 1.5;
+
+                    // Draw sparkling star/circle
+                    targetCtx.beginPath();
+                    targetCtx.arc(cx, cy, rad, 0, Math.PI * 2);
+                    targetCtx.fill();
+                    targetCtx.stroke();
+
+                    // Inner magical core shape (Small star/sparkle)
+                    targetCtx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                    targetCtx.beginPath();
+                    for(let i = 0; i < 8; i++) {
+                        const angle = (i * Math.PI) / 4;
+                        const currRad = (i % 2 === 0) ? rad * 0.8 : rad * 0.3;
+                        targetCtx.lineTo(cx + currRad * Math.cos(angle), cy + currRad * Math.sin(angle));
+                    }
+                    targetCtx.closePath();
+                    targetCtx.fill();
+                    break;
+            }
+
+            targetCtx.restore();
+        }
+
+        /**
+         * Scan the complete grid to discover alignment of matching colored gems
+         */
+        function scanMatches() {
+            let matchesFound = false;
+            let matchMap = Array.from({length: ROWS}, () => Array(COLS).fill(false));
+
+            // Standard color-matching
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const gem = board[r][c];
+                    // Skip empty block, falling animations, and magic wildcard gem (scanned separately)
+                    if (gem === 0 || gem === 7) continue;
+
+                    // Check all directions
+                    MATCH_DIR_OFFSETS.forEach(offset => {
+                        const [[dr1, dc1], [dr2, dc2]] = offset;
+                        
+                        const r1 = r + dr1, c1 = c + dc1;
+                        const r2 = r + dr2, c2 = c + dc2;
+
+                        if (r1 >= 0 && r1 < ROWS && c1 >= 0 && c1 < COLS &&
+                            r2 >= 0 && r2 < ROWS && c2 >= 0 && c2 < COLS) {
+                            
+                            // 3-matching condition
+                            if (board[r1][c1] === gem && board[r2][c2] === gem) {
+                                matchMap[r][c] = true;
+                                matchMap[r1][c1] = true;
+                                matchMap[r2][c2] = true;
+                                matchesFound = true;
+                            }
+                        }
+                    });
+                }
+            }
+
+            // Convert map to matched cell coordinate index list
+            matchingCells = [];
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (matchMap[r][c]) {
+                        matchingCells.push({r, c, color: GEM_COLOURS[board[r][c]]});
+                    }
+                }
+            }
+
+            return matchesFound;
+        }
+
+        /**
+         * Handle gravity of gems above suspended spaces
+         */
+        function applyGravity() {
+            let moved = false;
+            for (let c = 0; c < COLS; c++) {
+                // Read columns bottom-up
+                for (let r = ROWS - 1; r > 0; r--) {
+                    if (board[r][c] === 0) {
+                        // Look upwards for nearest solid block
+                        let searchRow = r - 1;
+                        while (searchRow >= 0 && board[searchRow][c] === 0) {
+                            searchRow--;
+                        }
+                        if (searchRow >= 0) {
+                            board[r][c] = board[searchRow][c];
+                            board[searchRow][c] = 0;
+                            moved = true;
+                        }
+                    }
+                }
+            }
+            return moved;
+        }
+
+        /**
+         * Spawns a randomized 3-gem dropping column
+         */
+        function spawnGems() {
+            const colorsCount = difficulty === 'easy' ? 4 : (difficulty === 'normal' ? 5 : 6);
+            
+            // Randomly decide if next column is preset or generated
+            if (!nextCol) {
+                nextCol = generateRandomColumn(colorsCount);
+            }
+
+            droppingCol = {
+                x: 2, // Spawn in middle
+                y: -3, // Animate entry into top
+                gems: nextCol
+            };
+
+            // Prepare next up preview queue
+            nextCol = generateRandomColumn(colorsCount);
+            drawNextPreview();
+
+            // Collision immediately at spawn implies Game Over
+            if (board[0][2] !== 0 || board[1][2] !== 0 || board[2][2] !== 0) {
+                endGame();
+            }
+        }
+
+        function generateRandomColumn(colorsCount) {
+            // 5% chance of spawning the Magic Gem
+            const magicChance = Math.random() < 0.05;
+            const gems = [];
+            for (let i = 0; i < 3; i++) {
+                if (magicChance && i === 2) {
+                    gems.push(7); // Place magic gem at bottom position
+                } else {
+                    gems.push(Math.floor(Math.random() * colorsCount) + 1);
+                }
+            }
+            return gems;
+        }
+
+        /**
+         * Core game update loop tick
+         */
+        function gameTick() {
+            if (gameState !== 'PLAYING') return;
+
+            // Move the dropping column down
+            if (canMove(droppingCol.x, droppingCol.y + 1)) {
+                droppingCol.y++;
+                sound.playMove();
+            } else {
+                // Column has landed
+                lockDroppingGroup();
+            }
+            drawGame();
+        }
+
+        function lockDroppingGroup() {
+            gameState = 'MATCH_WAIT';
+            combo = 0;
+
+            const x = droppingCol.x;
+            const y = Math.round(droppingCol.y);
+
+            // Lay the 3 gems inside the stable grid matrix
+            for (let i = 0; i < 3; i++) {
+                const targetRow = y + i;
+                if (targetRow >= 0 && targetRow < ROWS) {
+                    board[targetRow][x] = droppingCol.gems[i];
+                }
+            }
+
+            droppingCol = null;
+
+            // Check if magic gem landed (it sits at bottom of column usually, let's find if a 7 is placed)
+            let magicTriggered = false;
+            for (let i = 0; i < 3; i++) {
+                const targetRow = y + i;
+                if (targetRow >= 0 && targetRow < ROWS && board[targetRow][x] === 7) {
+                    triggerMagicGem(targetRow, x);
+                    magicTriggered = true;
+                }
+            }
+
+            if (magicTriggered) {
+                // Apply post-magic physics
+                setTimeout(() => {
+                    sound.playMagicClear();
+                    applyGravity();
+                    checkMatchCascade();
+                }, 400);
+            } else {
+                // Standard match scanning cascade cycle
+                checkMatchCascade();
+            }
+        }
+
+        /**
+         * Magic Gem land action: Clear all matching elements of the gem instantly beneath it
+         */
+        function triggerMagicGem(row, col) {
+            // Find target jewel color directly beneath
+            let targetColor = 0;
+            if (row + 1 < ROWS && board[row + 1][col] > 0 && board[row + 1][col] < 7) {
+                targetColor = board[row + 1][col];
+            } else {
+                // Sits at very floor, pick a random present color on grid to shatter
+                const colorsOnBoard = [...new Set(board.flat())].filter(g => g > 0 && g < 7);
+                if (colorsOnBoard.length > 0) {
+                    targetColor = colorsOnBoard[Math.floor(Math.random() * colorsOnBoard.length)];
+                }
+            }
+
+            // Create blast sparkles in matching elements
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    if (board[r][c] === targetColor || (r === row && c === col)) {
+                        createShatterParticles(r, c, GEM_COLOURS[board[r][c] || 7]);
+                        board[r][c] = 0;
+                    }
+                }
+            }
+
+            score += 150;
+            updateScores();
+        }
+
+        /**
+         * Cascade matcher loop supporting multiple consecutive chain explosions
+         */
+        function checkMatchCascade() {
+            const hasMatches = scanMatches();
+
+            if (hasMatches) {
+                combo++;
+                // Flash matches first
+                drawGame();
+                sound.playMatch(combo);
+
+                // Wait for flash animation frame sequence
+                setTimeout(() => {
+                    // Explode jewels
+                    matchingCells.forEach(cell => {
+                        createShatterParticles(cell.r, cell.c, cell.color);
+                        board[cell.r][cell.c] = 0;
+                    });
+
+                    // Update parameters
+                    const scoreReward = matchingCells.length * 10 * combo;
+                    score += scoreReward;
+                    linesCleared += matchingCells.length;
+
+                    // Level Up progression every 30 cleared lines
+                    const oldLevel = level;
+                    level = Math.floor(linesCleared / 30) + 1;
+                    if (level > oldLevel) {
+                        sound.playLevelUp();
+                        gameSpeed = Math.max(100, 800 - (level - 1) * 80);
+                        clearInterval(dropInterval);
+                        dropInterval = setInterval(gameTick, gameSpeed);
+                    }
+
+                    updateScores();
+                    matchingCells = [];
+
+                    // Apply gravity & recursively sweep matches again
+                    applyGravity();
+                    drawGame();
+
+                    setTimeout(() => {
+                        checkMatchCascade();
+                    }, 250);
+
+                }, 200);
+
+            } else {
+                // Loop ends, spawn next falling piece
+                gameState = 'PLAYING';
+                spawnGems();
+                drawGame();
+            }
+        }
+
+        function canMove(tx, ty) {
+            // Check if column can transition to proposed destination coords
+            for (let i = 0; i < 3; i++) {
+                const targetY = ty + i;
+                if (targetY < 0) continue; // Allow spawning above visible ceiling
+
+                if (targetY >= ROWS || tx < 0 || tx >= COLS) {
+                    return false;
+                }
+                if (board[targetY][tx] !== 0) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function createShatterParticles(row, col, color) {
+            const startX = col * CELL_SIZE + CELL_SIZE / 2;
+            const startY = row * CELL_SIZE + CELL_SIZE / 2;
+            for (let i = 0; i < 15; i++) {
+                animations.push(new Particle(startX, startY, color));
+            }
+        }
+
+        /**
+         * Cycles the order of the 3 jewels in the falling column (bottom -> top)
+         */
+        function cycleGems() {
+            if (!droppingCol || gameState !== 'PLAYING') return;
+            sound.playRotate();
+            
+            // Shift gems elements: Index [0, 1, 2] -> [2, 0, 1]
+            const gems = droppingCol.gems;
+            const last = gems[2];
+            gems[2] = gems[1];
+            gems[1] = gems[0];
+            gems[0] = last;
+
+            drawGame();
+        }
+
+        function moveLeft() {
+            if (!droppingCol || gameState !== 'PLAYING') return;
+            if (canMove(droppingCol.x - 1, droppingCol.y)) {
+                droppingCol.x--;
+                sound.playMove();
+                drawGame();
+            }
+        }
+
+        function moveRight() {
+            if (!droppingCol || gameState !== 'PLAYING') return;
+            if (canMove(droppingCol.x + 1, droppingCol.y)) {
+                droppingCol.x++;
+                sound.playMove();
+                drawGame();
+            }
+        }
+
+        function softDrop() {
+            if (!droppingCol || gameState !== 'PLAYING') return;
+            if (canMove(droppingCol.x, droppingCol.y + 1)) {
+                droppingCol.y++;
+                score += 1;
+                updateScores();
+                drawGame();
+            }
+        }
+
+        function hardDrop() {
+            if (!droppingCol || gameState !== 'PLAYING') return;
+            let dropsCount = 0;
+            while (canMove(droppingCol.x, droppingCol.y + 1)) {
+                droppingCol.y++;
+                dropsCount++;
+            }
+            score += dropsCount * 2;
+            updateScores();
+            sound.playMove();
+            lockDroppingGroup();
+        }
+
+        // Global animation frame count to support flashing/sparkle cycles
+        let globalFrameCount = 0;
+
+        function drawGame() {
+            globalFrameCount++;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Background Grids
+            ctx.strokeStyle = '#1e1b4b';
+            ctx.lineWidth = 0.5;
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    ctx.strokeRect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                }
+            }
+
+            // Draw Stable Stacked Grid Gems
+            for (let r = 0; r < ROWS; r++) {
+                for (let c = 0; c < COLS; c++) {
+                    const gemType = board[r][c];
+                    if (gemType > 0) {
+                        // Flashing match overlay effect
+                        const isMatching = matchingCells.some(cell => cell.r === r && cell.c === c);
+                        if (isMatching && Math.floor(globalFrameCount / 3) % 2 === 0) {
+                            // Flash pure white shine
+                            ctx.fillStyle = '#ffffff';
+                            ctx.fillRect(c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, CELL_SIZE);
+                        } else {
+                            drawGem(ctx, c * CELL_SIZE, r * CELL_SIZE, CELL_SIZE, gemType, globalFrameCount);
+                        }
+                    }
+                }
+            }
+
+            // Draw Falling Drop Column Group
+            if (droppingCol && gameState === 'PLAYING') {
+                for (let i = 0; i < 3; i++) {
+                    const renderY = (droppingCol.y + i) * CELL_SIZE;
+                    const renderX = droppingCol.x * CELL_SIZE;
+                    // Only draw if within bounds
+                    if (renderY >= 0) {
+                        drawGem(ctx, renderX, renderY, CELL_SIZE, droppingCol.gems[i], globalFrameCount);
+                    }
+                }
+            }
+
+            // Draw Particles & Explosions
+            animations = animations.filter(p => p.life > 0);
+            animations.forEach(p => {
+                p.update();
+                p.draw(ctx);
+            });
+        }
+
+        /**
+         * Render next queued block in sidebar canvas
+         */
+        function drawNextPreview() {
+            nextCtx.clearRect(0, 0, nextCanvas.width, nextCanvas.height);
+            
+            // Layout Next Column Vertically in Box
+            if (nextCol) {
+                const margin = 10;
+                const size = 35;
+                for (let i = 0; i < 3; i++) {
+                    drawGem(nextCtx, (nextCanvas.width - size) / 2, margin + i * (size + 5), size, nextCol[i], globalFrameCount);
+                }
+            }
+        }
+
+        // UI Action States Trigger Updates
+        function updateScores() {
+            // Pad scores with leading zeros for retro arcade retro-mono looks
+            const padScore = String(score).padStart(6, '0');
+            const padBest = String(highscore).padStart(6, '0');
+
+            document.getElementById('stat-score').innerText = padScore;
+            document.getElementById('left-score').innerText = padScore;
+            document.getElementById('stat-best').innerText = padBest;
+            document.getElementById('left-lines').innerText = linesCleared;
+            document.getElementById('stat-level').innerText = String(level).padStart(2, '0');
+        }
+
+        function setDifficulty(diff) {
+            difficulty = diff;
+            // Deselect all
+            ['easy', 'normal', 'hard'].forEach(d => {
+                const btn = document.getElementById(`diff-${d}`);
+                btn.className = "py-1 px-2 text-xs font-semibold rounded bg-purple-900/40 text-purple-200 border border-purple-800 transition-all active:scale-95";
+            });
+            // Select active
+            const activeBtn = document.getElementById(`diff-${diff}`);
+            activeBtn.className = "py-1 px-2 text-xs font-semibold rounded bg-pink-500 text-white border border-pink-400 shadow-md shadow-pink-500/30 transition-all active:scale-95";
+        }
+
+        function togglePause() {
+            if (gameState === 'PLAYING') {
+                gameState = 'PAUSED';
+                clearInterval(dropInterval);
+                document.getElementById('pause-overlay').classList.remove('hidden');
+            } else if (gameState === 'PAUSED') {
+                gameState = 'PLAYING';
+                dropInterval = setInterval(gameTick, gameSpeed);
+                document.getElementById('pause-overlay').classList.add('hidden');
+            }
+        }
+
+        function startGame() {
+            sound.init();
+            
+            // Reset Matrices
+            board = Array.from({length: ROWS}, () => Array(COLS).fill(0));
+            score = 0;
+            level = 1;
+            linesCleared = 0;
+            combo = 0;
+            droppingCol = null;
+            nextCol = null;
+            animations = [];
+            matchingCells = [];
+            
+            gameSpeed = difficulty === 'easy' ? 950 : (difficulty === 'normal' ? 800 : 600);
+
+            // Hide overlays
+            document.getElementById('start-overlay').classList.add('hidden');
+            document.getElementById('gameover-overlay').classList.add('hidden');
+            document.getElementById('pause-overlay').classList.add('hidden');
+
+            updateScores();
+            spawnGems();
+            
+            gameState = 'PLAYING';
+
+            clearInterval(dropInterval);
+            dropInterval = setInterval(gameTick, gameSpeed);
+        }
+
+        function endGame() {
+            gameState = 'GAME_OVER';
+            clearInterval(dropInterval);
+            sound.playGameOver();
+
+            // Store high scores
+            if (score > highscore) {
+                highscore = score;
+                localStorage.setItem(LOCAL_STORAGE_KEY, highscore);
+            }
+
+            // Update stats
+            document.getElementById('final-score').innerText = String(score).padStart(6, '0');
+            document.getElementById('final-best').innerText = String(highscore).padStart(6, '0');
+            document.getElementById('gameover-overlay').classList.remove('hidden');
+        }
+
+        // Handle controls inputs (Keyboard map)
+        window.addEventListener('keydown', e => {
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(e.key)) {
+                e.preventDefault(); // Lock browser scrolling
+            }
+
+            if (gameState !== 'PLAYING') {
+                if (e.key === 'Enter') {
+                    if (gameState === 'START' || gameState === 'GAME_OVER') startGame();
+                }
+                return;
+            }
+
+            switch(e.key) {
+                case 'ArrowLeft':
+                    moveLeft();
+                    break;
+                case 'ArrowRight':
+                    moveRight();
+                    break;
+                case 'ArrowUp':
+                case ' ':
+                    cycleGems();
+                    break;
+                case 'ArrowDown':
+                    softDrop();
+                    break;
+                case 'x':
+                case 'X':
+                    hardDrop();
+                    break;
+                case 'p':
+                case 'P':
+                    togglePause();
+                    break;
+            }
+        });
+
+        // Touch Controllers Trigger Events
+        const bindControl = (elementId, action) => {
+            const btn = document.getElementById(elementId);
+            const triggerAction = (e) => {
+                e.preventDefault();
+                action();
+                // Play lightweight haptic vibration if supported
+                if (navigator.vibrate) navigator.vibrate(20);
+            };
+            btn.addEventListener('touchstart', triggerAction, { passive: false });
+            btn.addEventListener('mousedown', triggerAction);
+        };
+
+        bindControl('ctrl-left', moveLeft);
+        bindControl('ctrl-right', moveRight);
+        bindControl('ctrl-cycle', cycleGems);
+        bindControl('ctrl-drop', softDrop);
+        bindControl('ctrl-hard', hardDrop);
+
+        // Sound volume controller toggler
+        document.getElementById('btn-sound').addEventListener('click', () => {
+            sound.muted = !sound.muted;
+            const icon = document.getElementById('sound-icon');
+            if (sound.muted) {
+                icon.className = "fa-solid fa-volume-xmark text-lg text-red-500";
+            } else {
+                icon.className = "fa-solid fa-volume-high text-lg text-cyan-400";
+                sound.init();
+            }
+        });
+
+        // Modals / Guides Hooks
+        const modal = document.getElementById('tutorial-modal');
+        document.getElementById('btn-help').addEventListener('click', () => {
+            modal.classList.remove('hidden');
+        });
+        document.getElementById('btn-close-help').addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+        document.getElementById('btn-close-help-confirm').addEventListener('click', () => {
+            modal.classList.add('hidden');
+        });
+
+        // Static Page Hooks
+        document.getElementById('btn-start').addEventListener('click', startGame);
+        document.getElementById('btn-resume').addEventListener('click', togglePause);
+        document.getElementById('btn-restart').addEventListener('click', startGame);
+
+        // Persistent Animation Rendering Frame
+        function animationLoop() {
+            drawGame();
+            drawNextPreview();
+            requestAnimationFrame(animationLoop);
+        }
+
+        // Initialize window context on load
+        window.onload = function() {
+            resizeScreen();
+            updateScores();
+            animationLoop();
+        };
+    </script>
+</body>
+</html>
