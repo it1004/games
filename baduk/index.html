@@ -1,1 +1,1158 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>천하제일 바둑 (Go Master)</title>
+    <!-- Tailwind CSS 탑재 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 아이콘 탑재 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter & Nanum Gothic -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Nanum+Gothic:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Nanum Gothic', 'Inter', sans-serif;
+            background-color: #121214;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        /* 우드톤 보드 백그라운드 디테일 */
+        .wood-board {
+            background: radial-gradient(circle, #f3d29a 0%, #dca862 100%);
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.3), 0 10px 25px rgba(0,0,0,0.5);
+        }
+        /* 스크롤바 커스텀 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e1e24;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body class="text-gray-100 min-h-screen flex flex-col justify-between overflow-x-hidden">
 
+    <!-- 헤더 바 -->
+    <header class="bg-gray-900 border-b border-gray-800 px-4 py-3 shadow-md">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <div class="bg-yellow-600 text-gray-950 p-2 rounded-lg font-black text-xl shadow-lg">
+                    <i class="fa-solid fa-circle-dot"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg md:text-xl font-extrabold tracking-wider text-yellow-500">천하제일 바둑</h1>
+                    <p class="text-xs text-gray-400">Premium Go Game Engine</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="toggleRuleModal(true)" class="bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs md:text-sm px-3 py-1.5 rounded-lg border border-gray-700 transition flex items-center gap-1.5">
+                    <i class="fa-solid fa-circle-question text-yellow-500"></i> 규칙 도움말
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 메인 컨텐츠 영역 -->
+    <main class="flex-grow max-w-6xl w-full mx-auto p-3 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        
+        <!-- 왼쪽: 바둑판 영역 (8단 점유) -->
+        <section class="lg:col-span-7 xl:col-span-8 flex flex-col items-center">
+            <!-- 상태 배너 -->
+            <div class="w-full max-w-[600px] mb-3 bg-gray-900/80 border border-gray-800 rounded-xl p-3 flex justify-between items-center shadow-lg">
+                <div class="flex items-center space-x-3">
+                    <div id="turn-badge-black" class="flex items-center space-x-2 bg-black/50 border border-gray-700 px-3 py-1.5 rounded-lg">
+                        <span class="w-3.5 h-3.5 rounded-full bg-stone-900 ring-2 ring-stone-500 inline-block"></span>
+                        <span class="font-bold text-sm text-stone-200">흑 (Player)</span>
+                    </div>
+                    <div class="text-gray-500 font-bold">VS</div>
+                    <div id="turn-badge-white" class="flex items-center space-x-2 bg-gray-800/40 border border-transparent px-3 py-1.5 rounded-lg">
+                        <span class="w-3.5 h-3.5 rounded-full bg-stone-100 ring-2 ring-stone-300 inline-block"></span>
+                        <span id="white-label" class="font-bold text-sm text-stone-400">백 (AI)</span>
+                    </div>
+                </div>
+                
+                <div id="status-message" class="text-sm text-yellow-400 font-semibold px-2 animate-pulse">
+                    흑의 차례입니다
+                </div>
+            </div>
+
+            <!-- 바둑판 컨테이너 -->
+            <div class="relative w-full max-w-[600px] aspect-square wood-board rounded-2xl overflow-hidden touch-none" id="board-container">
+                <canvas id="goCanvas" class="absolute top-0 left-0 w-full h-full cursor-crosshair"></canvas>
+            </div>
+            
+            <!-- 모바일/터치 안내 메시지 -->
+            <p class="text-xs text-gray-500 mt-2 text-center lg:hidden">
+                <i class="fa-solid fa-fingerprint text-yellow-600 mr-1 animate-pulse"></i> 
+                터치 후 손가락을 밀어 위치를 바꾼 뒤, 손을 떼면 돌을 놓을 수 있습니다.
+            </p>
+        </section>
+
+        <!-- 오른쪽: 제어판 및 통계 (4단 점유) -->
+        <section class="lg:col-span-5 xl:col-span-4 space-y-4 w-full">
+            
+            <!-- 대국 상태 및 사석(사로잡은 돌) 스코어 -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 shadow-lg space-y-4">
+                <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider border-b border-gray-800 pb-2 flex justify-between items-center">
+                    <span>대국 정보 및 기록</span>
+                    <span id="current-board-size-badge" class="text-xs bg-yellow-500/10 text-yellow-500 border border-yellow-500/30 px-2 py-0.5 rounded">19 x 19</span>
+                </h3>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <!-- 흑 통계 -->
+                    <div class="bg-gray-950 p-3 rounded-lg border border-gray-800 flex flex-col justify-between">
+                        <div class="flex justify-between items-center text-xs text-gray-400 mb-1">
+                            <span>흑 (선수)</span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-stone-900 ring-1 ring-stone-500"></span>
+                        </div>
+                        <div class="text-2xl font-black text-stone-100" id="black-captures">0</div>
+                        <div class="text-[10px] text-gray-500 mt-1">따낸 백돌 개수</div>
+                    </div>
+
+                    <!-- 백 통계 -->
+                    <div class="bg-gray-950 p-3 rounded-lg border border-gray-800 flex flex-col justify-between">
+                        <div class="flex justify-between items-center text-xs text-gray-400 mb-1">
+                            <span>백 (대국자)</span>
+                            <span class="w-2.5 h-2.5 rounded-full bg-stone-100 ring-1 ring-stone-300"></span>
+                        </div>
+                        <div class="text-2xl font-black text-stone-100" id="white-captures">0</div>
+                        <div class="text-[10px] text-gray-500 mt-1">따낸 흑돌 개수 (+덤 6.5)</div>
+                    </div>
+                </div>
+
+                <!-- 실시간 형세 분석기 (집 계산기) -->
+                <div class="bg-gray-950 p-3 rounded-lg border border-gray-800">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs font-bold text-yellow-500 flex items-center gap-1">
+                            <i class="fa-solid fa-calculator"></i> 실시간 집 계산기
+                        </span>
+                        <span class="text-[10px] text-gray-500">(계가 추정값)</span>
+                    </div>
+                    <div class="space-y-1.5 text-xs">
+                        <div class="flex justify-between text-stone-300">
+                            <span>흑 영역 집:</span>
+                            <span id="calc-black-total" class="font-bold">0집</span>
+                        </div>
+                        <div class="flex justify-between text-stone-300">
+                            <span>백 영역 집 (덤 포함):</span>
+                            <span id="calc-white-total" class="font-bold">6.5집</span>
+                        </div>
+                        <div class="border-t border-gray-800/80 my-1 pt-1 flex justify-between text-yellow-400 font-bold">
+                            <span>우세 분석:</span>
+                            <span id="calc-advantage">백 우세 (+6.5)</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 컨트롤 패널 -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 shadow-lg space-y-4">
+                <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider border-b border-gray-800 pb-2">
+                    대국 설정 & 조작
+                </h3>
+
+                <!-- 설정 옵션 -->
+                <div class="space-y-3">
+                    <!-- 바둑판 크기 -->
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1.5">바둑판 규격 선택</label>
+                        <div class="grid grid-cols-3 gap-2">
+                            <button onclick="changeBoardSize(9)" id="btn-size-9" class="py-1.5 px-2 bg-gray-800 hover:bg-gray-700 text-xs rounded-lg border border-gray-700 text-gray-300 transition font-bold">9 x 9</button>
+                            <button onclick="changeBoardSize(13)" id="btn-size-13" class="py-1.5 px-2 bg-gray-800 hover:bg-gray-700 text-xs rounded-lg border border-gray-700 text-gray-300 transition font-bold">13 x 13</button>
+                            <button onclick="changeBoardSize(19)" id="btn-size-19" class="py-1.5 px-2 bg-yellow-600/20 hover:bg-yellow-600/30 text-xs rounded-lg border border-yellow-500/50 text-yellow-400 transition font-bold">19 x 19</button>
+                        </div>
+                    </div>
+
+                    <!-- 대국 모드 (AI 대결 여부) -->
+                    <div>
+                        <label class="block text-xs text-gray-400 mb-1.5">대국 상대 설정</label>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="setOpponent('ai')" id="btn-op-ai" class="py-1.5 px-2 bg-yellow-600/20 hover:bg-yellow-600/30 text-xs rounded-lg border border-yellow-500/50 text-yellow-400 transition font-bold flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-robot"></i> 인공지능 (AI)
+                            </button>
+                            <button onclick="setOpponent('local')" id="btn-op-local" class="py-1.5 px-2 bg-gray-800 hover:bg-gray-700 text-xs rounded-lg border border-gray-700 text-gray-300 transition font-bold flex items-center justify-center gap-1.5">
+                                <i class="fa-solid fa-users"></i> 2인 대국 (로컬)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 인게임 액션 버튼들 -->
+                <div class="pt-2 border-t border-gray-800 grid grid-cols-2 gap-2">
+                    <button onclick="undoMove()" class="bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs py-2.5 px-3 rounded-lg border border-gray-700 transition flex items-center justify-center gap-1.5 font-bold">
+                        <i class="fa-solid fa-arrow-rotate-left text-blue-400"></i> 무르기
+                    </button>
+                    <button onclick="passTurn()" class="bg-gray-800 hover:bg-gray-700 text-gray-200 text-xs py-2.5 px-3 rounded-lg border border-gray-700 transition flex items-center justify-center gap-1.5 font-bold">
+                        <i class="fa-solid fa-forward-step text-green-400"></i> 한 수 쉬기
+                    </button>
+                    <button onclick="resignGame()" class="bg-gray-800 hover:bg-red-950 text-gray-200 hover:text-red-300 text-xs py-2.5 px-3 rounded-lg border border-gray-700 hover:border-red-900 transition flex items-center justify-center gap-1.5 font-bold">
+                        <i class="fa-solid fa-flag text-red-500"></i> 기권패
+                    </button>
+                    <button onclick="resetGame()" class="bg-red-900/30 hover:bg-red-900/50 text-red-400 text-xs py-2.5 px-3 rounded-lg border border-red-900/50 transition flex items-center justify-center gap-1.5 font-bold">
+                        <i class="fa-solid fa-rotate-right"></i> 판 초기화
+                    </button>
+                </div>
+            </div>
+
+            <!-- 대국 기록 기보 로그 -->
+            <div class="bg-gray-900 border border-gray-800 rounded-xl p-4 shadow-lg space-y-2">
+                <h3 class="text-sm font-bold text-gray-400 uppercase tracking-wider border-b border-gray-800 pb-2">
+                    대국 기록 (기보)
+                </h3>
+                <div id="game-logs" class="h-32 overflow-y-auto text-xs space-y-1.5 pr-2 text-gray-400 bg-gray-950 p-2.5 rounded-lg border border-gray-900">
+                    <div class="text-yellow-500 font-semibold flex items-center gap-1">
+                        <i class="fa-solid fa-circle-info"></i> 대국이 시작되었습니다. (덤 6.5)
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- 모달: 결과 알림 -->
+    <div id="result-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden p-4">
+        <div class="bg-gray-900 border border-gray-700 max-w-sm w-full rounded-2xl p-6 text-center shadow-2xl relative transform transition-all">
+            <div class="w-16 h-16 bg-yellow-500/10 text-yellow-500 border border-yellow-500/30 rounded-full flex items-center justify-center mx-auto mb-4 text-2xl">
+                <i class="fa-solid fa-trophy"></i>
+            </div>
+            <h2 id="result-title" class="text-xl font-black text-yellow-500 mb-1">대국 종료!</h2>
+            <p id="result-subtitle" class="text-xs text-gray-400 mb-4">최종 집 계산 결과</p>
+            
+            <div class="bg-gray-950 rounded-xl p-4 mb-5 border border-gray-800 space-y-2 text-sm text-left">
+                <div class="flex justify-between">
+                    <span class="text-stone-400">흑 집 누적:</span>
+                    <span id="modal-black-score" class="font-bold text-stone-100">0집</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-stone-400">백 집 누적 (덤 6.5 포함):</span>
+                    <span id="modal-white-score" class="font-bold text-stone-100">6.5집</span>
+                </div>
+                <div class="border-t border-gray-800 pt-2 flex justify-between font-extrabold text-base text-yellow-400">
+                    <span>최종 결과:</span>
+                    <span id="modal-winner-text">백 승리 (+6.5)</span>
+                </div>
+            </div>
+
+            <button onclick="closeResultModal()" class="w-full bg-yellow-600 hover:bg-yellow-500 text-gray-950 font-bold py-2.5 rounded-lg shadow-lg transition text-sm">
+                확인 및 새 대국 시작
+            </button>
+        </div>
+    </div>
+
+    <!-- 모달: 도움말 -->
+    <div id="rule-modal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden p-4">
+        <div class="bg-gray-900 border border-gray-700 max-w-md w-full rounded-2xl p-6 text-left shadow-2xl relative max-h-[85vh] flex flex-col justify-between">
+            <div class="overflow-y-auto pr-2 space-y-4">
+                <div class="flex justify-between items-center border-b border-gray-800 pb-3">
+                    <h2 class="text-lg font-black text-yellow-500 flex items-center gap-1.5">
+                        <i class="fa-solid fa-circle-question"></i> 바둑 게임 규칙 및 이용방법
+                    </h2>
+                    <button onclick="toggleRuleModal(false)" class="text-gray-400 hover:text-white">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-3 text-xs leading-relaxed text-gray-300">
+                    <p><strong class="text-yellow-500">1. 기본 목적:</strong> 바둑은 더 많은 빈공간(집)을 포위하여 차지하는 플레이어가 이기는 게임입니다. 흑이 먼저 둡니다.</p>
+                    <p><strong class="text-yellow-500">2. 활로와 따내기:</strong> 돌은 바둑판 선들의 교차점에 놓입니다. 돌의 가로세로로 이어진 비어있는 선의 교차점을 **'활로(Liberties)'**라고 합니다. 활로가 완전히 막히면 돌은 사로잡혀(따내기) 판에서 제외됩니다.</p>
+                    <p><strong class="text-yellow-500">3. 착수 금지 (자충수):</strong> 돌을 두자마자 스스로 활로가 0이 되어 죽는 곳에는 둘 수 없습니다. 다만, 돌을 놓음과 동시에 상대방의 돌을 따낼 수 있는 경우는 예외로 착수가 허용됩니다.</p>
+                    <p><strong class="text-yellow-500">4. 패(Ko) 룰:</strong> 돌을 한 개 따내자마자 상대방이 곧바로 다시 되따내어 동일한 판 형태를 반복하는 것을 방지하기 위해, 한 차례 다른 곳에 둔 뒤에만 되따낼 수 있습니다.</p>
+                    <p><strong class="text-yellow-500">5. 덤(Komi):</strong> 먼저 두는 흑의 유리함을 상쇄하기 위해 백에게 **6.5집**의 보너스 점수를 부여합니다.</p>
+                    <p><strong class="text-yellow-500">6. 모바일 조작 가이드:</strong> 모바일 기기에서는 바둑판을 누르고 손가락을 이동하면 돌의 미리보기가 드래그되어 따라옵니다. 놓고 싶은 정밀한 교차점에 맞춘 후 **손가락을 떼면 착수가 완료**됩니다.</p>
+                </div>
+            </div>
+            
+            <button onclick="toggleRuleModal(false)" class="mt-5 w-full bg-gray-800 hover:bg-gray-700 text-gray-200 font-bold py-2.5 rounded-lg border border-gray-700 transition text-xs">
+                닫기
+            </button>
+        </div>
+    </div>
+
+    <!-- 푸터 바 -->
+    <footer class="bg-gray-950 border-t border-gray-900 py-3 text-center text-xs text-gray-500">
+        <div>&copy; 2026 천하제일 바둑. HTML5 Web Engine. All rights reserved.</div>
+    </footer>
+
+    <script>
+        // --- 전역 상태 변수 ---
+        let boardSize = 19; // 9, 13, 19
+        let board = [];     // 0: 빈곳, 1: 흑, 2: 백
+        let turn = 1;       // 1: 흑, 2: 백
+        let opponentType = 'ai'; // 'ai' 또는 'local'
+        let captures = { 1: 0, 2: 0 }; // 1: 흑이 백을 따낸 수, 2: 백이 흑을 따낸 수
+        let history = [];   // 무르기를 위한 히스토리 백업
+        let koIntersection = null; // 패(Ko) 룰에 의해 다음 턴 착수 금지된 {x, y} 좌표
+        let lastMove = null; // 마지막으로 둔 {x, y}
+        let hoverCell = null; // 마우스/드래그 시 현재 조준 중인 {x, y}
+
+        // 터치 제어용 변수
+        let isTouching = false;
+
+        // 캔버스 엘리먼트 정의
+        const canvas = document.getElementById('goCanvas');
+        const ctx = canvas.getContext('2d');
+        const container = document.getElementById('board-container');
+
+        // 사운드 합성을 위한 Web Audio API 콘텍스트
+        let audioCtx = null;
+
+        // --- 사운드 효과음 함수 ---
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playStoneSound() {
+            try {
+                initAudio();
+                if (!audioCtx) return;
+                
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                // 실제 나무 바둑판에 돌을 딱! 하고 내리치는 느낌의 주파수 스윕 설계
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(280, audioCtx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(70, audioCtx.currentTime + 0.1);
+                
+                gain.gain.setValueAtTime(0.4, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.15);
+            } catch (e) {
+                console.log("오디오 재생 실패:", e);
+            }
+        }
+
+        function playCaptureSound() {
+            try {
+                initAudio();
+                if (!audioCtx) return;
+                
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(450, audioCtx.currentTime);
+                osc.frequency.setValueAtTime(600, audioCtx.currentTime + 0.05);
+                
+                gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.18);
+                
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                osc.start();
+                osc.stop(audioCtx.currentTime + 0.2);
+            } catch (e) {
+                console.log("오디오 재생 실패:", e);
+            }
+        }
+
+        // --- 캔버스 드로잉 시스템 ---
+        
+        // 화점(Hoshi) 좌표 목록 가져오기
+        function getStarPoints(size) {
+            if (size === 19) {
+                return [
+                    {x: 3, y: 3}, {x: 9, y: 3}, {x: 15, y: 3},
+                    {x: 3, y: 9}, {x: 9, y: 9}, {x: 15, y: 9},
+                    {x: 3, y: 15}, {x: 9, y: 15}, {x: 15, y: 15}
+                ];
+            } else if (size === 13) {
+                return [
+                    {x: 3, y: 3}, {x: 9, y: 3},
+                    {x: 6, y: 6},
+                    {x: 3, y: 9}, {x: 9, y: 9}
+                ];
+            } else if (size === 9) {
+                return [
+                    {x: 2, y: 2}, {x: 6, y: 2},
+                    {x: 4, y: 4},
+                    {x: 2, y: 6}, {x: 6, y: 6}
+                ];
+            }
+            return [];
+        }
+
+        // 해상도 조절 및 보정 그리기
+        function resizeCanvas() {
+            const rect = container.getBoundingClientRect();
+            // 선명한 렌더링을 위해 디바이스 픽셀 비율 적용 (고해상도 Retina 대응)
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = rect.width * dpr;
+            canvas.height = rect.height * dpr;
+            ctx.scale(dpr, dpr);
+            
+            drawBoard();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+
+        // 보드판 전체 드로잉 실행
+        function drawBoard() {
+            const width = canvas.width / (window.devicePixelRatio || 1);
+            const height = canvas.height / (window.devicePixelRatio || 1);
+            
+            // 캔버스 클리어 및 나무결 배경 효과
+            ctx.clearRect(0, 0, width, height);
+            
+            // 바둑판 안쪽 마진 패딩 정의
+            const margin = width / (boardSize + 1);
+            const cellSize = (width - margin * 2) / (boardSize - 1);
+            
+            // 1. 그리드 선 그리기
+            ctx.strokeStyle = '#2d1e08';
+            ctx.lineWidth = 1.2;
+            
+            for (let i = 0; i < boardSize; i++) {
+                const pos = margin + i * cellSize;
+                
+                // 가로선
+                ctx.beginPath();
+                ctx.moveTo(margin, pos);
+                ctx.lineTo(width - margin, pos);
+                ctx.stroke();
+                
+                // 세로선
+                ctx.beginPath();
+                ctx.moveTo(pos, margin);
+                ctx.lineTo(pos, height - margin);
+                ctx.stroke();
+            }
+
+            // 2. 화점(Hoshi) 그리기
+            const starPoints = getStarPoints(boardSize);
+            ctx.fillStyle = '#2d1e08';
+            const starRadius = boardSize === 9 ? 3.5 : 4.5;
+            
+            for (let pt of starPoints) {
+                const cx = margin + pt.x * cellSize;
+                const cy = margin + pt.y * cellSize;
+                ctx.beginPath();
+                ctx.arc(cx, cy, starRadius, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            // 3. 놓인 바둑돌 및 3D 입체 반사광 렌더링
+            const stoneRadius = cellSize * 0.46;
+            
+            for (let y = 0; y < boardSize; y++) {
+                for (let x = 0; x < boardSize; x++) {
+                    const stone = board[y][x];
+                    if (stone !== 0) {
+                        const cx = margin + x * cellSize;
+                        const cy = margin + y * cellSize;
+                        
+                        drawStone(cx, cy, stone, stoneRadius);
+                        
+                        // 마지막 착수 위치 표시 마킹
+                        if (lastMove && lastMove.x === x && lastMove.y === y) {
+                            ctx.beginPath();
+                            ctx.strokeStyle = stone === 1 ? '#ffffff' : '#000000';
+                            ctx.lineWidth = 1.8;
+                            ctx.arc(cx, cy, stoneRadius * 0.4, 0, Math.PI * 2);
+                            ctx.stroke();
+                        }
+                    }
+                }
+            }
+
+            // 4. 마우스 이동/드래그 중인 임시 위치 가이드 렌더링
+            if (hoverCell && board[hoverCell.y][hoverCell.x] === 0) {
+                const cx = margin + hoverCell.x * cellSize;
+                const cy = margin + hoverCell.y * cellSize;
+                
+                ctx.save();
+                ctx.globalAlpha = 0.55; // 반투명
+                drawStone(cx, cy, turn, stoneRadius);
+                ctx.restore();
+                
+                // 조준 가이드 크로스헤어
+                ctx.strokeStyle = turn === 1 ? 'rgba(0,0,0,0.5)' : 'rgba(255,255,255,0.6)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(cx, cy, stoneRadius + 3, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+
+        // 바둑돌 자체 디자인 3D 그라데이션 기법 구현
+        function drawStone(cx, cy, type, radius) {
+            // 돌 아래 자연스러운 퍼진 그림자 효과
+            ctx.beginPath();
+            ctx.arc(cx + 2, cy + 2.5, radius - 0.5, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+            ctx.fill();
+
+            // 바둑돌 몸체 입체 그라데이션
+            const grad = ctx.createRadialGradient(
+                cx - radius * 0.25, cy - radius * 0.25, radius * 0.1,
+                cx, cy, radius
+            );
+            
+            if (type === 1) { // 흑돌: 무광과 미세한 반사광의 묵직한 조화
+                grad.addColorStop(0, '#55555d');
+                grad.addColorStop(0.3, '#222226');
+                grad.addColorStop(1, '#0b0b0d');
+            } else { // 백돌: 고급 조개 바둑돌 특유의 반짝이는 도자기 질감
+                grad.addColorStop(0, '#ffffff');
+                grad.addColorStop(0.5, '#f0eff5');
+                grad.addColorStop(1, '#cccccc');
+            }
+            
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.fillStyle = grad;
+            ctx.fill();
+            
+            // 미세 테두리 윤곽선
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.strokeStyle = type === 1 ? 'rgba(0,0,0,0.8)' : 'rgba(0,0,0,0.15)';
+            ctx.lineWidth = 0.5;
+            ctx.stroke();
+        }
+
+        // --- 바둑 룰 핵심 알고리즘 (Go Game Engine Logic) ---
+
+        // 특정 그룹 탐색 및 활로 개수 연산 (BFS/FloodFill)
+        function getGroupInfo(startX, startY, targetColor, checkBoard = board) {
+            const group = [];
+            const liberties = new Set();
+            const visited = Array(boardSize).fill(null).map(() => Array(boardSize).fill(false));
+            const queue = [[startX, startY]];
+            visited[startY][startX] = true;
+
+            while (queue.length > 0) {
+                const [cx, cy] = queue.shift();
+                group.push([cx, cy]);
+
+                const neighbors = [
+                    [cx + 1, cy], [cx - 1, cy],
+                    [cx, cy + 1], [cx, cy - 1]
+                ];
+
+                for (const [nx, ny] of neighbors) {
+                    if (nx >= 0 && nx < boardSize && ny >= 0 && ny < boardSize) {
+                        if (checkBoard[ny][nx] === 0) {
+                            liberties.add(`${nx},${ny}`);
+                        } else if (checkBoard[ny][nx] === targetColor && !visited[ny][nx]) {
+                            visited[ny][nx] = true;
+                            queue.push([nx, ny]);
+                        }
+                    }
+                }
+            }
+
+            return {
+                group,
+                libertiesCount: liberties.size,
+                liberties: Array.from(liberties).map(s => s.split(',').map(Number))
+            };
+        }
+
+        // 임시 가상 착수 타당성 및 규칙 체크
+        function checkMoveValidity(x, y, playerColor) {
+            // 1. 이미 돌이 놓여 있는 곳은 예외없이 착수 불가
+            if (board[y][x] !== 0) return { valid: false, reason: "이미 돌이 놓여있는 자리입니다." };
+
+            // 2. 가상의 보드 복사본 생성 후 시뮬레이션
+            const tempBoard = board.map(row => [...row]);
+            tempBoard[y][x] = playerColor;
+
+            const opponentColor = playerColor === 1 ? 2 : 1;
+            let capturedStones = [];
+            const checkedOpponentGroups = Array(boardSize).fill(null).map(() => Array(boardSize).fill(false));
+
+            // 인접한 4방향 상대 돌 그룹의 사활 체크
+            const neighbors = [
+                [x + 1, y], [x - 1, y],
+                [x, y + 1], [x, y - 1]
+            ];
+
+            for (const [nx, ny] of neighbors) {
+                if (nx >= 0 && nx < boardSize && ny >= 0 && ny < boardSize) {
+                    if (tempBoard[ny][nx] === opponentColor && !checkedOpponentGroups[ny][nx]) {
+                        const { group, libertiesCount } = getGroupInfo(nx, ny, opponentColor, tempBoard);
+                        for (const [gx, gy] of group) {
+                            checkedOpponentGroups[gy][gx] = true; // 중복 제거를 위한 마킹
+                        }
+                        if (libertiesCount === 0) {
+                            capturedStones.push(...group);
+                        }
+                    }
+                }
+            }
+
+            // 가상 보드에서 따낸 상대 돌 일시적으로 지우기
+            for (const [cx, cy] of capturedStones) {
+                tempBoard[cy][cx] = 0;
+            }
+
+            // 3. 자충수(Suicide) 체크: 착수한 직후 자기 돌 그룹의 활로가 존재하는가?
+            const ownGroup = getGroupInfo(x, y, playerColor, tempBoard);
+            if (ownGroup.libertiesCount === 0) {
+                return { valid: false, reason: "착수금지(자충수)입니다. 놓을 자리에 활로가 없습니다." };
+            }
+
+            // 4. 패(Ko) 룰 금지 조건 체크
+            if (koIntersection && koIntersection.x === x && koIntersection.y === y) {
+                return { valid: false, reason: "패(Ko) 상태입니다. 다른 자리에 먼저 착수한 후 다시 둘 수 있습니다." };
+            }
+
+            // 착수 가능 여부 확정
+            return {
+                valid: true,
+                tempBoard,
+                capturedStones,
+                // 만약 1개의 돌을 잡았고, 착수한 자신의 그룹 크기도 1개이며 활로가 1개뿐이라면 이는 '패'의 소지 발생
+                newKo: (capturedStones.length === 1 && ownGroup.group.length === 1) ? { x: capturedStones[0][0], y: capturedStones[0][1] } : null
+            };
+        }
+
+        // --- 착수 실행 및 상태 전이 ---
+
+        function makeMove(x, y) {
+            const check = checkMoveValidity(x, y, turn);
+            if (!check.valid) {
+                logMessage(`착수 불가: ${check.reason}`, "text-red-400 font-semibold");
+                return false;
+            }
+
+            // 무르기 히스토리 백업
+            backupHistory();
+
+            // 실제 보드 업데이트 적용
+            board = check.tempBoard;
+            koIntersection = check.newKo;
+            lastMove = { x, y };
+
+            // 사석 개수 누적
+            if (check.capturedStones.length > 0) {
+                captures[turn] += check.capturedStones.length;
+                playCaptureSound();
+                logMessage(`${turn === 1 ? '흑' : '백'}이 상대 돌 ${check.capturedStones.length}개를 따냈습니다.`, "text-blue-400 font-bold");
+            } else {
+                playStoneSound();
+            }
+
+            // 기보 기록에 좌표 작성 (예: B [16, 15])
+            logMessage(`${turn === 1 ? '흑' : '백'}: [${x + 1}, ${y + 1}] 착수`, "text-gray-300");
+
+            // 턴 전환 및 UI 업데이트
+            turn = turn === 1 ? 2 : 1;
+            updateUI();
+
+            // 상대가 AI이고 다음 턴일 때 AI 착수 트리거 발동
+            if (opponentType === 'ai' && turn === 2) {
+                setTimeout(makeAIMove, 400); // 자연스러운 딜레이
+            }
+
+            return true;
+        }
+
+        // 한 수 쉬기 (Pass)
+        function passTurn() {
+            logMessage(`${turn === 1 ? '흑' : '백'}이 한 수 쉬었습니다.`, "text-yellow-500 font-semibold");
+            
+            // 무르기용 백업
+            backupHistory();
+
+            // 턴 연계
+            koIntersection = null;
+            lastMove = null;
+            turn = turn === 1 ? 2 : 1;
+            updateUI();
+
+            // 2연속 패스 처리 시 대국 자동 종료 판단
+            if (history.length >= 2) {
+                const prevAction = history[history.length - 1];
+                // 직전도 패스였는지 체크 가능하도록 간소화 설계
+                if (prevAction.turn === turn) {
+                    logMessage("양 대국자 모두 패스하여 대국을 종료하고 계가를 시작합니다.", "text-green-400 font-black");
+                    calculateFinalScore(true);
+                }
+            }
+
+            if (opponentType === 'ai' && turn === 2) {
+                setTimeout(makeAIMove, 500);
+            }
+        }
+
+        // 기권하기 (Resign)
+        function resignGame() {
+            const winner = turn === 1 ? "백 (기권승)" : "흑 (기권승)";
+            logMessage(`${turn === 1 ? '흑' : '백'}이 대국을 포기하고 기권하였습니다.`, "text-red-400 font-bold");
+            
+            showResultModal(winner, `${turn === 1 ? '백' : '흑'}의 불계승입니다.`);
+        }
+
+        // 히스토리 무르기 (Undo)
+        function undoMove() {
+            if (history.length === 0) {
+                logMessage("무를 기록이 없습니다.", "text-gray-500");
+                return;
+            }
+
+            // AI 대전 모드일 시 플레이어가 흑이므로 2단계를 되돌려야 함
+            if (opponentType === 'ai') {
+                if (history.length < 2) return;
+                // 두 단계 복원
+                history.pop(); // AI의 직전 움직임 백업 삭제
+                const state = history.pop(); // 플레이어의 움직임 백업 복구
+                restoreState(state);
+                logMessage("흑의 이전 착수 단계로 되돌아갑니다.", "text-blue-300");
+            } else {
+                // 로컬 모드일 때는 한 번에 1턴씩 복구
+                const state = history.pop();
+                restoreState(state);
+                logMessage("이전 차례로 되돌아갑니다.", "text-blue-300");
+            }
+            updateUI();
+        }
+
+        // 상태 히스토리 백업
+        function backupHistory() {
+            const boardState = board.map(row => [...row]);
+            history.push({
+                board: boardState,
+                turn: turn,
+                captures: { ...captures },
+                koIntersection: koIntersection ? { ...koIntersection } : null,
+                lastMove: lastMove ? { ...lastMove } : null
+            });
+            // 최대 메모리 확보를 위한 제약 (최대 150수)
+            if (history.length > 150) history.shift();
+        }
+
+        // 특정 히스토리 상태 복원
+        function restoreState(state) {
+            board = state.board;
+            turn = state.turn;
+            captures = state.captures;
+            koIntersection = state.koIntersection;
+            lastMove = state.lastMove;
+        }
+
+        // --- 실시간 영토 추정 및 계가 (Scoring & Territory Estimator) ---
+
+        function estimateScore() {
+            const visited = Array(boardSize).fill(null).map(() => Array(boardSize).fill(false));
+            let blackTerritory = 0;
+            let whiteTerritory = 0;
+
+            for (let y = 0; y < boardSize; y++) {
+                for (let x = 0; x < boardSize; x++) {
+                    if (board[y][x] === 0 && !visited[y][x]) {
+                        const region = [];
+                        const borderColors = new Set();
+                        const queue = [[x, y]];
+                        visited[y][x] = true;
+
+                        while (queue.length > 0) {
+                            const [cx, cy] = queue.shift();
+                            region.push([cx, cy]);
+
+                            const neighbors = [
+                                [cx + 1, cy], [cx - 1, cy],
+                                [cx, cy + 1], [cx, cy - 1]
+                            ];
+
+                            for (const [nx, ny] of neighbors) {
+                                if (nx >= 0 && nx < boardSize && ny >= 0 && ny < boardSize) {
+                                    if (board[ny][nx] === 0) {
+                                        if (!visited[ny][nx]) {
+                                            visited[ny][nx] = true;
+                                            queue.push([nx, ny]);
+                                        }
+                                    } else {
+                                        borderColors.add(board[ny][nx]);
+                                    }
+                                }
+                            }
+                        }
+
+                        // 단 한 종류의 색깔의 돌로만 완벽히 둘러싸인 빈 지역일 경우 해당 색의 '집'으로 편입
+                        if (borderColors.size === 1) {
+                            if (borderColors.has(1)) {
+                                blackTerritory += region.length;
+                            } else if (borderColors.has(2)) {
+                                whiteTerritory += region.length;
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 일본식 계가 시스템 추정: 사석(따낸 돌) + 자기 집 영역
+            const blackScore = blackTerritory + captures[1];
+            const whiteScore = whiteTerritory + captures[2] + 6.5; // 백은 덤 포함
+
+            return {
+                blackTerritory,
+                whiteTerritory,
+                blackScore,
+                whiteScore
+            };
+        }
+
+        // 최종 계가 및 우승자 결정 처리
+        function calculateFinalScore(showModal = false) {
+            const result = estimateScore();
+            const diff = Math.abs(result.blackScore - result.whiteScore);
+            let winnerText = "";
+            let subText = "";
+
+            if (result.blackScore > result.whiteScore) {
+                winnerText = "흑 승리!";
+                subText = `흑이 백을 상대로 ${diff.toFixed(1)}집 앞섰습니다.`;
+            } else {
+                winnerText = "백 승리!";
+                subText = `백이 흑을 상대로 ${diff.toFixed(1)}집 앞섰습니다. (덤 6.5집 포함)`;
+            }
+
+            if (showModal) {
+                showResultModal(winnerText, subText, result.blackScore, result.whiteScore);
+            }
+        }
+
+        // --- 인공지능 (AI) 플레이어 엔진 구현 ---
+
+        function makeAIMove() {
+            if (turn !== 2) return; // AI는 백돌
+
+            const validMoves = [];
+            
+            // 1. 모든 가능한 교차점 탐색 및 점수 평가
+            for (let y = 0; y < boardSize; y++) {
+                for (let x = 0; x < boardSize; x++) {
+                    const check = checkMoveValidity(x, y, 2);
+                    if (check.valid) {
+                        let score = 0;
+
+                        // 패턴 휴리스틱 1: 포획(잡기) 가능한 수가 있을 경우 최고 가중치 부여
+                        if (check.capturedStones.length > 0) {
+                            score += 1000 + (check.capturedStones.length * 150);
+                        }
+
+                        // 패턴 휴리스틱 2: 백돌 자신의 위기 방어 (Atari 탈출)
+                        // 임시 가상 보드 복사에서 착수한 자신의 그룹 활로 체크
+                        const ownGroup = getGroupInfo(x, y, 2, check.tempBoard);
+                        if (ownGroup.libertiesCount >= 3) {
+                            score += 50; // 활로가 풍부해지는 방향
+                        } else if (ownGroup.libertiesCount === 2) {
+                            score += 10;
+                        }
+
+                        // 패턴 휴리스틱 3: 흑의 위협 (상대방 단수 치기)
+                        const neighbors = [
+                            [x + 1, y], [x - 1, y], [x, y + 1], [x, y - 1]
+                        ];
+                        for (const [nx, ny] of neighbors) {
+                            if (nx >= 0 && nx < boardSize && ny >= 0 && ny < boardSize) {
+                                if (board[ny][nx] === 1) { // 흑돌 그룹
+                                    const oppGroup = getGroupInfo(nx, ny, 1);
+                                    if (oppGroup.libertiesCount === 2) {
+                                        score += 120; // 흑돌을 단수로 모는 수에 큰 메리트
+                                    }
+                                }
+                            }
+                        }
+
+                        // 패턴 휴리스틱 4: 바둑판 중심선 선호 및 기존 본인 돌과의 밀착성
+                        // 변, 귀, 화점 인근 배치에 대한 공간 가산
+                        const center = Math.floor(boardSize / 2);
+                        const distToCenter = Math.abs(x - center) + Math.abs(y - center);
+                        score += (boardSize - distToCenter) * 0.5;
+
+                        // 기존 백돌들과의 거리가 가까운 곳을 선호하여 협력망 형성
+                        let closeFriendly = false;
+                        for (const [nx, ny] of neighbors) {
+                            if (nx >= 0 && nx < boardSize && ny >= 0 && ny < boardSize) {
+                                if (board[ny][nx] === 2) closeFriendly = true;
+                            }
+                        }
+                        if (closeFriendly) score += 25;
+
+                        // 약간의 무작위 변조 추가로 대국 중복성 방지
+                        score += Math.random() * 15;
+
+                        validMoves.push({ x, y, score });
+                    }
+                }
+            }
+
+            // 2. 가중치가 가장 높은 착수점을 소팅 후 선택
+            if (validMoves.length > 0) {
+                validMoves.sort((a, b) => b.score - a.score);
+                const bestMove = validMoves[0];
+                
+                // 가중치가 비정상적으로 낮고 후반부에 다다랐다면 패스 유도
+                if (bestMove.score < 3 && history.length > boardSize * 2) {
+                    passTurn();
+                } else {
+                    makeMove(bestMove.x, bestMove.y);
+                }
+            } else {
+                // 둘 곳이 전혀 없다면 무조건 패스
+                passTurn();
+            }
+        }
+
+        // --- 터치 디바이스 및 마우스 인터랙션 이벤트 바인딩 ---
+
+        // 보드 마우스 크기 좌표 계산 공식
+        function getCellFromCoords(clientX, clientY) {
+            const rect = canvas.getBoundingClientRect();
+            const scaleX = rect.width;
+            const scaleY = rect.height;
+            const margin = scaleX / (boardSize + 1);
+            const cellSize = (scaleX - margin * 2) / (boardSize - 1);
+
+            const xPos = clientX - rect.left;
+            const yPos = clientY - rect.top;
+
+            // 클릭 타겟 보정값 산출
+            const gridX = Math.round((xPos - margin) / cellSize);
+            const gridY = Math.round((yPos - margin) / cellSize);
+
+            if (gridX >= 0 && gridX < boardSize && gridY >= 0 && gridY < boardSize) {
+                return { x: gridX, y: gridY };
+            }
+            return null;
+        }
+
+        // 마우스 및 터치 리스너
+        canvas.addEventListener('mousemove', (e) => {
+            if (isTouching) return; // 터치 모드 중일 때는 마우스 무시
+            const cell = getCellFromCoords(e.clientX, e.clientY);
+            if (cell) {
+                if (!hoverCell || hoverCell.x !== cell.x || hoverCell.y !== cell.y) {
+                    hoverCell = cell;
+                    drawBoard();
+                }
+            } else {
+                if (hoverCell) {
+                    hoverCell = null;
+                    drawBoard();
+                }
+            }
+        });
+
+        canvas.addEventListener('mouseleave', () => {
+            hoverCell = null;
+            drawBoard();
+        });
+
+        canvas.addEventListener('click', (e) => {
+            if (isTouching) return;
+            // 모바일 2인 대국 중 AI 차례 시 클릭 잠금
+            if (opponentType === 'ai' && turn === 2) return;
+
+            const cell = getCellFromCoords(e.clientX, e.clientY);
+            if (cell) {
+                makeMove(cell.x, cell.y);
+            }
+        });
+
+        // 모바일 정밀 조준 터치 시스템 개발 (중요!)
+        canvas.addEventListener('touchstart', (e) => {
+            if (opponentType === 'ai' && turn === 2) return;
+            isTouching = true;
+            const touch = e.touches[0];
+            const cell = getCellFromCoords(touch.clientX, touch.clientY);
+            if (cell) {
+                hoverCell = cell;
+                drawBoard();
+            }
+            e.preventDefault();
+        }, { passive: false });
+
+        canvas.addEventListener('touchmove', (e) => {
+            const touch = e.touches[0];
+            const cell = getCellFromCoords(touch.clientX, touch.clientY);
+            if (cell) {
+                hoverCell = cell;
+                drawBoard();
+            }
+            e.preventDefault();
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', (e) => {
+            if (hoverCell) {
+                const success = makeMove(hoverCell.x, hoverCell.y);
+                hoverCell = null;
+                drawBoard();
+            }
+            isTouching = false;
+            e.preventDefault();
+        }, { passive: false });
+
+
+        // --- UI 컴포넌트 실시간 동기화 ---
+
+        function updateUI() {
+            // 사석 개수 업데이트
+            document.getElementById('black-captures').innerText = captures[1];
+            document.getElementById('white-captures').innerText = captures[2];
+
+            // 턴 배지 강조 효과 갱신
+            const badgeBlack = document.getElementById('turn-badge-black');
+            const badgeWhite = document.getElementById('turn-badge-white');
+            const statusMsg = document.getElementById('status-message');
+
+            if (turn === 1) {
+                badgeBlack.className = "flex items-center space-x-2 bg-black/60 border border-yellow-500/80 px-3 py-1.5 rounded-lg shadow-lg ring-2 ring-yellow-500/20";
+                badgeWhite.className = "flex items-center space-x-2 bg-gray-800/20 border border-transparent px-3 py-1.5 rounded-lg";
+                statusMsg.innerText = "흑의 차례입니다";
+                statusMsg.className = "text-sm text-yellow-400 font-bold px-2";
+            } else {
+                badgeWhite.className = "flex items-center space-x-2 bg-gray-800/80 border border-yellow-500/80 px-3 py-1.5 rounded-lg shadow-lg ring-2 ring-yellow-500/20";
+                badgeBlack.className = "flex items-center space-x-2 bg-black/20 border border-transparent px-3 py-1.5 rounded-lg";
+                statusMsg.innerText = opponentType === 'ai' ? "AI 연산 중..." : "백의 차례입니다";
+                statusMsg.className = opponentType === 'ai' ? "text-sm text-blue-400 font-bold px-2 animate-pulse" : "text-sm text-yellow-400 font-bold px-2";
+            }
+
+            // 실시간 간이 계가 분석 반영
+            const score = estimateScore();
+            document.getElementById('calc-black-total').innerText = `${score.blackScore.toFixed(1)}집`;
+            document.getElementById('calc-white-total').innerText = `${score.whiteScore.toFixed(1)}집`;
+            
+            const advantageSpan = document.getElementById('calc-advantage');
+            const diff = Math.abs(score.blackScore - score.whiteScore);
+            if (score.blackScore > score.whiteScore) {
+                advantageSpan.innerText = `흑 우세 (+${diff.toFixed(1)})`;
+                advantageSpan.className = "text-green-400 font-bold";
+            } else {
+                advantageSpan.innerText = `백 우세 (+${diff.toFixed(1)})`;
+                advantageSpan.className = "text-blue-400 font-bold";
+            }
+
+            // 전체 보드 재선언
+            drawBoard();
+        }
+
+        // 로그 메시지 출력 함수
+        function logMessage(msg, cssClass = "") {
+            const logsContainer = document.getElementById('game-logs');
+            const logItem = document.createElement('div');
+            logItem.className = cssClass || "text-gray-400";
+            logItem.innerHTML = `<span class="text-gray-600 mr-1.5">[수 ${history.length + 1}]</span>${msg}`;
+            logsContainer.appendChild(logItem);
+            
+            // 자동 스크롤 하단 고정
+            logsContainer.scrollTop = logsContainer.scrollHeight;
+        }
+
+        // 바둑판 크기 교체 조작
+        function changeBoardSize(size) {
+            boardSize = size;
+            
+            // UI 테마 활성화 토글 지정
+            [9, 13, 19].forEach(s => {
+                const btn = document.getElementById(`btn-size-${s}`);
+                if (s === size) {
+                    btn.className = "py-1.5 px-2 bg-yellow-600/20 hover:bg-yellow-600/30 text-xs rounded-lg border border-yellow-500/50 text-yellow-400 transition font-bold";
+                } else {
+                    btn.className = "py-1.5 px-2 bg-gray-800 hover:bg-gray-700 text-xs rounded-lg border border-gray-700 text-gray-300 transition font-bold";
+                }
+            });
+
+            document.getElementById('current-board-size-badge').innerText = `${size} x ${size}`;
+            resetGame();
+        }
+
+        // 대전 상대 제어 토글
+        function setOpponent(type) {
+            opponentType = type;
+            const btnAI = document.getElementById('btn-op-ai');
+            const btnLocal = document.getElementById('btn-op-local');
+            const whiteLabel = document.getElementById('white-label');
+
+            if (type === 'ai') {
+                btnAI.className = "py-1.5 px-2 bg-yellow-600/20 hover:bg-yellow-600/30 text-xs rounded-lg border border-yellow-500/50 text-yellow-400 transition font-bold flex items-center justify-center gap-1.5";
+                btnLocal.className = "py-1.5 px-2 bg-gray-800 hover:bg-gray-700 text-xs rounded-lg border border-gray-700 text-gray-300 transition font-bold flex items-center justify-center gap-1.5";
+                whiteLabel.innerText = "백 (AI)";
+                logMessage("상대를 인공지능(AI)으로 변경했습니다.", "text-yellow-500/90 font-semibold");
+            } else {
+                btnLocal.className = "py-1.5 px-2 bg-yellow-600/20 hover:bg-yellow-600/30 text-xs rounded-lg border border-yellow-500/50 text-yellow-400 transition font-bold flex items-center justify-center gap-1.5";
+                btnAI.className = "py-1.5 px-2 bg-gray-800 hover:bg-gray-700 text-xs rounded-lg border border-gray-700 text-gray-300 transition font-bold flex items-center justify-center gap-1.5";
+                whiteLabel.innerText = "백 (Player 2)";
+                logMessage("상대를 로컬 2인 대국으로 변경했습니다.", "text-yellow-500/90 font-semibold");
+            }
+            resetGame();
+        }
+
+        // --- 모달 처리 및 리셋 함수 ---
+
+        function toggleRuleModal(show) {
+            const modal = document.getElementById('rule-modal');
+            if (show) {
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function showResultModal(winner, sub, blackScore, whiteScore) {
+            document.getElementById('result-title').innerText = winner;
+            document.getElementById('result-subtitle').innerText = sub;
+            
+            if (blackScore !== undefined && whiteScore !== undefined) {
+                document.getElementById('modal-black-score').innerText = `${blackScore.toFixed(1)}집`;
+                document.getElementById('modal-white-score').innerText = `${whiteScore.toFixed(1)}집`;
+                document.getElementById('modal-winner-text').innerText = `${winner} (${Math.abs(blackScore - whiteScore).toFixed(1)}집 차이)`;
+            } else {
+                document.getElementById('modal-black-score').innerText = "-";
+                document.getElementById('modal-white-score').innerText = "-";
+                document.getElementById('modal-winner-text').innerText = "기권 기보";
+            }
+
+            document.getElementById('result-modal').classList.remove('hidden');
+        }
+
+        function closeResultModal() {
+            document.getElementById('result-modal').classList.add('hidden');
+            resetGame();
+        }
+
+        // 게임 판 대청소 및 완전 초기화
+        function resetGame() {
+            // 보드 데이터 초기 구성
+            board = Array(boardSize).fill(null).map(() => Array(boardSize).fill(0));
+            turn = 1;
+            captures = { 1: 0, 2: 0 };
+            history = [];
+            koIntersection = null;
+            lastMove = null;
+            hoverCell = null;
+
+            // 로그 청소
+            const logsContainer = document.getElementById('game-logs');
+            logsContainer.innerHTML = `
+                <div class="text-yellow-500 font-semibold flex items-center gap-1">
+                    <i class="fa-solid fa-circle-info"></i> 대국이 초기화되었습니다. (판 규격: ${boardSize}x${boardSize})
+                </div>
+            `;
+
+            updateUI();
+        }
+
+        // 최초 기기 실행 시 스타트업 로드
+        window.onload = function() {
+            resetGame();
+            resizeCanvas();
+        };
+    </script>
+</body>
+</html>
