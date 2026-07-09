@@ -43,7 +43,7 @@
                 </div>
                 <div>
                     <h1 class="font-extrabold text-lg tracking-tight bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">Premium Ladder Climber</h1>
-                    <p class="text-xs text-slate-400">일대일 매칭 보장 사다리타기</p>
+                    <p class="text-xs text-slate-400">1:1 무작위 대칭 매칭 보장 사다리타기</p>
                 </div>
             </div>
             
@@ -65,7 +65,7 @@
                     <label class="text-sm font-semibold text-slate-300">참가자 수</label>
                     <div class="flex items-center gap-1 bg-slate-800 p-1 rounded-xl border border-slate-700">
                         <button onclick="changePlayerCount(-1)" class="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition-all font-bold text-lg">-</button>
-                        <span id="playerCountLabel" class="w-10 text-center font-bold text-lg text-indigo-400">6</span>
+                        <span id="playerCountLabel" class="w-10 text-center font-bold text-lg text-indigo-400">4</span>
                         <button onclick="changePlayerCount(1)" class="w-8 h-8 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition-all font-bold text-lg">+</button>
                     </div>
                 </div>
@@ -125,7 +125,7 @@
     <!-- Footer -->
     <footer class="border-t border-slate-800 bg-slate-950/50 py-4 text-center text-xs text-slate-500">
         <div class="max-w-5xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <p>© 2026 Premium Ladder. 1:1 대칭 완벽 보장 & 딜레이 애니메이션 탑재.</p>
+            <p>© 2026 Premium Ladder. 1:1 대칭 완벽 보장 & 좌표 동기화 패치 적용 완료.</p>
             <p class="flex items-center gap-1.5">
                 <span class="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
                 Web Audio Synth Activated
@@ -216,7 +216,7 @@
 
 
         // --- 2. Game Core State ---
-        let playerCount = 6;
+        let playerCount = 4; // 시작 시 기본 참가자 수를 4명으로 수정
         const emojis = ['🐱', '🐶', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐸', '🐵', '🐷', '🐰'];
         
         let playerNames = [];
@@ -224,7 +224,7 @@
         let isGenerated = false;
 
         let ladderData = {
-            numCols: 6,
+            numCols: 4, // 시작 시 기본 열 개수를 4로 수정
             numRows: 14, 
             bridges: [], 
             paths: []    
@@ -375,9 +375,9 @@
                 bridges[r] = [];
                 for (let c = 0; c < numCols - 1; c++) {
                     if (c > 0 && bridges[r][c - 1]) {
-                        bridges[r][c] = false;
+                        bridges[r][c] = false; 
                     } else {
-                        bridges[r][c] = Math.random() < 0.42;
+                        bridges[r][c] = Math.random() < 0.42; 
                     }
                 }
             }
@@ -394,14 +394,13 @@
             finishedCount = 0;
             isGenerated = true;
 
-            calculateAllPaths();
             resizeCanvas();
         }
 
         function getCanvasCoords(col, row) {
-            const canvas = document.getElementById('ladderCanvas');
-            const w = canvas.width;
-            const h = canvas.height;
+            const container = document.getElementById('canvasContainer');
+            const w = container ? container.clientWidth : 600;
+            const h = container ? container.clientHeight : 400;
 
             const colWidth = w / playerCount;
             const rowHeight = h / (ladderData.numRows + 1);
@@ -456,12 +455,21 @@
 
         function resizeCanvas() {
             const container = document.getElementById('canvasContainer');
-            canvas.width = container.clientWidth * window.devicePixelRatio;
-            canvas.height = container.clientHeight * window.devicePixelRatio;
-            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            if (!container || container.clientWidth === 0) {
+                setTimeout(resizeCanvas, 100);
+                return;
+            }
+
+            const dpr = window.devicePixelRatio || 1;
+            
+            canvas.width = container.clientWidth * dpr;
+            canvas.height = container.clientHeight * dpr;
             
             canvas.style.width = container.clientWidth + "px";
             canvas.style.height = container.clientHeight + "px";
+
+            ctx.setTransform(1, 0, 0, 1, 0, 0); 
+            ctx.scale(dpr, dpr); 
 
             calculateAllPaths();
             drawLadder();
@@ -470,8 +478,10 @@
         window.addEventListener('resize', resizeCanvas);
 
         function drawLadder() {
-            const w = canvas.width / window.devicePixelRatio;
-            const h = canvas.height / window.devicePixelRatio;
+            const container = document.getElementById('canvasContainer');
+            if (!container) return;
+            const w = container.clientWidth;
+            const h = container.clientHeight;
 
             ctx.clearRect(0, 0, w, h);
 
@@ -513,6 +523,7 @@
                 if (traceProgress[i] === undefined) continue;
 
                 const path = ladderData.paths[i];
+                if (!path || path.length === 0) continue;
                 const currentPos = getPositionOnPath(path, traceProgress[i]);
 
                 ctx.beginPath();
@@ -534,6 +545,7 @@
                 if (traceProgress[i] === undefined) continue;
 
                 const path = ladderData.paths[i];
+                if (!path || path.length === 0) continue;
                 const pos = getPositionOnPath(path, traceProgress[i]);
                 const emoji = emojis[i % emojis.length];
 
@@ -598,7 +610,6 @@
             if (!isGenerated) return;
             initAudio();
 
-            // 기존에 해당 인덱스 결과의 하이라이트가 있었다면 초기화
             resetGoalHighlights();
 
             traceProgress[i] = 0.0;
@@ -644,11 +655,13 @@
                     active = true;
 
                     const path = ladderData.paths[i];
-                    const oldSeg = getCurrentSegmentIndex(path, oldProgress);
-                    const newSeg = getCurrentSegmentIndex(path, traceProgress[i]);
+                    if (path) {
+                        const oldSeg = getCurrentSegmentIndex(path, oldProgress);
+                        const newSeg = getCurrentSegmentIndex(path, traceProgress[i]);
 
-                    if (newSeg > oldSeg && path[newSeg].isBridge) {
-                        playSound('bridge');
+                        if (newSeg > oldSeg && path[newSeg].isBridge) {
+                            playSound('bridge');
+                        }
                     }
 
                     if (traceProgress[i] >= 1.0) {
@@ -672,14 +685,14 @@
             playSound('win');
             
             const path = ladderData.paths[startCol];
+            if (!path) return;
             const endCol = path[path.length - 1].col;
 
             finishedCount++;
 
-            // 결과 도달 시 하단 결과 레이블을 강조합니다.
             const goalLabel = document.getElementById(`goalLabel-${endCol}`);
             if (goalLabel) {
-                goalLabel.className = "text-xs font-extrabold text-indigo-400 bg-indigo-950/80 px-2 py-1 rounded-xl border border-indigo-500/30 text-center animate-pulse scale-110 duration-300";
+                goalLabel.className = "text-xs font-extrabold text-indigo-400 bg-indigo-950/80 px-2 py-1 rounded-xl border border-indigo-500/30 text-center animate-pulse scale-110 duration-300 shadow-lg shadow-indigo-500/10";
             }
         }
 
