@@ -1,1 +1,859 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>골든럭키 로또번호 생성기</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background: radial-gradient(circle at center, #1e1b4b 0%, #0f172a 100%);
+        }
+        .ball-pop {
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) both;
+        }
+        @keyframes popIn {
+            0% { transform: scale(0) rotate(-180deg); opacity: 0; }
+            100% { transform: scale(1) rotate(0deg); opacity: 1; }
+        }
+        /* Glassmorphism utility */
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px rgba(255, 255, 255, 0.08) solid;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.5);
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(99, 102, 241, 0.8);
+        }
+    </style>
+</head>
+<body class="text-slate-100 min-h-screen pb-12">
 
+    <div class="max-w-4xl mx-auto px-4 pt-8">
+        <!-- Header Section -->
+        <header class="text-center mb-8 relative">
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl -z-10"></div>
+            <div class="inline-flex items-center justify-center p-3 bg-amber-500/10 rounded-2xl border border-amber-500/20 mb-4 animate-bounce">
+                <i class="fa-solid fa-clover text-amber-400 text-3xl"></i>
+            </div>
+            <h1 class="text-4xl md:text-5xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-400 to-amber-200">
+                GOLDEN LUCKY
+            </h1>
+            <p class="text-slate-400 mt-2 text-sm md:text-base font-medium">당신의 인생 역전을 응원하는 프리미엄 로또번호 추출 시스템</p>
+        </header>
+
+        <!-- Dynamic Warning/Info Toast Container -->
+        <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+        <!-- Main Layout Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- Left Panel: Control / Filter / Generator -->
+            <main class="lg:col-span-7 flex flex-col gap-6">
+                <!-- Main Generator Control Box -->
+                <div class="glass-panel rounded-3xl p-6 shadow-2xl relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-2xl pointer-events-none"></div>
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-lg bg-indigo-500/20 flex items-center justify-center text-indigo-400">
+                                <i class="fa-solid fa-wand-magic-sparkles"></i>
+                            </span>
+                            <h2 class="text-xl font-bold">로또 번호 생성</h2>
+                        </div>
+                        <span class="text-xs bg-indigo-500/20 text-indigo-300 font-bold px-3 py-1 rounded-full border border-indigo-500/30">
+                            Lotto 6/45
+                        </span>
+                    </div>
+
+                    <!-- Quantity selection -->
+                    <div class="mb-6">
+                        <label class="block text-sm font-medium text-slate-300 mb-2">생성할 게임 수 (최대 5게임)</label>
+                        <div class="grid grid-cols-5 gap-2">
+                            <button onclick="setGameCount(1)" id="btn-count-1" class="game-count-btn py-3 rounded-xl border border-slate-700 bg-slate-800/50 hover:bg-slate-700/50 transition-all font-bold text-lg focus:outline-none">1</button>
+                            <button onclick="setGameCount(2)" id="btn-count-2" class="game-count-btn py-3 rounded-xl border border-slate-700 bg-slate-800/50 hover:bg-slate-700/50 transition-all font-bold text-lg focus:outline-none">2</button>
+                            <button onclick="setGameCount(3)" id="btn-count-3" class="game-count-btn py-3 rounded-xl border border-slate-700 bg-slate-800/50 hover:bg-slate-700/50 transition-all font-bold text-lg focus:outline-none">3</button>
+                            <button onclick="setGameCount(4)" id="btn-count-4" class="game-count-btn py-3 rounded-xl border border-slate-700 bg-slate-800/50 hover:bg-slate-700/50 transition-all font-bold text-lg focus:outline-none">4</button>
+                            <button onclick="setGameCount(5)" id="btn-count-5" class="game-count-btn py-3 rounded-xl border-indigo-500 bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/35 transition-all font-bold text-lg focus:outline-none">5</button>
+                        </div>
+                    </div>
+
+                    <!-- Generate Button Trigger -->
+                    <div class="flex gap-3">
+                        <button onclick="generateLottoNumbers()" class="flex-1 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-lg py-4 px-6 rounded-2xl shadow-xl shadow-amber-500/10 hover:shadow-amber-500/25 active:scale-95 transition-all flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-circle-play text-xl"></i>
+                            럭키 번호 추첨하기
+                        </button>
+                        <button onclick="resetFilters()" class="px-4 py-4 rounded-2xl border border-slate-700 hover:border-slate-500 hover:bg-slate-800 text-slate-400 hover:text-white transition-all" title="설정 초기화">
+                            <i class="fa-solid fa-rotate-right"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Advanced settings accordion -->
+                <div class="glass-panel rounded-3xl p-6 shadow-xl">
+                    <div class="flex items-center justify-between mb-4 cursor-pointer" onclick="toggleAdvancedSettings()">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-lg bg-emerald-500/20 flex items-center justify-center text-emerald-400">
+                                <i class="fa-solid fa-sliders"></i>
+                            </span>
+                            <h2 class="text-lg font-bold">고급 필터 (고정수 & 제외수)</h2>
+                        </div>
+                        <i id="advanced-chevron" class="fa-solid fa-chevron-down text-slate-400 transition-transform"></i>
+                    </div>
+
+                    <div id="advanced-settings-panel" class="hidden mt-4 space-y-6 pt-4 border-t border-slate-800/60">
+                        <!-- Alert Box inside Panel -->
+                        <div class="p-3 rounded-xl bg-slate-800/40 border border-slate-700/50 text-xs text-slate-400 leading-relaxed">
+                            <i class="fa-solid fa-circle-info text-indigo-400 mr-1"></i>
+                            <strong>고정수</strong>는 번호 생성 시 반드시 포함되고, <strong>제외수</strong>는 무조건 배제됩니다. 고정수는 최대 5개까지 설정 가능하며, 서로 겹치게 지정할 수 없습니다.
+                        </div>
+
+                        <!-- Included Numbers (고정수) Selector Grid -->
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-semibold text-emerald-400">고정할 번호 (선택됨: <span id="fixed-count">0</span>/5)</span>
+                                <button onclick="clearSpecificFilter('fixed')" class="text-xs text-slate-500 hover:text-slate-300">비우기</button>
+                            </div>
+                            <div class="flex flex-wrap gap-1 max-h-24 overflow-y-auto p-2 bg-slate-900/40 rounded-xl border border-slate-800">
+                                <div id="fixed-selector-container" class="flex flex-wrap gap-1">
+                                    <!-- Dynamic elements from JS -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Excluded Numbers (제외수) Selector Grid -->
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-sm font-semibold text-rose-400">제외할 번호 (선택됨: <span id="excluded-count">0</span>)</span>
+                                <button onclick="clearSpecificFilter('excluded')" class="text-xs text-slate-500 hover:text-slate-300">비우기</button>
+                            </div>
+                            <div class="flex flex-wrap gap-1 max-h-24 overflow-y-auto p-2 bg-slate-900/40 rounded-xl border border-slate-800">
+                                <div id="excluded-selector-container" class="flex flex-wrap gap-1">
+                                    <!-- Dynamic elements from JS -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Dream Keyword Interpreter -->
+                <div class="glass-panel rounded-3xl p-6 shadow-xl">
+                    <div class="flex items-center gap-3 mb-4">
+                        <span class="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center text-purple-400">
+                            <i class="fa-solid fa-moon"></i>
+                        </span>
+                        <h2 class="text-lg font-bold">꿈해몽 번호 추출</h2>
+                    </div>
+                    <p class="text-slate-400 text-xs mb-3">어젯밤 꾼 꿈의 주요 키워드를 검색하거나 클릭하시면 추천 로또 번호를 찾아드립니다.</p>
+
+                    <div class="relative mb-3">
+                        <input type="text" id="dream-input" placeholder="예: 돼지, 불, 황금, 물, 조상..." class="w-full bg-slate-900/80 border border-slate-700/80 focus:border-purple-500 rounded-xl py-3 px-4 pl-10 text-sm text-slate-100 placeholder-slate-500 focus:outline-none transition-all">
+                        <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-500 text-sm"></i>
+                    </div>
+
+                    <!-- Dream recommended keywords quick chips -->
+                    <div class="flex flex-wrap gap-1.5 mb-4">
+                        <button onclick="searchDreamKeyword('돼지')" class="px-2.5 py-1 text-xs bg-slate-800 hover:bg-purple-900/30 hover:border-purple-500/50 border border-slate-700 rounded-lg text-slate-300 transition-all">🐖 돼지</button>
+                        <button onclick="searchDreamKeyword('불')" class="px-2.5 py-1 text-xs bg-slate-800 hover:bg-purple-900/30 hover:border-purple-500/50 border border-slate-700 rounded-lg text-slate-300 transition-all">🔥 불</button>
+                        <button onclick="searchDreamKeyword('물')" class="px-2.5 py-1 text-xs bg-slate-800 hover:bg-purple-900/30 hover:border-purple-500/50 border border-slate-700 rounded-lg text-slate-300 transition-all">💧 물</button>
+                        <button onclick="searchDreamKeyword('황금')" class="px-2.5 py-1 text-xs bg-slate-800 hover:bg-purple-900/30 hover:border-purple-500/50 border border-slate-700 rounded-lg text-slate-300 transition-all">🪙 황금</button>
+                        <button onclick="searchDreamKeyword('조상')" class="px-2.5 py-1 text-xs bg-slate-800 hover:bg-purple-900/30 hover:border-purple-500/50 border border-slate-700 rounded-lg text-slate-300 transition-all">👵 조상</button>
+                        <button onclick="searchDreamKeyword('대통령')" class="px-2.5 py-1 text-xs bg-slate-800 hover:bg-purple-900/30 hover:border-purple-500/50 border border-slate-700 rounded-lg text-slate-300 transition-all">🏛️ 대통령</button>
+                    </div>
+
+                    <!-- Dream Search Result Area -->
+                    <div id="dream-result" class="hidden p-3.5 rounded-xl bg-purple-950/20 border border-purple-500/20 text-xs">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="font-bold text-purple-300" id="dream-result-title">"돼지" 꿈 추천 번호</span>
+                            <button onclick="applyDreamNumbers()" class="text-[10px] text-amber-400 font-bold hover:underline">필터(고정수)에 반영</button>
+                        </div>
+                        <p class="text-slate-400 mb-2" id="dream-result-desc">돼지 꿈은 대표적인 재물 운을 나타냅니다.</p>
+                        <div class="flex gap-1.5" id="dream-result-balls">
+                            <!-- JS Inject recommended balls -->
+                        </div>
+                    </div>
+                </div>
+            </main>
+
+            <!-- Right Panel: Output & History -->
+            <section class="lg:col-span-5 flex flex-col gap-6">
+                <!-- Live Draw Screen -->
+                <div class="glass-panel rounded-3xl p-6 shadow-2xl flex-1 flex flex-col min-h-[380px]">
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-lg bg-amber-500/20 flex items-center justify-center text-amber-400">
+                                <i class="fa-solid fa-ticket"></i>
+                            </span>
+                            <h2 class="text-xl font-bold">추첨된 럭키 넘버</h2>
+                        </div>
+                        <button onclick="clearHistory()" class="text-xs text-slate-500 hover:text-slate-300 flex items-center gap-1">
+                            <i class="fa-solid fa-trash-can"></i>
+                            모두 지우기
+                        </button>
+                    </div>
+
+                    <!-- Main Ball Generating Stage -->
+                    <div id="draw-stage" class="flex-1 flex flex-col justify-center gap-5">
+                        <!-- Placeholder state -->
+                        <div id="stage-placeholder" class="text-center py-12">
+                            <div class="w-20 h-20 bg-slate-800/60 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-700/50 text-slate-500">
+                                <i class="fa-solid fa-chart-line text-3xl animate-pulse"></i>
+                            </div>
+                            <p class="text-slate-400 font-semibold text-sm">추천 버튼을 클릭하여</p>
+                            <p class="text-slate-500 text-xs mt-1">대박 기운이 담긴 번호를 뽑아보세요!</p>
+                        </div>
+
+                        <!-- Active drawing list -->
+                        <div id="games-container" class="space-y-4 hidden">
+                            <!-- Dynamic game sets rendered here -->
+                        </div>
+                    </div>
+
+                    <!-- Bottom helper statistics / metadata -->
+                    <div id="statistics-panel" class="hidden mt-6 pt-4 border-t border-slate-800/80 text-xs text-slate-500 flex justify-between items-center">
+                        <span id="session-generation-count">생성된 총 게임: 0</span>
+                        <span>* 행운 번호는 단순 난수 생성 결과입니다.</span>
+                    </div>
+                </div>
+
+                <!-- History log -->
+                <div class="glass-panel rounded-3xl p-6 shadow-xl max-h-64 overflow-hidden flex flex-col">
+                    <div class="flex items-center justify-between mb-3">
+                        <h3 class="font-bold text-sm text-slate-400">금주 누적 저장소 (최근 15회)</h3>
+                        <span id="history-counter" class="text-xs px-2 py-0.5 bg-slate-800 text-slate-300 rounded-md">0건</span>
+                    </div>
+
+                    <!-- History Items List scrollable wrapper -->
+                    <div id="history-list" class="flex-1 overflow-y-auto space-y-2 pr-1 text-xs text-slate-400">
+                        <!-- Dynamic history logs rendered here -->
+                        <div id="history-empty" class="text-center py-6 text-slate-600">저장된 추출 기록이 없습니다.</div>
+                    </div>
+                </div>
+            </section>
+
+        </div>
+    </div>
+
+    <!-- Audio toggle (Sound Effects Control) -->
+    <div class="fixed bottom-4 right-4 z-40">
+        <button onclick="toggleSound()" id="sound-toggle-btn" class="w-12 h-12 bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white rounded-full flex items-center justify-center shadow-lg border border-slate-700/80 transition-all" title="효과음">
+            <i id="sound-icon" class="fa-solid fa-volume-high text-lg"></i>
+        </button>
+    </div>
+
+    <!-- Logic Script -->
+    <script>
+        // Sound toggle state
+        let soundEnabled = true;
+        let selectedGameCount = 5;
+        let fixedNumbers = [];
+        let excludedNumbers = [];
+        let generatedHistory = [];
+        
+        // Classic Dream-to-number data structure
+        const dreamDictionary = {
+            '돼지': { desc: '풍요와 번창을 불러오는 대박 길몽의 대명사', numbers: [1, 3, 11, 24, 38] },
+            '불': { desc: '활활 타는 불길처럼 사업이나 일이 대성하는 꿈', numbers: [7, 8, 15, 33, 44] },
+            '물': { desc: '맑은 물이 솟구치는 꿈은 큰 재산 축적을 상징', numbers: [2, 12, 17, 28, 40] },
+            '황금': { desc: '뜻밖의 부귀영화를 입고 일확천금 기회가 찾아올 징조', numbers: [5, 14, 25, 36, 45] },
+            '조상': { desc: '조상님의 자애로운 표정은 예기치 못한 금전적 축복', numbers: [6, 19, 21, 30, 42] },
+            '대통령': { desc: '최고의 명예와 신분 상승, 행운이 깃드는 권력몽', numbers: [9, 10, 20, 29, 35] },
+            '똥': { desc: '원하는 일이 술술 풀리며 막강한 부를 얻을 몽', numbers: [4, 13, 26, 31, 37] },
+            '보석': { desc: '귀중한 명예나 애정, 예기치 않은 수익을 암시', numbers: [16, 22, 27, 34, 41] },
+            '피': { desc: '정력적 진행과 금전 융통, 막혔던 일이 해소될 징조', numbers: [18, 23, 32, 39, 43] }
+        };
+
+        // UI Initialization on DOM Load
+        window.onload = function() {
+            setGameCount(5);
+            buildAdvancedSelectors();
+            setupDreamInputListener();
+        }
+
+        // Play synth ball extraction sound (Web Audio API)
+        function playExtractSound(index) {
+            if (!soundEnabled) return;
+            try {
+                const ctx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                
+                osc.connect(gain);
+                gain.connect(ctx.destination);
+                
+                // Scale note frequency upward based on ball position
+                const baseFreq = 261.63; // C4
+                const noteInterval = Math.pow(1.059463, index * 2); 
+                osc.frequency.setValueAtTime(baseFreq * noteInterval, ctx.currentTime);
+                osc.type = 'sine';
+                
+                // Rapid synth decay
+                gain.gain.setValueAtTime(0.12, ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35);
+                
+                osc.start();
+                osc.stop(ctx.currentTime + 0.4);
+            } catch (e) {
+                console.warn('Audio context init blocked or failed', e);
+            }
+        }
+
+        // Toggle sound state
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const soundIcon = document.getElementById('sound-icon');
+            if (soundEnabled) {
+                soundIcon.className = 'fa-solid fa-volume-high text-lg';
+                showToast('효과음 활성화', 'success');
+            } else {
+                soundIcon.className = 'fa-solid fa-volume-xmark text-lg';
+                showToast('효과음 비활성화', 'info');
+            }
+        }
+
+        // Toggle advanced filter expand/collapse
+        function toggleAdvancedSettings() {
+            const panel = document.getElementById('advanced-settings-panel');
+            const chevron = document.getElementById('advanced-chevron');
+            if (panel.classList.contains('hidden')) {
+                panel.classList.remove('hidden');
+                chevron.classList.add('rotate-180');
+            } else {
+                panel.classList.add('hidden');
+                chevron.classList.remove('rotate-180');
+            }
+        }
+
+        // Render Fixed & Excluded input ball selectors dynamically
+        function buildAdvancedSelectors() {
+            const fixedContainer = document.getElementById('fixed-selector-container');
+            const excludedContainer = document.getElementById('excluded-selector-container');
+            
+            fixedContainer.innerHTML = '';
+            excludedContainer.innerHTML = '';
+
+            for (let i = 1; i <= 45; i++) {
+                // Fixed Balls (고정수) Button Generation
+                const fixedBtn = document.createElement('button');
+                fixedBtn.type = 'button';
+                fixedBtn.id = `fixed-num-${i}`;
+                fixedBtn.innerText = i;
+                fixedBtn.onclick = () => toggleFixedNumber(i);
+                fixedBtn.className = `w-7 h-7 text-xs font-bold rounded-full border transition-all ${getBallInactiveClasses()}`;
+                fixedContainer.appendChild(fixedBtn);
+
+                // Excluded Balls (제외수) Button Generation
+                const excludedBtn = document.createElement('button');
+                excludedBtn.type = 'button';
+                excludedBtn.id = `excluded-num-${i}`;
+                excludedBtn.innerText = i;
+                excludedBtn.onclick = () => toggleExcludedNumber(i);
+                excludedBtn.className = `w-7 h-7 text-xs font-bold rounded-full border transition-all ${getBallInactiveClasses()}`;
+                excludedContainer.appendChild(excludedBtn);
+            }
+        }
+
+        // Color defaults for inactive ball buttons
+        function getBallInactiveClasses() {
+            return "bg-slate-800/40 border-slate-700/60 text-slate-400 hover:border-indigo-400 hover:text-white";
+        }
+
+        // Game Count selector handler
+        function setGameCount(count) {
+            selectedGameCount = count;
+            for (let i = 1; i <= 5; i++) {
+                const btn = document.getElementById(`btn-count-${i}`);
+                if (i === count) {
+                    btn.className = "game-count-btn py-3 rounded-xl border-indigo-500 bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-500/35 transition-all font-bold text-lg focus:outline-none";
+                } else {
+                    btn.className = "game-count-btn py-3 rounded-xl border-slate-700 bg-slate-800/50 hover:bg-slate-700/50 transition-all text-slate-400 font-bold text-lg focus:outline-none";
+                }
+            }
+        }
+
+        // Handle including logic for advanced rules
+        function toggleFixedNumber(num) {
+            if (fixedNumbers.includes(num)) {
+                // Remove
+                fixedNumbers = fixedNumbers.filter(n => n !== num);
+                updateFixedSelectorUI(num, false);
+            } else {
+                // Assert limit
+                if (fixedNumbers.length >= 5) {
+                    showToast('고정수는 최대 5개까지만 선택 가능합니다.', 'warning');
+                    return;
+                }
+                // Check exclusion duplication
+                if (excludedNumbers.includes(num)) {
+                    excludedNumbers = excludedNumbers.filter(n => n !== num);
+                    updateExcludedSelectorUI(num, false);
+                }
+                fixedNumbers.push(num);
+                updateFixedSelectorUI(num, true);
+            }
+            document.getElementById('fixed-count').innerText = fixedNumbers.length;
+        }
+
+        // Handle excluding logic for advanced rules
+        function toggleExcludedNumber(num) {
+            if (excludedNumbers.includes(num)) {
+                // Remove
+                excludedNumbers = excludedNumbers.filter(n => n !== num);
+                updateExcludedSelectorUI(num, false);
+            } else {
+                // Check fixed duplication
+                if (fixedNumbers.includes(num)) {
+                    fixedNumbers = fixedNumbers.filter(n => n !== num);
+                    updateFixedSelectorUI(num, false);
+                    document.getElementById('fixed-count').innerText = fixedNumbers.length;
+                }
+                excludedNumbers.push(num);
+                updateExcludedSelectorUI(num, true);
+            }
+            document.getElementById('excluded-count').innerText = excludedNumbers.length;
+        }
+
+        // Visual feedback handlers for state panels
+        function updateFixedSelectorUI(num, active) {
+            const btn = document.getElementById(`fixed-num-${num}`);
+            if (active) {
+                btn.className = "w-7 h-7 text-xs font-bold rounded-full border transition-all bg-emerald-600 border-emerald-400 text-white shadow-md shadow-emerald-500/20";
+            } else {
+                btn.className = `w-7 h-7 text-xs font-bold rounded-full border transition-all ${getBallInactiveClasses()}`;
+            }
+        }
+
+        function updateExcludedSelectorUI(num, active) {
+            const btn = document.getElementById(`excluded-num-${num}`);
+            if (active) {
+                btn.className = "w-7 h-7 text-xs font-bold rounded-full border transition-all bg-rose-600 border-rose-400 text-white shadow-md shadow-rose-500/20";
+            } else {
+                btn.className = `w-7 h-7 text-xs font-bold rounded-full border transition-all ${getBallInactiveClasses()}`;
+            }
+        }
+
+        // Clear filter buttons
+        function clearSpecificFilter(type) {
+            if (type === 'fixed') {
+                fixedNumbers.forEach(n => updateFixedSelectorUI(n, false));
+                fixedNumbers = [];
+                document.getElementById('fixed-count').innerText = 0;
+                showToast('고정수가 초기화되었습니다.', 'info');
+            } else {
+                excludedNumbers.forEach(n => updateExcludedSelectorUI(n, false));
+                excludedNumbers = [];
+                document.getElementById('excluded-count').innerText = 0;
+                showToast('제외수가 초기화되었습니다.', 'info');
+            }
+        }
+
+        // Entire Filters reset
+        function resetFilters() {
+            clearSpecificFilter('fixed');
+            clearSpecificFilter('excluded');
+            document.getElementById('dream-input').value = '';
+            document.getElementById('dream-result').classList.add('hidden');
+            showToast('모든 설정이 초기화되었습니다.', 'info');
+        }
+
+        // Setup Dream keyword listeners
+        function setupDreamInputListener() {
+            const input = document.getElementById('dream-input');
+            input.addEventListener('input', function() {
+                const keyword = this.value.trim();
+                if (keyword === '') {
+                    document.getElementById('dream-result').classList.add('hidden');
+                    return;
+                }
+                
+                // Simple partial matching logic
+                let foundKey = null;
+                for (let key in dreamDictionary) {
+                    if (key.includes(keyword) || keyword.includes(key)) {
+                        foundKey = key;
+                        break;
+                    }
+                }
+
+                if (foundKey) {
+                    renderDreamResult(foundKey);
+                } else {
+                    // Soft generate temporary associated numbers for generic dreams
+                    renderGenericDreamResult(keyword);
+                }
+            });
+        }
+
+        // Trigger dream search via chips
+        function searchDreamKeyword(word) {
+            document.getElementById('dream-input').value = word;
+            renderDreamResult(word);
+        }
+
+        // UI rendering for pre-defined dream keyword matches
+        function renderDreamResult(key) {
+            const data = dreamDictionary[key];
+            const resultBox = document.getElementById('dream-result');
+            
+            document.getElementById('dream-result-title').innerText = `"${key}" 꿈 추천 고유번호`;
+            document.getElementById('dream-result-desc').innerText = data.desc;
+            
+            const ballsContainer = document.getElementById('dream-result-balls');
+            ballsContainer.innerHTML = '';
+            
+            data.numbers.forEach(num => {
+                const ball = document.createElement('span');
+                ball.className = `w-7 h-7 text-xs font-bold rounded-full flex items-center justify-center text-slate-900 font-bold ${getBallColorClass(num)}`;
+                ball.innerText = num;
+                ballsContainer.appendChild(ball);
+            });
+
+            // Store active search numbers globally in matching dataset
+            resultBox.dataset.numbers = JSON.stringify(data.numbers);
+            resultBox.classList.remove('hidden');
+        }
+
+        // Seed generator for arbitrary text dream associations
+        function renderGenericDreamResult(keyword) {
+            const resultBox = document.getElementById('dream-result');
+            document.getElementById('dream-result-title').innerText = `"${keyword}" 꿈 연상 행운 분석`;
+            document.getElementById('dream-result-desc').innerText = `어디선가 예고된 길한 기운을 수치화한 영감 추천번호 입니다.`;
+
+            // Consistent seed numbers generation depending on word characters code
+            let seed = 0;
+            for (let i = 0; i < keyword.length; i++) {
+                seed += keyword.charCodeAt(i);
+            }
+            
+            const numbers = [];
+            while (numbers.length < 5) {
+                // Ensure unique numbers within [1-45] range
+                const generated = ((seed * (numbers.length + 1) * 17) % 45) + 1;
+                if (!numbers.includes(generated)) {
+                    numbers.push(generated);
+                } else {
+                    // Fallback to find standard empty spot
+                    let step = 1;
+                    while (true) {
+                        const fallbackNum = ((generated + step) % 45) + 1;
+                        if (!numbers.includes(fallbackNum)) {
+                            numbers.push(fallbackNum);
+                            break;
+                        }
+                        step++;
+                    }
+                }
+            }
+            numbers.sort((a,b)=>a-b);
+
+            const ballsContainer = document.getElementById('dream-result-balls');
+            ballsContainer.innerHTML = '';
+            numbers.forEach(num => {
+                const ball = document.createElement('span');
+                ball.className = `w-7 h-7 text-xs font-bold rounded-full flex items-center justify-center text-slate-900 font-bold ${getBallColorClass(num)}`;
+                ball.innerText = num;
+                ballsContainer.appendChild(ball);
+            });
+
+            resultBox.dataset.numbers = JSON.stringify(numbers);
+            resultBox.classList.remove('hidden');
+        }
+
+        // Apply generated dream numbers to the fixed filters panel
+        function applyDreamNumbers() {
+            const resultBox = document.getElementById('dream-result');
+            if (!resultBox.dataset.numbers) return;
+            
+            const numbers = JSON.parse(resultBox.dataset.numbers);
+            
+            // Clear current selection
+            clearSpecificFilter('fixed');
+            
+            // Try to assign new numbers
+            numbers.forEach(n => {
+                if (fixedNumbers.length < 5) {
+                    toggleFixedNumber(n);
+                }
+            });
+            
+            // Visually trigger advanced panel toggle to show result
+            const panel = document.getElementById('advanced-settings-panel');
+            if (panel.classList.contains('hidden')) {
+                toggleAdvancedSettings();
+            }
+
+            showToast('꿈 추천 번호가 고정수로 적용되었습니다!', 'success');
+        }
+
+        // Main generation trigger
+        function generateLottoNumbers() {
+            // Validate logical conflicts
+            if (fixedNumbers.length + (45 - excludedNumbers.length) < 6) {
+                showToast('제외수가 너무 많아 6개의 번호를 선택할 수 없습니다.', 'danger');
+                return;
+            }
+
+            const placeholder = document.getElementById('stage-placeholder');
+            const gamesContainer = document.getElementById('games-container');
+            const statsPanel = document.getElementById('statistics-panel');
+
+            // Toggle active stage
+            placeholder.classList.add('hidden');
+            gamesContainer.classList.remove('hidden');
+            statsPanel.classList.remove('hidden');
+
+            gamesContainer.innerHTML = '';
+
+            const gameSets = [];
+
+            // Draw individual game routines
+            for (let g = 0; g < selectedGameCount; g++) {
+                const gameNumbers = drawSingleGame();
+                gameSets.push(gameNumbers);
+                
+                // Prepare container elements for current row
+                const gameRow = document.createElement('div');
+                gameRow.className = "flex items-center justify-between p-3.5 bg-slate-900/40 rounded-2xl border border-slate-800/80 hover:border-indigo-500/30 transition-all group";
+                
+                const indexSpan = document.createElement('span');
+                indexSpan.className = "text-xs font-bold text-slate-500 bg-slate-800/80 w-6 h-6 rounded-lg flex items-center justify-center border border-slate-700/40 group-hover:text-indigo-400 group-hover:border-indigo-500/20";
+                indexSpan.innerText = String.fromCharCode(65 + g); // Indexing letters A, B, C, D, E
+                
+                const ballsDiv = document.createElement('div');
+                ballsDiv.className = "flex gap-2 justify-center flex-1 mx-3";
+                
+                const actionDiv = document.createElement('div');
+                actionDiv.className = "flex items-center gap-1.5";
+                
+                // Copy current single game button
+                const copyBtn = document.createElement('button');
+                copyBtn.className = "p-2 hover:bg-indigo-500/20 text-slate-500 hover:text-indigo-400 rounded-lg transition-all"
+                copyBtn.title = "이 번호 세트 복사";
+                copyBtn.onclick = () => copySpecificNumbers(gameNumbers);
+                copyBtn.innerHTML = `<i class="fa-solid fa-copy text-sm"></i>`;
+                
+                actionDiv.appendChild(copyBtn);
+                gameRow.appendChild(indexSpan);
+                gameRow.appendChild(ballsDiv);
+                gameRow.appendChild(actionDiv);
+                gamesContainer.appendChild(gameRow);
+
+                // Sequential Delayed Animation Rendering
+                gameNumbers.forEach((num, index) => {
+                    const delay = (g * 180) + (index * 60);
+                    setTimeout(() => {
+                        const ball = document.createElement('span');
+                        ball.className = `w-10 h-10 md:w-11 md:h-11 text-slate-900 font-extrabold text-sm md:text-base rounded-full flex items-center justify-center ball-pop shadow-md ${getBallColorClass(num)}`;
+                        ball.innerText = num;
+                        ballsDiv.appendChild(ball);
+                        
+                        // play short tone
+                        playExtractSound(index);
+                    }, delay);
+                });
+            }
+
+            // Append newly generated set lists into log records
+            setTimeout(() => {
+                gameSets.forEach(set => appendHistoryRecord(set));
+                showToast(`${selectedGameCount}개 게임 번호가 무작위 생성되었습니다!`, 'success');
+            }, (selectedGameCount * 180) + 360);
+        }
+
+        // Single ticket draft algorithm
+        function drawSingleGame() {
+            const availablePool = [];
+            // Generate pool representing numbers excluding specified values
+            for (let i = 1; i <= 45; i++) {
+                if (!excludedNumbers.includes(i) && !fixedNumbers.includes(i)) {
+                    availablePool.push(i);
+                }
+            }
+
+            // Initialize numbers from fixed items
+            const resultSet = [...fixedNumbers];
+            const neededCount = 6 - resultSet.length;
+
+            // Simple random selection
+            const shuffled = shuffleArray(availablePool);
+            for (let i = 0; i < neededCount; i++) {
+                if (shuffled[i]) {
+                    resultSet.push(shuffled[i]);
+                }
+            }
+
+            // Standard Lotto sorting
+            return resultSet.sort((a, b) => a - b);
+        }
+
+        // Auxiliary Fisher-Yates array shuffle implementation
+        function shuffleArray(array) {
+            const copy = [...array];
+            for (let i = copy.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [copy[i], copy[j]] = [copy[j], copy[i]];
+            }
+            return copy;
+        }
+
+        // Dynamic lotto ball color configurations matching real Lotto 6/45 standard
+        function getBallColorClass(num) {
+            if (num >= 1 && num <= 10) {
+                // Gold / Yellow
+                return "bg-gradient-to-br from-amber-200 via-yellow-400 to-amber-500 shadow-yellow-500/20 border border-yellow-300";
+            } else if (num >= 11 && num <= 20) {
+                // Blue
+                return "bg-gradient-to-br from-sky-300 via-blue-500 to-blue-700 shadow-blue-500/20 border border-blue-400 text-white";
+            } else if (num >= 21 && num <= 30) {
+                // Red
+                return "bg-gradient-to-br from-rose-300 via-red-500 to-red-700 shadow-red-500/20 border border-red-400 text-white";
+            } else if (num >= 31 && num <= 40) {
+                // Slate / Gray
+                return "bg-gradient-to-br from-slate-200 via-slate-400 to-slate-600 shadow-slate-500/20 border border-slate-300";
+            } else {
+                // Green
+                return "bg-gradient-to-br from-emerald-300 via-green-500 to-green-700 shadow-green-500/20 border border-green-400 text-white";
+            }
+        }
+
+        // Append generated tickets to log interface
+        function appendHistoryRecord(numbers) {
+            generatedHistory.unshift(numbers);
+            if (generatedHistory.length > 15) {
+                generatedHistory.pop();
+            }
+
+            // Update stats
+            document.getElementById('session-generation-count').innerText = `생성된 총 게임: ${generatedHistory.length}`;
+            updateHistoryUI();
+        }
+
+        // Render cumulative tickets history list
+        function updateHistoryUI() {
+            const historyList = document.getElementById('history-list');
+            const emptyState = document.getElementById('history-empty');
+            const counter = document.getElementById('history-counter');
+
+            counter.innerText = `${generatedHistory.length}건`;
+
+            if (generatedHistory.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            
+            // Redraw complete history list
+            historyList.innerHTML = '';
+            historyList.appendChild(emptyState);
+
+            generatedHistory.forEach((set, index) => {
+                const card = document.createElement('div');
+                card.className = "flex items-center justify-between p-2 bg-slate-900/60 rounded-xl border border-slate-800/80 hover:bg-slate-900/80 transition-all";
+                
+                const indexSpan = document.createElement('span');
+                indexSpan.className = "font-medium text-[10px] text-slate-500 ml-1";
+                indexSpan.innerText = `[${generatedHistory.length - index}회]`;
+
+                const miniBalls = document.createElement('div');
+                miniBalls.className = "flex gap-1 items-center justify-center";
+                set.forEach(num => {
+                    const mBall = document.createElement('span');
+                    mBall.className = `w-5.5 h-5.5 rounded-full flex items-center justify-center text-[9px] font-black text-slate-950 ${getBallColorClass(num)}`;
+                    mBall.style.width = "22px";
+                    mBall.style.height = "22px";
+                    mBall.innerText = num;
+                    miniBalls.appendChild(mBall);
+                });
+
+                const copyBtn = document.createElement('button');
+                copyBtn.className = "text-[10px] text-indigo-400 hover:text-indigo-300 font-bold px-2 py-1 rounded hover:bg-indigo-500/10 transition-all";
+                copyBtn.onclick = () => copySpecificNumbers(set);
+                copyBtn.innerText = "복사";
+
+                card.appendChild(indexSpan);
+                card.appendChild(miniBalls);
+                card.appendChild(copyBtn);
+                historyList.appendChild(card);
+            });
+        }
+
+        // Clear log values completely
+        function clearHistory() {
+            generatedHistory = [];
+            updateHistoryUI();
+            document.getElementById('session-generation-count').innerText = "생성된 총 게임: 0";
+            showToast('히스토리 내역이 초기화되었습니다.', 'info');
+        }
+
+        // Copy array values directly into browser clipboard
+        function copySpecificNumbers(numbers) {
+            const numbersString = numbers.join(', ');
+            const dummy = document.createElement("textarea");
+            document.body.appendChild(dummy);
+            dummy.value = numbersString;
+            dummy.select();
+            document.execCommand("copy");
+            document.body.removeChild(dummy);
+
+            showToast(`[${numbersString}] 클립보드에 복사 완료!`, 'success');
+        }
+
+        // Rich visual Toast mechanism
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            
+            const toast = document.createElement('div');
+            toast.className = "flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg border text-sm transition-all transform translate-y-2 opacity-0 pointer-events-auto max-w-xs";
+            
+            // Handle context profiles
+            if (type === 'success') {
+                toast.classList.add('bg-emerald-950/80', 'border-emerald-500/30', 'text-emerald-300');
+                toast.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> ${message}`;
+            } else if (type === 'warning') {
+                toast.classList.add('bg-amber-950/80', 'border-amber-500/30', 'text-amber-300');
+                toast.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-amber-400"></i> ${message}`;
+            } else if (type === 'danger') {
+                toast.classList.add('bg-rose-950/80', 'border-rose-500/30', 'text-rose-300');
+                toast.innerHTML = `<i class="fa-solid fa-circle-exclamation text-rose-400"></i> ${message}`;
+            } else {
+                toast.classList.add('bg-slate-900/90', 'border-slate-700', 'text-slate-300');
+                toast.innerHTML = `<i class="fa-solid fa-circle-info text-indigo-400"></i> ${message}`;
+            }
+
+            container.appendChild(toast);
+
+            // Pop-in Transition
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 50);
+
+            // Automatic dismiss timers
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => {
+                    toast.remove();
+                }, 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
