@@ -1,1 +1,987 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D 네온 주사위 배틀</title>
+    <!-- Tailwind CSS 탑재 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 아이콘 탑재 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter & Do Hyeon 탑재 -->
+    <link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', 'Do Hyeon', sans-serif;
+            background: radial-gradient(circle at center, #1e1b4b 0%, #0f172a 100%);
+        }
 
+        /* 3D 주사위 뷰포트 */
+        .dice-area {
+            perspective: 600px;
+            position: relative;
+        }
+
+        /* 결과 강조용 스포트라이트 오라 */
+        .spotlight {
+            position: absolute;
+            width: 140px;
+            height: 140px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(253, 224, 71, 0.25) 0%, rgba(99, 102, 241, 0) 70%);
+            opacity: 0;
+            transform: scale(0.6);
+            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+            z-index: 1;
+        }
+        .spotlight-cpu {
+            background: radial-gradient(circle, rgba(52, 211, 153, 0.25) 0%, rgba(16, 185, 129, 0) 70%);
+        }
+        .spotlight-active .spotlight {
+            opacity: 1;
+            transform: scale(1.3);
+            animation: pulse-spotlight 2s infinite alternate;
+        }
+
+        @keyframes pulse-spotlight {
+            0% { transform: scale(1.25); opacity: 0.8; }
+            100% { transform: scale(1.35); opacity: 1; }
+        }
+
+        /* */
+        /* 주사위 3D 큐브 */
+        .cube {
+            width: 100px;
+            height: 100px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 1.5s cubic-bezier(0.2, 0.8, 0.3, 1.15);
+            z-index: 10;
+        }
+
+        /* 주사위 각 면 공통 스타일 */
+        .face {
+            position: absolute;
+            width: 100px;
+            height: 100px;
+            background: linear-gradient(135deg, #1e1b4b 0%, #0f172a 100%);
+            border: 2px solid rgba(99, 102, 241, 0.4);
+            border-radius: 18px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            padding: 10px;
+            box-sizing: border-box;
+            box-shadow: inset 0 0 15px rgba(99, 102, 241, 0.4), 0 4px 10px rgba(0, 0, 0, 0.5);
+            backface-visibility: visible; /* 뒷면도 희미하게 입체감을 주기 위해 유지 */
+            transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), border-color 0.4s, box-shadow 0.4s;
+        }
+
+        /* 컴퓨터 주사위는 색상 다르게 (에메랄드 테마) */
+        .cube-cpu .face {
+            border-color: rgba(16, 185, 129, 0.4);
+            box-shadow: inset 0 0 15px rgba(16, 185, 129, 0.4), 0 4px 10px rgba(0, 0, 0, 0.5);
+        }
+
+        /* 3D 기본 좌표 배치 */
+        .face-1 { transform: rotateY(0deg) translateZ(50px); }
+        .face-6 { transform: rotateY(180deg) translateZ(50px); }
+        .face-2 { transform: rotateY(90deg) translateZ(50px); }
+        .face-5 { transform: rotateY(-90deg) translateZ(50px); }
+        .face-3 { transform: rotateX(90deg) translateZ(50px); }
+        .face-4 { transform: rotateX(-90deg) translateZ(50px); }
+
+        /* ──────────────────────────────────────────────────────────
+           ★ 핵심: 정면 결과값 면 돌출(Pop-out) 및 초발광 하이라이트 효과 ★
+        ────────────────────────────────────────────────────────── */
+        .player-active.face-1 { transform: rotateY(0deg) translateZ(60px) scale(1.08); }
+        .player-active.face-6 { transform: rotateY(180deg) translateZ(60px) scale(1.08); }
+        .player-active.face-2 { transform: rotateY(90deg) translateZ(60px) scale(1.08); }
+        .player-active.face-5 { transform: rotateY(-90deg) translateZ(60px) scale(1.08); }
+        .player-active.face-3 { transform: rotateX(90deg) translateZ(60px) scale(1.08); }
+        .player-active.face-4 { transform: rotateX(-90deg) translateZ(60px) scale(1.08); }
+
+        .cpu-active.face-1 { transform: rotateY(0deg) translateZ(60px) scale(1.08); }
+        .cpu-active.face-6 { transform: rotateY(180deg) translateZ(60px) scale(1.08); }
+        .cpu-active.face-2 { transform: rotateY(90deg) translateZ(60px) scale(1.08); }
+        .cpu-active.face-5 { transform: rotateY(-90deg) translateZ(60px) scale(1.08); }
+        .cpu-active.face-3 { transform: rotateX(90deg) translateZ(60px) scale(1.08); }
+        .cpu-active.face-4 { transform: rotateX(-90deg) translateZ(60px) scale(1.08); }
+
+        /* 플레이어 정면 하이라이트 (골드 엘로우 테마) */
+        .player-active {
+            border: 4px solid #facc15 !important;
+            box-shadow: inset 0 0 20px rgba(250, 204, 21, 0.6), 0 0 30px rgba(250, 204, 21, 0.8) !important;
+            animation: pulse-active-player 1.5s infinite alternate;
+            z-index: 50;
+        }
+
+        /* 컴퓨터 정면 하이라이트 (테크 네온 에메랄드 테마) */
+        .cpu-active {
+            border: 4px solid #34d399 !important;
+            box-shadow: inset 0 0 20px rgba(52, 211, 153, 0.6), 0 0 30px rgba(52, 211, 153, 0.8) !important;
+            animation: pulse-active-cpu 1.5s infinite alternate;
+            z-index: 50;
+        }
+
+        @keyframes pulse-active-player {
+            0% { box-shadow: inset 0 0 15px rgba(250, 204, 21, 0.5), 0 0 20px rgba(250, 204, 21, 0.6); }
+            100% { box-shadow: inset 0 0 25px rgba(250, 204, 21, 0.8), 0 0 40px rgba(250, 204, 21, 1); }
+        }
+
+        @keyframes pulse-active-cpu {
+            0% { box-shadow: inset 0 0 15px rgba(52, 211, 153, 0.5), 0 0 20px rgba(52, 211, 153, 0.6); }
+            100% { box-shadow: inset 0 0 25px rgba(52, 211, 153, 0.8), 0 0 40px rgba(52, 211, 153, 1); }
+        }
+
+        /* 주사위 눈금(점) 스타일 입체화 */
+        .dot {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            align-self: center;
+            justify-self: center;
+            background: radial-gradient(circle at 35% 35%, #ffffff 0%, #cbd5e1 60%, #94a3b8 100%);
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.8), inset -1px -1px 2px rgba(0,0,0,0.4);
+            transition: background 0.4s, box-shadow 0.4s;
+        }
+
+        /* 활성화 상태 정면 점 보강 */
+        .player-active .dot {
+            background: radial-gradient(circle at 35% 35%, #ffffff 0%, #fbbf24 65%, #d97706 100%) !important;
+            box-shadow: 0 0 12px #facc15, inset -1px -1px 2px rgba(0,0,0,0.5) !important;
+        }
+
+        .cpu-active .dot {
+            background: radial-gradient(circle at 35% 35%, #ffffff 0%, #34d399 65%, #059669 100%) !important;
+            box-shadow: 0 0 12px #34d399, inset -1px -1px 2px rgba(0,0,0,0.5) !important;
+        }
+
+        /* 1번 눈금(레드) 특수 포인트 처리 */
+        .face-1 .dot { 
+            grid-area: 2 / 2; 
+            width: 24px; 
+            height: 24px; 
+            background: radial-gradient(circle at 35% 35%, #ff8585 0%, #ef4444 60%, #b91c1c 100%) !important; 
+            box-shadow: 1px 1px 3px rgba(0,0,0,0.8), 0 0 8px rgba(239, 68, 68, 0.5); 
+        }
+        .player-active.face-1 .dot {
+            background: radial-gradient(circle at 35% 35%, #ffffff 0%, #f87171 50%, #dc2626 100%) !important;
+            box-shadow: 0 0 15px #ef4444, inset -1px -1px 2px rgba(0,0,0,0.5) !important;
+        }
+        .cpu-active.face-1 .dot {
+            background: radial-gradient(circle at 35% 35%, #ffffff 0%, #f87171 50%, #dc2626 100%) !important;
+            box-shadow: 0 0 15px #ef4444, inset -1px -1px 2px rgba(0,0,0,0.5) !important;
+        }
+
+        /* 점 레이아웃 지정 (1~6 눈금 위치 정의) */
+        .face-2 .d1 { grid-area: 1 / 1; }
+        .face-2 .d2 { grid-area: 3 / 3; }
+
+        .face-3 .d1 { grid-area: 1 / 1; }
+        .face-3 .d2 { grid-area: 2 / 2; }
+        .face-3 .d3 { grid-area: 3 / 3; }
+
+        .face-4 .d1 { grid-area: 1 / 1; }
+        .face-4 .d2 { grid-area: 1 / 3; }
+        .face-4 .d3 { grid-area: 3 / 1; }
+        .face-4 .d4 { grid-area: 3 / 3; }
+
+        .face-5 .d1 { grid-area: 1 / 1; }
+        .face-5 .d2 { grid-area: 1 / 3; }
+        .face-5 .d3 { grid-area: 2 / 2; }
+        .face-5 .d4 { grid-area: 3 / 1; }
+        .face-5 .d5 { grid-area: 3 / 3; }
+
+        .face-6 .d1 { grid-area: 1 / 1; }
+        .face-6 .d2 { grid-area: 1 / 3; }
+        .face-6 .d3 { grid-area: 2 / 1; }
+        .face-6 .d4 { grid-area: 2 / 3; }
+        .face-6 .d5 { grid-area: 3 / 1; }
+        .face-6 .d6 { grid-area: 3 / 3; }
+
+        /* 커스텀 스크롤바 디자인 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6366f1;
+        }
+    </style>
+</head>
+<body class="min-h-screen text-slate-100 flex flex-col justify-between overflow-x-hidden">
+
+    <!-- 상단 헤더 -->
+    <header class="w-full max-w-6xl mx-auto px-4 py-4 flex justify-between items-center border-b border-indigo-950">
+        <div class="flex items-center space-x-3">
+            <div class="bg-indigo-600 p-2.5 rounded-xl shadow-lg shadow-indigo-500/30 animate-pulse">
+                <i class="fa-solid fa-dice-five text-2xl text-white"></i>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold tracking-wider text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">NEON DICE BATTLE</h1>
+                <p class="text-xs text-slate-400">명확한 HUD 가이드와 딜레이가 개선된 3D 대결!</p>
+            </div>
+        </div>
+        
+        <!-- 오디오 및 정보 컨트롤 -->
+        <div class="flex items-center space-x-4">
+            <button id="soundToggle" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 transition flex items-center justify-center border border-slate-700 text-indigo-400 hover:text-indigo-300" title="음소거 토글">
+                <i id="soundIcon" class="fa-solid fa-volume-high"></i>
+            </button>
+            <button id="ruleBtn" class="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 transition flex items-center justify-center border border-slate-700 text-purple-400 hover:text-purple-300" title="게임 규칙">
+                <i class="fa-solid fa-circle-info"></i>
+            </button>
+        </div>
+    </header>
+
+    <!-- -->
+    <!-- 메인 대시보드 구역 -->
+    <main class="flex-grow w-full max-w-5xl mx-auto px-4 py-6 flex flex-col lg:flex-row gap-6 items-center lg:items-stretch justify-center">
+        
+        <!-- 좌측: 대결 패널 -->
+        <div class="w-full lg:w-2/3 bg-slate-900/60 backdrop-blur-md rounded-2xl p-6 border border-slate-800 flex flex-col justify-between shadow-2xl relative overflow-hidden">
+            <!-- 백그라운드 네온 오라 -->
+            <div class="absolute -top-10 -left-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-10 -right-10 w-40 h-40 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+            <!-- 매치 상태바 -->
+            <div class="flex justify-between items-center mb-6 bg-slate-950/40 p-4 rounded-xl border border-slate-800/80">
+                <div class="text-center">
+                    <span class="text-xs text-indigo-400 block uppercase tracking-widest font-bold">Player Set</span>
+                    <span id="playerMatchScore" class="text-2xl font-black text-indigo-400">0</span>
+                </div>
+                
+                <div class="flex flex-col items-center">
+                    <span class="text-xs text-slate-400 font-semibold mb-1">목표 승수 (최대)</span>
+                    <div class="flex items-center space-x-2 bg-slate-900 px-3 py-1 rounded-lg border border-slate-800">
+                        <button id="decTarget" class="text-slate-400 hover:text-white px-1">-</button>
+                        <span id="targetScoreDisplay" class="font-bold text-sm text-yellow-400 w-6 text-center">3</span>
+                        <button id="incTarget" class="text-slate-400 hover:text-white px-1">+</button>
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <span class="text-xs text-emerald-400 block uppercase tracking-widest font-bold">CPU Set</span>
+                    <span id="cpuMatchScore" class="text-2xl font-black text-emerald-400">0</span>
+                </div>
+            </div>
+
+            <!-- 대결 배틀그라운드 -->
+            <div class="grid grid-cols-2 gap-4 my-auto relative">
+                <!-- VS 가림막/선 -->
+                <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-30 bg-slate-950 border border-slate-800 text-slate-400 w-10 h-10 rounded-full flex items-center justify-center font-black text-sm shadow-lg shadow-black/50">
+                    VS
+                </div>
+
+                <!-- 플레이어 구역 (스포트라이트 컨테이너 연결) -->
+                <div id="playerDiceArea" class="dice-container-panel bg-indigo-950/20 rounded-2xl p-6 border border-indigo-950/50 flex flex-col items-center justify-center text-center relative overflow-hidden transition-all duration-500">
+                    <span class="absolute top-3 left-3 px-2 py-0.5 rounded-md text-[10px] font-bold bg-indigo-500/20 text-indigo-400 border border-indigo-500/30">PLAYER</span>
+                    
+                    <div class="dice-area h-36 w-full flex items-center justify-center mb-4 relative">
+                        <!-- 스포트라이트 원형 백드롭 -->
+                        <div class="spotlight"></div>
+                        
+                        <!-- HUD Target Frame Overlay (어디가 위쪽/기준면인지 명확하게 구분해주는 서클 브래킷) -->
+                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                            <div class="w-28 h-28 border border-dashed border-indigo-500/30 rounded-2xl flex items-center justify-center">
+                                <span class="absolute -bottom-2 bg-indigo-950 border border-indigo-500/60 text-[9px] text-indigo-400 px-2 py-0.5 rounded-full font-black tracking-wider uppercase shadow-md shadow-black">
+                                    FRONT (판정)
+                                </span>
+                                <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-indigo-500/60 rounded-tl-sm"></div>
+                                <div class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-indigo-500/60 rounded-tr-sm"></div>
+                                <div class="absolute bottom-2 left-2 w-3 h-3 border-b-2 border-l-2 border-indigo-500/60 rounded-bl-sm"></div>
+                                <div class="absolute bottom-2 right-2 w-3 h-3 border-b-2 border-r-2 border-indigo-500/60 rounded-br-sm"></div>
+                            </div>
+                        </div>
+
+                        <!-- 3D 플레이어 주사위 -->
+                        <div id="playerCube" class="cube cube-player">
+                            <div class="face face-1"><div class="dot d1"></div></div>
+                            <div class="face face-6">
+                                <div class="dot d1"></div><div class="dot d2"></div><div class="dot d3"></div>
+                                <div class="dot d4"></div><div class="dot d5"></div><div class="dot d6"></div>
+                            </div>
+                            <div class="face face-2"><div class="dot d1"></div><div class="dot d2"></div></div>
+                            <div class="face face-5">
+                                <div class="dot d1"></div><div class="dot d2"></div><div class="dot d3"></div>
+                                <div class="dot d4"></div><div class="dot d5"></div>
+                            </div>
+                            <div class="face face-3"><div class="dot d1"></div><div class="dot d2"></div><div class="dot d3"></div></div>
+                            <div class="face face-4">
+                                <div class="dot d1"></div><div class="dot d2"></div><div class="dot d3"></div><div class="dot d4"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-300">플레이어</h3>
+                    <div class="mt-2 text-2xl font-black text-indigo-400 h-8 transition-transform duration-300" id="playerResultVal">-</div>
+                </div>
+
+                <!-- 컴퓨터 구역 (스포트라이트 컨테이너 연결) -->
+                <div id="cpuDiceArea" class="dice-container-panel bg-emerald-950/20 rounded-2xl p-6 border border-emerald-950/50 flex flex-col items-center justify-center text-center relative overflow-hidden transition-all duration-500">
+                    <span class="absolute top-3 right-3 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">COMPUTERS</span>
+                    
+                    <div class="dice-area h-36 w-full flex items-center justify-center mb-4 relative">
+                        <!-- 스포트라이트 원형 백드롭 -->
+                        <div class="spotlight spotlight-cpu"></div>
+                        
+                        <!-- HUD Target Frame Overlay (컴퓨터용 가이드라인) -->
+                        <div class="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+                            <div class="w-28 h-28 border border-dashed border-emerald-500/30 rounded-2xl flex items-center justify-center">
+                                <span class="absolute -bottom-2 bg-emerald-950 border border-emerald-500/60 text-[9px] text-emerald-400 px-2 py-0.5 rounded-full font-black tracking-wider uppercase shadow-md shadow-black">
+                                    FRONT (판정)
+                                </span>
+                                <div class="absolute top-2 left-2 w-3 h-3 border-t-2 border-l-2 border-emerald-500/60 rounded-tl-sm"></div>
+                                <div class="absolute top-2 right-2 w-3 h-3 border-t-2 border-r-2 border-emerald-500/60 rounded-tr-sm"></div>
+                                <div class="absolute bottom-2 left-2 w-3 h-3 border-b-2 border-l-2 border-emerald-500/60 rounded-bl-sm"></div>
+                                <div class="absolute bottom-2 right-2 w-3 h-3 border-b-2 border-r-2 border-emerald-500/60 rounded-br-sm"></div>
+                            </div>
+                        </div>
+
+                        <!-- 3D 컴퓨터 주사위 -->
+                        <div id="cpuCube" class="cube cube-cpu">
+                            <div class="face face-1"><div class="dot d1"></div></div>
+                            <div class="face face-6">
+                                <div class="dot d1"></div><div class="dot d2"></div><div class="dot d3"></div>
+                                <div class="dot d4"></div><div class="dot d5"></div><div class="dot d6"></div>
+                            </div>
+                            <div class="face face-2"><div class="dot d1"></div><div class="dot d2"></div></div>
+                            <div class="face face-5">
+                                <div class="dot d1"></div><div class="dot d2"></div><div class="dot d3"></div>
+                                <div class="dot d4"></div><div class="dot d5"></div>
+                            </div>
+                            <div class="face face-3"><div class="dot d1"></div><div class="dot d2"></div><div class="dot d3"></div></div>
+                            <div class="face face-4">
+                                <div class="dot d1"></div><div class="dot d2"></div><div class="dot d3"></div><div class="dot d4"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-300">컴퓨터</h3>
+                    <div class="mt-2 text-2xl font-black text-emerald-400 h-8 transition-transform duration-300" id="cpuResultVal">-</div>
+                </div>
+            </div>
+
+            <!-- 컨트롤 패널 -->
+            <div class="mt-6 flex flex-col sm:flex-row gap-3">
+                <button id="rollBtn" class="flex-1 py-4 px-6 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-700 hover:from-indigo-500 hover:to-indigo-600 rounded-xl font-bold text-lg shadow-lg shadow-indigo-500/20 active:scale-95 transition-all duration-150 flex items-center justify-center space-x-2 border-t border-indigo-400">
+                    <i class="fa-solid fa-gamepad animate-bounce"></i>
+                    <span>주사위 던지기!</span>
+                </button>
+                <button id="resetMatchBtn" class="py-4 px-6 bg-slate-800 hover:bg-slate-700 rounded-xl font-bold transition flex items-center justify-center space-x-2 border border-slate-700 text-slate-300">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span class="sm:inline">점수 초기화</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 우측: 매치 기록 및 랭킹 스탯 -->
+        <div class="w-full lg:w-1/3 flex flex-col gap-4">
+            <!-- 상태 판넬 -->
+            <div class="bg-slate-900/60 backdrop-blur-md rounded-2xl p-5 border border-slate-800 flex-grow flex flex-col justify-between">
+                <div>
+                    <h2 class="text-md font-bold mb-3 flex items-center text-indigo-400">
+                        <i class="fa-solid fa-trophy mr-2 text-yellow-400"></i> 배틀 매치 보드
+                    </h2>
+                    
+                    <div class="grid grid-cols-3 gap-2 text-center mb-4">
+                        <div class="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/50">
+                            <span class="text-[10px] text-slate-400 block">총 대결</span>
+                            <span id="statTotal" class="text-lg font-extrabold text-slate-100">0</span>
+                        </div>
+                        <div class="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/50">
+                            <span class="text-[10px] text-indigo-400 block">승리</span>
+                            <span id="statWins" class="text-lg font-extrabold text-indigo-400">0</span>
+                        </div>
+                        <div class="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/50">
+                            <span class="text-[10px] text-rose-400 block">패배</span>
+                            <span id="statLosses" class="text-lg font-extrabold text-rose-400">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 라운드 로그 기록 -->
+                <div class="flex-grow flex flex-col min-h-[160px] lg:min-h-[220px]">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs text-slate-400 font-bold">대결 히스토리</span>
+                        <button id="clearLogBtn" class="text-[10px] text-slate-500 hover:text-slate-300 transition underline">전체 삭제</button>
+                    </div>
+                    <div id="logContainer" class="flex-grow bg-slate-950/40 border border-slate-950 rounded-xl p-3 overflow-y-auto max-h-[200px] lg:max-h-[280px] text-xs space-y-2 flex flex-col">
+                        <div class="text-center text-slate-500 my-auto py-4">
+                            <i class="fa-solid fa-hourglass-start block text-lg mb-1 animate-spin"></i>
+                            아직 배틀 기록이 없습니다.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- 하단 푸터 -->
+    <footer class="w-full text-center py-4 text-xs text-slate-500 border-t border-indigo-950">
+        <p>© 2026 3D Neon Dice Battle. All rights reserved.</p>
+    </footer>
+
+    <!-- 게임 결과 가이드 및 모달 창 -->
+    <!-- 1. 안내 모달 -->
+    <div id="infoModal" class="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-sm w-full p-6 text-center transform scale-95 transition-transform duration-300">
+            <div class="w-14 h-14 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-400 border border-indigo-500/20">
+                <i class="fa-solid fa-circle-info text-2xl"></i>
+            </div>
+            <h3 class="text-xl font-bold text-slate-100 mb-2">게임 규칙</h3>
+            <p class="text-sm text-slate-400 leading-relaxed text-left mb-6">
+                1. <strong>주사위 던지기</strong> 버튼을 눌러 본인과 컴퓨터의 주사위를 동시에 굴립니다.<br>
+                2. 더 큰 주사위 눈금이 나온 쪽이 승리하여 세트 점수를 1점 획득합니다.<br>
+                3. 동점(무승부)일 경우 세트 점수는 그대로 유지되며 다음 기회로 넘어갑니다.<br>
+                4. 설정한 <strong>목표 승수</strong>에 먼저 도달한 쪽이 최종 매치 우승을 차지하게 됩니다!<br>
+                5. <strong>정면 판정 가이드:</strong> 3D 공간의 정중앙 `FRONT` 프레임 영역에 완벽하게 안착된 정면 눈금값이 최종 결과 숫자로 판정됩니다.
+            </p>
+            <button id="closeInfoModal" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 transition text-white font-bold rounded-xl">확인</button>
+        </div>
+    </div>
+
+    <!-- 2. 최종 승패 선언 모달 (시간 지연을 두고 등장하도록 개편) -->
+    <div id="matchEndModal" class="fixed inset-0 bg-black/85 z-50 flex items-center justify-center p-4 hidden opacity-0 transition-opacity duration-300">
+        <div class="bg-slate-900 border-2 border-indigo-500/50 rounded-2xl max-w-sm w-full p-6 text-center transform scale-95 transition-transform duration-300 relative overflow-hidden">
+            <div class="absolute -top-12 -left-12 w-28 h-28 bg-indigo-500/20 rounded-full blur-2xl"></div>
+            <div id="matchResultBadge" class="w-16 h-16 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-4 text-yellow-400 border border-yellow-500/20 text-2xl">
+                <i class="fa-solid fa-crown animate-bounce"></i>
+            </div>
+            <h3 id="matchEndTitle" class="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-300 mb-2">최종 우승!</h3>
+            <p id="matchEndDesc" class="text-sm text-slate-400 mb-6">당신이 컴퓨터를 이겼습니다.</p>
+            <button id="closeMatchModal" class="w-full py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 transition text-white font-bold rounded-xl shadow-lg shadow-indigo-600/30">새 매치 시작하기</button>
+        </div>
+    </div>
+
+    <!-- 최종 승리 폭죽 효과용 캔버스 -->
+    <canvas id="confettiCanvas" class="fixed inset-0 pointer-events-none z-40 hidden"></canvas>
+
+    <!-- -->
+    <!-- 주사위 제어 및 게임 로직 스크립트 -->
+    <script>
+        // --- 오디오 시스템 (Web Audio API 활용 기법) ---
+        class SoundEffects {
+            constructor() {
+                this.ctx = null;
+                this.enabled = true;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            }
+
+            playRoll() {
+                if (!this.enabled) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                
+                // 가벼운 드럼 주사위 튕기는 소리 시뮬레이션
+                for (let i = 0; i < 6; i++) {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(80 + Math.random() * 150, now + i * 0.15);
+                    osc.frequency.exponentialRampToValueAtTime(10, now + i * 0.15 + 0.1);
+                    
+                    gain.gain.setValueAtTime(0.15, now + i * 0.15);
+                    gain.gain.linearRampToValueAtTime(0.01, now + i * 0.15 + 0.1);
+                    
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + i * 0.15);
+                    osc.stop(now + i * 0.15 + 0.1);
+                }
+            }
+
+            playWin() {
+                if (!this.enabled) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const notes = [261.63, 329.63, 392.00, 523.25]; // C, E, G, C
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.1);
+                    
+                    gain.gain.setValueAtTime(0.1, now + idx * 0.1);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.1 + 0.4);
+                    
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.1);
+                    osc.stop(now + idx * 0.1 + 0.45);
+                });
+            }
+
+            playLoss() {
+                if (!this.enabled) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                const notes = [311.13, 293.66, 261.63, 196.00]; // Eb, D, C, G
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.15);
+                    
+                    gain.gain.setValueAtTime(0.08, now + idx * 0.15);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.15 + 0.5);
+                    
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.15);
+                    osc.stop(now + idx * 0.15 + 0.5);
+                });
+            }
+
+            playDraw() {
+                if (!this.enabled) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                [330, 330].forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.15);
+                    gain.gain.setValueAtTime(0.1, now + idx * 0.15);
+                    gain.gain.linearRampToValueAtTime(0.001, now + idx * 0.15 + 0.12);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.15);
+                    osc.stop(now + idx * 0.15 + 0.13);
+                });
+            }
+        }
+
+        const sound = new SoundEffects();
+
+        // --- 애플리케이션 상태 변수 ---
+        let state = {
+            totalRounds: 0,
+            playerMatchScore: 0,
+            cpuMatchScore: 0,
+            statWins: 0,
+            statLosses: 0,
+            targetScore: 3,
+            isRolling: false,
+            logs: []
+        };
+
+        // DOM 요소 캐싱
+        const rollBtn = document.getElementById('rollBtn');
+        const resetMatchBtn = document.getElementById('resetMatchBtn');
+        const soundToggle = document.getElementById('soundToggle');
+        const soundIcon = document.getElementById('soundIcon');
+        const ruleBtn = document.getElementById('ruleBtn');
+        const infoModal = document.getElementById('infoModal');
+        const closeInfoModal = document.getElementById('closeInfoModal');
+        
+        const matchEndModal = document.getElementById('matchEndModal');
+        const matchEndTitle = document.getElementById('matchEndTitle');
+        const matchEndDesc = document.getElementById('matchEndDesc');
+        const matchResultBadge = document.getElementById('matchResultBadge');
+        const closeMatchModal = document.getElementById('closeMatchModal');
+
+        const decTarget = document.getElementById('decTarget');
+        const incTarget = document.getElementById('incTarget');
+        const targetScoreDisplay = document.getElementById('targetScoreDisplay');
+
+        const playerMatchScoreEl = document.getElementById('playerMatchScore');
+        const cpuMatchScoreEl = document.getElementById('cpuMatchScore');
+        const playerResultValEl = document.getElementById('playerResultVal');
+        const cpuResultValEl = document.getElementById('cpuResultVal');
+
+        const statTotalEl = document.getElementById('statTotal');
+        const statWinsEl = document.getElementById('statWins');
+        const statLossesEl = document.getElementById('statLosses');
+        
+        const logContainer = document.getElementById('logContainer');
+        const clearLogBtn = document.getElementById('clearLogBtn');
+
+        const playerCube = document.getElementById('playerCube');
+        const cpuCube = document.getElementById('cpuCube');
+        
+        const playerDiceArea = document.getElementById('playerDiceArea');
+        const cpuDiceArea = document.getElementById('cpuDiceArea');
+        
+        const confettiCanvas = document.getElementById('confettiCanvas');
+
+        // --- 폭죽(컨페티) 효과엔진 구현 ---
+        const confetti = {
+            active: false,
+            ctx: confettiCanvas.getContext('2d'),
+            particles: [],
+            colors: ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#3b82f6'],
+            
+            start() {
+                confettiCanvas.classList.remove('hidden');
+                this.active = true;
+                this.resize();
+                this.particles = [];
+                for (let i = 0; i < 120; i++) {
+                    this.particles.push({
+                        x: Math.random() * confettiCanvas.width,
+                        y: Math.random() * confettiCanvas.height - confettiCanvas.height,
+                        r: Math.random() * 6 + 4,
+                        d: Math.random() * confettiCanvas.height,
+                        color: this.colors[Math.floor(Math.random() * this.colors.length)],
+                        tilt: Math.random() * 10 - 5,
+                        tiltAngleIncremental: Math.random() * 0.07 + 0.02,
+                        tiltAngle: 0
+                    });
+                }
+                this.animate();
+            },
+            
+            stop() {
+                this.active = false;
+                confettiCanvas.classList.add('hidden');
+            },
+
+            resize() {
+                confettiCanvas.width = window.innerWidth;
+                confettiCanvas.height = window.innerHeight;
+            },
+
+            animate() {
+                if (!confetti.active) return;
+                requestAnimationFrame(() => confetti.animate());
+                
+                const ctx = confetti.ctx;
+                ctx.clearRect(0, 0, confettiCanvas.width, confettiCanvas.height);
+                
+                let finished = true;
+                confetti.particles.forEach((p) => {
+                    p.tiltAngle += p.tiltAngleIncremental;
+                    p.y += (Math.cos(p.d) + 3 + p.r / 2) / 2;
+                    p.x += Math.sin(p.tiltAngle);
+                    p.tilt = Math.sin(p.tiltAngle - p.r/2) * 15;
+
+                    if (p.y < confettiCanvas.height) {
+                        finished = false;
+                    }
+
+                    ctx.beginPath();
+                    ctx.lineWidth = p.r;
+                    ctx.strokeStyle = p.color;
+                    ctx.moveTo(p.x + p.tilt + p.r/2, p.y);
+                    ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r/2);
+                    ctx.stroke();
+                });
+
+                if (finished) {
+                    this.stop();
+                }
+            }
+        };
+
+        window.addEventListener('resize', () => {
+            if (confetti.active) confetti.resize();
+        });
+
+        // 주사위 면별 최종 변환 맵핑 구조 (정면 FRONT로 정확히 수평 배향)
+        const cubeRotationMap = {
+            1: { x: 0, y: 0 },
+            2: { x: 0, y: -90 },
+            3: { x: -90, y: 0 },
+            4: { x: 90, y: 0 },
+            5: { x: 0, y: 90 },
+            6: { x: 180, y: 0 }
+        };
+
+        // 모달 제어 함수
+        function showModal(modalEl) {
+            modalEl.classList.remove('hidden');
+            setTimeout(() => {
+                modalEl.classList.remove('opacity-0');
+                modalEl.querySelector('.transform').classList.remove('scale-95');
+            }, 10);
+        }
+
+        function hideModal(modalEl) {
+            modalEl.classList.add('opacity-0');
+            modalEl.querySelector('.transform').classList.add('scale-95');
+            setTimeout(() => {
+                modalEl.classList.add('hidden');
+            }, 300);
+        }
+
+        // --- 리스너 장착 ---
+        ruleBtn.addEventListener('click', () => showModal(infoModal));
+        closeInfoModal.addEventListener('click', () => hideModal(infoModal));
+        closeMatchModal.addEventListener('click', () => {
+            hideModal(matchEndModal);
+            confetti.stop();
+            resetMatch();
+        });
+
+        // 타겟 스코어 조절
+        decTarget.addEventListener('click', () => {
+            if (state.targetScore > 1) {
+                state.targetScore--;
+                targetScoreDisplay.textContent = state.targetScore;
+            }
+        });
+        incTarget.addEventListener('click', () => {
+            if (state.targetScore < 10) {
+                state.targetScore++;
+                targetScoreDisplay.textContent = state.targetScore;
+            }
+        });
+
+        // 사운드 토글
+        soundToggle.addEventListener('click', () => {
+            sound.enabled = !sound.enabled;
+            if (sound.enabled) {
+                soundIcon.className = "fa-solid fa-volume-high text-indigo-400";
+            } else {
+                soundIcon.className = "fa-solid fa-volume-xmark text-slate-500";
+            }
+        });
+
+        // 전체 로그 삭제
+        clearLogBtn.addEventListener('click', () => {
+            state.logs = [];
+            renderLogs();
+        });
+
+        // --- STREAMING_CHUNK: Triggering the dice rolling physics and animations... ---
+        // --- 핵심 주사위 롤링 및 게임 판정 로직 ---
+        function triggerRoll() {
+            if (state.isRolling) return;
+            state.isRolling = true;
+            rollBtn.disabled = true;
+            rollBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            sound.playRoll();
+
+            // 이전 라운드의 결과 클래스 및 돌출 상태 전체 리셋
+            document.querySelectorAll('.face').forEach(face => {
+                face.classList.remove('player-active', 'cpu-active');
+            });
+            playerDiceArea.classList.remove('spotlight-active');
+            cpuDiceArea.classList.remove('spotlight-active');
+
+            // 결과 보드 글자 대기 상태 표출
+            playerResultValEl.innerHTML = `<span class="animate-pulse text-slate-500 text-sm">롤링 중...</span>`;
+            cpuResultValEl.innerHTML = `<span class="animate-pulse text-slate-500 text-sm">롤링 중...</span>`;
+
+            // 무작위 주사위 면 선택 (1-6)
+            const playerDiceVal = Math.floor(Math.random() * 6) + 1;
+            const cpuDiceVal = Math.floor(Math.random() * 6) + 1;
+
+            // 회전 애니메이션 계산 (기본 3-4바퀴 더 돌린 후 목적지 각도 계산)
+            const randomExtraX1 = (Math.floor(Math.random() * 3) + 3) * 360;
+            const randomExtraY1 = (Math.floor(Math.random() * 3) + 3) * 360;
+            const randomExtraX2 = (Math.floor(Math.random() * 3) + 3) * 360;
+            const randomExtraY2 = (Math.floor(Math.random() * 3) + 3) * 360;
+
+            const playerTarget = cubeRotationMap[playerDiceVal];
+            const cpuTarget = cubeRotationMap[cpuDiceVal];
+
+            // 큐브 인라인 스타일 전환 적용
+            playerCube.style.transform = `rotateX(${randomExtraX1 + playerTarget.x}deg) rotateY(${randomExtraY1 + playerTarget.y}deg) rotateZ(${Math.random() * 15}deg)`;
+            cpuCube.style.transform = `rotateX(${randomExtraX2 + cpuTarget.x}deg) rotateY(${randomExtraY2 + cpuTarget.y}deg) rotateZ(${Math.random() * 15}deg)`;
+
+            // 1.5초 후 롤링 애니메이션 완료 시점에 결과 선언
+            setTimeout(() => {
+                resolveRound(playerDiceVal, cpuDiceVal);
+            }, 1500);
+        }
+
+        //        // 라운드 결과 종합 및 반영
+        function resolveRound(pVal, cVal) {
+            // 판정 완료 직후 해당 값의 면에 강력한 돌출 및 후광 시각 처리 추가
+            const playerActiveFace = playerCube.querySelector(`.face-${pVal}`);
+            const cpuActiveFace = cpuCube.querySelector(`.face-${cVal}`);
+
+            if (playerActiveFace) playerActiveFace.classList.add('player-active');
+            if (cpuActiveFace) cpuActiveFace.classList.add('cpu-active');
+
+            // 스포트라이트 원형 배경 활성화
+            playerDiceArea.classList.add('spotlight-active');
+            cpuDiceArea.classList.add('spotlight-active');
+
+            // 결과값 텍스트 출력 및 살짝 튕기는 크기 애니메이션 적용
+            playerResultValEl.textContent = pVal;
+            cpuResultValEl.textContent = cVal;
+            
+            playerResultValEl.classList.add('scale-125');
+            cpuResultValEl.classList.add('scale-125');
+            setTimeout(() => {
+                playerResultValEl.classList.remove('scale-125');
+                cpuResultValEl.classList.remove('scale-125');
+            }, 300);
+
+            state.totalRounds++;
+            let winnerText = "";
+            let resultClass = "";
+
+            if (pVal > cVal) {
+                // 플레이어 이김
+                state.playerMatchScore++;
+                state.statWins++;
+                winnerText = "플레이어 승리";
+                resultClass = "text-indigo-400 font-bold";
+                sound.playWin();
+            } else if (pVal < cVal) {
+                // 컴퓨터 이김
+                state.cpuMatchScore++;
+                state.statLosses++;
+                winnerText = "컴퓨터 승리";
+                resultClass = "text-emerald-400 font-bold";
+                sound.playLoss();
+            } else {
+                // 무승부
+                winnerText = "무승부";
+                resultClass = "text-slate-400 font-bold";
+                sound.playDraw();
+            }
+
+            // 라운드 이력 로그 남기기
+            const logEntry = {
+                round: state.totalRounds,
+                player: pVal,
+                cpu: cVal,
+                result: winnerText,
+                cssClass: resultClass
+            };
+            state.logs.unshift(logEntry); // 최신 정보가 상단에 보이게 처리
+
+            // UI 갱신
+            updateUI();
+
+            // 최종 매치 우승 검사 조건
+            const isMatchOver = (state.playerMatchScore >= state.targetScore) || (state.cpuMatchScore >= state.targetScore);
+
+            if (isMatchOver) {
+                // 사용자가 마지막 판정 눈금 상태(3D 돌출 효과 및 스포트라이트 오라)를 
+                // 충분히 여유롭고 완벽하게 눈으로 확인할 수 있도록 2.2초(2200ms)의 대기 시간을 두고 팝업창을 호출합니다.
+                setTimeout(() => {
+                    checkMatchOver();
+                }, 2200);
+            } else {
+                // 게임이 끝나지 않았다면 즉시 조작 락을 해제하여 다음 게임을 진행할 수 있게 함
+                state.isRolling = false;
+                rollBtn.disabled = false;
+                rollBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }
+
+        // UI 상태 동기화 함수
+        function updateUI() {
+            playerMatchScoreEl.textContent = state.playerMatchScore;
+            cpuMatchScoreEl.textContent = state.cpuMatchScore;
+
+            statTotalEl.textContent = state.totalRounds;
+            statWinsEl.textContent = state.statWins;
+            statLossesEl.textContent = state.statLosses;
+
+            renderLogs();
+        }
+
+        // 로그 기록 렌더러
+        function renderLogs() {
+            if (state.logs.length === 0) {
+                logContainer.innerHTML = `
+                    <div class="text-center text-slate-500 my-auto py-4">
+                        <i class="fa-solid fa-hourglass-start block text-lg mb-1"></i>
+                        아직 배틀 기록이 없습니다.
+                    </div>
+                `;
+                return;
+            }
+
+            logContainer.innerHTML = state.logs.map(log => `
+                <div class="flex justify-between items-center bg-slate-900/50 p-2 rounded-lg border border-slate-800/40">
+                    <span class="text-slate-500">배틀 #${log.round}</span>
+                    <span class="font-medium text-slate-300">나 (${log.player}) vs 컴 (${log.cpu})</span>
+                    <span class="${log.cssClass}">${log.result}</span>
+                </div>
+            `).join('');
+        }
+
+        // 최종 우승자 감지 체크 및 팝업 띄우기
+        function checkMatchOver() {
+            if (state.playerMatchScore >= state.targetScore) {
+                // 플레이어가 타겟 스코어 도달 - 매치 최종 우승
+                matchEndTitle.textContent = "🏆 매치 최종 우승! 🎉";
+                matchEndTitle.className = "text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-300 mb-2";
+                matchEndDesc.innerHTML = `훌륭합니다! 컴퓨터를 상대로 <strong>${state.playerMatchScore} : ${state.cpuMatchScore}</strong> 대승을 거두었습니다!`;
+                matchResultBadge.innerHTML = `<i class="fa-solid fa-crown animate-bounce"></i>`;
+                matchResultBadge.className = "w-16 h-16 bg-yellow-500/10 rounded-full flex items-center justify-center mx-auto mb-4 text-yellow-400 border border-yellow-500/20 text-2xl";
+                
+                showModal(matchEndModal);
+                confetti.start();
+            } else if (state.cpuMatchScore >= state.targetScore) {
+                // 컴퓨터가 타겟 스코어 도달 - 매치 최종 패배
+                matchEndTitle.textContent = "💀 패배했습니다... 😭";
+                matchEndTitle.className = "text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-red-400 mb-2";
+                matchEndDesc.innerHTML = `컴퓨터가 <strong>${state.cpuMatchScore} : ${state.playerMatchScore}</strong>로 먼저 목표 승수에 도달했습니다. 다시 도전해 보세요!`;
+                matchResultBadge.innerHTML = `<i class="fa-solid fa-skull-crossbones"></i>`;
+                matchResultBadge.className = "w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto mb-4 text-rose-500 border border-rose-500/20 text-2xl";
+                
+                showModal(matchEndModal);
+            }
+        }
+
+        // 매치 완전 리셋 함수
+        function resetMatch() {
+            state.playerMatchScore = 0;
+            state.cpuMatchScore = 0;
+            playerResultValEl.textContent = "-";
+            cpuResultValEl.textContent = "-";
+            
+            // 모든 하이라이트 클래스 및 스포트라이트 오라 리셋
+            document.querySelectorAll('.face').forEach(face => {
+                face.classList.remove('player-active', 'cpu-active');
+            });
+            playerDiceArea.classList.remove('spotlight-active');
+            cpuDiceArea.classList.remove('spotlight-active');
+
+            // 주사위 초기 위치 정렬
+            playerCube.style.transform = "rotateX(0deg) rotateY(0deg)";
+            cpuCube.style.transform = "rotateX(0deg) rotateY(0deg)";
+
+            // 롤 상태 완전 초기화
+            state.isRolling = false;
+            rollBtn.disabled = false;
+            rollBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+            updateUI();
+        }
+
+        // 주사위 및 스탯 완전 초기화
+        resetMatchBtn.addEventListener('click', () => {
+            state.totalRounds = 0;
+            state.statWins = 0;
+            state.statLosses = 0;
+            state.logs = [];
+            resetMatch();
+        });
+
+        // 버튼 탭 이벤트 연결
+        rollBtn.addEventListener('click', triggerRoll);
+
+        // 페이지 초기 세팅
+        window.onload = function () {
+            updateUI();
+        }
+    </script>
+</body>
+</html>
