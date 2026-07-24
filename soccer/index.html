@@ -1,1 +1,1368 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K-리그 스타일 승부차기 챔피언십</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts (Inter & Black Han Sans) -->
+    <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Black Han Sans', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .text-neon {
+            text-shadow: 0 0 10px rgba(74, 222, 128, 0.8), 0 0 20px rgba(74, 222, 128, 0.4);
+        }
+        .text-neon-red {
+            text-shadow: 0 0 10px rgba(239, 68, 68, 0.8), 0 0 20px rgba(239, 68, 68, 0.4);
+        }
+        /* 그라데이션 및 애니메이션 효과 */
+        .bg-stadium {
+            background: radial-gradient(circle at center, #1a4d2e 0%, #071e10 100%);
+        }
+        @keyframes pulse-fast {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.8; }
+        }
+        .animate-pulse-fast {
+            animation: pulse-fast 1.5s infinite;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-white min-h-screen flex items-center justify-center p-2 sm:p-4 overflow-hidden bg-stadium">
 
+<div id="game-container" class="relative w-full max-w-4xl bg-slate-900/90 rounded-3xl border border-emerald-500/30 shadow-2xl overflow-hidden aspect-[4/3] flex flex-col justify-between p-4 md:p-6">
+    
+    <!-- AUDIO SYNTHESIZER SETUPS -->
+    <script>
+        // Web Audio API를 활용한 무설치 내장 사운드 제너레이터
+        const AudioSynth = {
+            ctx: null,
+            init() {
+                if (!this.ctx) {
+                    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+                }
+            },
+            playWhistle() {
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(1000, now);
+                osc.frequency.exponentialRampToValueAtTime(1200, now + 0.15);
+                osc.frequency.exponentialRampToValueAtTime(1100, now + 0.3);
+                
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.3);
+                
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(now + 0.3);
+            },
+            playKick() {
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.exponentialRampToValueAtTime(40, now + 0.12);
+                
+                gain.gain.setValueAtTime(0.4, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+                
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(now + 0.15);
+            },
+            playCheer() {
+                this.init();
+                const now = this.ctx.currentTime;
+                const bufferSize = this.ctx.sampleRate * 1.5;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+                
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'lowpass';
+                filter.frequency.setValueAtTime(800, now);
+                filter.frequency.exponentialRampToValueAtTime(1200, now + 0.5);
+                
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0.05, now);
+                gain.gain.linearRampToValueAtTime(0.2, now + 0.2);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 1.5);
+                
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.ctx.destination);
+                noise.start();
+            },
+            playSave() {
+                this.init();
+                const now = this.ctx.currentTime;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(300, now);
+                osc.frequency.exponentialRampToValueAtTime(100, now + 0.2);
+                
+                gain.gain.setValueAtTime(0.3, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 0.25);
+                
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(now + 0.25);
+            },
+            playBoo() {
+                this.init();
+                const now = this.ctx.currentTime;
+                const bufferSize = this.ctx.sampleRate * 1.2;
+                const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                const data = buffer.getChannelData(0);
+                for (let i = 0; i < bufferSize; i++) {
+                    data[i] = Math.random() * 2 - 1;
+                }
+                const noise = this.ctx.createBufferSource();
+                noise.buffer = buffer;
+                
+                const filter = this.ctx.createBiquadFilter();
+                filter.type = 'bandpass';
+                filter.frequency.value = 250;
+                
+                const gain = this.ctx.createGain();
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.01, now + 1.2);
+                
+                noise.connect(filter);
+                filter.connect(gain);
+                gain.connect(this.ctx.destination);
+                noise.start();
+            }
+        };
+    </script>
+
+    <script>
+        const TEAMS = {
+            KOR: { name: "대한민국", color: "#FF003F", secondary: "#FFFFFF", short: "KOR" },
+            BRA: { name: "브라질", color: "#FFDF00", secondary: "#009B3A", short: "BRA" },
+            FRA: { name: "프랑스", color: "#002395", secondary: "#ED2939", short: "FRA" },
+            ARG: { name: "아르헨티나", color: "#75AADB", secondary: "#FFFFFF", short: "ARG" },
+            GER: { name: "독일", color: "#FFFFFF", secondary: "#000000", short: "GER" },
+            ENG: { name: "잉글랜드", color: "#FFFFFF", secondary: "#CE1126", short: "ENG" }
+        };
+        
+        let playerTeam = "KOR";
+        let cpuTeam = "BRA";
+        
+        // 게임 상태 관리
+        let score = { player: 0, cpu: 0 };
+        let round = 1; 
+        let phase = 'KICK'; // 'KICK' (플레이어가 참), 'DEFEND' (플레이어가 막음)
+        let playerHistory = []; // 각 라운드 결과: 'goal', 'miss', 'save', null
+        let cpuHistory = [];
+        let shootAttempts = 0; // 전체 슈팅 시도 누적
+    </script>
+
+    <!-- UI SCREENS: MAIN MENU / TEAM SELECT -->
+    <div id="screen-menu" class="absolute inset-0 z-50 bg-slate-950/95 flex flex-col items-center justify-center p-6 text-center">
+        <div class="mb-4">
+            <span class="px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-full text-xs font-bold uppercase tracking-widest">Ultimate Penalty Shootout</span>
+        </div>
+        <h1 class="text-4xl md:text-6xl font-black italic text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-green-300 to-teal-400 mb-6 font-sans tracking-tight">
+            승부차기 챔피언십
+        </h1>
+        
+        <!-- Team Selector Panel -->
+        <div class="grid grid-cols-2 gap-6 w-full max-w-md mb-8">
+            <!-- Player Team Select -->
+            <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
+                <label class="block text-xs font-semibold text-slate-400 mb-2">MY TEAM</label>
+                <select id="select-player-team" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold focus:outline-none focus:border-emerald-500" onchange="updateSelectedTeams()">
+                    <option value="KOR" selected>🇰🇷 대한민국</option>
+                    <option value="BRA">🇧🇷 브라질</option>
+                    <option value="FRA">🇫🇷 프랑스</option>
+                    <option value="ARG">🇦🇷 아르헨티나</option>
+                    <option value="GER">🇩🇪 독일</option>
+                    <option value="ENG">🏴󠁧󠁢󠁥󠁮󠁧󠁿 잉글랜드</option>
+                </select>
+                <div class="mt-3 flex justify-center">
+                    <div id="player-preview-color" class="w-8 h-8 rounded-full border-2 border-white shadow-lg"></div>
+                </div>
+            </div>
+            <!-- CPU Team Select -->
+            <div class="bg-slate-900/80 p-4 rounded-2xl border border-slate-800">
+                <label class="block text-xs font-semibold text-slate-400 mb-2">OPPONENT</label>
+                <select id="select-cpu-team" class="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold focus:outline-none focus:border-emerald-500" onchange="updateSelectedTeams()">
+                    <option value="KOR">🇰🇷 대한민국</option>
+                    <option value="BRA" selected>🇧🇷 브라질</option>
+                    <option value="FRA">🇫🇷 프랑스</option>
+                    <option value="ARG">🇦🇷 아르헨티나</option>
+                    <option value="GER">🇩🇪 독일</option>
+                    <option value="ENG">🏴󠁧󠁢󠁥󠁮󠁧󠁿 잉글랜드</option>
+                </select>
+                <div class="mt-3 flex justify-center">
+                    <div id="cpu-preview-color" class="w-8 h-8 rounded-full border-2 border-white shadow-lg"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- How To Play Intro -->
+        <div class="text-xs text-slate-400 max-w-sm mb-8 space-y-1 bg-slate-900/50 p-3 rounded-xl border border-slate-800">
+            <p class="font-bold text-slate-300">🎮 조작 가이드</p>
+            <p>1. 킥(공격): 원하는 조준 영역을 클릭하고 슛 게이지를 정밀 조절하세요.</p>
+            <p>2. 세이브(수비): 상대가 찰 것 같은 방향의 다이빙 과녁을 빠르게 터치하세요.</p>
+        </div>
+
+        <button onclick="startGame()" class="px-8 py-4 bg-gradient-to-r from-emerald-500 to-green-400 hover:from-emerald-400 hover:to-green-300 text-slate-950 font-black text-xl rounded-2xl shadow-xl shadow-emerald-500/20 transform hover:-translate-y-0.5 active:translate-y-0 transition-all duration-150 animate-pulse-fast">
+            토너먼트 시작하기 ➔
+        </button>
+    </div>
+
+    <!-- HUD Header Board -->
+    <div id="hud-header" class="flex items-center justify-between bg-slate-950/80 p-3 rounded-2xl border border-slate-800/80 backdrop-blur-md">
+        <!-- Team Left -->
+        <div class="flex items-center space-x-3 w-1/3">
+            <span id="hud-p-badge" class="w-3 h-8 rounded-md block"></span>
+            <div>
+                <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">PLAYER</div>
+                <div id="hud-p-name" class="font-bold text-sm md:text-base leading-none">대한민국</div>
+            </div>
+        </div>
+
+        <!-- Central Live Scoreboard -->
+        <div class="flex flex-col items-center justify-center w-1/3">
+            <div class="text-[10px] text-emerald-400 font-bold tracking-widest uppercase mb-1">PENALTY SHOOTOUT</div>
+            <div class="flex items-center space-x-4">
+                <span id="score-player" class="text-2xl md:text-4xl font-black text-neon">0</span>
+                <span class="text-slate-600 font-bold text-xl">:</span>
+                <span id="score-cpu" class="text-2xl md:text-4xl font-black text-neon-red">0</span>
+            </div>
+        </div>
+
+        <!-- Team Right -->
+        <div class="flex items-center justify-end space-x-3 w-1/3 text-right">
+            <div>
+                <div class="text-[10px] text-slate-400 font-bold uppercase tracking-wider">CPU</div>
+                <div id="hud-c-name" class="font-bold text-sm md:text-base leading-none">브라질</div>
+            </div>
+            <span id="hud-c-badge" class="w-3 h-8 rounded-md block"></span>
+        </div>
+    </div>
+
+    <!-- Mini Round Dots Dashboard -->
+    <div class="my-2 flex flex-col sm:flex-row items-center justify-between gap-2 px-2 py-1.5 bg-slate-950/40 rounded-xl border border-slate-800/30 text-xs">
+        <div class="flex items-center space-x-2">
+            <span class="font-bold text-slate-400 w-12 sm:w-auto">PLAYER:</span>
+            <div id="dots-player" class="flex space-x-1.5">
+                <!-- Dynamic dots -->
+            </div>
+        </div>
+        <div class="hidden sm:block text-slate-500 font-semibold" id="hud-round-label">Round 1</div>
+        <div class="flex items-center space-x-2">
+            <span class="font-bold text-slate-400 w-12 sm:w-auto">CPU:</span>
+            <div id="dots-cpu" class="flex space-x-1.5">
+                <!-- Dynamic dots -->
+            </div>
+        </div>
+    </div>
+
+    <!-- The Core Arena Scene -->
+    <div class="relative flex-grow rounded-2xl overflow-hidden bg-slate-950 border border-slate-800 shadow-inner group">
+        <canvas id="gameCanvas" class="w-full h-full block"></canvas>
+        
+        <!-- Overlay HUD: Guidance & Announcement Messages -->
+        <div id="banner-announcement" class="absolute inset-x-0 top-1/4 flex flex-col items-center justify-center text-center pointer-events-none transform scale-0 transition-transform duration-300">
+            <div id="announcement-title" class="text-3xl md:text-5xl font-extrabold italic uppercase drop-shadow-lg tracking-wider text-yellow-400">
+                GOAL!
+            </div>
+            <div id="announcement-subtitle" class="text-xs md:text-sm text-white font-semibold tracking-wide bg-black/60 px-3 py-1 rounded-full mt-2">
+                완벽한 구석 조준 슛!
+            </div>
+        </div>
+
+        <!-- Target Overlay Buttons (Kick / Save Targets) -->
+        <!-- Standard 6 Goal Zones Projection Mapping over Canvas coordinates -->
+        <div id="target-grid" class="absolute inset-0 grid grid-cols-3 grid-rows-2 p-1 gap-2 pointer-events-none">
+            <!-- Zone 1 (Top Left) -->
+            <button onclick="selectZone(0)" class="target-btn pointer-events-auto flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200">
+                <span class="w-10 h-10 rounded-full border-2 border-dashed border-emerald-400 bg-emerald-500/10 flex items-center justify-center font-bold text-emerald-400 shadow-md">↖</span>
+            </button>
+            <!-- Zone 2 (Top Center) -->
+            <button onclick="selectZone(1)" class="target-btn pointer-events-auto flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200">
+                <span class="w-10 h-10 rounded-full border-2 border-dashed border-emerald-400 bg-emerald-500/10 flex items-center justify-center font-bold text-emerald-400 shadow-md">↑</span>
+            </button>
+            <!-- Zone 3 (Top Right) -->
+            <button onclick="selectZone(2)" class="target-btn pointer-events-auto flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200">
+                <span class="w-10 h-10 rounded-full border-2 border-dashed border-emerald-400 bg-emerald-500/10 flex items-center justify-center font-bold text-emerald-400 shadow-md">↗</span>
+            </button>
+            <!-- Zone 4 (Bottom Left) -->
+            <button onclick="selectZone(3)" class="target-btn pointer-events-auto flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200">
+                <span class="w-10 h-10 rounded-full border-2 border-dashed border-emerald-400 bg-emerald-500/10 flex items-center justify-center font-bold text-emerald-400 shadow-md">↙</span>
+            </button>
+            <!-- Zone 5 (Bottom Center) -->
+            <button onclick="selectZone(4)" class="target-btn pointer-events-auto flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200">
+                <span class="w-10 h-10 rounded-full border-2 border-dashed border-emerald-400 bg-emerald-500/10 flex items-center justify-center font-bold text-emerald-400 shadow-md">↓</span>
+            </button>
+            <!-- Zone 6 (Bottom Right) -->
+            <button onclick="selectZone(5)" class="target-btn pointer-events-auto flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200">
+                <span class="w-10 h-10 rounded-full border-2 border-dashed border-emerald-400 bg-emerald-500/10 flex items-center justify-center font-bold text-emerald-400 shadow-md">↘</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Control Room Panel at the Bottom -->
+    <div id="control-panel" class="mt-3 flex flex-col md:flex-row items-center justify-between gap-4 p-3 bg-slate-950/70 border border-slate-800 rounded-2xl backdrop-blur-md">
+        <!-- Interactive Phase Prompt -->
+        <div class="flex items-center space-x-3 w-full md:w-auto">
+            <span id="phase-badge" class="px-3 py-1.5 bg-emerald-500 text-slate-950 rounded-xl font-bold text-xs uppercase tracking-wider animate-pulse">KICK PHASE</span>
+            <p id="instruction-txt" class="text-xs text-slate-300 font-medium">상대방 골대를 조준하여 클릭하십시오!</p>
+        </div>
+
+        <!-- Power Meter Indicator (Active during KICK power lock phase) -->
+        <div id="power-meter-container" class="w-full md:w-64 h-6 bg-slate-900 border border-slate-800 rounded-full relative overflow-hidden hidden">
+            <div id="power-bar" class="h-full bg-gradient-to-r from-green-500 via-yellow-400 to-red-500 w-[0%] transition-all duration-75"></div>
+            <!-- Sweet Spot Marker -->
+            <div class="absolute inset-y-0 left-[70%] w-4 border-l-2 border-r-2 border-white bg-emerald-400/40 flex items-center justify-center">
+                <span class="text-[8px] font-black text-white">SWEET</span>
+            </div>
+            <!-- Indicator Label -->
+            <span class="absolute inset-0 flex items-center justify-center text-[10px] font-black text-white tracking-widest drop-shadow">KICK POWER</span>
+        </div>
+
+        <!-- Action / Stop Kick Trigger Trigger -->
+        <div class="flex items-center space-x-2 w-full md:w-auto justify-end">
+            <button id="btn-action" onclick="handleActionButton()" class="w-full md:w-auto px-6 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold rounded-xl transition-all duration-150 border border-slate-700 text-sm flex items-center justify-center gap-1">
+                <span>영역 선택 필수</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- GAME OVER OVERLAY SCREEN -->
+<div id="screen-game-over" class="fixed inset-0 z-[100] bg-slate-950/98 flex flex-col items-center justify-center p-6 text-center hidden">
+    <div id="trophy-wrapper" class="text-7xl md:text-9xl mb-4 animate-bounce">🏆</div>
+    <h2 id="end-status-title" class="text-4xl md:text-6xl font-black italic tracking-tight mb-2">CHAMPIONS!</h2>
+    <p id="end-status-subtitle" class="text-slate-400 text-sm md:text-lg mb-8 max-w-md">치열한 승부차기 혈투 끝에 짜릿한 승리를 쟁취하였습니다!</p>
+    
+    <!-- Match Stat card -->
+    <div class="bg-slate-900/80 border border-slate-800 p-6 rounded-2xl w-full max-w-sm mb-8 space-y-3">
+        <h3 class="text-xs font-bold text-emerald-400 tracking-wider uppercase">최종 경기 요약</h3>
+        <div class="flex justify-between border-b border-slate-800/60 pb-2 text-sm">
+            <span class="text-slate-400">내 스코어</span>
+            <span id="stat-my-score" class="font-black text-white">5</span>
+        </div>
+        <div class="flex justify-between border-b border-slate-800/60 pb-2 text-sm">
+            <span class="text-slate-400">상대 스코어</span>
+            <span id="stat-cpu-score" class="font-black text-white">4</span>
+        </div>
+        <div class="flex justify-between text-sm">
+            <span class="text-slate-400">총 승부차기 횟수</span>
+            <span id="stat-total-rounds" class="font-black text-emerald-400">5라운드</span>
+        </div>
+    </div>
+
+    <button onclick="resetToMenu()" class="px-8 py-4 bg-gradient-to-r from-emerald-500 to-green-400 text-slate-950 font-black text-xl rounded-2xl shadow-xl hover:scale-105 active:scale-95 transition-all">
+        메인 메뉴로 이동
+    </button>
+</div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    // Canvas resizing configuration
+    function resizeCanvas() {
+        const rect = canvas.parentNode.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // 6개 영역의 조준 궤적 좌표 매핑 (Canvas 정규화 좌표계 0~1 기준)
+    const TARGET_COORDINATES = [
+        { x: 0.25, y: 0.35, label: "Top Left" },      // Zone 0
+        { x: 0.50, y: 0.35, label: "Top Center" },    // Zone 1
+        { x: 0.75, y: 0.35, label: "Top Right" },     // Zone 2
+        { x: 0.25, y: 0.65, label: "Bottom Left" },   // Zone 3
+        { x: 0.50, y: 0.65, label: "Bottom Center" }, // Zone 4
+        { x: 0.75, y: 0.65, label: "Bottom Right" }   // Zone 5
+    ];
+
+    // 게임 렌더링을 위한 씬 상태값 정의
+    let selectedZoneIdx = null;
+    let goalkeeperAnimState = 'idle'; // 'idle', 'dive_left', 'dive_right', 'dive_up', 'center'
+    let goaliePos = { x: 0.5, y: 0.55 }; // Normalized
+    let targetGoaliePos = { x: 0.5, y: 0.55 };
+    let ballPos = { x: 0.5, y: 0.9 }; // Starts in front
+    let ballScale = 1.0;
+    let ballRot = 0;
+    let animationTimer = 0;
+    let particles = [];
+    let isAnimating = false;
+    let netDeformation = 0; // 골 네트 흔들림 계수
+
+    // 슛 게이지
+    let powerGaugeVal = 0;
+    let powerGaugeDir = 1;
+    let isPowerActive = false;
+    let powerIntervalId = null;
+
+    // 렌더 프레임 루프 가동
+    function initSceneLoop() {
+        function tick() {
+            updateVisuals();
+            renderVisuals();
+            requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+    }
+
+    function updateVisuals() {
+        // Goalkeeper movement interpolation
+        goaliePos.x += (targetGoaliePos.x - goaliePos.x) * 0.12;
+        goaliePos.y += (targetGoaliePos.y - goaliePos.y) * 0.12;
+
+        // Particle updates
+        for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += p.gravity || 0.1;
+            p.alpha -= p.decay || 0.01;
+            if (p.alpha <= 0) {
+                particles.splice(i, 1);
+            }
+        }
+
+        // Net vibration decay
+        netDeformation += (0 - netDeformation) * 0.08;
+    }
+
+    function createConfetti(x, y) {
+        const colors = ['#FFD700', '#FF003F', '#009B3A', '#002395', '#FFFFFF', '#4ADE80'];
+        for (let i = 0; i < 60; i++) {
+            particles.push({
+                x: x,
+                y: y,
+                vx: (Math.random() - 0.5) * 12,
+                vy: (Math.random() - 0.7) * 10 - 2,
+                radius: Math.random() * 4 + 3,
+                color: colors[Math.floor(Math.random() * colors.length)],
+                alpha: 1.0,
+                decay: Math.random() * 0.015 + 0.01,
+                gravity: 0.15
+            });
+        }
+    }
+
+    function createGrassKickParticles(x, y) {
+        for (let i = 0; i < 15; i++) {
+            particles.push({
+                x: x,
+                y: y,
+                vx: (Math.random() - 0.5) * 6,
+                vy: (Math.random() - 0.8) * 4,
+                radius: Math.random() * 2 + 1,
+                color: '#22C55E',
+                alpha: 0.8,
+                decay: 0.03,
+                gravity: 0.1
+            });
+        }
+    }
+
+    function renderVisuals() {
+        const w = canvas.width;
+        const h = canvas.height;
+        ctx.clearRect(0, 0, w, h);
+
+        // 1. 경기장 잔디 배경 (투영 그라데이션)
+        const grassGrad = ctx.createLinearGradient(w/2, h, w/2, 0);
+        grassGrad.addColorStop(0, '#166534'); // 짙은 녹색
+        grassGrad.addColorStop(0.5, '#14532D');
+        grassGrad.addColorStop(1, '#022C22'); // 아득한 심해 녹색
+        ctx.fillStyle = grassGrad;
+        ctx.fillRect(0, 0, w, h);
+
+        // 2. 잔디 깎인 줄무늬 원근 패턴 그리기
+        const linesCount = 8;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+        for (let i = 0; i < linesCount; i++) {
+            if (i % 2 === 0) {
+                ctx.beginPath();
+                const yStart = (h * 0.4) + (i / linesCount) * (h * 0.6);
+                const yEnd = (h * 0.4) + ((i + 1) / linesCount) * (h * 0.6);
+                
+                // Perspective trapezoid
+                const wStartLeft = w/2 - (w/2 * 0.4) * (yStart / h);
+                const wStartRight = w/2 + (w/2 * 0.4) * (yStart / h);
+                const wEndLeft = w/2 - (w/2 * 1.5) * (yEnd / h);
+                const wEndRight = w/2 + (w/2 * 1.5) * (yEnd / h);
+
+                ctx.moveTo(wStartLeft, yStart);
+                ctx.lineTo(wStartRight, yStart);
+                ctx.lineTo(wEndRight, yEnd);
+                ctx.lineTo(wEndLeft, yEnd);
+                ctx.closePath();
+                ctx.fill();
+            }
+        }
+
+        // 3. 골대 입체 3D 라인 렌더링
+        const goalLeftNorm = 0.18;
+        const goalRightNorm = 0.82;
+        const goalTopNorm = 0.22;
+        const goalBottomNorm = 0.72;
+
+        const gx1 = w * goalLeftNorm;
+        const gx2 = w * goalRightNorm;
+        const gy1 = h * goalTopNorm;
+        const gy2 = h * goalBottomNorm;
+        const gw = gx2 - gx1;
+        const gh = gy2 - gy1;
+
+        // 골 그물망 격자 그리기 (흔들림 deformation 포함)
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+        ctx.lineWidth = 1;
+        const netRows = 14;
+        const netCols = 24;
+
+        // 가로 그물선
+        for (let r = 0; r <= netRows; r++) {
+            ctx.beginPath();
+            const ny = gy1 + (gh * (r / netRows));
+            ctx.moveTo(gx1, ny);
+            
+            for (let c = 0; c <= netCols; c++) {
+                const nx = gx1 + (gw * (c / netCols));
+                // 공 충돌 근처 흔들림 굴곡 수학적 연출
+                const distToDef = Math.hypot(nx - ballPos.x * w, ny - ballPos.y * h);
+                const defFactor = Math.max(0, 1 - distToDef / (w * 0.2)) * netDeformation;
+                const offsety = Math.sin(r + c) * defFactor * 12;
+                
+                ctx.lineTo(nx, ny + offsety);
+            }
+            ctx.stroke();
+        }
+        // 세로 그물선
+        for (let c = 0; c <= netCols; c++) {
+            ctx.beginPath();
+            const nx = gx1 + (gw * (c / netCols));
+            ctx.moveTo(nx, gy1);
+            for (let r = 0; r <= netRows; r++) {
+                const ny = gy1 + (gh * (r / netRows));
+                const distToDef = Math.hypot(nx - ballPos.x * w, ny - ballPos.y * h);
+                const defFactor = Math.max(0, 1 - distToDef / (w * 0.2)) * netDeformation;
+                const offsetx = Math.cos(r + c) * defFactor * 12;
+                ctx.lineTo(nx + offsetx, ny);
+            }
+            ctx.stroke();
+        }
+
+        // 뒷벽 어둠 음영 효과
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+        ctx.fillRect(gx1, gy1, gw, gh);
+
+        // 페널티 에어리어 라인 
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(w * 0.05, h);
+        ctx.lineTo(w * 0.15, h * 0.78);
+        ctx.lineTo(w * 0.85, h * 0.78);
+        ctx.lineTo(w * 0.95, h);
+        ctx.stroke();
+
+        // 페널티 마크 (Penalty Spot)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.beginPath();
+        ctx.arc(w * 0.5, h * 0.9, 10 * (w / 800), 0, Math.PI * 2);
+        ctx.fill();
+
+        // 골대 기둥 쇠 파이프 렌더링 (그라데이션 효과 입혀 은색 금속 입체감 부여)
+        const postGrad = ctx.createLinearGradient(gx1 - 5, gy1, gx1 + 5, gy1);
+        postGrad.addColorStop(0, '#94A3B8');
+        postGrad.addColorStop(0.5, '#F1F5F9');
+        postGrad.addColorStop(1, '#475569');
+
+        ctx.strokeStyle = postGrad;
+        ctx.lineWidth = 10 * (w / 800);
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        ctx.beginPath();
+        ctx.moveTo(gx1, gy2); // 바닥 왼쪽 포스트
+        ctx.lineTo(gx1, gy1); // 모서리 왼쪽
+        ctx.lineTo(gx2, gy1); // 모서리 오른쪽
+        ctx.lineTo(gx2, gy2); // 바닥 오른쪽 포스트
+        ctx.stroke();
+
+        // 4. 골키퍼 렌더링
+        drawGoalkeeper(w, h, gx1, gx2, gy1, gy2);
+
+        // 5. 파티클 그리기
+        particles.forEach(p => {
+            ctx.save();
+            ctx.globalAlpha = p.alpha;
+            ctx.fillStyle = p.color;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+        });
+
+        // 6. 조준점 가이드라인 (에임 선택 시에만 연출)
+        if (selectedZoneIdx !== null && !isAnimating && phase === 'KICK') {
+            const target = TARGET_COORDINATES[selectedZoneIdx];
+            const tx = gx1 + (target.x - 0.18) * gw / (0.82 - 0.18);
+            const ty = gy1 + (target.y - 0.22) * gh / (0.72 - 0.22);
+            
+            // 조준점 애니메이션 링
+            ctx.strokeStyle = '#34D399';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(tx, ty, 20 + Math.sin(Date.now() / 100) * 4, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // 십자 에임
+            ctx.strokeStyle = 'rgba(52, 211, 153, 0.6)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(tx - 35, ty); ctx.lineTo(tx + 35, ty);
+            ctx.moveTo(tx, ty - 35); ctx.lineTo(tx, ty + 35);
+            ctx.stroke();
+        }
+
+        // 7. 축구공 렌더링 (원근 스케일링 적용)
+        const bx = ballPos.x * w;
+        const by = ballPos.y * h;
+        const baseRadius = 24 * (w / 800);
+        const ballRadius = baseRadius * ballScale;
+
+        drawSoccerBall(bx, by, ballRadius);
+    }
+
+    function drawGoalkeeper(w, h, gx1, gx2, gy1, gy2) {
+        // 골키퍼 전반적인 비율
+        const gw = gx2 - gx1;
+        const gh = gy2 - gy1;
+
+        // 정규화 위치를 바탕으로 캔버스 실제 크기 변환
+        const gkx = gx1 + (goaliePos.x - 0.18) * gw / (0.82 - 0.18);
+        const gky = gy1 + (goaliePos.y - 0.22) * gh / (0.72 - 0.22);
+
+        // 현재 수비 국가의 메인 컬러 확인
+        const currentDefTeam = (phase === 'KICK') ? cpuTeam : playerTeam;
+        const colors = TEAMS[currentDefTeam] || TEAMS.BRA;
+
+        ctx.save();
+        
+        // 그림자 효과
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+        ctx.shadowBlur = 10;
+        ctx.shadowOffsetY = 15;
+
+        // 키퍼 머리 크기 및 신체 크기 비례
+        const scale = w / 800;
+        const headSize = 13 * scale;
+
+        // 1. 다이빙 자세에 따른 사지 비틀기 수학 모델
+        let angle = 0;
+        if (goalkeeperAnimState.includes('left')) angle = -Math.PI / 6;
+        if (goalkeeperAnimState.includes('right')) angle = Math.PI / 6;
+
+        ctx.translate(gkx, gky);
+        ctx.rotate(angle);
+
+        // 바디 (몸통 유니폼)
+        ctx.fillStyle = colors.color;
+        ctx.strokeStyle = colors.secondary;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        // 타원형 몸매 구현
+        ctx.ellipse(0, 20 * scale, 14 * scale, 25 * scale, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // 머리 (피부톤 표현)
+        ctx.fillStyle = '#FBCFE8'; // 부드러운 핑크 베이지 스킨
+        ctx.beginPath();
+        ctx.arc(0, -10 * scale, headSize, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 헤어/머리카락 연출
+        ctx.fillStyle = '#334155';
+        ctx.beginPath();
+        ctx.arc(0, -13 * scale, headSize, Math.PI, 0);
+        ctx.fill();
+
+        // 2. 골키퍼 팔 & 왕장갑 연출
+        ctx.fillStyle = '#F59E0B'; // 형광 노랑 골키퍼 장갑 장착!
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 1.5;
+
+        // 왼팔 & 장갑
+        ctx.beginPath();
+        if (goalkeeperAnimState.includes('left') || goalkeeperAnimState === 'dive_up') {
+            // 다이빙 시 만세 형상
+            ctx.moveTo(-10 * scale, 10 * scale);
+            ctx.lineTo(-35 * scale, -25 * scale);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(-35 * scale, -25 * scale, 8 * scale, 0, Math.PI * 2);
+        } else {
+            // 평소 차렷 혹은 날개 준비 동작
+            ctx.moveTo(-10 * scale, 10 * scale);
+            ctx.lineTo(-30 * scale, 0 * scale);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(-30 * scale, 0 * scale, 8 * scale, 0, Math.PI * 2);
+        }
+        ctx.fill();
+        ctx.stroke();
+
+        // 오른팔 & 장갑
+        ctx.beginPath();
+        if (goalkeeperAnimState.includes('right') || goalkeeperAnimState === 'dive_up') {
+            ctx.moveTo(10 * scale, 10 * scale);
+            ctx.lineTo(35 * scale, -25 * scale);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(35 * scale, -25 * scale, 8 * scale, 0, Math.PI * 2);
+        } else {
+            ctx.moveTo(10 * scale, 10 * scale);
+            ctx.lineTo(30 * scale, 0 * scale);
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(30 * scale, 0 * scale, 8 * scale, 0, Math.PI * 2);
+        }
+        ctx.fill();
+        ctx.stroke();
+
+        // 3. 다리 & 양말 & 축구화 연출
+        ctx.strokeStyle = colors.secondary;
+        ctx.lineWidth = 5 * scale;
+        // 왼다리
+        ctx.beginPath();
+        ctx.moveTo(-8 * scale, 42 * scale);
+        ctx.lineTo(-15 * scale, 65 * scale);
+        ctx.stroke();
+        // 오른다리
+        ctx.beginPath();
+        ctx.moveTo(8 * scale, 42 * scale);
+        ctx.lineTo(15 * scale, 65 * scale);
+        ctx.stroke();
+
+        // 축구화 포인트
+        ctx.fillStyle = '#000000';
+        ctx.beginPath();
+        ctx.arc(-15 * scale, 67 * scale, 4 * scale, 0, Math.PI * 2);
+        ctx.arc(15 * scale, 67 * scale, 4 * scale, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+    }
+
+    function drawSoccerBall(x, y, r) {
+        ctx.save();
+        
+        // 공 외곽 그림자 효과
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.4)';
+        ctx.shadowBlur = r * 0.4;
+        ctx.shadowOffsetY = r * 0.3;
+
+        // 공 베이스 원형 흰 바탕 그리기
+        ctx.fillStyle = '#FFFFFF';
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+
+        // 3D 구체 느낌을 위한 그라데이션 조명 마스크
+        const ballLightGrad = ctx.createRadialGradient(
+            x - r * 0.3, y - r * 0.3, r * 0.1,
+            x, y, r
+        );
+        ballLightGrad.addColorStop(0, 'rgba(255, 255, 255, 0.9)');
+        ballLightGrad.addColorStop(0.5, 'rgba(240, 240, 240, 0.3)');
+        ballLightGrad.addColorStop(1, 'rgba(100, 100, 100, 0.8)'); // 외곽선 어둠
+
+        // 오각형 무늬 그리기 (Pentagons) - 리얼 축구공 형태 회전값 포함 수학식
+        ctx.fillStyle = '#111827'; // 검정 타일
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.4)';
+        ctx.lineWidth = 1;
+        
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.clip(); // 오각형이 공 경계선을 안 벗어나게 마스킹
+
+        // 중앙 메인 오각형 그리기
+        drawPentagon(x, y, r * 0.35, ballRot);
+
+        // 주변부 방사 오각형 5개 패턴 그리기
+        for (let i = 0; i < 5; i++) {
+            const angle = (i * Math.PI * 2 / 5) + ballRot;
+            const px = x + Math.cos(angle) * r * 0.7;
+            const py = y + Math.sin(angle) * r * 0.7;
+            drawPentagon(px, py, r * 0.35, angle + Math.PI);
+        }
+
+        // 구체 볼륨감 그라데이션 덮어쓰기
+        ctx.fillStyle = ballLightGrad;
+        ctx.beginPath();
+        ctx.arc(x, y, r, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+    }
+
+    // 오각형 헬퍼 함수
+    function drawPentagon(cx, cy, radius, rot) {
+        ctx.beginPath();
+        for (let i = 0; i < 5; i++) {
+            const angle = rot + (i * Math.PI * 2 / 5);
+            const x = cx + Math.cos(angle) * radius;
+            const y = cy + Math.sin(angle) * radius;
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.closePath();
+        ctx.fill();
+        ctx.stroke();
+    }
+</script>
+
+<script>
+    // 1. 게임 실행 개시
+    function startGame() {
+        AudioSynth.playWhistle();
+        
+        playerTeam = document.getElementById('select-player-team').value;
+        cpuTeam = document.getElementById('select-cpu-team').value;
+        
+        // UI 변경 숨기기/보여주기
+        document.getElementById('screen-menu').classList.add('hidden');
+        
+        // HUD 정보 동기화
+        document.getElementById('hud-p-name').innerText = TEAMS[playerTeam].name;
+        document.getElementById('hud-p-badge').style.backgroundColor = TEAMS[playerTeam].color;
+        document.getElementById('hud-c-name').innerText = TEAMS[cpuTeam].name;
+        document.getElementById('hud-c-badge').style.backgroundColor = TEAMS[cpuTeam].color;
+
+        // 점수 및 상태 초기화
+        score = { player: 0, cpu: 0 };
+        round = 1;
+        phase = 'KICK';
+        playerHistory = [];
+        cpuHistory = [];
+        shootAttempts = 0;
+
+        updateHUD();
+        setupNewPhase();
+    }
+
+    // 메인화면 초기 국가별 컬러 미리보기 연출용
+    function updateSelectedTeams() {
+        const pVal = document.getElementById('select-player-team').value;
+        const cVal = document.getElementById('select-cpu-team').value;
+        document.getElementById('player-preview-color').style.backgroundColor = TEAMS[pVal].color;
+        document.getElementById('cpu-preview-color').style.backgroundColor = TEAMS[cVal].color;
+    }
+    updateSelectedTeams(); // 첫 실행시 세팅
+
+    // HUD 지표 업데이트
+    function updateHUD() {
+        document.getElementById('score-player').innerText = score.player;
+        document.getElementById('score-cpu').innerText = score.cpu;
+        document.getElementById('hud-round-label').innerText = `Round ${round}`;
+
+        // 라운드 승패 닷 보드 렌더링
+        renderHistoryDots('dots-player', playerHistory);
+        renderHistoryDots('dots-cpu', cpuHistory);
+    }
+
+    // 닷(Dot) 보드 생성
+    function renderHistoryDots(containerId, history) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        
+        // 최소 5개 표시 유지하되, 5라운드 이상 길어지면 해당 길이만큼 동적 확대
+        const displayLimit = Math.max(5, history.length);
+        for (let i = 0; i < displayLimit; i++) {
+            const val = history[i];
+            let dotClass = 'bg-slate-800 border border-slate-700 text-transparent'; // 대기중 상태
+            let symbol = '•';
+
+            if (val === 'goal') {
+                dotClass = 'bg-emerald-500 border border-emerald-400 text-slate-900 shadow-md shadow-emerald-500/20';
+                symbol = '✓';
+            } else if (val === 'miss' || val === 'save') {
+                dotClass = 'bg-red-500 border border-red-400 text-white shadow-md shadow-red-500/20';
+                symbol = '✕';
+            }
+
+            const dot = document.createElement('span');
+            dot.className = `w-5 h-5 md:w-6 md:h-6 rounded-full flex items-center justify-center text-[10px] md:text-xs font-black transition-all ${dotClass}`;
+            dot.innerText = symbol;
+            container.appendChild(dot);
+        }
+    }
+
+    function setupNewPhase() {
+        isAnimating = false;
+        selectedZoneIdx = null;
+        
+        // 씬 그래픽 기본값 복귀 리셋
+        goalkeeperAnimState = 'idle';
+        goaliePos = { x: 0.5, y: 0.55 };
+        targetGoaliePos = { x: 0.5, y: 0.55 };
+        ballPos = { x: 0.5, y: 0.9 };
+        ballScale = 1.0;
+        ballRot = 0;
+        netDeformation = 0;
+
+        // 조준 가이드 격자 조작 스위치
+        const targetGrid = document.getElementById('target-grid');
+        const targetBtns = document.querySelectorAll('.target-btn');
+        targetGrid.classList.remove('pointer-events-none');
+        
+        // 버튼 상태 리셋
+        targetBtns.forEach(btn => {
+            btn.style.opacity = '0';
+        });
+
+        // 킥 파워 게이지 초기화
+        powerGaugeVal = 0;
+        isPowerActive = false;
+        if (powerIntervalId) clearInterval(powerIntervalId);
+        document.getElementById('power-meter-container').classList.add('hidden');
+
+        // 행동 버튼 갱신
+        const actionBtn = document.getElementById('btn-action');
+        actionBtn.className = "w-full md:w-auto px-6 py-2 bg-slate-800/80 text-slate-400 font-bold rounded-xl border border-slate-700/80 text-sm flex items-center justify-center gap-1 cursor-not-allowed";
+        actionBtn.innerHTML = "<span>영역 선택 필수</span>";
+
+        // 공격 / 수비 페이즈 설정
+        const phaseBadge = document.getElementById('phase-badge');
+        const instructionTxt = document.getElementById('instruction-txt');
+
+        if (phase === 'KICK') {
+            phaseBadge.innerText = "KICK PHASE";
+            phaseBadge.className = "px-3 py-1.5 bg-emerald-500 text-slate-950 rounded-xl font-bold text-xs uppercase tracking-wider animate-pulse";
+            instructionTxt.innerText = "공을 차고 싶은 방향의 골대를 골라 타겟을 클릭하세요!";
+        } else {
+            phaseBadge.innerText = "DEFEND PHASE";
+            phaseBadge.className = "px-3 py-1.5 bg-red-500 text-white rounded-xl font-bold text-xs uppercase tracking-wider animate-pulse";
+            instructionTxt.innerText = "상대 슛 방향을 예상하여 수비 과녁을 선택하세요!";
+        }
+    }
+
+    // 골대 그리드 타겟 클릭 액션
+    function selectZone(idx) {
+        if (isAnimating) return;
+        selectedZoneIdx = idx;
+
+        // 클릭된 버튼 시각 강조 및 나머지 하이드
+        const targetBtns = document.querySelectorAll('.target-btn');
+        targetBtns.forEach((btn, i) => {
+            if (i === idx) {
+                btn.style.opacity = '100';
+            } else {
+                btn.style.opacity = '0';
+            }
+        });
+
+        // 액션 버튼 승인
+        const actionBtn = document.getElementById('btn-action');
+        if (phase === 'KICK') {
+            actionBtn.className = "w-full md:w-auto px-6 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl transition-all shadow-md shadow-emerald-500/20 text-sm flex items-center justify-center gap-1";
+            actionBtn.innerHTML = "<span>파워 장전하기 ➔</span>";
+        } else {
+            actionBtn.className = "w-full md:w-auto px-6 py-2.5 bg-red-500 hover:bg-red-400 text-white font-black rounded-xl transition-all shadow-md shadow-red-500/20 text-sm flex items-center justify-center gap-1";
+            actionBtn.innerHTML = "<span>과녁 수비 다이빙! ➔</span>";
+        }
+    }
+
+    // 하단부 동작 액션 버튼 통합 핸들러
+    function handleActionButton() {
+        if (selectedZoneIdx === null || isAnimating) return;
+
+        if (phase === 'KICK') {
+            // 공격 단계: 1단계는 게이지 게이밍 루프 진입
+            if (!isPowerActive) {
+                startPowerGauge();
+            } else {
+                // 2단계: 게이지 락 & 공 차기 실행
+                lockPowerAndShoot();
+            }
+        } else {
+            // 수비 단계: 터치 즉시 연출 진행
+            executeDefendPlay();
+        }
+    }
+
+    function startPowerGauge() {
+        isPowerActive = true;
+        document.getElementById('power-meter-container').classList.remove('hidden');
+        document.getElementById('target-grid').classList.add('pointer-events-none'); // 에임 조절 고정
+
+        const actionBtn = document.getElementById('btn-action');
+        actionBtn.className = "w-full md:w-auto px-8 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl transition-all text-sm flex items-center justify-center gap-1 animate-pulse-fast";
+        actionBtn.innerHTML = "<span>⚽ 발포하기 (클릭!)</span>";
+
+        // 파워 게이지 바 핑퐁 애니메이션 루프 가동
+        powerIntervalId = setInterval(() => {
+            powerGaugeVal += 4 * powerGaugeDir;
+            if (powerGaugeVal >= 100) {
+                powerGaugeVal = 100;
+                powerGaugeDir = -1;
+            } else if (powerGaugeVal <= 0) {
+                powerGaugeVal = 0;
+                powerGaugeDir = 1;
+            }
+            document.getElementById('power-bar').style.width = `${powerGaugeVal}%`;
+        }, 30);
+    }
+
+    // 슛 게이지 타점 고정 후 실제 슛 비행 런칭
+    function lockPowerAndShoot() {
+        clearInterval(powerIntervalId);
+        isPowerActive = false;
+        isAnimating = true;
+
+        AudioSynth.playKick();
+        createGrassKickParticles(canvas.width * 0.5, canvas.height * 0.9);
+
+        // 1. 슈팅 정확도 분석
+        // 스위트 스팟은 [65% ~ 82%] 영역에 분포
+        let kickAccuracy = "GOOD"; // 'PERFECT', 'GOOD', 'WIDE'
+        if (powerGaugeVal >= 65 && powerGaugeVal <= 82) {
+            kickAccuracy = "PERFECT";
+        } else if (powerGaugeVal > 92 || powerGaugeVal < 25) {
+            kickAccuracy = "WIDE"; // 힘이 너무 과하거나 약해서 홈런 혹은 실축 유발 확률
+        }
+
+        // 2. 컴퓨터 골키퍼의 수비 판단 알고리즘
+        // 컴퓨터는 플레이어가 지정한 6개 영역 중 한 곳을 예측하여 다이빙합니다.
+        // 완벽한 킥이 아니면 키퍼가 인접 영역까지도 막아낼 기회를 얻습니다.
+        const cpuGKTargetIdx = Math.floor(Math.random() * 6);
+        const playerShootIdx = selectedZoneIdx;
+
+        // 비행 궤적 애니메이션용 변수 연산
+        let ballTargetPos = { ...TARGET_COORDINATES[playerShootIdx] };
+        
+        // 실축(WIDE)일 경우 볼 궤적을 바깥으로 인위적 이탈 시킴
+        if (kickAccuracy === 'WIDE') {
+            const offsetDirX = Math.random() > 0.5 ? 1 : -1;
+            const offsetDirY = Math.random() > 0.5 ? 1 : -1;
+            ballTargetPos.x += offsetDirX * 0.15;
+            ballTargetPos.y -= offsetDirY * 0.12;
+        }
+
+        // 키퍼 다이빙 물리 좌표
+        const goalieTargetCoords = { ...TARGET_COORDINATES[cpuGKTargetIdx] };
+        // 키퍼가 너무 아래로 가라앉는 동작 보정
+        if (goalieTargetCoords.y > 0.6) goalieTargetCoords.y = 0.58; 
+
+        // 3. 골 성공 판정 트리거
+        let shootoutResult = 'goal'; // 'goal', 'save', 'miss'
+        
+        if (kickAccuracy === 'WIDE') {
+            shootoutResult = 'miss';
+        } else if (cpuGKTargetIdx === playerShootIdx) {
+            shootoutResult = 'save'; // 키퍼 완벽 차단 예측 성공
+        } else if (kickAccuracy === 'GOOD') {
+            // 완벽히 차지 못했으나 인접 구역인 경우 세이브가 될 소량의 찬스
+            const isNeighborX = Math.abs(TARGET_COORDINATES[cpuGKTargetIdx].x - TARGET_COORDINATES[playerShootIdx].x) <= 0.25;
+            const isNeighborY = Math.abs(TARGET_COORDINATES[cpuGKTargetIdx].y - TARGET_COORDINATES[playerShootIdx].y) <= 0.3;
+            if (isNeighborX && isNeighborY && Math.random() > 0.5) {
+                shootoutResult = 'save';
+                // 키퍼가 몸을 살짝 구부려 인접부로 궤도 유도
+                goalieTargetCoords.x = (goalieTargetCoords.x + ballTargetPos.x) / 2;
+                goalieTargetCoords.y = (goalieTargetCoords.y + ballTargetPos.y) / 2;
+            }
+        }
+
+        // 키퍼 다이브 모션 지정
+        if (cpuGKTargetIdx === 0 || cpuGKTargetIdx === 3) goalkeeperAnimState = 'dive_left';
+        else if (cpuGKTargetIdx === 2 || cpuGKTargetIdx === 5) goalkeeperAnimState = 'dive_right';
+        else goalkeeperAnimState = 'dive_up';
+
+        // 4. 애니메이션 시퀀스 개시
+        let frame = 0;
+        const totalFrames = 35;
+        
+        const startX = 0.5;
+        const startY = 0.9;
+        const targetX = ballTargetPos.x;
+        const targetY = ballTargetPos.y;
+
+        function animateShoot() {
+            frame++;
+            const t = frame / totalFrames;
+            
+            // 공의 포물선 및 3D 스케일 축소 효과 구현
+            ballPos.x = startX + (targetX - startX) * t;
+            ballPos.y = startY + (targetY - startY) * t;
+            ballScale = 1.0 - (0.65 * t);
+            ballRot += 0.25; // 공 롤링 회전
+
+            // 골키퍼 다이빙 보간 시작
+            targetGoaliePos = goalieTargetCoords;
+
+            if (frame < totalFrames) {
+                requestAnimationFrame(animateShoot);
+            } else {
+                // 비행 슛 결과 완료 처리
+                completeShootAnimation(shootoutResult, targetX, targetY);
+            }
+        }
+        
+        // 애니메이션 작동
+        requestAnimationFrame(animateShoot);
+    }
+
+    function executeDefendPlay() {
+        isAnimating = true;
+        document.getElementById('target-grid').classList.add('pointer-events-none');
+
+        // 1. 상대 CPU 사격 구역 임의 결정
+        const cpuShootIdx = Math.floor(Math.random() * 6);
+        const playerSaveIdx = selectedZoneIdx;
+
+        // CPU 정확도 확률 (가장자리 조준 실패 확률)
+        const isCpuWide = Math.random() < 0.12; 
+
+        let ballTargetPos = { ...TARGET_COORDINATES[cpuShootIdx] };
+        if (isCpuWide) {
+            ballTargetPos.x += (Math.random() > 0.5 ? 1 : -1) * 0.15;
+            ballTargetPos.y -= (Math.random() > 0.5 ? 1 : -1) * 0.12;
+        }
+
+        // 플레이어 다이빙 물리 경로
+        const goalieTargetCoords = { ...TARGET_COORDINATES[playerSaveIdx] };
+        if (goalieTargetCoords.y > 0.6) goalieTargetCoords.y = 0.58; 
+
+        // 골 결과 연산
+        let shootoutResult = 'goal';
+        if (isCpuWide) {
+            shootoutResult = 'miss';
+        } else if (playerSaveIdx === cpuShootIdx) {
+            shootoutResult = 'save';
+        } else {
+            // 인접 영역 구제 수비수 보정
+            const isNeighborX = Math.abs(TARGET_COORDINATES[playerSaveIdx].x - TARGET_COORDINATES[cpuShootIdx].x) <= 0.25;
+            const isNeighborY = Math.abs(TARGET_COORDINATES[playerSaveIdx].y - TARGET_COORDINATES[cpuShootIdx].y) <= 0.3;
+            if (isNeighborX && isNeighborY && Math.random() > 0.65) {
+                shootoutResult = 'save';
+                goalieTargetCoords.x = (goalieTargetCoords.x + ballTargetPos.x) / 2;
+                goalieTargetCoords.y = (goalieTargetCoords.y + ballTargetPos.y) / 2;
+            }
+        }
+
+        // 플레이어 키퍼 애니메이션 방향
+        if (playerSaveIdx === 0 || playerSaveIdx === 3) goalkeeperAnimState = 'dive_left';
+        else if (playerSaveIdx === 2 || playerSaveIdx === 5) goalkeeperAnimState = 'dive_right';
+        else goalkeeperAnimState = 'dive_up';
+
+        // 슛 시뮬레이션 개동
+        let frame = 0;
+        const totalFrames = 35;
+        const startX = 0.5;
+        const startY = 0.9;
+        const targetX = ballTargetPos.x;
+        const targetY = ballTargetPos.y;
+
+        AudioSynth.playKick();
+
+        function animateDefend() {
+            frame++;
+            const t = frame / totalFrames;
+            
+            ballPos.x = startX + (targetX - startX) * t;
+            ballPos.y = startY + (targetY - startY) * t;
+            ballScale = 1.0 - (0.65 * t);
+            ballRot += 0.3;
+
+            // 키퍼 다이빙 추적
+            targetGoaliePos = goalieTargetCoords;
+
+            if (frame < totalFrames) {
+                requestAnimationFrame(animateDefend);
+            } else {
+                completeShootAnimation(shootoutResult, targetX, targetY);
+            }
+        }
+        requestAnimationFrame(animateDefend);
+    }
+
+    function completeShootAnimation(result, finalX, finalY) {
+        // 결과에 따른 효과음 및 연출 장치 작동
+        const banner = document.getElementById('banner-announcement');
+        const title = document.getElementById('announcement-title');
+        const subtitle = document.getElementById('announcement-subtitle');
+
+        if (result === 'goal') {
+            AudioSynth.playCheer();
+            netDeformation = 2.5; // 골 그물 출렁임 강도 세팅
+            createConfetti(finalX * canvas.width, finalY * canvas.height);
+            
+            // 화면 흔들림 효과 부여
+            canvas.classList.add('animate-bounce');
+            setTimeout(() => canvas.classList.remove('animate-bounce'), 500);
+
+            title.innerText = "GOAL!!";
+            title.className = "text-5xl md:text-7xl font-extrabold italic text-yellow-400 drop-shadow-lg text-neon";
+            
+            if (phase === 'KICK') {
+                score.player++;
+                playerHistory.push('goal');
+                subtitle.innerText = "환상적인 궤적의 원더 골 달성!";
+            } else {
+                score.cpu++;
+                cpuHistory.push('goal');
+                subtitle.innerText = "상대 키퍼를 속이며 골라인을 관통했습니다.";
+            }
+        } else if (result === 'save') {
+            AudioSynth.playSave();
+            title.innerText = "SUPER SAVE!!";
+            title.className = "text-4xl md:text-6xl font-extrabold italic text-cyan-400 drop-shadow-lg text-neon-blue";
+            
+            // 공 튕겨나가기
+            ballPos.x += (Math.random() > 0.5 ? 0.08 : -0.08);
+            ballPos.y += 0.15;
+            ballScale += 0.1;
+
+            if (phase === 'KICK') {
+                playerHistory.push('save');
+                subtitle.innerText = "상대 골키퍼가 길목을 읽고 쳐냈습니다!";
+            } else {
+                cpuHistory.push('save');
+                subtitle.innerText = "정확한 판단으로 상대 슛을 완전히 방어했습니다!";
+            }
+        } else {
+            // MISS (실축)
+            AudioSynth.playBoo();
+            title.innerText = "MISSED!!";
+            title.className = "text-4xl md:text-6xl font-extrabold italic text-red-500 drop-shadow-lg text-neon-red";
+            
+            if (phase === 'KICK') {
+                playerHistory.push('miss');
+                subtitle.innerText = "슛의 영점이 크게 어긋나며 골문을 벗어났습니다!";
+            } else {
+                cpuHistory.push('miss');
+                subtitle.innerText = "상대 슛이 어이없게 골대를 비껴갑니다!";
+            }
+        }
+
+        // 배너 디스플레이 오픈
+        banner.style.transform = 'scale(1)';
+        updateHUD();
+
+        // 3초 후 다음 경기 페이즈로 전환
+        setTimeout(() => {
+            banner.style.transform = 'scale(0)';
+            evaluateMatchStatus();
+        }, 2200);
+    }
+
+    function evaluateMatchStatus() {
+        shootAttempts++;
+
+        // 승부차기 조기 승패 종료 판정 공식 (실제 FIFA 룰 구현)
+        const pKicks = playerHistory.length;
+        const cKicks = cpuHistory.length;
+        const pLeft = 5 - pKicks;
+        const cLeft = 5 - cKicks;
+
+        // 1. 5회차 이하일 때, 남은 기회 다 골을 넣어도 불가능한 격차인지 조사
+        if (pKicks <= 5 && cKicks <= 5) {
+            if (score.player > score.cpu + cLeft) {
+                endGameMatch(true); // 플레이어 우승 확정
+                return;
+            }
+            if (score.cpu > score.player + pLeft) {
+                endGameMatch(false); // CPU 패배 확정
+                return;
+            }
+        }
+
+        // 2. 각자 5번씩 모두 찬 상태일 때
+        if (pKicks >= 5 && cKicks >= 5) {
+            if (pKicks === cKicks) {
+                if (score.player !== score.cpu) {
+                    endGameMatch(score.player > score.cpu);
+                    return;
+                }
+                // 갑작스러운 서든데스 라운드 추가 갱신
+                round++;
+            } else {
+                // 한명만 차서 스코어가 갈렸는지 조사 (KICK 이후 혹은 DEFEND 이후)
+                // cKicks가 모자란 상태라면 DEFEND 페이즈가 마저 진행된 후 판가름
+            }
+        } else {
+            // 일반적인 5번씩 완료 전 교대 갱신
+            if (pKicks === cKicks) {
+                round = pKicks + 1;
+            }
+        }
+
+        // 페이즈 전환 후 세팅
+        phase = (phase === 'KICK') ? 'DEFEND' : 'KICK';
+        setupNewPhase();
+    }
+
+    // 경기 최종 피날레 마감
+    function endGameMatch(isPlayerWinner) {
+        document.getElementById('screen-game-over').classList.remove('hidden');
+
+        const statusTitle = document.getElementById('end-status-title');
+        const statusSubtitle = document.getElementById('end-status-subtitle');
+        const trophy = document.getElementById('trophy-wrapper');
+
+        // 경기 요약 실적 채우기
+        document.getElementById('stat-my-score').innerText = `${score.player} 골`;
+        document.getElementById('stat-cpu-score').innerText = `${score.cpu} 골`;
+        document.getElementById('stat-total-rounds').innerText = `${playerHistory.length} 라운드`;
+
+        if (isPlayerWinner) {
+            AudioSynth.playCheer();
+            trophy.innerText = "🏆";
+            statusTitle.innerText = "우승을 축하합니다!";
+            statusTitle.className = "text-4xl md:text-6xl font-black italic text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-amber-300 drop-shadow-md mb-2";
+            statusSubtitle.innerText = `${TEAMS[playerTeam].name}이(가) 치열한 혈투 끝에 승부차기에서 승리하여 컵 트로피를 들어올렸습니다!`;
+        } else {
+            AudioSynth.playBoo();
+            trophy.innerText = "🥈";
+            statusTitle.innerText = "준우승 패배";
+            statusTitle.className = "text-4xl md:text-6xl font-black italic text-slate-400 drop-shadow-md mb-2";
+            statusSubtitle.innerText = `아쉽게 패배하였습니다. 다음 기회에 챔피언 자리를 다시 노려보세요!`;
+        }
+    }
+
+    // 재도전 리셋
+    function resetToMenu() {
+        document.getElementById('screen-game-over').classList.add('hidden');
+        document.getElementById('screen-menu').classList.remove('hidden');
+    }
+
+    // 최초 씬 기동 초기화 실행
+    window.onload = function() {
+        initSceneLoop();
+    };
+</script>
+</body>
+</html>
