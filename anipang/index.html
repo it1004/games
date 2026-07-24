@@ -1,1 +1,1154 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>애니팡 (Anipang Style Game)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
 
+        body {
+            font-family: 'Jua', 'Nunito', sans-serif;
+            background: linear-gradient(180deg, #4facfe 0%, #00f2fe 100%);
+            overflow: hidden;
+        }
+
+        /* Glassmorphism & Game Frame styling */
+        .game-frame {
+            background: rgba(18, 25, 44, 0.85);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4), inset 0 2px 4px rgba(255,255,255,0.2);
+        }
+
+        .board-cell {
+            background: #0f172a;
+            border-radius: 16px;
+            box-shadow: inset 0 3px 6px rgba(0,0,0,0.8), inset 0 -1px 2px rgba(255,255,255,0.08);
+        }
+
+        .board-cell:nth-child(even) {
+            background: #1e293b;
+        }
+
+        .tile {
+            transition: transform 0.22s ease-out, top 0.22s ease-out, left 0.22s ease-out;
+            cursor: pointer;
+            will-change: transform, top, left;
+        }
+
+        .tile.selected {
+            transform: scale(1.18);
+            filter: drop-shadow(0 0 15px #ffe600) drop-shadow(0 8px 12px rgba(0,0,0,0.5));
+            z-index: 30;
+        }
+
+        .tile-3d-wrapper {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2px;
+            overflow: visible;
+        }
+
+        .tile.pop {
+            animation: popAnim 0.35s ease-out forwards;
+        }
+
+        @keyframes popAnim {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.3) rotate(10deg); opacity: 0.9; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        /* Floating Score Particle */
+        .score-float {
+            position: absolute;
+            font-family: 'Jua', sans-serif;
+            font-weight: bold;
+            color: #ffe600;
+            text-shadow: 0 2px 6px rgba(0,0,0,0.9), 0 0 10px #ff3366;
+            pointer-events: none;
+            animation: floatUp 0.8s ease-out forwards;
+            z-index: 50;
+        }
+
+        @keyframes floatUp {
+            0% { opacity: 1; transform: translateY(0) scale(0.8); }
+            50% { opacity: 1; transform: translateY(-30px) scale(1.2); }
+            100% { opacity: 0; transform: translateY(-60px) scale(1); }
+        }
+
+        /* Fever FX Background */
+        .fever-active {
+            animation: feverGlow 0.5s infinite alternate ease-in-out;
+        }
+
+        @keyframes feverGlow {
+            from { box-shadow: 0 0 15px #ff2a6d, inset 0 0 20px #ff2a6d; }
+            to { box-shadow: 0 0 35px #ffe600, inset 0 0 40px #ffe600; }
+        }
+
+        /* Progress Bars */
+        .progress-gloss {
+            background: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.15) 100%);
+        }
+
+        /* Fire effect canvas behind bomb */
+        #fxCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 40;
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex items-center justify-center p-2 sm:p-4 select-none">
+
+    <div id="app" class="relative w-full max-w-md h-full max-h-[920px] flex flex-col justify-between rounded-3xl overflow-hidden game-frame p-4 border-2 border-cyan-300/30">
+        
+        <!-- Canvas for dynamic bomb rays, fire effects & fireworks -->
+        <canvas id="fxCanvas"></canvas>
+
+        <!-- TOP BAR: Score, Bomb Meter, Pause -->
+        <div class="relative z-10 flex flex-col gap-2">
+            <div class="flex items-center justify-between">
+                <!-- SCORE DISPLAY -->
+                <div class="flex flex-col">
+                    <span class="text-xs uppercase tracking-wider text-cyan-200 font-bold drop-shadow">SCORE</span>
+                    <span id="scoreText" class="text-3xl sm:text-4xl text-white font-extrabold tracking-wider drop-shadow-[0_3px_5px_rgba(0,0,0,0.8)]">0</span>
+                </div>
+
+                <!-- BOMB GAUGE / AVATAR -->
+                <div class="flex items-center gap-3">
+                    <div class="relative w-28 h-6 bg-slate-900/80 rounded-full border border-slate-700 overflow-hidden p-0.5 shadow-inner">
+                        <div id="bombBar" class="h-full bg-gradient-to-r from-amber-400 via-orange-500 to-red-500 rounded-full w-0 transition-all duration-300 progress-gloss"></div>
+                    </div>
+                    <div id="bombBadge" class="relative w-12 h-12 bg-slate-800 rounded-full border-2 border-amber-400 flex items-center justify-center shadow-lg transition-transform duration-200 cursor-pointer active:scale-95">
+                        <span class="text-2xl">💣</span>
+                        <div id="bombReadyRing" class="hidden absolute inset-0 rounded-full border-2 border-yellow-300 animate-ping"></div>
+                    </div>
+                </div>
+
+                <!-- PAUSE BUTTON -->
+                <button id="pauseBtn" class="w-10 h-10 bg-cyan-600 hover:bg-cyan-500 active:bg-cyan-700 text-white font-bold rounded-xl flex items-center justify-center shadow-md border border-cyan-300/40 text-lg">
+                    ❚❚
+                </button>
+            </div>
+
+            <!-- STAR/FEVER BANNER -->
+            <div id="feverBanner" class="h-2 w-full bg-slate-800/80 rounded-full overflow-hidden">
+                <div id="feverBar" class="h-full bg-gradient-to-r from-pink-500 via-purple-500 to-yellow-400 w-0 transition-all duration-200"></div>
+            </div>
+        </div>
+
+        <!-- PUZZLE BOARD CONTAINER -->
+        <div class="relative my-auto flex justify-center items-center">
+            <div id="boardContainer" class="relative w-full aspect-square bg-slate-950/90 rounded-2xl p-2 border border-slate-700/60 shadow-2xl grid grid-cols-7 grid-rows-7 gap-1.5 overflow-hidden">
+                <!-- Background grid cells injected by JS -->
+            </div>
+            
+            <!-- COMBO / FEVER POPUP OVERLAY -->
+            <div id="comboOverlay" class="pointer-events-none absolute inset-0 flex items-center justify-center opacity-0 transition-opacity duration-200 z-50">
+                <span id="comboText" class="text-4xl sm:text-5xl font-black italic text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-orange-400 to-pink-500 drop-shadow-[0_4px_8px_rgba(0,0,0,0.9)] transform scale-75">
+                    COMBO x2!
+                </span>
+            </div>
+        </div>
+
+        <!-- BOTTOM BAR: Timer Countdown & Logo -->
+        <div class="relative z-10 flex flex-col gap-2">
+            <!-- TIMER BAR (60 Seconds) -->
+            <div class="relative w-full h-8 bg-slate-900/90 rounded-2xl border-2 border-emerald-400/50 p-1 shadow-inner flex items-center">
+                <div id="timerBar" class="h-full bg-gradient-to-r from-emerald-400 via-lime-400 to-green-500 rounded-xl w-full transition-all duration-300 progress-gloss"></div>
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <span id="timerText" class="text-white text-lg font-black drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]">60</span>
+                </div>
+            </div>
+
+            <!-- LOGO / BRANDING -->
+            <div class="flex items-center justify-between px-2">
+                <div class="flex items-center gap-1">
+                    <span class="text-pink-400 text-xl font-black tracking-widest drop-shadow">ani</span>
+                    <span class="text-amber-300 text-xl font-black tracking-widest drop-shadow">PANG</span>
+                    <span class="text-xs bg-pink-500/30 text-pink-200 px-2 py-0.5 rounded-full border border-pink-400/30 ml-1">REMASTERED</span>
+                </div>
+                <button id="soundToggle" class="text-slate-300 hover:text-white text-sm bg-slate-800 px-3 py-1 rounded-lg border border-slate-600">
+                    🔊 SOUND ON
+                </button>
+            </div>
+        </div>
+
+        <!-- START MODAL -->
+        <div id="startModal" class="absolute inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex flex-col items-center justify-center p-6 text-center">
+            <div class="w-24 h-24 mb-4 rounded-3xl bg-gradient-to-tr from-pink-500 to-amber-400 p-1 shadow-2xl animate-bounce">
+                <div class="w-full h-full bg-slate-900 rounded-[22px] flex items-center justify-center text-5xl">
+                    🐱
+                </div>
+            </div>
+            <h1 class="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-pink-400 to-cyan-300 mb-2">
+                애니팡 !
+            </h1>
+            <p class="text-slate-300 text-sm mb-6 max-w-xs leading-relaxed">
+                같은 동물 3개 이상을 연속으로 가로/세로 연결해 팡팡 터뜨리세요! 콤보를 쌓아 폭탄과 피버 모드를 발동하세요.
+            </p>
+            <button id="startBtn" class="w-full max-w-xs py-4 bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-300 hover:to-teal-400 active:scale-95 text-slate-950 text-2xl font-black rounded-2xl shadow-lg border-2 border-emerald-200 transition-all">
+                게임 시작 !
+            </button>
+        </div>
+
+        <!-- GAME OVER MODAL -->
+        <div id="gameOverModal" class="hidden absolute inset-0 bg-slate-950/95 backdrop-blur-md z-50 flex flex-col items-center justify-center p-6 text-center">
+            <h2 class="text-3xl font-black text-amber-400 mb-1">TIME'S UP!</h2>
+            <p class="text-slate-400 text-sm mb-4">게임 종료</p>
+
+            <div class="w-full max-w-xs bg-slate-900/80 rounded-2xl p-4 border border-slate-800 flex flex-col gap-3 mb-6">
+                <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                    <span class="text-slate-400">최종 점수</span>
+                    <span id="finalScore" class="text-2xl font-black text-yellow-300">0</span>
+                </div>
+                <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                    <span class="text-slate-400">최고 콤보</span>
+                    <span id="finalCombo" class="text-xl font-bold text-pink-400">0 x</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-400">최고 기록</span>
+                    <span id="highScoreText" class="text-xl font-bold text-cyan-300">0</span>
+                </div>
+            </div>
+
+            <button id="restartBtn" class="w-full max-w-xs py-4 bg-gradient-to-r from-amber-400 to-orange-500 hover:from-amber-300 hover:to-orange-400 active:scale-95 text-slate-950 text-2xl font-black rounded-2xl shadow-lg border-2 border-amber-200 transition-all">
+                다시 하기
+            </button>
+        </div>
+
+        <!-- PAUSE MODAL -->
+        <div id="pauseModal" class="hidden absolute inset-0 bg-slate-950/90 backdrop-blur-md z-50 flex flex-col items-center justify-center p-6 text-center">
+            <h2 class="text-3xl font-black text-cyan-300 mb-6">일시 정지</h2>
+            <button id="resumeBtn" class="w-full max-w-xs py-4 bg-cyan-500 hover:bg-cyan-400 text-slate-950 text-xl font-black rounded-2xl shadow-lg mb-3">
+                계속하기
+            </button>
+            <button id="quitBtn" class="w-full max-w-xs py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-2xl">
+                메뉴로 나가기
+            </button>
+        </div>
+
+    </div>
+
+    <script>
+        /* SOUND SYNTHESIZER USING WEB AUDIO API */
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.enabled = true;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    if (AudioCtx) {
+                        this.ctx = new AudioCtx();
+                    }
+                }
+                if (this.ctx && this.ctx.state === 'suspended') {
+                    this.ctx.resume();
+                }
+            }
+
+            playTone(freq, type = 'sine', duration = 0.1, gainVal = 0.1, freqEnd = null) {
+                if (!this.enabled || !this.ctx) return;
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    if (freqEnd !== null) {
+                        osc.frequency.exponentialRampToValueAtTime(Math.max(1, freqEnd), this.ctx.currentTime + duration);
+                    }
+
+                    gain.gain.setValueAtTime(gainVal, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch (e) {}
+            }
+
+            playSwap() {
+                this.playTone(350, 'sine', 0.08, 0.1, 500);
+            }
+
+            playPop(multiplier = 1) {
+                const baseFreq = Math.min(1200, 400 * multiplier);
+                this.playTone(baseFreq, 'triangle', 0.12, 0.2, baseFreq * 1.5);
+            }
+
+            playBomb() {
+                if (!this.enabled || !this.ctx) return;
+                try {
+                    const bufferSize = this.ctx.sampleRate * 0.4;
+                    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+                    const data = buffer.getChannelData(0);
+                    for (let i = 0; i < bufferSize; i++) {
+                        data[i] = Math.random() * 2 - 1;
+                    }
+
+                    const noise = this.ctx.createBufferSource();
+                    noise.buffer = buffer;
+
+                    const filter = this.ctx.createBiquadFilter();
+                    filter.type = 'lowpass';
+                    filter.frequency.setValueAtTime(800, this.ctx.currentTime);
+                    filter.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.4);
+
+                    const gain = this.ctx.createGain();
+                    gain.gain.setValueAtTime(0.4, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
+
+                    noise.connect(filter);
+                    filter.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    noise.start();
+                } catch (e) {}
+            }
+
+            playFever() {
+                if (!this.enabled || !this.ctx) return;
+                const notes = [523.25, 659.25, 783.99, 1046.50];
+                notes.forEach((freq, idx) => {
+                    setTimeout(() => {
+                        this.playTone(freq, 'sine', 0.15, 0.2, freq * 1.2);
+                    }, idx * 60);
+                });
+            }
+        }
+
+        /* ANIMAL SVG GENERATOR (7 Cute 3D Types + Bomb) */
+        const ANIMAL_TYPES = [
+            { 
+                id: 0, 
+                name: 'mouse', 
+                bg: '#76d600', 
+                bgLight: '#b6ff42',
+                svg: `<svg viewBox="0 0 100 100" class="w-full h-full filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.3)]">
+                    <defs>
+                        <radialGradient id="mBody" cx="35%" cy="30%" r="65%">
+                            <stop offset="0%" stop-color="#c4ff4d"/>
+                            <stop offset="60%" stop-color="#76d600"/>
+                            <stop offset="100%" stop-color="#4e9900"/>
+                        </radialGradient>
+                        <radialGradient id="mEar" cx="35%" cy="30%" r="65%">
+                            <stop offset="0%" stop-color="#ffb3d9"/>
+                            <stop offset="100%" stop-color="#ff4081"/>
+                        </radialGradient>
+                    </defs>
+                    <circle cx="22" cy="22" r="18" fill="url(#mBody)"/>
+                    <circle cx="78" cy="22" r="18" fill="url(#mBody)"/>
+                    <circle cx="22" cy="22" r="11" fill="url(#mEar)"/>
+                    <circle cx="78" cy="22" r="11" fill="url(#mEar)"/>
+                    <circle cx="50" cy="56" r="36" fill="url(#mBody)"/>
+                    <ellipse cx="50" cy="28" rx="18" ry="7" fill="#ffffff" opacity="0.45"/>
+                    <circle cx="36" cy="50" r="6" fill="#1e293b"/>
+                    <circle cx="64" cy="50" r="6" fill="#1e293b"/>
+                    <circle cx="34" cy="48" r="2.2" fill="#fff"/>
+                    <circle cx="62" cy="48" r="2.2" fill="#fff"/>
+                    <circle cx="37" cy="52" r="1" fill="#fff"/>
+                    <circle cx="65" cy="52" r="1" fill="#fff"/>
+                    <ellipse cx="50" cy="60" rx="6" ry="4" fill="#ff477e"/>
+                    <ellipse cx="50" cy="59" rx="3" ry="1.8" fill="#ffffff" opacity="0.6"/>
+                    <path d="M42 66 Q50 74 58 66" stroke="#1e293b" stroke-width="3" fill="none" stroke-linecap="round"/>
+                    <circle cx="27" cy="58" r="7" fill="#ff477e" opacity="0.45"/>
+                    <circle cx="73" cy="58" r="7" fill="#ff477e" opacity="0.45"/>
+                </svg>` 
+            },
+            { 
+                id: 1, 
+                name: 'dog', 
+                bg: '#00b4d8', 
+                bgLight: '#70f3ff',
+                svg: `<svg viewBox="0 0 100 100" class="w-full h-full filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.3)]">
+                    <defs>
+                        <radialGradient id="dBody" cx="35%" cy="30%" r="65%">
+                            <stop offset="0%" stop-color="#80f4ff"/>
+                            <stop offset="65%" stop-color="#00b4d8"/>
+                            <stop offset="100%" stop-color="#0077b6"/>
+                        </radialGradient>
+                        <linearGradient id="dEar" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#0077b6"/>
+                            <stop offset="100%" stop-color="#03045e"/>
+                        </linearGradient>
+                        <radialGradient id="dMuzzle" cx="35%" cy="30%" r="65%">
+                            <stop offset="0%" stop-color="#ffffff"/>
+                            <stop offset="100%" stop-color="#e0f2fe"/>
+                        </radialGradient>
+                    </defs>
+                    <path d="M12 28 Q8 62 26 66 Q32 38 18 22 Z" fill="url(#dEar)"/>
+                    <path d="M88 28 Q92 62 74 66 Q68 38 82 22 Z" fill="url(#dEar)"/>
+                    <circle cx="50" cy="55" r="36" fill="url(#dBody)"/>
+                    <ellipse cx="50" cy="27" rx="18" ry="7" fill="#ffffff" opacity="0.45"/>
+                    <ellipse cx="50" cy="65" rx="20" ry="15" fill="url(#dMuzzle)"/>
+                    <circle cx="36" cy="48" r="5.5" fill="#0f172a"/>
+                    <circle cx="64" cy="48" r="5.5" fill="#0f172a"/>
+                    <circle cx="34" cy="46" r="2" fill="#fff"/>
+                    <circle cx="62" cy="46" r="2" fill="#fff"/>
+                    <ellipse cx="50" cy="58" rx="7" ry="5" fill="#0f172a"/>
+                    <ellipse cx="48" cy="56.5" rx="2.5" ry="1.5" fill="#fff" opacity="0.7"/>
+                    <path d="M44 65 Q50 71 56 65" stroke="#0f172a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                    <circle cx="27" cy="57" r="6" fill="#ff477e" opacity="0.4"/>
+                    <circle cx="73" cy="57" r="6" fill="#ff477e" opacity="0.4"/>
+                </svg>` 
+            },
+            { 
+                id: 2, 
+                name: 'cat', 
+                bg: '#94a3b8', 
+                bgLight: '#f1f5f9',
+                svg: `<svg viewBox="0 0 100 100" class="w-full h-full filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.3)]">
+                    <defs>
+                        <radialGradient id="cBody" cx="35%" cy="30%" r="65%">
+                            <stop offset="0%" stop-color="#ffffff"/>
+                            <stop offset="60%" stop-color="#cbd5e1"/>
+                            <stop offset="100%" stop-color="#64748b"/>
+                        </radialGradient>
+                        <linearGradient id="cEarIn" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#ffb3c1"/>
+                            <stop offset="100%" stop-color="#ff4d6d"/>
+                        </linearGradient>
+                    </defs>
+                    <polygon points="18,12 38,38 8,44" fill="url(#cBody)"/>
+                    <polygon points="82,12 62,38 92,44" fill="url(#cBody)"/>
+                    <polygon points="20,17 34,36 12,40" fill="url(#cEarIn)"/>
+                    <polygon points="80,17 66,36 88,40" fill="url(#cEarIn)"/>
+                    <circle cx="50" cy="55" r="36" fill="url(#cBody)"/>
+                    <ellipse cx="50" cy="27" rx="18" ry="7" fill="#ffffff" opacity="0.5"/>
+                    <ellipse cx="36" cy="49" rx="5.5" ry="7" fill="#0f172a"/>
+                    <ellipse cx="64" cy="49" rx="5.5" ry="7" fill="#0f172a"/>
+                    <circle cx="34" cy="46" r="2.2" fill="#fff"/>
+                    <circle cx="62" cy="46" r="2.2" fill="#fff"/>
+                    <circle cx="37" cy="51" r="1" fill="#fff"/>
+                    <circle cx="65" cy="51" r="1" fill="#fff"/>
+                    <polygon points="50,57 44,53 56,53" fill="#ff4d6d"/>
+                    <path d="M41 62 Q50 67 59 62" stroke="#334155" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                    <line x1="14" y1="52" x2="30" y2="54" stroke="#475569" stroke-width="2.5" stroke-linecap="round"/>
+                    <line x1="12" y1="60" x2="29" y2="59" stroke="#475569" stroke-width="2.5" stroke-linecap="round"/>
+                    <line x1="86" y1="52" x2="70" y2="54" stroke="#475569" stroke-width="2.5" stroke-linecap="round"/>
+                    <line x1="88" y1="60" x2="71" y2="59" stroke="#475569" stroke-width="2.5" stroke-linecap="round"/>
+                    <circle cx="28" cy="58" r="6" fill="#ff477e" opacity="0.35"/>
+                    <circle cx="72" cy="58" r="6" fill="#ff477e" opacity="0.35"/>
+                </svg>` 
+            },
+            { 
+                id: 3, 
+                name: 'chick', 
+                bg: '#ffb703', 
+                bgLight: '#fff3b0',
+                svg: `<svg viewBox="0 0 100 100" class="w-full h-full filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.3)]">
+                    <defs>
+                        <radialGradient id="chBody" cx="35%" cy="30%" r="65%">
+                            <stop offset="0%" stop-color="#fff566"/>
+                            <stop offset="60%" stop-color="#ffcc00"/>
+                            <stop offset="100%" stop-color="#e69900"/>
+                        </radialGradient>
+                        <radialGradient id="chBeak" cx="35%" cy="30%" r="65%">
+                            <stop offset="0%" stop-color="#ff9f43"/>
+                            <stop offset="100%" stop-color="#ee5253"/>
+                        </radialGradient>
+                    </defs>
+                    <path d="M46 18 Q50 6 54 18" stroke="#ff9f43" stroke-width="5" stroke-linecap="round" fill="none"/>
+                    <circle cx="50" cy="55" r="36" fill="url(#chBody)"/>
+                    <ellipse cx="50" cy="27" rx="18" ry="7" fill="#ffffff" opacity="0.5"/>
+                    <circle cx="36" cy="48" r="5.5" fill="#1e293b"/>
+                    <circle cx="64" cy="48" r="5.5" fill="#1e293b"/>
+                    <circle cx="34" cy="46" r="2.2" fill="#fff"/>
+                    <circle cx="62" cy="46" r="2.2" fill="#fff"/>
+                    <polygon points="50,50 38,60 62,60" fill="url(#chBeak)"/>
+                    <polygon points="50,50 42,58 58,58" fill="#ffa801"/>
+                    <circle cx="26" cy="57" r="7.5" fill="#ff3f34" opacity="0.5"/>
+                    <circle cx="74" cy="57" r="7.5" fill="#ff3f34" opacity="0.5"/>
+                </svg>` 
+            },
+            { 
+                id: 4, 
+                name: 'rabbit', 
+                bg: '#e2e8f0', 
+                bgLight: '#ffffff',
+                svg: `<svg viewBox="0 0 100 100" class="w-full h-full filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.3)]">
+                    <defs>
+                        <radialGradient id="rBody" cx="35%" cy="30%" r="65%">
+                            <stop offset="0%" stop-color="#ffffff"/>
+                            <stop offset="70%" stop-color="#f1f5f9"/>
+                            <stop offset="100%" stop-color="#cbd5e1"/>
+                        </radialGradient>
+                        <linearGradient id="rEar" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stop-color="#ffafcc"/>
+                            <stop offset="100%" stop-color="#ff2a6d"/>
+                        </linearGradient>
+                    </defs>
+                    <rect x="25" y="6" width="16" height="44" rx="8" fill="url(#rBody)"/>
+                    <rect x="59" y="6" width="16" height="44" rx="8" fill="url(#rBody)"/>
+                    <rect x="29" y="12" width="8" height="32" rx="4" fill="url(#rEar)"/>
+                    <rect x="63" y="12" width="8" height="32" rx="4" fill="url(#rEar)"/>
+                    <circle cx="50" cy="57" r="35" fill="url(#rBody)"/>
+                    <ellipse cx="50" cy="30" rx="17" ry="7" fill="#ffffff" opacity="0.7"/>
+                    <circle cx="36" cy="51" r="5" fill="#0f172a"/>
+                    <circle cx="64" cy="51" r="5" fill="#0f172a"/>
+                    <circle cx="34" cy="49" r="2" fill="#fff"/>
+                    <circle cx="62" cy="49" r="2" fill="#fff"/>
+                    <ellipse cx="50" cy="58" rx="4.5" ry="3.5" fill="#ff2a6d"/>
+                    <path d="M43 64 Q50 69 57 64" stroke="#0f172a" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                    <circle cx="26" cy="60" r="7" fill="#ff477e" opacity="0.45"/>
+                    <circle cx="74" cy="60" r="7" fill="#ff477e" opacity="0.45"/>
+                </svg>` 
+            },
+            { 
+                id: 5, 
+                name: 'monkey', 
+                bg: '#b07d48', 
+                bgLight: '#f4c493',
+                svg: `<svg viewBox="0 0 100 100" class="w-full h-full filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.3)]">
+                    <defs>
+                        <radialGradient id="mkBody" cx="35%" cy="30%" r="65%">
+                            <stop offset="0%" stop-color="#e0a96d"/>
+                            <stop offset="60%" stop-color="#b07d48"/>
+                            <stop offset="100%" stop-color="#6e471d"/>
+                        </radialGradient>
+                        <radialGradient id="mkFace" cx="35%" cy="30%" r="65%">
+                            <stop offset="0%" stop-color="#ffeedd"/>
+                            <stop offset="100%" stop-color="#f4c493"/>
+                        </radialGradient>
+                    </defs>
+                    <circle cx="17" cy="45" r="14" fill="url(#mkBody)"/>
+                    <circle cx="83" cy="45" r="14" fill="url(#mkBody)"/>
+                    <circle cx="17" cy="45" r="8" fill="url(#mkFace)"/>
+                    <circle cx="83" cy="45" r="8" fill="url(#mkFace)"/>
+                    <circle cx="50" cy="54" r="36" fill="url(#mkBody)"/>
+                    <ellipse cx="50" cy="26" rx="18" ry="7" fill="#ffffff" opacity="0.35"/>
+                    <path d="M24 45 Q50 30 76 45 Q50 78 24 45 Z" fill="url(#mkFace)"/>
+                    <circle cx="37" cy="47" r="5" fill="#3e2723"/>
+                    <circle cx="63" cy="47" r="5" fill="#3e2723"/>
+                    <circle cx="35" cy="45" r="2" fill="#fff"/>
+                    <circle cx="61" cy="45" r="2" fill="#fff"/>
+                    <ellipse cx="50" cy="55" rx="5" ry="3.5" fill="#3e2723"/>
+                    <path d="M41 62 Q50 68 59 62" stroke="#3e2723" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+                    <circle cx="28" cy="56" r="6" fill="#ff7043" opacity="0.4"/>
+                    <circle cx="72" cy="56" r="6" fill="#ff7043" opacity="0.4"/>
+                </svg>` 
+            },
+            { 
+                id: 6, 
+                name: 'pig', 
+                bg: '#ff758f', 
+                bgLight: '#ffccd5',
+                svg: `<svg viewBox="0 0 100 100" class="w-full h-full filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.3)]">
+                    <defs>
+                        <radialGradient id="pBody" cx="35%" cy="30%" r="65%">
+                            <stop offset="0%" stop-color="#ffb3c6"/>
+                            <stop offset="60%" stop-color="#ff758f"/>
+                            <stop offset="100%" stop-color="#c9184a"/>
+                        </radialGradient>
+                        <radialGradient id="pSnout" cx="35%" cy="30%" r="65%">
+                            <stop offset="0%" stop-color="#ffccd5"/>
+                            <stop offset="100%" stop-color="#ff4d6d"/>
+                        </radialGradient>
+                    </defs>
+                    <polygon points="18,22 34,28 18,44" fill="#c9184a"/>
+                    <polygon points="82,22 66,28 82,44" fill="#c9184a"/>
+                    <polygon points="20,24 32,29 20,40" fill="#ffccd5"/>
+                    <polygon points="80,24 68,29 80,40" fill="#ffccd5"/>
+                    <circle cx="50" cy="55" r="36" fill="url(#pBody)"/>
+                    <ellipse cx="50" cy="27" rx="18" ry="7" fill="#ffffff" opacity="0.45"/>
+                    <circle cx="35" cy="47" r="5.5" fill="#1e293b"/>
+                    <circle cx="65" cy="47" r="5.5" fill="#1e293b"/>
+                    <circle cx="33" cy="45" r="2.2" fill="#fff"/>
+                    <circle cx="63" cy="45" r="2.2" fill="#fff"/>
+                    <ellipse cx="50" cy="60" rx="14" ry="10" fill="url(#pSnout)"/>
+                    <circle cx="44" cy="60" r="3" fill="#800f2f"/>
+                    <circle cx="56" cy="60" r="3" fill="#800f2f"/>
+                    <ellipse cx="50" cy="55" rx="8" ry="3" fill="#ffffff" opacity="0.4"/>
+                    <circle cx="25" cy="58" r="6.5" fill="#ff0054" opacity="0.4"/>
+                    <circle cx="75" cy="58" r="6.5" fill="#ff0054" opacity="0.4"/>
+                </svg>` 
+            },
+            { 
+                id: 7, 
+                name: 'bomb', 
+                bg: '#1e293b', 
+                bgLight: '#475569',
+                svg: `<svg viewBox="0 0 100 100" class="w-full h-full filter drop-shadow-[0_4px_6px_rgba(0,0,0,0.5)]">
+                    <defs>
+                        <radialGradient id="bmBody" cx="35%" cy="30%" r="65%">
+                            <stop offset="0%" stop-color="#64748b"/>
+                            <stop offset="40%" stop-color="#1e293b"/>
+                            <stop offset="100%" stop-color="#020617"/>
+                        </radialGradient>
+                        <radialGradient id="bmSpark" cx="50%" cy="50%" r="50%">
+                            <stop offset="0%" stop-color="#ffffff"/>
+                            <stop offset="40%" stop-color="#ffea00"/>
+                            <stop offset="100%" stop-color="#ff0000"/>
+                        </radialGradient>
+                    </defs>
+                    <path d="M50 22 Q58 8 68 12" stroke="#ff9f43" stroke-width="5" fill="none" stroke-linecap="round"/>
+                    <circle cx="68" cy="12" r="7" fill="url(#bmSpark)" class="animate-pulse"/>
+                    <circle cx="50" cy="56" r="36" fill="url(#bmBody)"/>
+                    <ellipse cx="50" cy="28" rx="18" ry="7" fill="#ffffff" opacity="0.3"/>
+                    <path d="M33 46 L45 52 M45 46 L33 52" stroke="#ff2a6d" stroke-width="4.5" stroke-linecap="round"/>
+                    <path d="M67 46 L55 52 M55 46 L67 52" stroke="#ff2a6d" stroke-width="4.5" stroke-linecap="round"/>
+                    <path d="M38 68 Q50 60 62 68" stroke="#ffffff" stroke-width="3.5" stroke-linecap="round" fill="none"/>
+                </svg>` 
+            }
+        ];
+
+        /* GAME STATE VARIABLES */
+        const GRID_SIZE = 7;
+        let board = [];
+        let score = 0;
+        let comboCount = 0;
+        let maxCombo = 0;
+        let timeLeft = 60;
+        let timerInterval = null;
+        let isPlaying = false;
+        let isPaused = false;
+        let isProcessing = false;
+        let selectedTile = null; // {r, c}
+        let bombGauge = 0; // 0 to 100
+        let feverGauge = 0; // 0 to 100
+        let isFeverMode = false;
+        let feverTimer = null;
+        let soundEngine = new SoundEngine();
+
+        const boardContainer = document.getElementById('boardContainer');
+        const scoreText = document.getElementById('scoreText');
+        const timerBar = document.getElementById('timerBar');
+        const timerText = document.getElementById('timerText');
+        const bombBar = document.getElementById('bombBar');
+        const bombBadge = document.getElementById('bombBadge');
+        const bombReadyRing = document.getElementById('bombReadyRing');
+        const feverBar = document.getElementById('feverBar');
+        const feverBanner = document.getElementById('feverBanner');
+        const comboOverlay = document.getElementById('comboOverlay');
+        const comboText = document.getElementById('comboText');
+
+        // Modals
+        const startModal = document.getElementById('startModal');
+        const gameOverModal = document.getElementById('gameOverModal');
+        const pauseModal = document.getElementById('pauseModal');
+
+        // Buttons
+        document.getElementById('startBtn').addEventListener('click', startGame);
+        document.getElementById('restartBtn').addEventListener('click', startGame);
+        document.getElementById('pauseBtn').addEventListener('click', togglePause);
+        document.getElementById('resumeBtn').addEventListener('click', togglePause);
+        document.getElementById('quitBtn').addEventListener('click', () => {
+            pauseModal.classList.add('hidden');
+            startModal.classList.remove('hidden');
+            isPlaying = false;
+            clearInterval(timerInterval);
+        });
+
+        document.getElementById('soundToggle').addEventListener('click', (e) => {
+            soundEngine.enabled = !soundEngine.enabled;
+            e.target.innerText = soundEngine.enabled ? '🔊 SOUND ON' : '🔇 SOUND OFF';
+        });
+
+        bombBadge.addEventListener('click', triggerBombSkill);
+
+        /* BOARD SETUP */
+        function createBoardGrid() {
+            boardContainer.innerHTML = '';
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'board-cell w-full h-full relative';
+                    cell.dataset.row = r;
+                    cell.dataset.col = c;
+                    boardContainer.appendChild(cell);
+                }
+            }
+        }
+
+        function initBoardLogic() {
+            board = [];
+            for (let r = 0; r < GRID_SIZE; r++) {
+                board[r] = [];
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    let animalId;
+                    do {
+                        animalId = Math.floor(Math.random() * (ANIMAL_TYPES.length - 1)); // exclude bomb initially
+                    } while (
+                        (r >= 2 && board[r-1][c] === animalId && board[r-2][c] === animalId) ||
+                        (c >= 2 && board[r][c-1] === animalId && board[r][c-2] === animalId)
+                    );
+                    board[r][c] = animalId;
+                }
+            }
+            renderBoard();
+        }
+
+        function renderBoard() {
+            // Remove existing tile elements
+            document.querySelectorAll('.tile').forEach(el => el.remove());
+
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    const animalId = board[r][c];
+                    if (animalId === null) continue;
+
+                    const tile = document.createElement('div');
+                    tile.className = 'tile absolute flex items-center justify-center p-1 cursor-pointer';
+                    tile.style.width = `calc(100% / ${GRID_SIZE})`;
+                    tile.style.height = `calc(100% / ${GRID_SIZE})`;
+                    tile.style.top = `${(r / GRID_SIZE) * 100}%`;
+                    tile.style.left = `${(c / GRID_SIZE) * 100}%`;
+                    tile.dataset.row = r;
+                    tile.dataset.col = c;
+                    tile.id = `tile-${r}-${c}`;
+
+                    const animal = ANIMAL_TYPES[animalId];
+                    tile.innerHTML = `<div class="tile-3d-wrapper">${animal.svg}</div>`;
+
+                    // Touch & Click Event Listeners
+                    tile.addEventListener('click', () => handleTileClick(r, c));
+
+                    boardContainer.appendChild(tile);
+                }
+            }
+        }
+
+        function handleTileClick(r, c) {
+            if (!isPlaying || isPaused || isProcessing) return;
+            soundEngine.init();
+
+            if (!selectedTile) {
+                selectedTile = { r, c };
+                highlightTile(r, c, true);
+                soundEngine.playSwap();
+            } else {
+                const prev = selectedTile;
+                highlightTile(prev.r, prev.c, false);
+                selectedTile = null;
+
+                // Check if adjacent
+                const isAdjacent = (Math.abs(prev.r - r) + Math.abs(prev.c - c)) === 1;
+
+                if (isAdjacent) {
+                    swapTiles(prev.r, prev.c, r, c);
+                } else {
+                    selectedTile = { r, c };
+                    highlightTile(r, c, true);
+                    soundEngine.playSwap();
+                }
+            }
+        }
+
+        function highlightTile(r, c, enable) {
+            const el = document.getElementById(`tile-${r}-${c}`);
+            if (el) {
+                if (enable) el.classList.add('selected');
+                else el.classList.remove('selected');
+            }
+        }
+
+        async function swapTiles(r1, c1, r2, c2) {
+            isProcessing = true;
+
+            // Swap values in matrix
+            const temp = board[r1][c1];
+            board[r1][c1] = board[r2][c2];
+            board[r2][c2] = temp;
+
+            renderBoard();
+            soundEngine.playSwap();
+
+            await new Promise(res => setTimeout(res, 230));
+
+            // Check if match happens
+            const matches = findMatches();
+            if (matches.length > 0) {
+                comboCount = 0;
+                await processMatches(matches);
+            } else {
+                // Revert swap if no match
+                const temp2 = board[r1][c1];
+                board[r1][c1] = board[r2][c2];
+                board[r2][c2] = temp2;
+                renderBoard();
+                isProcessing = false;
+            }
+        }
+
+        function findMatches() {
+            const matchedCoords = new Set();
+
+            // Horizontal Matches
+            for (let r = 0; r < GRID_SIZE; r++) {
+                let matchLen = 1;
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    if (c < GRID_SIZE - 1 && board[r][c] !== null && board[r][c] === board[r][c+1]) {
+                        matchLen++;
+                    } else {
+                        if (matchLen >= 3) {
+                            for (let k = 0; k < matchLen; k++) {
+                                matchedCoords.add(`${r},${c - k}`);
+                            }
+                        }
+                        matchLen = 1;
+                    }
+                }
+            }
+
+            // Vertical Matches
+            for (let c = 0; c < GRID_SIZE; c++) {
+                let matchLen = 1;
+                for (let r = 0; r < GRID_SIZE; r++) {
+                    if (r < GRID_SIZE - 1 && board[r][c] !== null && board[r][c] === board[r+1][c]) {
+                        matchLen++;
+                    } else {
+                        if (matchLen >= 3) {
+                            for (let k = 0; k < matchLen; k++) {
+                                matchedCoords.add(`${r - k},${c}`);
+                            }
+                        }
+                        matchLen = 1;
+                    }
+                }
+            }
+
+            return Array.from(matchedCoords).map(str => {
+                const [r, c] = str.split(',').map(Number);
+                return { r, c };
+            });
+        }
+
+        async function processMatches(matches) {
+            comboCount++;
+            if (comboCount > maxCombo) maxCombo = comboCount;
+
+            // Score calculation
+            const baseScore = matches.length * 100;
+            const comboMultiplier = isFeverMode ? comboCount * 2.5 : comboCount;
+            const earnedScore = Math.floor(baseScore * comboMultiplier);
+            score += earnedScore;
+            scoreText.innerText = score.toLocaleString();
+
+            // Update Gauges
+            updateBombGauge(matches.length * 5);
+            updateFeverGauge(matches.length * 6);
+
+            // Audio & Visual Effects
+            soundEngine.playPop(1 + (comboCount * 0.12));
+            showComboEffect(comboCount);
+
+            // Trigger Pop Animations
+            matches.forEach(({ r, c }) => {
+                const el = document.getElementById(`tile-${r}-${c}`);
+                if (el) {
+                    el.classList.add('pop');
+                    spawnScoreParticle(el, `+${earnedScore}`);
+                    spawnSparkles(el);
+                }
+                board[r][c] = null;
+            });
+
+            await new Promise(res => setTimeout(res, 320));
+
+            // Cascade Drop
+            await dropTiles();
+
+            // Refill New Tiles
+            await refillBoard();
+
+            // Recursive Match Check
+            const nextMatches = findMatches();
+            if (nextMatches.length > 0) {
+                await processMatches(nextMatches);
+            } else {
+                isProcessing = false;
+            }
+        }
+
+        async function dropTiles() {
+            for (let c = 0; c < GRID_SIZE; c++) {
+                let emptyRow = GRID_SIZE - 1;
+                for (let r = GRID_SIZE - 1; r >= 0; r--) {
+                    if (board[r][c] !== null) {
+                        if (r !== emptyRow) {
+                            board[emptyRow][c] = board[r][c];
+                            board[r][c] = null;
+                        }
+                        emptyRow--;
+                    }
+                }
+            }
+            renderBoard();
+            await new Promise(res => setTimeout(res, 200));
+        }
+
+        async function refillBoard() {
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    if (board[r][c] === null) {
+                        board[r][c] = Math.floor(Math.random() * (ANIMAL_TYPES.length - 1));
+                    }
+                }
+            }
+            renderBoard();
+            await new Promise(res => setTimeout(res, 200));
+        }
+
+        function updateBombGauge(amount) {
+            bombGauge = Math.min(100, bombGauge + amount);
+            bombBar.style.width = `${bombGauge}%`;
+            if (bombGauge >= 100) {
+                bombReadyRing.classList.remove('hidden');
+                bombBadge.classList.add('animate-bounce');
+            }
+        }
+
+        function triggerBombSkill() {
+            if (!isPlaying || isPaused || isProcessing || bombGauge < 100) return;
+
+            bombGauge = 0;
+            bombBar.style.width = `0%`;
+            bombReadyRing.classList.add('hidden');
+            bombBadge.classList.remove('animate-bounce');
+
+            soundEngine.playBomb();
+
+            // Clear center 3x3 or random cross
+            const centerR = 3, centerC = 3;
+            const bombTargets = [];
+            for (let r = 0; r < GRID_SIZE; r++) {
+                for (let c = 0; c < GRID_SIZE; c++) {
+                    if (r === centerR || c === centerC) {
+                        bombTargets.push({ r, c });
+                    }
+                }
+            }
+
+            // Launch fiery particle wave
+            createFireballWave();
+            processMatches(bombTargets);
+        }
+
+        function updateFeverGauge(amount) {
+            if (isFeverMode) return;
+            feverGauge = Math.min(100, feverGauge + amount);
+            feverBar.style.width = `${feverGauge}%`;
+
+            if (feverGauge >= 100) {
+                activateFeverMode();
+            }
+        }
+
+        function activateFeverMode() {
+            isFeverMode = true;
+            soundEngine.playFever();
+            feverBanner.classList.add('fever-active');
+            
+            showComboEffect('FEVER TIME!');
+
+            let duration = 6; // 6 seconds fever
+            feverTimer = setInterval(() => {
+                duration--;
+                feverBar.style.width = `${(duration / 6) * 100}%`;
+                if (duration <= 0) {
+                    clearInterval(feverTimer);
+                    isFeverMode = false;
+                    feverGauge = 0;
+                    feverBanner.classList.remove('fever-active');
+                }
+            }, 1000);
+        }
+
+        /* COMBO OVERLAY & PARTICLES */
+        function showComboEffect(combo) {
+            if (typeof combo === 'number' && combo <= 1) return;
+
+            comboText.innerText = typeof combo === 'number' ? `COMBO x${combo}!` : combo;
+            comboOverlay.style.opacity = '1';
+            comboOverlay.style.transform = 'scale(1.2)';
+
+            setTimeout(() => {
+                comboOverlay.style.opacity = '0';
+                comboOverlay.style.transform = 'scale(0.8)';
+            }, 700);
+        }
+
+        function spawnScoreParticle(element, text) {
+            const rect = element.getBoundingClientRect();
+            const p = document.createElement('div');
+            p.className = 'score-float';
+            p.innerText = text;
+            p.style.left = `${rect.left + rect.width / 4}px`;
+            p.style.top = `${rect.top}px`;
+            document.body.appendChild(p);
+
+            setTimeout(() => p.remove(), 800);
+        }
+
+        const canvas = document.getElementById('fxCanvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        function spawnSparkles(tileEl) {
+            const rect = tileEl.getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+
+            for (let i = 0; i < 8; i++) {
+                particles.push({
+                    x: centerX,
+                    y: centerY,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8,
+                    size: Math.random() * 6 + 3,
+                    color: ['#FFE600', '#FF2A6D', '#00D2FC', '#8CE600'][Math.floor(Math.random() * 4)],
+                    life: 1.0
+                });
+            }
+        }
+
+        function createFireballWave() {
+            for (let i = 0; i < 40; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 16,
+                    vy: (Math.random() - 0.5) * 16,
+                    size: Math.random() * 12 + 4,
+                    color: '#FF5722',
+                    life: 1.2
+                });
+            }
+        }
+
+        function animateParticles() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life -= 0.03;
+
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, p.life);
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+
+                if (p.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+
+        function startGame() {
+            soundEngine.init();
+            score = 0;
+            comboCount = 0;
+            maxCombo = 0;
+            timeLeft = 60;
+            bombGauge = 0;
+            feverGauge = 0;
+            isFeverMode = false;
+
+            scoreText.innerText = '0';
+            timerText.innerText = '60';
+            timerBar.style.width = '100%';
+            bombBar.style.width = '0%';
+            feverBar.style.width = '0%';
+
+            startModal.classList.add('hidden');
+            gameOverModal.classList.add('hidden');
+            pauseModal.classList.add('hidden');
+
+            isPlaying = true;
+            isPaused = false;
+            isProcessing = false;
+
+            createBoardGrid();
+            initBoardLogic();
+
+            clearInterval(timerInterval);
+            timerInterval = setInterval(updateTimer, 1000);
+        }
+
+        function updateTimer() {
+            if (!isPlaying || isPaused) return;
+
+            timeLeft--;
+            timerText.innerText = timeLeft;
+            timerBar.style.width = `${(timeLeft / 60) * 100}%`;
+
+            if (timeLeft <= 10) {
+                timerBar.style.background = 'linear-gradient(180deg, #ff4e50 0%, #f9d423 100%)';
+            }
+
+            if (timeLeft <= 0) {
+                endGame();
+            }
+        }
+
+        function togglePause() {
+            if (!isPlaying) return;
+            isPaused = !isPaused;
+
+            if (isPaused) {
+                pauseModal.classList.remove('hidden');
+            } else {
+                pauseModal.classList.add('hidden');
+            }
+        }
+
+        function endGame() {
+            isPlaying = false;
+            clearInterval(timerInterval);
+            if (feverTimer) clearInterval(feverTimer);
+
+            // Save high score
+            const highScore = localStorage.getItem('anipang_high_score') || 0;
+            if (score > highScore) {
+                localStorage.setItem('anipang_high_score', score);
+            }
+
+            document.getElementById('finalScore').innerText = score.toLocaleString();
+            document.getElementById('finalCombo').innerText = `${maxCombo} x`;
+            document.getElementById('highScoreText').innerText = Math.max(score, highScore).toLocaleString();
+
+            gameOverModal.classList.remove('hidden');
+        }
+
+        window.onload = function() {
+            createBoardGrid();
+        };
+    </script>
+</body>
+</html>
