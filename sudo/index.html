@@ -1,1 +1,1278 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>세계 수도 마스터 - 국가 수도 맞추기 게임</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter & Do Hyeon -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Do+Hyeon&family=Inter:wght@300;400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Noto Sans KR', 'Inter', sans-serif;
+            background: radial-gradient(circle at center, #1e1b4b 0%, #0f172a 100%);
+            min-height: 100vh;
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+        .title-font {
+            font-family: 'Do Hyeon', sans-serif;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #312e81;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4338ca;
+        }
+        /* Card Flip Animation for Study Mode */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
+        .preserve-3d {
+            transform-style: preserve-3d;
+        }
+        .backface-hidden {
+            backface-visibility: hidden;
+        }
+        .rotate-y-180 {
+            transform: rotateY(180deg);
+        }
+        /* Button & feedback Animations */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+        .shake-animation {
+            animation: shake 0.2s ease-in-out 2;
+        }
+        @keyframes pulse-green {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            50% { box-shadow: 0 0 0 10px rgba(16, 185, 129, 0); }
+        }
+        .pulse-correct {
+            animation: pulse-green 0.6s ease-in-out;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        .floating {
+            animation: float 4s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-height-screen select-none">
+    
+    <!-- Canvas for Confetti particles -->
+    <canvas id="confetti-canvas" class="fixed top-0 left-0 w-full h-full pointer-events-none z-50"></canvas>
 
+    <!-- App Container -->
+    <main class="flex-grow flex items-center justify-center p-4 md:p-8">
+        <div class="w-full max-w-2xl bg-slate-900/80 backdrop-blur-xl border border-indigo-500/20 rounded-3xl shadow-2xl overflow-hidden relative">
+            
+            <!-- Top Status Bar (Dynamic headers) -->
+            <header class="bg-slate-950/50 px-6 py-4 border-b border-indigo-500/10 flex justify-between items-center z-10 relative">
+                <div class="flex items-center gap-2 cursor-pointer" onclick="goHome()">
+                    <i class="fa-solid fa-earth-asia text-indigo-400 text-xl floating"></i>
+                    <span class="title-font text-lg md:text-xl tracking-wider text-indigo-300">세계수도 마스터</span>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="toggleMute()" id="mute-btn" class="text-slate-400 hover:text-slate-200 transition p-2 rounded-lg bg-slate-800/50">
+                        <i class="fa-solid fa-volume-high"></i>
+                    </button>
+                    <button onclick="showInfoModal()" class="text-slate-400 hover:text-slate-200 transition p-2 rounded-lg bg-slate-800/50">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </button>
+                </div>
+            </header>
+
+            
+            <!-- ====== VIEW 1: HOME SCREEN ====== -->
+            <div id="view-home" class="p-6 md:p-10 space-y-8">
+                <div class="text-center space-y-3">
+                    <h1 class="title-font text-4xl md:text-5xl text-transparent bg-clip-text bg-gradient-to-r from-teal-300 via-indigo-200 to-pink-400 leading-tight">
+                        세계 지도 위의 심장,<br>수도를 정복하라!
+                    </h1>
+                    <p class="text-slate-400 text-sm md:text-base font-light">
+                        전 세계의 다양한 국가와 수도를 맞추며 상식을 넓혀보세요.
+                    </p>
+                </div>
+
+                <!-- Game Mode Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Classic Mode -->
+                    <button onclick="selectMode('classic')" class="group text-left p-5 rounded-2xl bg-slate-800/40 hover:bg-indigo-900/30 border border-slate-700/50 hover:border-indigo-500/50 transition-all duration-300 shadow-lg relative overflow-hidden">
+                        <div class="absolute -right-4 -bottom-4 text-indigo-500/10 text-7xl group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-award"></i>
+                        </div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="p-2.5 rounded-xl bg-indigo-500/20 text-indigo-300">
+                                <i class="fa-solid fa-award text-lg"></i>
+                            </span>
+                            <h3 class="font-bold text-lg text-slate-100">클래식 모드</h3>
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed">총 15개의 퀴즈를 풀며 기본 실력을 쌓는 정석 모드입니다.</p>
+                        <div class="mt-3 text-xs text-indigo-300/80 flex items-center gap-1">
+                            <span>최고 점수: </span>
+                            <span id="best-classic" class="font-bold">0점</span>
+                        </div>
+                    </button>
+
+                    <!-- Survival Mode -->
+                    <button onclick="selectMode('survival')" class="group text-left p-5 rounded-2xl bg-slate-800/40 hover:bg-emerald-900/30 border border-slate-700/50 hover:border-emerald-500/50 transition-all duration-300 shadow-lg relative overflow-hidden">
+                        <div class="absolute -right-4 -bottom-4 text-emerald-500/10 text-7xl group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-heart-crack"></i>
+                        </div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-300">
+                                <i class="fa-solid fa-heart-pulse text-lg"></i>
+                            </span>
+                            <h3 class="font-bold text-lg text-slate-100">무한 생존 모드</h3>
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed">하트 3개! 문제당 10초 제한! 오답 즉시 하트 차감. 한계에 도전하세요.</p>
+                        <div class="mt-3 text-xs text-emerald-300/80 flex items-center gap-1">
+                            <span>최고 콤보: </span>
+                            <span id="best-survival" class="font-bold">0연승</span>
+                        </div>
+                    </button>
+
+                    <!-- Time Attack Mode -->
+                    <button onclick="selectMode('timeattack')" class="group text-left p-5 rounded-2xl bg-slate-800/40 hover:bg-pink-900/30 border border-slate-700/50 hover:border-pink-500/50 transition-all duration-300 shadow-lg relative overflow-hidden">
+                        <div class="absolute -right-4 -bottom-4 text-pink-500/10 text-7xl group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-stopwatch"></i>
+                        </div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="p-2.5 rounded-xl bg-pink-500/20 text-pink-300">
+                                <i class="fa-solid fa-stopwatch text-lg"></i>
+                            </span>
+                            <h3 class="font-bold text-lg text-slate-100">타임 어택 (60초)</h3>
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed">60초의 타임 리밋 동안 스피디하게 가장 많은 정답을 제출하세요.</p>
+                        <div class="mt-3 text-xs text-pink-300/80 flex items-center gap-1">
+                            <span>최고 점수: </span>
+                            <span id="best-timeattack" class="font-bold">0점</span>
+                        </div>
+                    </button>
+
+                    <!-- Study/Flashcard Mode -->
+                    <button onclick="selectMode('study')" class="group text-left p-5 rounded-2xl bg-slate-800/40 hover:bg-teal-900/30 border border-slate-700/50 hover:border-teal-500/50 transition-all duration-300 shadow-lg relative overflow-hidden">
+                        <div class="absolute -right-4 -bottom-4 text-teal-500/10 text-7xl group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-book-open"></i>
+                        </div>
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="p-2.5 rounded-xl bg-teal-500/20 text-teal-300">
+                                <i class="fa-solid fa-book-open-reader text-lg"></i>
+                            </span>
+                            <h3 class="font-bold text-lg text-slate-100">플래시 카드 학습</h3>
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed">스트레스 없이 전 세계 대륙별 국가들의 수도를 뒤집어보며 외웁니다.</p>
+                        <div class="mt-3 text-xs text-teal-300/80 flex items-center gap-1">
+                            <span>카드 수: </span>
+                            <span id="study-card-count" class="font-bold">50장</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ====== VIEW 2: GAME SCREEN ====== -->
+            <div id="view-game" class="hidden p-6 md:p-8 space-y-6">
+                <!-- Game Header Info -->
+                <div class="flex justify-between items-center bg-slate-800/30 p-3 rounded-2xl border border-slate-700/30">
+                    <div class="flex items-center gap-2">
+                        <span id="game-badge-mode" class="px-3 py-1 rounded-full text-xs font-bold uppercase bg-indigo-500/20 text-indigo-300">클래식</span>
+                        <span id="game-question-counter" class="text-sm font-semibold text-slate-400">1 / 15</span>
+                    </div>
+                    
+                    <div class="flex items-center gap-3">
+                        <!-- Time Limit Indicator (Survival & Timeattack only) -->
+                        <div id="game-timer-container" class="hidden flex items-center gap-2">
+                            <i class="fa-regular fa-clock text-slate-400 animate-pulse"></i>
+                            <span id="game-timer" class="text-sm font-bold text-slate-200">10s</span>
+                        </div>
+                        <!-- Health / Streak Bar (Survival only) -->
+                        <div id="game-survival-stats" class="hidden flex items-center gap-4">
+                            <div id="game-hearts" class="flex gap-1 text-pink-500 text-lg">
+                                <i class="fa-solid fa-heart"></i>
+                                <i class="fa-solid fa-heart"></i>
+                                <i class="fa-solid fa-heart"></i>
+                            </div>
+                            <div class="text-xs font-semibold text-teal-400 bg-teal-500/10 px-2.5 py-1 rounded-full">
+                                콤보: <span id="game-streak">0</span>
+                            </div>
+                        </div>
+                        <!-- Exit/Home Button during gameplay -->
+                        <button onclick="askGoHome()" class="text-slate-400 hover:text-red-400 transition-all p-2 rounded-xl bg-slate-900/50 hover:bg-red-500/10 border border-slate-700/50 flex items-center justify-center gap-1.5" title="게임 중단하고 홈으로">
+                            <i class="fa-solid fa-arrow-right-from-bracket text-xs md:text-sm"></i>
+                            <span class="text-xs font-semibold hidden sm:inline">포기</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Progress Bar -->
+                <div class="w-full bg-slate-800 rounded-full h-2.5 overflow-hidden">
+                    <div id="game-progress-bar" class="bg-indigo-500 h-2.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+
+                <!-- Question Card -->
+                <div id="question-card" class="bg-slate-800/50 p-8 rounded-2xl border border-slate-700/50 text-center space-y-5 shadow-xl relative overflow-hidden">
+                    <div class="text-6xl md:text-7xl select-none" id="question-flag">🇰🇷</div>
+                    <div class="space-y-1">
+                        <span id="question-continent" class="text-xs font-bold text-indigo-400 tracking-wider uppercase">아시아</span>
+                        <h2 class="title-font text-2xl md:text-3xl text-slate-100" id="question-text">
+                            <span class="text-slate-400 text-lg font-light block mb-1">이 나라의 수도는 어디일까요?</span>
+                            <span id="question-country-name" class="font-bold text-transparent bg-clip-text bg-gradient-to-r from-white via-indigo-100 to-indigo-300">대한민국</span>
+                        </h2>
+                    </div>
+                </div>
+
+                <!-- Answer Choices (4 options) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4" id="choices-container">
+                    <!-- Templates dynamically injected -->
+                    <button class="choice-btn p-4 rounded-xl bg-slate-800 hover:bg-slate-750 border border-slate-700 text-slate-200 text-left hover:border-indigo-500/50 active:scale-[0.98] transition-all flex items-center justify-between group">
+                        <span class="flex items-center gap-3">
+                            <span class="w-8 h-8 rounded-lg bg-slate-700 flex items-center justify-center text-xs font-bold group-hover:bg-indigo-500/20 group-hover:text-indigo-300 transition-colors">1</span>
+                            <span class="font-semibold text-sm">서울</span>
+                        </span>
+                        <i class="fa-solid fa-chevron-right text-slate-500 group-hover:text-indigo-400 transition-colors"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ====== VIEW 3: FLASHCARD (STUDY) SCREEN ====== -->
+            <div id="view-study" class="hidden p-6 md:p-8 space-y-6">
+                <!-- Study Header -->
+                <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 border-b border-slate-800 pb-4">
+                    <div>
+                        <h2 class="title-font text-2xl text-teal-300"><i class="fa-solid fa-book-bookmark mr-2"></i>수도 학습 플래시 카드</h2>
+                        <p class="text-xs text-slate-400 mt-1">대륙을 필터링해 체계적으로 국가와 수도를 마스터하세요.</p>
+                    </div>
+                    <!-- Continent Select -->
+                    <select id="study-filter" onchange="filterStudyCards()" class="bg-slate-800 text-slate-200 text-xs px-3 py-2 rounded-xl border border-slate-700 focus:border-teal-500 outline-none cursor-pointer">
+                        <option value="all">모든 대륙</option>
+                        <option value="아시아">아시아</option>
+                        <option value="유럽">유럽</option>
+                        <option value="아메리카">아메리카</option>
+                        <option value="아프리카/오세아니아">아프리카/오세아니아</option>
+                    </select>
+                </div>
+
+                <!-- Active Flashcard Section -->
+                <div class="flex flex-col items-center justify-center space-y-6 py-6">
+                    <!-- Flashcard Outer Container -->
+                    <div id="flashcard" onclick="flipCard()" class="perspective-1000 w-full max-w-sm h-64 cursor-pointer relative group">
+                        <div id="card-inner" class="preserve-3d duration-500 ease-in-out w-full h-full relative rounded-2xl shadow-2xl">
+                            <!-- Card Front (Country) -->
+                            <div class="absolute inset-0 bg-gradient-to-br from-slate-800 to-indigo-950 border border-indigo-500/30 rounded-2xl p-6 flex flex-col justify-between items-center backface-hidden">
+                                <span class="self-start text-xs font-bold text-indigo-400 tracking-wider uppercase" id="card-front-continent">아시아</span>
+                                <div class="text-center space-y-4">
+                                    <div class="text-7xl" id="card-front-flag">🇰🇷</div>
+                                    <h3 class="title-font text-3xl text-slate-100" id="card-front-country">대한민국</h3>
+                                </div>
+                                <span class="text-[10px] text-slate-500 uppercase font-semibold">클릭하여 수도 확인</span>
+                            </div>
+
+                            <!-- Card Back (Capital) -->
+                            <div class="absolute inset-0 bg-gradient-to-br from-teal-950 to-slate-900 border border-teal-500/30 rounded-2xl p-6 flex flex-col justify-between items-center backface-hidden rotate-y-180">
+                                <span class="self-start text-xs font-bold text-teal-400 tracking-wider uppercase">수도 정답</span>
+                                <div class="text-center space-y-2">
+                                    <h4 class="text-sm text-slate-400 font-medium" id="card-back-country-text">대한민국의 수도는</h4>
+                                    <h2 class="title-font text-4xl text-teal-300 font-extrabold" id="card-back-capital">서울</h2>
+                                </div>
+                                <span class="text-[10px] text-slate-500 uppercase font-semibold">클릭하여 돌아가기</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Progress Indicator -->
+                    <div class="text-slate-400 text-sm">
+                        <span id="study-current-idx">1</span> / <span id="study-total-idx">50</span>
+                    </div>
+
+                    <!-- Navigation Controls -->
+                    <div class="flex items-center gap-4">
+                        <button onclick="prevStudyCard()" class="p-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition active:scale-95 border border-slate-700">
+                            <i class="fa-solid fa-chevron-left text-lg"></i>
+                        </button>
+                        <button onclick="flipCard()" class="px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-slate-100 font-semibold transition active:scale-95 shadow-lg shadow-indigo-600/20 text-sm flex items-center gap-2">
+                            <i class="fa-solid fa-rotate"></i> 뒤집기
+                        </button>
+                        <button onclick="nextStudyCard()" class="p-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 transition active:scale-95 border border-slate-700">
+                            <i class="fa-solid fa-chevron-right text-lg"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Footer back button -->
+                <div class="flex justify-center border-t border-slate-800 pt-4">
+                    <button onclick="goHome()" class="px-5 py-2.5 rounded-xl bg-slate-800/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 transition text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-house"></i> 로비로 돌아가기
+                    </button>
+                </div>
+            </div>
+
+            <!-- ====== VIEW 4: RESULT SCREEN ====== -->
+            <div id="view-result" class="hidden p-6 md:p-10 space-y-8 text-center">
+                <div class="space-y-4">
+                    <!-- Status Icon -->
+                    <div class="inline-flex p-5 rounded-full bg-indigo-500/10 text-indigo-400 text-4xl md:text-5xl border border-indigo-500/20 floating">
+                        <i id="result-icon" class="fa-solid fa-trophy"></i>
+                    </div>
+                    <h2 class="title-font text-3xl md:text-4xl text-slate-100" id="result-title">게임 종료!</h2>
+                    <p class="text-sm text-slate-400 max-w-sm mx-auto" id="result-subtitle">정말 멋진 대결이었습니다. 상식 능력이 대단합니다!</p>
+                </div>
+
+                <!-- Stats Summary -->
+                <div class="grid grid-cols-2 gap-4 max-w-md mx-auto">
+                    <div class="p-4 rounded-2xl bg-slate-800/40 border border-slate-700/50">
+                        <div class="text-xs text-slate-400 font-medium">최종 점수 / 결과</div>
+                        <div class="title-font text-2xl text-transparent bg-clip-text bg-gradient-to-r from-teal-300 to-indigo-300 mt-1" id="result-score-txt">
+                            12 / 15
+                        </div>
+                    </div>
+                    <div class="p-4 rounded-2xl bg-slate-800/40 border border-slate-700/50">
+                        <div class="text-xs text-slate-400 font-medium">최고 기록 갱신</div>
+                        <div class="title-font text-2xl text-pink-400 mt-1" id="result-best-txt">
+                            NEW RECORD!
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Wrong Answers (Collapse style review panel) -->
+                <div id="result-wrong-container" class="hidden text-left max-w-md mx-auto space-y-3">
+                    <h4 class="text-xs font-bold text-pink-400 tracking-wider uppercase flex items-center gap-2">
+                        <i class="fa-solid fa-triangle-exclamation"></i> 오답 요약 및 복습
+                    </h4>
+                    <div id="wrong-answers-list" class="max-h-40 overflow-y-auto bg-slate-950/60 p-3 rounded-xl border border-slate-800 space-y-2.5 text-xs text-slate-300">
+                        <!-- Instantiated through JS -->
+                    </div>
+                </div>
+
+                <!-- Navigation buttons -->
+                <div class="flex flex-col sm:flex-row gap-3 justify-center max-w-md mx-auto pt-4 border-t border-slate-800">
+                    <button onclick="restartGame()" class="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-slate-100 font-bold transition active:scale-95 shadow-lg shadow-indigo-600/30 text-sm flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-rotate-right"></i> 다시 하기
+                    </button>
+                    <button onclick="goHome()" class="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-slate-100 font-semibold transition active:scale-95 border border-slate-700 text-sm flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-house"></i> 홈 화면으로
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Custom Alert Alert Box instead of Native Alert -->
+    <div id="custom-alert" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+        <div class="bg-slate-900 border border-slate-700/80 max-w-sm w-full rounded-2xl p-6 shadow-2xl text-center space-y-4">
+            <div class="inline-flex p-3 rounded-full bg-indigo-500/10 text-indigo-400 text-2xl">
+                <i class="fa-solid fa-circle-exclamation"></i>
+            </div>
+            <h3 class="title-font text-xl text-slate-100" id="alert-title">알림</h3>
+            <p class="text-slate-400 text-sm leading-relaxed" id="alert-message">메시지 내용입니다.</p>
+            <button onclick="closeAlert()" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-semibold transition text-sm">
+                확인
+            </button>
+        </div>
+    </div>
+
+    <!-- Confirm Exit Modal during gameplay -->
+    <div id="confirm-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+        <div class="bg-slate-900 border border-red-500/20 max-w-sm w-full rounded-2xl p-6 shadow-2xl text-center space-y-4">
+            <div class="inline-flex p-3 rounded-full bg-red-500/10 text-red-400 text-2xl">
+                <i class="fa-solid fa-door-open"></i>
+            </div>
+            <h3 class="title-font text-xl text-slate-100">게임 포기</h3>
+            <p class="text-slate-400 text-sm leading-relaxed">
+                정말로 게임을 중단하고 홈 화면으로 돌아가시겠습니까?<br>
+                <span class="text-red-400/85 text-xs font-semibold">현재까지의 진행 및 점수는 반영되지 않습니다.</span>
+            </p>
+            <div class="flex gap-3">
+                <button onclick="cancelExit()" class="w-1/2 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-semibold transition text-sm">
+                    계속하기
+                </button>
+                <button onclick="confirmExit()" class="w-1/2 py-2.5 bg-red-600 hover:bg-red-500 text-white rounded-xl font-semibold transition text-sm shadow-lg shadow-red-600/20">
+                    그만두기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info/About Modal -->
+    <div id="info-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+        <div class="bg-slate-900 border border-indigo-500/20 max-w-md w-full rounded-3xl shadow-2xl text-left relative overflow-hidden">
+            <header class="bg-slate-950/40 p-5 border-b border-slate-800 flex justify-between items-center">
+                <span class="title-font text-lg text-indigo-300 flex items-center gap-2">
+                    <i class="fa-solid fa-earth-asia"></i> 세계수도 마스터 정보
+                </span>
+                <button onclick="hideInfoModal()" class="text-slate-400 hover:text-slate-200 transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </header>
+            <div class="p-6 space-y-4 text-xs md:text-sm text-slate-300 leading-relaxed">
+                <p>전 세계 50개 주요 국가의 국기(이모지)와 이름, 그리고 고유한 수도를 대륙별로 세분화하여 구성한 에듀테인먼트 퀴즈 게임입니다.</p>
+                <div class="space-y-2 bg-slate-950/40 p-3 rounded-xl border border-slate-800">
+                    <h4 class="font-bold text-indigo-400 text-xs uppercase">🔍 방해 메커니즘</h4>
+                    <p>본 게임의 객관식 보기는 난수를 적용하면서도, 가급적 **동일 대륙의 이웃국 수도**가 선택지에 배치되어 긴장도 높은 플레이를 선사합니다.</p>
+                </div>
+                <div class="space-y-1">
+                    <h4 class="font-bold text-slate-100">개발 세부사항:</h4>
+                    <p>• Web Audio API 기반 오디오 합성 기술 적용</p>
+                    <p>• 가볍고 정교한 HTML Canvas 파티클 Confetti 렌더러</p>
+                </div>
+            </div>
+            <footer class="bg-slate-950/20 p-4 border-t border-slate-800 flex justify-end">
+                <button onclick="hideInfoModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs transition">
+                    닫기
+                </button>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center py-4 text-slate-600 text-xs tracking-wider">
+        &copy; 2026 World Capital Quiz Master. All Rights Reserved.
+    </footer>
+
+    <!-- JS Logic -->
+    <script>
+        // Total 50 prominent countries across continents
+        const countryData = [
+            // Asia
+            { name: "대한민국", capital: "서울", flag: "🇰🇷", continent: "아시아" },
+            { name: "일본", capital: "도쿄", flag: "🇯🇵", continent: "아시아" },
+            { name: "중국", capital: "베이징", flag: "🇨🇳", continent: "아시아" },
+            { name: "인도", capital: "뉴델리", flag: "🇮🇳", continent: "아시아" },
+            { name: "필리핀", capital: "마닐라", flag: "🇵🇭", continent: "아시아" },
+            { name: "태국", capital: "방콕", flag: "🇹🇭", continent: "아시아" },
+            { name: "베트남", capital: "하노이", flag: "🇻🇳", continent: "아시아" },
+            { name: "인도네시아", capital: "자카르타", flag: "🇮🇩", continent: "아시아" },
+            { name: "싱가포르", capital: "싱가포르", flag: "🇸🇬", continent: "아시아" },
+            { name: "몽골", capital: "울란바토르", flag: "🇲🇳", continent: "아시아" },
+            { name: "사우디아라비아", capital: "리야드", flag: "🇸🇦", continent: "아시아" },
+            { name: "아랍에미리트", capital: "아부다비", flag: "🇦🇪", continent: "아시아" },
+            { name: "튀르키예", capital: "앙카라", flag: "🇹🇷", continent: "아시아" },
+            { name: "이란", capital: "테헤란", flag: "🇮🇷", continent: "아시아" },
+            
+            // Europe
+            { name: "영국", capital: "런던", flag: "🇬🇧", continent: "유럽" },
+            { name: "프랑스", capital: "파리", flag: "🇫🇷", continent: "유럽" },
+            { name: "독일", capital: "베를린", flag: "🇩🇪", continent: "유럽" },
+            { name: "이탈리아", capital: "로마", flag: "🇮🇹", continent: "유럽" },
+            { name: "스페인", capital: "마드리드", flag: "🇪🇸", continent: "유럽" },
+            { name: "러시아", capital: "모스크바", flag: "🇷🇺", continent: "유럽" },
+            { name: "스위스", capital: "베른", flag: "🇨🇭", continent: "유럽" },
+            { name: "네덜란드", capital: "암스테르담", flag: "🇳🇱", continent: "유럽" },
+            { name: "그리스", capital: "아테네", flag: "🇬🇷", continent: "유럽" },
+            { name: "오스트리아", capital: "빈", flag: "🇦🇹", continent: "유럽" },
+            { name: "벨기에", capital: "브뤼셀", flag: "🇧🇪", continent: "유럽" },
+            { name: "스웨덴", capital: "스톡홀름", flag: "🇸🇪", continent: "유럽" },
+            { name: "노르웨이", capital: "오슬로", flag: "🇳🇴", continent: "유럽" },
+            { name: "포르투갈", capital: "리스본", flag: "🇵🇹", continent: "유럽" },
+            { name: "체코", capital: "프라하", flag: "🇨🇿", continent: "유럽" },
+            { name: "폴란드", capital: "바르샤바", flag: "🇵🇱", continent: "유럽" },
+
+            // Americas
+            { name: "미국", capital: "워싱턴 D.C.", flag: "🇺🇸", continent: "아메리카" },
+            { name: "캐나다", capital: "오타와", flag: "🇨🇦", continent: "아메리카" },
+            { name: "브라질", capital: "브라질리아", flag: "🇧🇷", continent: "아메리카" },
+            { name: "멕시코", capital: "멕시코시티", flag: "🇲🇽", continent: "아메리카" },
+            { name: "아르헨티나", capital: "부엔오스아이레스", flag: "🇦🇷", continent: "아메리카" },
+            { name: "칠레", capital: "산티아고", flag: "🇨🇱", continent: "아메리카" },
+            { name: "콜롬비아", capital: "보고타", flag: "🇨🇴", continent: "아메리카" },
+            { name: "쿠바", capital: "아바나", flag: "🇨🇺", continent: "아메리카" },
+            { name: "페루", capital: "리마", flag: "🇵🇪", continent: "아메리카" },
+
+            // Africa & Oceania
+            { name: "이집트", capital: "카이로", flag: "🇪🇬", continent: "아프리카/오세아니아" },
+            { name: "남아프리카 공화국", capital: "프리토리아", flag: "🇿🇦", continent: "아프리카/오세아니아" },
+            { name: "케냐", capital: "나이로비", flag: "🇰🇪", continent: "아프리카/오세아니아" },
+            { name: "모로코", capital: "라바트", flag: "🇲🇦", continent: "아프리카/오세아니아" },
+            { name: "나이지리아", capital: "아부자", flag: "🇳🇬", continent: "아프리카/오세아니아" },
+            { name: "호주", capital: "캔버라", flag: "🇦🇺", continent: "아프리카/오세아니아" },
+            { name: "뉴질랜드", capital: "웰링턴", flag: "🇳🇿", continent: "아프리카/오세아니아" }
+        ];
+
+        
+        // Simple Synthesized Sound Effects (No external audio file load)
+        let isMuted = false;
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtxInstance = null;
+
+        function getAudioContext() {
+            if (!audioCtxInstance) {
+                audioCtxInstance = new AudioCtx();
+            }
+            if (audioCtxInstance.state === 'suspended') {
+                audioCtxInstance.resume();
+            }
+            return audioCtxInstance;
+        }
+
+        function playSound(type) {
+            if (isMuted) return;
+            try {
+                const ctx = getAudioContext();
+                const now = ctx.currentTime;
+                
+                if (type === 'correct') {
+                    // Quick happy arpeggio C major
+                    const freqs = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                    freqs.forEach((freq, idx) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                        
+                        gain.gain.setValueAtTime(0.15, now + idx * 0.08);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.08 + 0.3);
+                        
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now + idx * 0.08);
+                        osc.stop(now + idx * 0.08 + 0.35);
+                    });
+                } else if (type === 'wrong') {
+                    // Low sad buzz descending
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.linearRampToValueAtTime(110, now + 0.4);
+                    
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+                    
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                } else if (type === 'gameover') {
+                    // Retro game over melody
+                    const notes = [392.00, 349.23, 311.13, 246.94]; // G4, F4, Eb4, B3
+                    notes.forEach((freq, idx) => {
+                        const osc = ctx.createOscillator();
+                        const gain = ctx.createGain();
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(freq, now + idx * 0.15);
+                        
+                        gain.gain.setValueAtTime(0.2, now + idx * 0.15);
+                        gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.15 + 0.4);
+                        
+                        osc.connect(gain);
+                        gain.connect(ctx.destination);
+                        osc.start(now + idx * 0.15);
+                        osc.stop(now + idx * 0.15 + 0.4);
+                    });
+                } else if (type === 'tick') {
+                    // Small click for countdown
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(1000, now);
+                    gain.gain.setValueAtTime(0.05, now);
+                    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.05);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(now);
+                    osc.stop(now + 0.06);
+                }
+            } catch (e) {
+                console.warn("Audio Context block or error:", e);
+            }
+        }
+
+        // Particle Confetti Mechanism on Canvas
+        const canvas = document.getElementById('confetti-canvas');
+        const ctxConfetti = canvas.getContext('2d');
+        let particles = [];
+        let animationFrameId = null;
+
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        class Particle {
+            constructor() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * -canvas.height - 20;
+                this.size = Math.random() * 8 + 4;
+                this.color = `hsl(${Math.random() * 360}, 80%, 60%)`;
+                this.speedX = Math.random() * 3 - 1.5;
+                this.speedY = Math.random() * 5 + 3;
+                this.rotation = Math.random() * 360;
+                this.rotationSpeed = Math.random() * 4 - 2;
+            }
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+                this.rotation += this.rotationSpeed;
+            }
+            draw() {
+                ctxConfetti.save();
+                ctxConfetti.translate(this.x, this.y);
+                ctxConfetti.rotate((this.rotation * Math.PI) / 180);
+                ctxConfetti.fillStyle = this.color;
+                ctxConfetti.fillRect(-this.size / 2, -this.size / 2, this.size, this.size);
+                ctxConfetti.restore();
+            }
+        }
+
+        function spawnConfetti() {
+            particles = [];
+            for (let i = 0; i < 80; i++) {
+                particles.push(new Particle());
+            }
+            if (animationFrameId) cancelAnimationFrame(animationFrameId);
+            animateConfetti();
+        }
+
+        function animateConfetti() {
+            ctxConfetti.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach((p, idx) => {
+                p.update();
+                p.draw();
+                // Remove out of bounds
+                if (p.y > canvas.height) {
+                    particles.splice(idx, 1);
+                }
+            });
+            if (particles.length > 0) {
+                animationFrameId = requestAnimationFrame(animateConfetti);
+            }
+        }
+
+
+        // Game State Variables
+        let currentMode = 'classic'; // 'classic' | 'survival' | 'timeattack' | 'study'
+        let currentQuestionIdx = 0;
+        let score = 0;
+        let lives = 3;
+        let streak = 0;
+        let maxSurvivalStreak = 0;
+        let gameTimeLeft = 60; // Time Attack total limit
+        let questionTimeLeft = 10; // Survival limit per question
+        let timerInterval = null;
+        let activeQuestion = null;
+        let quizPool = [];
+        let wrongAnswers = []; // Logs wrong answers {country, chosenCapital, correctCapital, flag}
+        let isPaused = false; // Pause state during confirmation modal
+        
+        // Study View State
+        let filteredStudyList = [...countryData];
+        let currentStudyIdx = 0;
+        let isCardFlipped = false;
+
+        // On Load
+        window.onload = function() {
+            loadHighScores();
+            // Count standard cards
+            document.getElementById('study-card-count').innerText = `${countryData.length}장`;
+        };
+
+        function toggleMute() {
+            isMuted = !isMuted;
+            const muteBtn = document.getElementById('mute-btn');
+            if (isMuted) {
+                muteBtn.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
+                muteBtn.classList.add('text-pink-400');
+            } else {
+                muteBtn.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+                muteBtn.classList.remove('text-pink-400');
+            }
+        }
+
+        function showInfoModal() {
+            document.getElementById('info-modal').style.display = 'flex';
+        }
+
+        function hideInfoModal() {
+            document.getElementById('info-modal').style.display = 'none';
+        }
+
+        function showCustomAlert(title, message) {
+            document.getElementById('alert-title').innerText = title;
+            document.getElementById('alert-message').innerText = message;
+            document.getElementById('custom-alert').style.display = 'flex';
+        }
+
+        function closeAlert() {
+            document.getElementById('custom-alert').style.display = 'none';
+        }
+
+        // Navigation
+        function goHome() {
+            // Stop timers
+            clearInterval(timerInterval);
+            
+            // Switch view
+            document.getElementById('view-home').classList.remove('hidden');
+            document.getElementById('view-game').classList.add('hidden');
+            document.getElementById('view-study').classList.add('hidden');
+            document.getElementById('view-result').classList.add('hidden');
+            
+            loadHighScores();
+        }
+
+        // Local Storage Handling
+        function loadHighScores() {
+            const classic = localStorage.getItem('best_classic') || 0;
+            const survival = localStorage.getItem('best_survival') || 0;
+            const timeattack = localStorage.getItem('best_timeattack') || 0;
+
+            document.getElementById('best-classic').innerText = `${classic}점`;
+            document.getElementById('best-survival').innerText = `${survival}연승`;
+            document.getElementById('best-timeattack').innerText = `${timeattack}점`;
+        }
+
+        function updateHighScore(mode, value) {
+            const key = `best_${mode}`;
+            const currentBest = parseInt(localStorage.getItem(key) || '0', 10);
+            if (value > currentBest) {
+                localStorage.setItem(key, value);
+                return true; // New High Score
+            }
+            return false;
+        }
+
+
+        function selectMode(mode) {
+            currentMode = mode;
+            if (mode === 'study') {
+                initStudyMode();
+            } else {
+                startGame();
+            }
+        }
+
+        function startGame() {
+            // Switch view
+            document.getElementById('view-home').classList.add('hidden');
+            document.getElementById('view-game').classList.remove('hidden');
+            document.getElementById('view-study').classList.add('hidden');
+            document.getElementById('view-result').classList.add('hidden');
+
+            // Reset States
+            score = 0;
+            lives = 3;
+            streak = 0;
+            maxSurvivalStreak = 0;
+            currentQuestionIdx = 0;
+            wrongAnswers = [];
+            isPaused = false;
+            clearInterval(timerInterval);
+
+            // Configure Pool & Badge
+            const badge = document.getElementById('game-badge-mode');
+            const timerContainer = document.getElementById('game-timer-container');
+            const survivalStats = document.getElementById('game-survival-stats');
+
+            badge.className = "px-3 py-1 rounded-full text-xs font-bold uppercase ";
+            
+            // Shallow copy and shuffle entire dataset
+            quizPool = [...countryData].sort(() => Math.random() - 0.5);
+
+            if (currentMode === 'classic') {
+                badge.innerText = "클래식";
+                badge.classList.add("bg-indigo-500/20", "text-indigo-300");
+                timerContainer.classList.add('hidden');
+                survivalStats.classList.add('hidden');
+                // Cap questions to 15
+                quizPool = quizPool.slice(0, 15);
+                updateProgressBar(0, 15);
+            } else if (currentMode === 'survival') {
+                badge.innerText = "생존";
+                badge.classList.add("bg-emerald-500/20", "text-emerald-300");
+                timerContainer.classList.remove('hidden');
+                survivalStats.classList.remove('hidden');
+                updateHeartsUI();
+                document.getElementById('game-streak').innerText = "0";
+                // Continuous loop, pull more questions as we go
+                updateProgressBar(0, 1);
+            } else if (currentMode === 'timeattack') {
+                badge.innerText = "타임어택";
+                badge.classList.add("bg-pink-500/20", "text-pink-300");
+                timerContainer.classList.remove('hidden');
+                survivalStats.classList.add('hidden');
+                
+                gameTimeLeft = 60;
+                document.getElementById('game-timer').innerText = `${gameTimeLeft}s`;
+                updateProgressBar(100, 100);
+
+                // Run Master Timer
+                timerInterval = setInterval(() => {
+                    if (isPaused) return; // Skip logic when paused
+                    gameTimeLeft--;
+                    document.getElementById('game-timer').innerText = `${gameTimeLeft}s`;
+                    if (gameTimeLeft > 0 && gameTimeLeft <= 10) {
+                        playSound('tick');
+                    }
+                    if (gameTimeLeft <= 0) {
+                        clearInterval(timerInterval);
+                        endGame();
+                    }
+                }, 1000);
+            }
+
+            nextQuestion();
+        }
+
+        function updateProgressBar(current, total) {
+            const bar = document.getElementById('game-progress-bar');
+            let pct = (current / total) * 100;
+            if (currentMode === 'timeattack') {
+                pct = (gameTimeLeft / 60) * 100;
+            }
+            bar.style.width = `${pct}%`;
+        }
+
+        function updateHeartsUI() {
+            const hCont = document.getElementById('game-hearts');
+            hCont.innerHTML = "";
+            for (let i = 0; i < 3; i++) {
+                if (i < lives) {
+                    hCont.innerHTML += '<i class="fa-solid fa-heart"></i>';
+                } else {
+                    hCont.innerHTML += '<i class="fa-regular fa-heart text-slate-600"></i>';
+                }
+            }
+        }
+
+        // Generates distractor answers with a clever continent bias
+        function generateChoices(correctItem) {
+            // Filter candidates of same continent (excluding self)
+            let matchingContinent = countryData.filter(x => x.continent === correctItem.continent && x.name !== correctItem.name);
+            // Fallback to any continent if too few
+            if (matchingContinent.length < 3) {
+                matchingContinent = countryData.filter(x => x.name !== correctItem.name);
+            }
+
+            // Shuffle matching continent options and grab 3
+            matchingContinent.sort(() => Math.random() - 0.5);
+            const chosenDistractors = matchingContinent.slice(0, 3);
+
+            // Assemble and Shuffle final 4 choices
+            const finalChoices = [correctItem, ...chosenDistractors];
+            return finalChoices.sort(() => Math.random() - 0.5);
+        }
+
+        function nextQuestion() {
+            // Check ends for Classic
+            if (currentMode === 'classic' && currentQuestionIdx >= 15) {
+                endGame();
+                return;
+            }
+
+            // If pool is exhausted (can happen in Survival/Timeattack), replenish
+            if (currentQuestionIdx >= quizPool.length) {
+                quizPool = [...countryData].sort(() => Math.random() - 0.5);
+                currentQuestionIdx = 0;
+            }
+
+            // Setup next active
+            activeQuestion = quizPool[currentQuestionIdx];
+            
+            // Render basic UI
+            document.getElementById('game-question-counter').innerText = 
+                currentMode === 'classic' ? `${currentQuestionIdx + 1} / 15` : `문제 ${score + 1}`;
+            
+            if (currentMode === 'classic') {
+                updateProgressBar(currentQuestionIdx, 15);
+            }
+
+            // Setup Question Card
+            document.getElementById('question-flag').innerText = activeQuestion.flag;
+            document.getElementById('question-continent').innerText = activeQuestion.continent;
+            document.getElementById('question-country-name').innerText = activeQuestion.name;
+
+            // Setup Choices
+            const choices = generateChoices(activeQuestion);
+            const container = document.getElementById('choices-container');
+            container.innerHTML = "";
+
+            choices.forEach((choice, index) => {
+                const btn = document.createElement('button');
+                btn.className = "choice-btn p-4 rounded-2xl bg-slate-800/80 hover:bg-slate-750 border border-slate-700/60 text-slate-200 text-left hover:border-indigo-500/50 active:scale-[0.98] transition-all flex items-center justify-between group";
+                btn.onclick = () => selectAnswer(choice, btn);
+
+                btn.innerHTML = `
+                    <span class="flex items-center gap-3">
+                        <span class="w-8 h-8 rounded-lg bg-slate-700 flex items-center justify-center text-xs font-bold group-hover:bg-indigo-500/20 group-hover:text-indigo-300 transition-colors">${index + 1}</span>
+                        <span class="font-semibold text-sm md:text-base">${choice.capital}</span>
+                    </span>
+                    <i class="fa-solid fa-chevron-right text-slate-500 group-hover:text-indigo-400 transition-colors"></i>
+                `;
+                container.appendChild(btn);
+            });
+
+            // Handle Survival Question Timer
+            if (currentMode === 'survival') {
+                questionTimeLeft = 10;
+                document.getElementById('game-timer').innerText = `${questionTimeLeft}s`;
+                
+                // Clear any question ticker
+                clearInterval(timerInterval);
+                timerInterval = setInterval(() => {
+                    if (isPaused) return; // Skip logic when paused
+                    questionTimeLeft--;
+                    document.getElementById('game-timer').innerText = `${questionTimeLeft}s`;
+                    
+                    // Progress bar matches remaining time
+                    updateProgressBar(questionTimeLeft, 10);
+
+                    if (questionTimeLeft > 0 && questionTimeLeft <= 3) {
+                        playSound('tick');
+                    }
+
+                    if (questionTimeLeft <= 0) {
+                        clearInterval(timerInterval);
+                        handleSurvivalTimeout();
+                    }
+                }, 1000);
+            }
+        }
+
+        function handleSurvivalTimeout() {
+            playSound('wrong');
+            lives--;
+            updateHeartsUI();
+            
+            // Record failure
+            wrongAnswers.push({
+                country: activeQuestion.name,
+                chosenCapital: "시간 초과",
+                correctCapital: activeQuestion.capital,
+                flag: activeQuestion.flag
+            });
+
+            // Reset Streak
+            streak = 0;
+            document.getElementById('game-streak').innerText = "0";
+
+            // Visual feedback on question card (shake)
+            const card = document.getElementById('question-card');
+            card.classList.add('shake-animation', 'border-red-500/50');
+            setTimeout(() => {
+                card.classList.remove('shake-animation', 'border-red-500/50');
+                if (lives <= 0) {
+                    endGame();
+                } else {
+                    currentQuestionIdx++;
+                    nextQuestion();
+                }
+            }, 800);
+        }
+
+        function selectAnswer(selectedChoice, selectedBtn) {
+            // Disable further clicks momentarily
+            const buttons = document.querySelectorAll('.choice-btn');
+            buttons.forEach(b => b.disabled = true);
+
+            // Pause survival timer
+            if (currentMode === 'survival') {
+                clearInterval(timerInterval);
+            }
+
+            const isCorrect = selectedChoice.capital === activeQuestion.capital;
+
+            if (isCorrect) {
+                playSound('correct');
+                spawnConfetti();
+                selectedBtn.classList.add('bg-emerald-950/60', 'border-emerald-500', 'pulse-correct');
+                
+                score++;
+                if (currentMode === 'survival') {
+                    streak++;
+                    document.getElementById('game-streak').innerText = streak;
+                    if (streak > maxSurvivalStreak) maxSurvivalStreak = streak;
+                }
+            } else {
+                playSound('wrong');
+                selectedBtn.classList.add('bg-pink-950/60', 'border-pink-500', 'shake-animation');
+                
+                // Track mistake
+                wrongAnswers.push({
+                    country: activeQuestion.name,
+                    chosenCapital: selectedChoice.capital,
+                    correctCapital: activeQuestion.capital,
+                    flag: activeQuestion.flag
+                });
+
+                if (currentMode === 'survival') {
+                    lives--;
+                    updateHeartsUI();
+                    streak = 0;
+                    document.getElementById('game-streak').innerText = "0";
+                }
+
+                // Highlight correct button
+                buttons.forEach(btn => {
+                    if (btn.innerText.includes(activeQuestion.capital)) {
+                        btn.classList.add('bg-emerald-950/30', 'border-emerald-500/60');
+                    }
+                });
+            }
+
+            // Transition delay
+            setTimeout(() => {
+                if (currentMode === 'survival' && lives <= 0) {
+                    endGame();
+                } else {
+                    currentQuestionIdx++;
+                    nextQuestion();
+                }
+            }, 1000);
+        }
+
+        // Gameplay Pause & Return Functions
+        function askGoHome() {
+            isPaused = true;
+            document.getElementById('confirm-modal').style.display = 'flex';
+        }
+
+        function cancelExit() {
+            isPaused = false;
+            document.getElementById('confirm-modal').style.display = 'none';
+        }
+
+        function confirmExit() {
+            isPaused = false;
+            document.getElementById('confirm-modal').style.display = 'none';
+            goHome();
+        }
+
+        function endGame() {
+            clearInterval(timerInterval);
+            playSound('gameover');
+
+            // Save high scores & record new flags
+            let isNewRecord = false;
+            if (currentMode === 'classic') {
+                isNewRecord = updateHighScore('classic', score);
+            } else if (currentMode === 'survival') {
+                isNewRecord = updateHighScore('survival', maxSurvivalStreak);
+            } else if (currentMode === 'timeattack') {
+                isNewRecord = updateHighScore('timeattack', score);
+            }
+
+            // Switch view
+            document.getElementById('view-game').classList.add('hidden');
+            document.getElementById('view-result').classList.remove('hidden');
+
+            // Populate Results UI
+            const resIcon = document.getElementById('result-icon');
+            const resTitle = document.getElementById('result-title');
+            const resScoreTxt = document.getElementById('result-score-txt');
+            const resBestTxt = document.getElementById('result-best-txt');
+            const resSubtitle = document.getElementById('result-subtitle');
+
+            // Dynamic Icons and text depending on score/mode
+            if (currentMode === 'classic') {
+                resScoreTxt.innerText = `${score} / 15`;
+                if (score === 15) {
+                    resIcon.className = "fa-solid fa-crown text-yellow-400";
+                    resTitle.innerText = "완벽한 만점!";
+                    resSubtitle.innerText = "와우! 당신은 완벽하게 수도를 지배했습니다.";
+                } else if (score >= 10) {
+                    resIcon.className = "fa-solid fa-trophy text-indigo-400";
+                    resTitle.innerText = "훌륭한 상식가!";
+                    resSubtitle.innerText = "상당한 지식을 가지고 계시네요. 훌륭합니다.";
+                } else {
+                    resIcon.className = "fa-solid fa-graduation-cap text-slate-400";
+                    resTitle.innerText = "지리 초보 탈출!";
+                    resSubtitle.innerText = "조금 더 연습해서 최고 점수에 도전해볼까요?";
+                }
+            } else if (currentMode === 'survival') {
+                resScoreTxt.innerText = `최고 콤보: ${maxSurvivalStreak}회`;
+                resIcon.className = "fa-solid fa-heart-crack text-pink-500";
+                resTitle.innerText = "생존 종료!";
+                resSubtitle.innerText = `최종 득점 ${score}문제를 맞추고 전사하셨습니다.`;
+            } else if (currentMode === 'timeattack') {
+                resScoreTxt.innerText = `${score}문제 정답`;
+                resIcon.className = "fa-solid fa-bolt text-yellow-400";
+                resTitle.innerText = "시간 완료!";
+                resSubtitle.innerText = "눈부시게 빠른 속도로 수도 정답을 찾았습니다.";
+            }
+
+            // New Record badge toggle
+            if (isNewRecord) {
+                resBestTxt.innerText = "NEW RECORD!";
+                resBestTxt.classList.remove('text-slate-500');
+                resBestTxt.classList.add('text-pink-400', 'animate-pulse');
+            } else {
+                resBestTxt.innerText = "기록 유지";
+                resBestTxt.classList.remove('text-pink-400', 'animate-pulse');
+                resBestTxt.classList.add('text-slate-500');
+            }
+
+            // Render Wrong Answers Summary
+            const wrongContainer = document.getElementById('result-wrong-container');
+            const wrongList = document.getElementById('wrong-answers-list');
+            wrongList.innerHTML = "";
+
+            if (wrongAnswers.length > 0) {
+                wrongContainer.classList.remove('hidden');
+                wrongAnswers.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = "flex items-center justify-between border-b border-slate-900 pb-2";
+                    div.innerHTML = `
+                        <div class="flex items-center gap-2">
+                            <span>${item.flag}</span>
+                            <span class="font-semibold text-slate-200">${item.country}</span>
+                        </div>
+                        <div class="space-x-2">
+                            <span class="text-pink-400 line-through">${item.chosenCapital}</span>
+                            <i class="fa-solid fa-arrow-right text-slate-500"></i>
+                            <span class="text-emerald-400 font-bold">${item.correctCapital}</span>
+                        </div>
+                    `;
+                    wrongList.appendChild(div);
+                });
+            } else {
+                wrongContainer.classList.add('hidden');
+            }
+        }
+
+        function restartGame() {
+            startGame();
+        }
+
+
+        // ====== FLASHCARD (STUDY) MODE FUNCTIONS ======
+
+        function initStudyMode() {
+            // Switch view
+            document.getElementById('view-home').classList.add('hidden');
+            document.getElementById('view-game').classList.add('hidden');
+            document.getElementById('view-study').classList.remove('hidden');
+            document.getElementById('view-result').classList.add('hidden');
+
+            document.getElementById('study-filter').value = "all";
+            filteredStudyList = [...countryData].sort((a,b) => a.name.localeCompare(b.name));
+            currentStudyIdx = 0;
+            isCardFlipped = false;
+            
+            renderStudyCard();
+        }
+
+        function filterStudyCards() {
+            const filterVal = document.getElementById('study-filter').value;
+            if (filterVal === 'all') {
+                filteredStudyList = [...countryData];
+            } else {
+                filteredStudyList = countryData.filter(item => item.continent === filterVal);
+            }
+            // Sort Alphabetically
+            filteredStudyList.sort((a,b) => a.name.localeCompare(b.name));
+            currentStudyIdx = 0;
+            isCardFlipped = false;
+            
+            // Re-rotate visual element instantly
+            document.getElementById('card-inner').classList.remove('rotate-y-180');
+            renderStudyCard();
+        }
+
+        function renderStudyCard() {
+            const total = filteredStudyList.length;
+            const currentCountIdx = document.getElementById('study-current-idx');
+            const totalCountIdx = document.getElementById('study-total-idx');
+            
+            if (total === 0) {
+                // Should not happen, fallback
+                currentCountIdx.innerText = "0";
+                totalCountIdx.innerText = "0";
+                return;
+            }
+
+            currentCountIdx.innerText = currentStudyIdx + 1;
+            totalCountIdx.innerText = total;
+
+            const item = filteredStudyList[currentStudyIdx];
+
+            // Render details
+            document.getElementById('card-front-continent').innerText = item.continent;
+            document.getElementById('card-front-flag').innerText = item.flag;
+            document.getElementById('card-front-country').innerText = item.name;
+            document.getElementById('card-back-country-text').innerText = `${item.name}의 수도는`;
+            document.getElementById('card-back-capital').innerText = item.capital;
+        }
+
+        function flipCard() {
+            isCardFlipped = !isCardFlipped;
+            const cardInner = document.getElementById('card-inner');
+            if (isCardFlipped) {
+                cardInner.classList.add('rotate-y-180');
+                playSound('tick');
+            } else {
+                cardInner.classList.remove('rotate-y-180');
+                playSound('tick');
+            }
+        }
+
+        function nextStudyCard() {
+            if (filteredStudyList.length === 0) return;
+            isCardFlipped = false;
+            document.getElementById('card-inner').classList.remove('rotate-y-180');
+            
+            // Small transition delay so content changes while card is flat
+            setTimeout(() => {
+                currentStudyIdx = (currentStudyIdx + 1) % filteredStudyList.length;
+                renderStudyCard();
+            }, 150);
+        }
+
+        function prevStudyCard() {
+            if (filteredStudyList.length === 0) return;
+            isCardFlipped = false;
+            document.getElementById('card-inner').classList.remove('rotate-y-180');
+            
+            setTimeout(() => {
+                currentStudyIdx = (currentStudyIdx - 1 + filteredStudyList.length) % filteredStudyList.length;
+                renderStudyCard();
+            }, 150);
+        }
+
+        // Support Keyboard inputs for quick gameplay (1, 2, 3, 4) or arrow keys for flashcards
+        window.addEventListener('keydown', (e) => {
+            const isGameActive = !document.getElementById('view-game').classList.contains('hidden');
+            const isStudyActive = !document.getElementById('view-study').classList.contains('hidden');
+
+            if (isGameActive) {
+                const num = parseInt(e.key, 10);
+                if (num >= 1 && num <= 4) {
+                    const buttons = document.querySelectorAll('.choice-btn');
+                    if (buttons[num - 1] && !buttons[num - 1].disabled) {
+                        buttons[num - 1].click();
+                    }
+                }
+            } else if (isStudyActive) {
+                if (e.key === 'ArrowRight') {
+                    nextStudyCard();
+                } else if (e.key === 'ArrowLeft') {
+                    prevStudyCard();
+                } else if (e.key === ' ' || e.key === 'Enter') {
+                    e.preventDefault();
+                    flipCard();
+                }
+            }
+        });
+    </script>
+</body>
+</html>
