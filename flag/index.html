@@ -1,1 +1,1447 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>세계 국기 맞추기 마스터</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons for Beautiful UI -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter & Black Han Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=Inter:wght@300;400;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Noto Sans KR', 'Inter', 'sans-serif'],
+                        title: ['Black Han Sans', 'sans-serif'],
+                    },
+                    animation: {
+                        'bounce-slow': 'bounce 2s infinite',
+                        'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom Animations */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            10%, 30%, 50%, 70%, 90% { transform: translateX(-6px); }
+            20%, 40%, 60%, 80% { transform: translateX(6px); }
+        }
+        .animate-shake {
+            animation: shake 0.5s ease-in-out;
+        }
+        
+        @keyframes pop-in {
+            0% { transform: scale(0.9); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop {
+            animation: pop-in 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
 
+        /* Sparkle/Particle Canvas overlay */
+        #particle-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 50;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(30, 41, 59, 0.5);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(148, 163, 184, 0.3);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(148, 163, 184, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden font-sans selection:bg-indigo-500 selection:text-white">
+
+    <!-- Background visual decorations -->
+    <div class="fixed -top-40 -left-40 w-96 h-96 bg-indigo-600/20 rounded-full blur-[120px] pointer-events-none"></div>
+    <div class="fixed -bottom-40 -right-40 w-96 h-96 bg-emerald-600/20 rounded-full blur-[120px] pointer-events-none"></div>
+
+    <!-- Header Section -->
+    <header class="border-b border-slate-800/80 backdrop-blur-md bg-slate-950/70 sticky top-0 z-40 px-4 py-3">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <div class="flex items-center space-x-3 cursor-pointer" onclick="goHome()">
+                <div class="w-10 h-10 bg-gradient-to-tr from-indigo-500 to-violet-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid fa-earth-asia text-white text-xl animate-spin-slow"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg md:text-xl font-black bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">국기 마스터</h1>
+                    <p class="text-xs text-slate-400 font-medium">World Flag Quiz</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button onclick="openHelp()" class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 transition-all" title="도움말">
+                    <i class="fa-solid fa-circle-question text-lg"></i>
+                </button>
+                <button onclick="toggleAudio()" id="audio-toggle-btn" class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 transition-all" title="음소거 토글">
+                    <i class="fa-solid fa-volume-high text-lg text-indigo-400"></i>
+                </button>
+                <button onclick="openStats()" class="p-2.5 rounded-lg bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-300 transition-all" title="통계 보기">
+                    <i class="fa-solid fa-chart-simple text-lg"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="flex-grow max-w-4xl w-full mx-auto p-4 md:p-6 flex flex-col justify-center relative">
+        <canvas id="particle-canvas"></canvas>
+
+        <!-- ================= WELCOME PANEL ================= -->
+        <div id="welcome-panel" class="animate-pop space-y-8 py-4">
+            <!-- Hero Banner -->
+            <div class="text-center space-y-4">
+                <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                    🌍 글로벌 지식 챌린지 v2.0
+                </span>
+                <h2 class="text-4xl md:text-6xl font-extrabold tracking-tight text-white leading-tight">
+                    재미있게 배우는<br/>
+                    <span class="bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-500 bg-clip-text text-transparent font-title">세계 국기 퀴즈</span>
+                </h2>
+                <p class="text-slate-400 text-base md:text-lg max-w-lg mx-auto">
+                    전 세계 190여 개국 국기를 모티브로 한 퀴즈를 즐기며 지리 천재로 거듭나 보세요!
+                </p>
+            </div>
+
+            <!-- Configuration Card -->
+            <div class="bg-slate-900/60 border border-slate-800/80 backdrop-blur-md rounded-2xl p-6 shadow-xl space-y-6 max-w-xl mx-auto">
+                <!-- 1. Select Continent -->
+                <div class="space-y-2">
+                    <label class="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                        <i class="fa-solid fa-map-location-dot text-indigo-400"></i> 도전할 대륙 선택
+                    </label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="selectContinent('all', this)" class="continent-btn p-3 rounded-xl border-2 border-indigo-500 bg-indigo-500/10 text-white font-bold text-sm transition-all shadow-md shadow-indigo-500/10">전체</button>
+                        <button onclick="selectContinent('asia', this)" class="continent-btn p-3 rounded-xl border-2 border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700 font-bold text-sm transition-all">아시아</button>
+                        <button onclick="selectContinent('europe', this)" class="continent-btn p-3 rounded-xl border-2 border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700 font-bold text-sm transition-all">유럽</button>
+                        <button onclick="selectContinent('americas', this)" class="continent-btn p-3 rounded-xl border-2 border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700 font-bold text-sm transition-all">아메리카</button>
+                        <button onclick="selectContinent('africa', this)" class="continent-btn p-3 rounded-xl border-2 border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700 font-bold text-sm transition-all">아프리카</button>
+                        <button onclick="selectContinent('oceania', this)" class="continent-btn p-3 rounded-xl border-2 border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700 font-bold text-sm transition-all">오세아니아</button>
+                    </div>
+                </div>
+
+                <!-- 2. Select Game Mode -->
+                <div class="space-y-3">
+                    <label class="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                        <i class="fa-solid fa-gamepad text-indigo-400"></i> 게임 모드 선택
+                    </label>
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <!-- Mode Card: Classic -->
+                        <div onclick="selectGameMode('classic', this)" class="mode-card group cursor-pointer p-4 rounded-xl border-2 border-indigo-500/20 bg-slate-950 hover:border-indigo-500/40 transition-all relative overflow-hidden flex flex-col justify-between active:scale-95">
+                            <div class="absolute right-2 top-2 text-indigo-500/20 group-hover:text-indigo-500/40 transition-all">
+                                <i class="fa-solid fa-square-poll-horizontal text-4xl"></i>
+                            </div>
+                            <div class="z-10">
+                                <h4 class="font-bold text-white text-base">클래식 모드</h4>
+                                <p class="text-xs text-slate-400 mt-1">4개의 보기 중 정답인 나라 이름을 선택하세요.</p>
+                            </div>
+                            <span class="inline-block mt-4 text-xs font-semibold text-indigo-400 group-hover:translate-x-1 transition-all">시작하기 <i class="fa-solid fa-arrow-right"></i></span>
+                        </div>
+
+                        <!-- Mode Card: Time Attack -->
+                        <div onclick="selectGameMode('timeattack', this)" class="mode-card group cursor-pointer p-4 rounded-xl border-2 border-slate-800 bg-slate-950 hover:border-purple-500/40 transition-all relative overflow-hidden flex flex-col justify-between active:scale-95">
+                            <div class="absolute right-2 top-2 text-purple-500/20 group-hover:text-purple-500/40 transition-all">
+                                <i class="fa-solid fa-clock text-4xl"></i>
+                            </div>
+                            <div class="z-10">
+                                <h4 class="font-bold text-white text-base">타임어택</h4>
+                                <p class="text-xs text-slate-400 mt-1">60초의 기한 동안 최대한 많은 국기를 맞추세요!</p>
+                            </div>
+                            <span class="inline-block mt-4 text-xs font-semibold text-purple-400 group-hover:translate-x-1 transition-all">도전하기 <i class="fa-solid fa-arrow-right"></i></span>
+                        </div>
+
+                        <!-- Mode Card: Typing -->
+                        <div onclick="selectGameMode('typing', this)" class="mode-card group cursor-pointer p-4 rounded-xl border-2 border-slate-800 bg-slate-950 hover:border-pink-500/40 transition-all relative overflow-hidden flex flex-col justify-between active:scale-95">
+                            <div class="absolute right-2 top-2 text-pink-500/20 group-hover:text-pink-500/40 transition-all">
+                                <i class="fa-solid fa-keyboard text-4xl"></i>
+                            </div>
+                            <div class="z-10">
+                                <h4 class="font-bold text-white text-base">타이핑 모드</h4>
+                                <p class="text-xs text-slate-400 mt-1">보기가 없습니다. 국기만 보고 국가명을 직접 적으세요!</p>
+                            </div>
+                            <span class="inline-block mt-4 text-xs font-semibold text-pink-400 group-hover:translate-x-1 transition-all">시작하기 <i class="fa-solid fa-arrow-right"></i></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Play/Guide button controls -->
+                <div class="pt-4 flex flex-col sm:flex-row gap-3">
+                    <button onclick="startGame()" class="flex-1 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg shadow-indigo-500/30 active:scale-95 transition-all text-base flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-circle-play text-lg"></i> 퀴즈 시작하기
+                    </button>
+                    <button onclick="openGallery()" class="py-4 px-6 bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 font-bold rounded-xl active:scale-95 transition-all text-base flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-book-open"></i> 국기 도감
+                    </button>
+                </div>
+            </div>
+
+            <!-- High Scores Mini Panel -->
+            <div class="max-w-xl mx-auto flex justify-between items-center bg-slate-900/40 border border-slate-800/40 rounded-xl p-4 text-sm text-slate-400">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-trophy text-amber-500"></i>
+                    <span>나의 최고 기록:</span>
+                </div>
+                <div class="flex gap-4">
+                    <span>클래식: <strong id="best-classic" class="text-white">0</strong></span>
+                    <span>타임어택: <strong id="best-timeattack" class="text-white">0</strong></span>
+                    <span>타이핑: <strong id="best-typing" class="text-white">0</strong></span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= GAME PLAY PANEL ================= -->
+        <div id="game-panel" class="hidden animate-pop space-y-6 py-2">
+            <!-- Game Status HUD -->
+            <div class="flex items-center justify-between bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 shadow-md backdrop-blur-md">
+                <div class="flex items-center space-x-6">
+                    <div>
+                        <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider block">진행 상황</span>
+                        <span id="question-index" class="text-lg font-black text-white">1 / 10</span>
+                    </div>
+                    <div>
+                        <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider block">획득 점수</span>
+                        <span id="score-count" class="text-lg font-black text-emerald-400">0</span>
+                    </div>
+                    <div id="streak-wrapper" class="opacity-0 transition-opacity">
+                        <span class="text-xs text-slate-400 font-semibold uppercase tracking-wider block">연속 정답</span>
+                        <span id="streak-count" class="text-lg font-black text-amber-400"><i class="fa-solid fa-fire text-amber-500 mr-1"></i>0</span>
+                    </div>
+                </div>
+
+                <!-- Timer Indicator for Time Attack -->
+                <div id="timer-box" class="hidden items-center space-x-3 bg-red-500/10 border border-red-500/30 rounded-xl px-4 py-2 text-red-400">
+                    <i class="fa-solid fa-hourglass-half animate-pulse-fast text-lg"></i>
+                    <span id="time-left" class="text-xl font-black tabular-nums">60</span>
+                </div>
+
+                <!-- Exit button -->
+                <button onclick="confirmExitGame()" class="px-3 py-2 text-sm text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all flex items-center gap-1.5 font-medium">
+                    <i class="fa-solid fa-right-from-bracket"></i> 그만하기
+                </button>
+            </div>
+
+            <!-- Question Area Card -->
+            <div id="main-flag-card" class="bg-slate-900/40 border border-slate-800/80 rounded-3xl p-6 shadow-xl flex flex-col items-center justify-center space-y-6 backdrop-blur-md relative overflow-hidden">
+                <div class="absolute top-2 left-2 text-xs text-slate-500 flex items-center gap-1">
+                    <i class="fa-solid fa-earth-americas"></i> <span id="flag-continent-info">전체</span>
+                </div>
+
+                <!-- Flag Visual Container -->
+                <div class="w-full max-w-sm aspect-[3/2] rounded-2xl overflow-hidden shadow-2xl border-4 border-slate-800 relative bg-slate-950 flex items-center justify-center">
+                    <!-- Loading state spinner -->
+                    <div id="flag-loader" class="absolute inset-0 flex items-center justify-center bg-slate-950 z-10 transition-opacity duration-300">
+                        <div class="w-10 h-10 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin"></div>
+                    </div>
+                    <!-- The actual flag image -->
+                    <img id="question-flag" class="w-full h-full object-cover transition-opacity duration-300 opacity-0" src="" alt="세계 국기" onload="onFlagLoaded()" onerror="onFlagError()">
+                </div>
+
+                <!-- Prompt / Instruction -->
+                <p id="game-instruction-text" class="text-center text-slate-300 font-medium text-sm md:text-base">이 국기는 어느 국가의 국기일까요?</p>
+            </div>
+
+            <!-- Classic Multiple Choice Panel -->
+            <div id="classic-choices-panel" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <button onclick="checkAnswer(0)" class="choice-btn py-4 px-6 rounded-2xl border border-slate-800/80 bg-slate-900/60 hover:bg-slate-800 hover:border-slate-700 hover:-translate-y-0.5 active:translate-y-0 text-left font-bold text-slate-200 text-base md:text-lg flex items-center justify-between transition-all group">
+                    <div class="flex items-center gap-3">
+                        <span class="w-7 h-7 rounded-lg bg-slate-950 border border-slate-800 group-hover:border-indigo-500/50 text-slate-500 group-hover:text-indigo-400 flex items-center justify-center text-xs">1</span>
+                        <span class="btn-text">대한민국</span>
+                    </div>
+                    <i class="choice-icon fa-solid fa-circle-check text-indigo-400 opacity-0 transition-opacity"></i>
+                </button>
+                <button onclick="checkAnswer(1)" class="choice-btn py-4 px-6 rounded-2xl border border-slate-800/80 bg-slate-900/60 hover:bg-slate-800 hover:border-slate-700 hover:-translate-y-0.5 active:translate-y-0 text-left font-bold text-slate-200 text-base md:text-lg flex items-center justify-between transition-all group">
+                    <div class="flex items-center gap-3">
+                        <span class="w-7 h-7 rounded-lg bg-slate-950 border border-slate-800 group-hover:border-indigo-500/50 text-slate-500 group-hover:text-indigo-400 flex items-center justify-center text-xs">2</span>
+                        <span class="btn-text">일본</span>
+                    </div>
+                    <i class="choice-icon fa-solid fa-circle-check text-indigo-400 opacity-0 transition-opacity"></i>
+                </button>
+                <button onclick="checkAnswer(2)" class="choice-btn py-4 px-6 rounded-2xl border border-slate-800/80 bg-slate-900/60 hover:bg-slate-800 hover:border-slate-700 hover:-translate-y-0.5 active:translate-y-0 text-left font-bold text-slate-200 text-base md:text-lg flex items-center justify-between transition-all group">
+                    <div class="flex items-center gap-3">
+                        <span class="w-7 h-7 rounded-lg bg-slate-950 border border-slate-800 group-hover:border-indigo-500/50 text-slate-500 group-hover:text-indigo-400 flex items-center justify-center text-xs">3</span>
+                        <span class="btn-text">중국</span>
+                    </div>
+                    <i class="choice-icon fa-solid fa-circle-check text-indigo-400 opacity-0 transition-opacity"></i>
+                </button>
+                <button onclick="checkAnswer(3)" class="choice-btn py-4 px-6 rounded-2xl border border-slate-800/80 bg-slate-900/60 hover:bg-slate-800 hover:border-slate-700 hover:-translate-y-0.5 active:translate-y-0 text-left font-bold text-slate-200 text-base md:text-lg flex items-center justify-between transition-all group">
+                    <div class="flex items-center gap-3">
+                        <span class="w-7 h-7 rounded-lg bg-slate-950 border border-slate-800 group-hover:border-indigo-500/50 text-slate-500 group-hover:text-indigo-400 flex items-center justify-center text-xs">4</span>
+                        <span class="btn-text">베트남</span>
+                    </div>
+                    <i class="choice-icon fa-solid fa-circle-check text-indigo-400 opacity-0 transition-opacity"></i>
+                </button>
+            </div>
+
+            <!-- Typing Mode Inputs -->
+            <div id="typing-input-panel" class="hidden bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6 shadow-md backdrop-blur-md space-y-4">
+                <div class="relative">
+                    <input type="text" id="typing-input" class="w-full bg-slate-950 border-2 border-slate-800 focus:border-indigo-500 rounded-xl px-4 py-4 text-white font-extrabold text-lg placeholder-slate-500 transition-all outline-none" placeholder="한글 국가명을 입력한 후 Enter를 누르세요..." autocomplete="off">
+                    <button onclick="submitTypingAnswer()" class="absolute right-2 top-2 bottom-2 px-6 bg-indigo-500 hover:bg-indigo-600 rounded-lg text-white font-bold transition-all active:scale-95 text-sm flex items-center gap-1">
+                        <i class="fa-regular fa-paper-plane"></i> 확인
+                    </button>
+                </div>
+                <!-- Dynamic Suggestions Area -->
+                <div id="typing-suggestions" class="flex flex-wrap gap-2 text-xs">
+                    <!-- Suggestions populate dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= RESULTS PANEL ================= -->
+        <div id="result-panel" class="hidden animate-pop space-y-6 max-w-xl mx-auto py-4 text-center">
+            <!-- Score Radial Ring / Badge -->
+            <div class="inline-flex flex-col items-center p-8 bg-slate-900/60 border border-slate-800/80 rounded-3xl shadow-xl backdrop-blur-md w-full relative overflow-hidden">
+                <!-- Result Accent Background -->
+                <div class="absolute -top-10 left-1/2 -translate-x-1/2 w-48 h-48 bg-indigo-500/10 rounded-full blur-3xl"></div>
+
+                <div class="w-24 h-24 bg-gradient-to-tr from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-5xl mb-4 shadow-lg shadow-indigo-500/20">
+                    <i id="result-badge-icon" class="fa-solid fa-trophy"></i>
+                </div>
+
+                <h3 class="text-xs uppercase tracking-widest text-slate-400 font-extrabold">최종 결과</h3>
+                <h2 id="result-message" class="text-2xl md:text-3xl font-black mt-2 text-white">축하합니다! 대단해요!</h2>
+
+                <div class="grid grid-cols-2 gap-4 w-full mt-6 pt-6 border-t border-slate-800/80">
+                    <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800/60">
+                        <span class="text-xs text-slate-500 block font-medium">정답 수 / 총 문제</span>
+                        <strong id="result-score-ratio" class="text-2xl font-black text-white">8 / 10</strong>
+                    </div>
+                    <div class="bg-slate-950/60 p-4 rounded-xl border border-slate-800/60">
+                        <span class="text-xs text-slate-500 block font-medium">최종 점수</span>
+                        <strong id="result-score-points" class="text-2xl font-black text-emerald-400">800점</strong>
+                    </div>
+                </div>
+
+                <!-- Performance evaluation -->
+                <p id="result-evaluation-text" class="text-slate-400 text-sm mt-4">
+                    훌륭한 눈썰미를 소유하셨네요! 조금만 더 하면 국기 마스터의 경지에 오를 수 있겠어요.
+                </p>
+            </div>
+
+            <!-- Action Controls -->
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button onclick="restartGame()" class="flex-1 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white font-bold rounded-xl shadow-lg active:scale-95 transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-rotate-left"></i> 한 판 더 플레이
+                </button>
+                <button onclick="goHome()" class="py-4 px-6 bg-slate-950 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 text-slate-300 font-bold rounded-xl active:scale-95 transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-house"></i> 메인으로 돌아가기
+                </button>
+            </div>
+
+            <!-- Incorrect Answers Review Table (If any) -->
+            <div id="wrong-answers-review" class="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6 text-left space-y-4 backdrop-blur-md">
+                <h4 class="font-extrabold text-white text-base flex items-center gap-2">
+                    <i class="fa-solid fa-spell-check text-red-400"></i> 오답 다시 보기
+                </h4>
+                <div id="wrong-answers-container" class="space-y-3 max-h-60 overflow-y-auto pr-2">
+                    <!-- Template inside script -->
+                </div>
+            </div>
+        </div>
+
+        <!-- ================= GALLERY PANEL ================= -->
+        <div id="gallery-panel" class="hidden animate-pop space-y-6 py-4">
+            <!-- Gallery Header -->
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-900/60 border border-slate-800/80 p-6 rounded-2xl shadow-md backdrop-blur-md">
+                <div>
+                    <h2 class="text-2xl font-black text-white">국기 도감</h2>
+                    <p class="text-xs text-slate-400 mt-1">세계 모든 나라의 국기 정보를 편하게 찾아보세요.</p>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-2">
+                    <!-- Search Input -->
+                    <div class="relative">
+                        <input type="text" id="gallery-search" oninput="filterGallery()" class="w-full sm:w-64 bg-slate-950 border border-slate-800 focus:border-indigo-500 rounded-xl px-4 py-2.5 text-white placeholder-slate-500 text-sm outline-none" placeholder="국가명 검색...">
+                        <i class="fa-solid fa-magnifying-glass absolute right-3 top-3.5 text-slate-500"></i>
+                    </div>
+                    <!-- Continent filter for Gallery -->
+                    <select id="gallery-filter" onchange="filterGallery()" class="bg-slate-950 border border-slate-800 text-slate-300 rounded-xl px-3 py-2.5 text-sm font-medium focus:border-indigo-500 outline-none">
+                        <option value="all">모든 대륙</option>
+                        <option value="asia">아시아</option>
+                        <option value="europe">유럽</option>
+                        <option value="americas">아메리카</option>
+                        <option value="africa">아프리카</option>
+                        <option value="oceania">오세아니아</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Gallery Cards Grid -->
+            <div id="gallery-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 max-h-[60vh] overflow-y-auto pr-2">
+                <!-- Gallery Item Template inside JS -->
+            </div>
+
+            <!-- Return controls -->
+            <div class="text-center pt-2">
+                <button onclick="goHome()" class="px-6 py-3 bg-indigo-500 hover:bg-indigo-600 rounded-xl text-white font-bold transition-all shadow-md">
+                    <i class="fa-solid fa-house mr-1"></i> 메인화면으로 복귀
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer Section -->
+    <footer class="border-t border-slate-900 bg-slate-950 py-6 px-4">
+        <div class="max-w-4xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+            <div>
+                <p>© 2026 국기 마스터. All Rights Reserved. </p>
+                <p class="mt-1">Flag images provided securely by FlagCDN.</p>
+            </div>
+            <div class="flex space-x-4">
+                <a href="#" onclick="openHelp(); return false;" class="hover:text-indigo-400 transition-colors">이용 가이드</a>
+                <span>|</span>
+                <a href="#" onclick="openStats(); return false;" class="hover:text-indigo-400 transition-colors">내 성적표</a>
+                <span>|</span>
+                <a href="#" onclick="resetAllStats(); return false;" class="hover:text-red-400 transition-colors">기록 초기화</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- ================= HELP MODAL ================= -->
+    <div id="help-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl animate-pop space-y-4">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-circle-info text-indigo-400"></i> 세계 국기 퀴즈 도움말
+                </h3>
+                <button onclick="closeHelp()" class="text-slate-400 hover:text-white transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="space-y-3 text-sm text-slate-300 leading-relaxed">
+                <div>
+                    <h4 class="font-bold text-white flex items-center gap-1.5"><span class="w-1.5 h-1.5 bg-indigo-500 rounded-full"></span> 퀴즈 진행 방식</h4>
+                    <p class="text-slate-400 ml-3">전체 국기 목록 혹은 각 대륙을 선택하여 집중 플레이할 수 있습니다.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-white flex items-center gap-1.5"><span class="w-1.5 h-1.5 bg-purple-500 rounded-full"></span> 클래식 모드</h4>
+                    <p class="text-slate-400 ml-3">총 10개의 문항을 풀게 되며, 연속으로 정답을 맞출 경우 가산점을 얻을 수 있는 기본 모드입니다.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-white flex items-center gap-1.5"><span class="w-1.5 h-1.5 bg-pink-500 rounded-full"></span> 타임어택 모드</h4>
+                    <p class="text-slate-400 ml-3">60초의 시간 제한 안에 최대한 많은 문제를 맞추어야 합니다. 오답 시 3초의 벌칙 시간이 깎입니다.</p>
+                </div>
+                <div>
+                    <h4 class="font-bold text-white flex items-center gap-1.5"><span class="w-1.5 h-1.5 bg-emerald-500 rounded-full"></span> 타이핑 모드</h4>
+                    <p class="text-slate-400 ml-3">보기가 주어지지 않고 주관식 한글로 이름을 입력합니다. 자음 자소 힌트 및 자동완성을 일부 지원합니다.</p>
+                </div>
+            </div>
+            <div class="pt-2">
+                <button onclick="closeHelp()" class="w-full py-3 bg-indigo-500 hover:bg-indigo-600 text-white font-bold rounded-xl transition-all">
+                    가이드를 다 읽었습니다
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= STATS MODAL ================= -->
+    <div id="stats-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-md w-full shadow-2xl animate-pop space-y-4">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-800">
+                <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-square-poll-vertical text-amber-500"></i> 누적 플레이 통계
+                </h3>
+                <button onclick="closeStats()" class="text-slate-400 hover:text-white transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="space-y-4 text-sm text-slate-300">
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="bg-slate-950/50 p-3 rounded-xl border border-slate-800/80 text-center">
+                        <span class="text-xs text-slate-500 block">총 퀴즈 푼 수</span>
+                        <strong id="stat-total-games" class="text-xl font-bold text-white">0회</strong>
+                    </div>
+                    <div class="bg-slate-950/50 p-3 rounded-xl border border-slate-800/80 text-center">
+                        <span class="text-xs text-slate-500 block">정답 누적 횟수</span>
+                        <strong id="stat-total-correct" class="text-xl font-bold text-indigo-400">0회</strong>
+                    </div>
+                </div>
+
+                <div class="space-y-2">
+                    <h4 class="font-bold text-white text-xs uppercase tracking-wider text-slate-400">모드별 최고 기록</h4>
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between items-center bg-slate-950/30 p-2 rounded-lg">
+                            <span class="text-slate-400">클래식 모드</span>
+                            <span class="font-bold text-white" id="stat-best-classic">0점</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-950/30 p-2 rounded-lg">
+                            <span class="text-slate-400">타임어택 최고 정답</span>
+                            <span class="font-bold text-purple-400" id="stat-best-timeattack">0개</span>
+                        </div>
+                        <div class="flex justify-between items-center bg-slate-950/30 p-2 rounded-lg">
+                            <span class="text-slate-400">타이핑 모드 최고 정답</span>
+                            <span class="font-bold text-pink-400" id="stat-best-typing">0개</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="pt-2">
+                <button onclick="closeStats()" class="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl transition-all">
+                    닫기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= CONFIRM MODAL (EXIT) ================= -->
+    <div id="confirm-exit-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl animate-pop space-y-4">
+            <div class="text-center space-y-2">
+                <div class="w-14 h-14 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto text-xl">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white">게임 포기 확인</h3>
+                <p class="text-slate-400 text-xs leading-relaxed">정말로 현재 게임을 도중에 포기하시겠습니까?<br>지금까지 획득한 이번 게임 점수는 유실됩니다.</p>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button onclick="closeConfirmExit()" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition-all">
+                    계속 풀기
+                </button>
+                <button onclick="exitGameConfirmed()" class="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl text-xs transition-all">
+                    포기하고 가기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= CONFIRM MODAL (RESET) ================= -->
+    <div id="confirm-reset-modal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full shadow-2xl animate-pop space-y-4">
+            <div class="text-center space-y-2">
+                <div class="w-14 h-14 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto text-xl">
+                    <i class="fa-solid fa-trash-can"></i>
+                </div>
+                <h3 class="text-lg font-bold text-white">기록 초기화 확인</h3>
+                <p class="text-slate-400 text-xs leading-relaxed">모든 누적 전적 데이터와 최고기록 점수를 초기화하시겠습니까?<br>삭제된 전적 기록은 복구할 수 없습니다.</p>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button onclick="closeConfirmReset()" class="flex-1 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl text-xs transition-all">
+                    취소
+                </button>
+                <button onclick="resetStatsConfirmed()" class="flex-1 py-3 bg-red-500 hover:bg-red-600 text-white font-bold rounded-xl text-xs transition-all">
+                    초기화 진행
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= CUSTOM ALERT BOX ================= -->
+    <div id="alert-box" class="fixed top-6 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md border border-indigo-500 text-slate-100 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 z-50 transform -translate-y-24 opacity-0 transition-all duration-300">
+        <i id="alert-icon" class="fa-solid fa-info text-indigo-400 text-lg"></i>
+        <span id="alert-message" class="font-medium text-sm">알림 메시지입니다.</span>
+    </div>
+
+    <script>
+        /* ================= GAME DATABASE & CONSTANTS ================= */
+        const COUNTRIES = [
+            // ASIA
+            { code: "kr", name: "대한민국", continent: "asia", keywords: ["한국", "남한", "korea"] },
+            { code: "jp", name: "일본", continent: "asia", keywords: ["japan"] },
+            { code: "cn", name: "중국", continent: "asia", keywords: ["china"] },
+            { code: "vn", name: "베트남", continent: "asia", keywords: ["vietnam"] },
+            { code: "th", name: "태국", continent: "asia", keywords: ["thai", "thailand"] },
+            { code: "sg", name: "싱가포르", continent: "asia", keywords: ["singapore"] },
+            { code: "ph", name: "필리핀", continent: "asia", keywords: ["philippines"] },
+            { code: "id", name: "인도네시아", continent: "asia", keywords: ["indonesia"] },
+            { code: "my", name: "말레이시아", continent: "asia", keywords: ["malaysia"] },
+            { code: "in", name: "인도", continent: "asia", keywords: ["india"] },
+            { code: "np", name: "네팔", continent: "asia", keywords: ["nepal"] },
+            { code: "mn", name: "몽골", continent: "asia", keywords: ["mongolia"] },
+            { code: "sa", name: "사우디아라비아", continent: "asia", keywords: ["사우디", "saudi arabia"] },
+            { code: "ae", name: "아랍에미리트", continent: "asia", keywords: ["uae"] },
+            { code: "il", name: "이스라엘", continent: "asia", keywords: ["israel"] },
+            { code: "tr", name: "튀르키예", continent: "asia", keywords: ["터키", "turkey"] },
+            { code: "tw", name: "대만", continent: "asia", keywords: ["타이완", "taiwan"] },
+
+            // EUROPE
+            { code: "fr", name: "프랑스", continent: "europe", keywords: ["france"] },
+            { code: "de", name: "독일", continent: "europe", keywords: ["germany"] },
+            { code: "gb", name: "영국", continent: "europe", keywords: ["uk", "england"] },
+            { code: "it", name: "이탈리아", continent: "europe", keywords: ["italy"] },
+            { code: "es", name: "스페인", continent: "europe", keywords: ["spain"] },
+            { code: "nl", name: "네덜란드", continent: "europe", keywords: ["netherlands"] },
+            { code: "se", name: "스웨덴", continent: "europe", keywords: ["sweden"] },
+            { code: "ch", name: "스위스", continent: "europe", keywords: ["switzerland"] },
+            { code: "be", name: "벨기에", continent: "europe", keywords: ["belgium"] },
+            { code: "at", name: "오스트리아", continent: "europe", keywords: ["austria"] },
+            { code: "gr", name: "그리스", continent: "europe", keywords: ["greece"] },
+            { code: "pt", name: "포르투갈", continent: "europe", keywords: ["portugal"] },
+            { code: "pl", name: "폴란드", continent: "europe", keywords: ["poland"] },
+            { code: "ua", name: "우크라이나", continent: "europe", keywords: ["ukraine"] },
+            { code: "no", name: "노르웨이", continent: "europe", keywords: ["norway"] },
+            { code: "dk", name: "덴마크", continent: "europe", keywords: ["denmark"] },
+            { code: "fi", name: "핀란드", continent: "europe", keywords: ["finland"] },
+            { code: "ie", name: "아일랜드", continent: "europe", keywords: ["ireland"] },
+            { code: "ru", name: "러시아", continent: "europe", keywords: ["russia"] },
+
+            // AMERICAS
+            { code: "us", name: "미국", continent: "americas", keywords: ["usa", "america"] },
+            { code: "ca", name: "캐나다", continent: "americas", keywords: ["canada"] },
+            { code: "mx", name: "멕시코", continent: "americas", keywords: ["mexico"] },
+            { code: "br", name: "브라질", continent: "americas", keywords: ["brazil"] },
+            { code: "ar", name: "아르헨티나", continent: "americas", keywords: ["argentina"] },
+            { code: "cl", name: "칠레", continent: "americas", keywords: ["chile"] },
+            { code: "co", name: "콜롬비아", continent: "americas", keywords: ["colombia"] },
+            { code: "pe", name: "페루", continent: "americas", keywords: ["peru"] },
+            { code: "cu", name: "쿠바", continent: "americas", keywords: ["cuba"] },
+            { code: "jm", name: "자메이카", continent: "americas", keywords: ["jamaica"] },
+
+            // AFRICA
+            { code: "eg", name: "이집트", continent: "africa", keywords: ["egypt"] },
+            { code: "za", name: "남아프리카 공화국", continent: "africa", keywords: ["남아공", "south africa"] },
+            { code: "ma", name: "모로코", continent: "africa", keywords: ["morocco"] },
+            { code: "ke", name: "케냐", continent: "africa", keywords: ["kenya"] },
+            { code: "ng", name: "나이지리아", continent: "africa", keywords: ["nigeria"] },
+            { code: "gh", name: "가나", continent: "africa", keywords: ["ghana"] },
+            { code: "sn", name: "세네갈", continent: "africa", keywords: ["senegal"] },
+            { code: "cm", name: "카메룬", continent: "africa", keywords: ["cameroon"] },
+
+            // OCEANIA
+            { code: "au", name: "호주", continent: "oceania", keywords: ["오스트레일리아", "australia"] },
+            { code: "nz", name: "뉴질랜드", continent: "oceania", keywords: ["new zealand"] },
+            { code: "fj", name: "피지", continent: "oceania", keywords: ["fiji"] },
+            { code: "pg", name: "파푸아뉴기니", continent: "oceania", keywords: ["papua new guinea"] }
+        ];
+
+        /* ================= SOUND ENGINE (WEB AUDIO API) ================= */
+        let isMuted = false;
+        let audioContext = null;
+
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playSound(type) {
+            if (isMuted) return;
+            initAudio();
+            if (audioContext.state === 'suspended') {
+                audioContext.resume();
+            }
+
+            const osc = audioContext.createOscillator();
+            const gain = audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(audioContext.destination);
+
+            const now = audioContext.currentTime;
+
+            if (type === 'correct') {
+                // Short retro ding ding sound
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                osc.start(now);
+                osc.stop(now + 0.35);
+            } else if (type === 'incorrect') {
+                // Low buzzer sound
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, now);
+                osc.frequency.linearRampToValueAtTime(80, now + 0.25);
+                gain.gain.setValueAtTime(0.15, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.3);
+                osc.start(now);
+                osc.stop(now + 0.3);
+            } else if (type === 'levelup') {
+                // Success fanfare
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(523.25, now); // C5
+                osc.frequency.setValueAtTime(659.25, now + 0.1); // E5
+                osc.frequency.setValueAtTime(783.99, now + 0.2); // G5
+                osc.frequency.setValueAtTime(1046.50, now + 0.3); // C6
+                gain.gain.setValueAtTime(0.2, now);
+                gain.gain.exponentialRampToValueAtTime(0.001, now + 0.6);
+                osc.start(now);
+                osc.stop(now + 0.6);
+            }
+        }
+
+        function toggleAudio() {
+            isMuted = !isMuted;
+            const audioBtn = document.getElementById('audio-toggle-btn');
+            if (isMuted) {
+                audioBtn.innerHTML = `<i class="fa-solid fa-volume-xmark text-lg text-slate-500"></i>`;
+                showAlert('사운드가 음소거되었습니다.');
+            } else {
+                audioBtn.innerHTML = `<i class="fa-solid fa-volume-high text-lg text-indigo-400"></i>`;
+                showAlert('사운드가 활성화되었습니다.');
+                // Quick audio trigger
+                playSound('correct');
+            }
+        }
+
+        /* ================= GAME STATE MANAGEMENT ================= */
+        let gameState = {
+            selectedContinent: 'all',
+            selectedMode: 'classic', // classic, timeattack, typing
+            currentQuestionIndex: 0,
+            totalQuestions: 10,
+            score: 0,
+            streak: 0,
+            activeQuestionList: [],
+            currentQuestion: null,
+            timeLimit: 60,
+            timerInterval: null,
+            incorrectReviews: [],
+            hasAnswered: false
+        };
+
+        window.onload = function() {
+            loadLocalStats();
+            // Start default settings
+            selectContinent('all', document.querySelector('.continent-btn'));
+            selectGameMode('classic', document.querySelector('.mode-card'));
+            initParticleEngine();
+        };
+
+        /* ================= NAVIGATION & ROUTING ================= */
+        function showPanel(panelId) {
+            const panels = ['welcome-panel', 'game-panel', 'result-panel', 'gallery-panel'];
+            panels.forEach(p => {
+                const el = document.getElementById(p);
+                if (p === panelId) {
+                    el.classList.remove('hidden');
+                    el.classList.add('animate-pop');
+                } else {
+                    el.classList.add('hidden');
+                }
+            });
+        }
+
+        function goHome() {
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+            }
+            showPanel('welcome-panel');
+            loadLocalStats();
+        }
+
+        /* ================= UI CONTROLS ================= */
+        function selectContinent(continent, buttonEl) {
+            gameState.selectedContinent = continent;
+            
+            // Highlight selected button
+            document.querySelectorAll('.continent-btn').forEach(btn => {
+                btn.className = "continent-btn p-3 rounded-xl border-2 border-slate-800 bg-slate-950 text-slate-400 hover:border-slate-700 font-bold text-sm transition-all";
+            });
+            buttonEl.className = "continent-btn p-3 rounded-xl border-2 border-indigo-500 bg-indigo-500/10 text-white font-bold text-sm transition-all shadow-md shadow-indigo-500/10";
+            playSound('correct');
+        }
+
+        function selectGameMode(mode, cardEl) {
+            gameState.selectedMode = mode;
+
+            // Normalize card borders
+            document.querySelectorAll('.mode-card').forEach(card => {
+                card.className = "mode-card group cursor-pointer p-4 rounded-xl border-2 border-slate-800 bg-slate-950 hover:border-indigo-500/40 transition-all relative overflow-hidden flex flex-col justify-between active:scale-95";
+            });
+
+            // Highlight chosen mode
+            if (mode === 'classic') {
+                cardEl.className = "mode-card group cursor-pointer p-4 rounded-xl border-2 border-indigo-500 bg-slate-950 hover:border-indigo-500/40 transition-all relative overflow-hidden flex flex-col justify-between active:scale-95";
+            } else if (mode === 'timeattack') {
+                cardEl.className = "mode-card group cursor-pointer p-4 rounded-xl border-2 border-purple-500 bg-slate-950 hover:border-purple-500/40 transition-all relative overflow-hidden flex flex-col justify-between active:scale-95";
+            } else if (mode === 'typing') {
+                cardEl.className = "mode-card group cursor-pointer p-4 rounded-xl border-2 border-pink-500 bg-slate-950 hover:border-pink-500/40 transition-all relative overflow-hidden flex flex-col justify-between active:scale-95";
+            }
+            playSound('correct');
+        }
+
+        /* ================= GAMEPLAY ENGINE ================= */
+        function startGame() {
+            // Filter database by continent selection
+            let filtered = COUNTRIES;
+            if (gameState.selectedContinent !== 'all') {
+                filtered = COUNTRIES.filter(c => c.continent === gameState.selectedContinent);
+            }
+
+            if (filtered.length < 4) {
+                showCustomAlert("해당 대륙에는 퀴즈를 낼 국가가 부족합니다! 전체 모드를 선택하세요.", "fa-triangle-exclamation");
+                return;
+            }
+
+            // Shuffle Countries pool
+            const shuffled = [...filtered].sort(() => Math.random() - 0.5);
+            
+            // Set up game session parameters
+            gameState.currentQuestionIndex = 0;
+            gameState.score = 0;
+            gameState.streak = 0;
+            gameState.incorrectReviews = [];
+            
+            if (gameState.selectedMode === 'timeattack') {
+                gameState.activeQuestionList = shuffled; // Play until time ends
+                gameState.totalQuestions = "∞";
+                gameState.timeLimit = 60;
+                document.getElementById('timer-box').classList.remove('hidden');
+                document.getElementById('timer-box').classList.add('flex');
+                startTimer();
+            } else {
+                gameState.activeQuestionList = shuffled.slice(0, 10); // Standard 10 rounds
+                gameState.totalQuestions = 10;
+                document.getElementById('timer-box').classList.add('hidden');
+                document.getElementById('timer-box').classList.remove('flex');
+            }
+
+            // UI configuration depending on Mode
+            if (gameState.selectedMode === 'typing') {
+                document.getElementById('classic-choices-panel').classList.add('hidden');
+                document.getElementById('typing-input-panel').classList.remove('hidden');
+                document.getElementById('game-instruction-text').innerText = "보기가 없습니다! 올바른 한글 이름을 직접 입력해 주세요.";
+            } else {
+                document.getElementById('classic-choices-panel').classList.remove('hidden');
+                document.getElementById('typing-input-panel').classList.add('hidden');
+                document.getElementById('game-instruction-text').innerText = "이 국기는 어느 국가의 국기일까요?";
+            }
+
+            // Trigger UI View shift
+            showPanel('game-panel');
+            loadNextQuestion();
+        }
+
+        function loadNextQuestion() {
+            gameState.hasAnswered = false;
+
+            // Reset UI states
+            document.getElementById('flag-loader').style.opacity = '1';
+            document.getElementById('question-flag').style.opacity = '0';
+
+            // Extract question
+            if (gameState.selectedMode === 'timeattack') {
+                // If we ran out of unique flags in timeattack, reshuffle
+                if (gameState.currentQuestionIndex >= gameState.activeQuestionList.length) {
+                    gameState.activeQuestionList = [...gameState.activeQuestionList].sort(() => Math.random() - 0.5);
+                    gameState.currentQuestionIndex = 0;
+                }
+            } else {
+                if (gameState.currentQuestionIndex >= gameState.totalQuestions) {
+                    endGame();
+                    return;
+                }
+            }
+
+            gameState.currentQuestion = gameState.activeQuestionList[gameState.currentQuestionIndex];
+            
+            // Show indexes and HUD values
+            const indexDisplay = gameState.selectedMode === 'timeattack' ? (gameState.currentQuestionIndex + 1) : `${gameState.currentQuestionIndex + 1} / ${gameState.totalQuestions}`;
+            document.getElementById('question-index').innerText = indexDisplay;
+            document.getElementById('score-count').innerText = gameState.score;
+            document.getElementById('flag-continent-info').innerText = getContinentKorean(gameState.currentQuestion.continent);
+
+            // Fetch high quality flag via FlagCDN
+            const flagUrl = `https://flagcdn.com/w320/${gameState.currentQuestion.code}.png`;
+            document.getElementById('question-flag').src = flagUrl;
+
+            // Render Options or Typing states
+            if (gameState.selectedMode === 'typing') {
+                const input = document.getElementById('typing-input');
+                input.value = "";
+                input.disabled = false;
+                input.focus();
+                renderTypingSuggestions();
+            } else {
+                generateChoices();
+            }
+        }
+
+        function onFlagLoaded() {
+            document.getElementById('flag-loader').style.opacity = '0';
+            document.getElementById('question-flag').style.opacity = '1';
+        }
+
+        function onFlagError() {
+            // Quick fallback helper
+            document.getElementById('question-flag').src = `https://placehold.co/320x213/1e293b/ffffff?text=No+Image`;
+        }
+
+        function generateChoices() {
+            const current = gameState.currentQuestion;
+            // Filter pool of choices to populate incorrect choices from the same continent if possible
+            let wrongPool = COUNTRIES.filter(c => c.code !== current.code && c.continent === current.continent);
+            if (wrongPool.length < 3) {
+                // fallback to general
+                wrongPool = COUNTRIES.filter(c => c.code !== current.code);
+            }
+
+            // Shuffle incorrect options
+            wrongPool.sort(() => Math.random() - 0.5);
+            const selectedWrongs = wrongPool.slice(0, 3);
+
+            // Mix correct with incorrect
+            const choices = [current, ...selectedWrongs].sort(() => Math.random() - 0.5);
+
+            // Load into buttons
+            const buttons = document.querySelectorAll('.choice-btn');
+            buttons.forEach((btn, index) => {
+                btn.disabled = false;
+                btn.className = "choice-btn py-4 px-6 rounded-2xl border border-slate-800/80 bg-slate-900/60 hover:bg-slate-800 hover:border-slate-700 hover:-translate-y-0.5 active:translate-y-0 text-left font-bold text-slate-200 text-base md:text-lg flex items-center justify-between transition-all group";
+                
+                // Set texts
+                btn.querySelector('.btn-text').innerText = choices[index].name;
+                btn.querySelector('.choice-icon').className = "choice-icon fa-solid fa-circle-check text-indigo-400 opacity-0 transition-opacity";
+
+                // Save associated country data into dataset element
+                btn.dataset.countryCode = choices[index].code;
+            });
+        }
+
+        function checkAnswer(index) {
+            if (gameState.hasAnswered) return;
+            gameState.hasAnswered = true;
+
+            const buttons = document.querySelectorAll('.choice-btn');
+            const selectedBtn = buttons[index];
+            const answerCode = selectedBtn.dataset.countryCode;
+            const correctCode = gameState.currentQuestion.code;
+
+            if (answerCode === correctCode) {
+                handleCorrectAnswer(selectedBtn);
+            } else {
+                handleIncorrectAnswer(selectedBtn, correctCode);
+            }
+
+            // Delay transitioning to next question to let user absorb correct/incorrect feedback animation
+            setTimeout(() => {
+                gameState.currentQuestionIndex++;
+                loadNextQuestion();
+            }, 1400);
+        }
+
+        /* ================= TYPING MODE LOGIC ================= */
+        function submitTypingAnswer() {
+            if (gameState.hasAnswered) return;
+            const input = document.getElementById('typing-input');
+            const userText = input.value.trim().toLowerCase();
+
+            if (!userText) {
+                showCustomAlert("국가 이름을 입력해 주세요!", "fa-keyboard");
+                return;
+            }
+
+            gameState.hasAnswered = true;
+            input.disabled = true;
+
+            const correctCountry = gameState.currentQuestion;
+            // Cross check using real name or alternative keywords matching
+            const isMatch = correctCountry.name.replace(/\s+/g, '') === userText.replace(/\s+/g, '') ||
+                            (correctCountry.keywords && correctCountry.keywords.some(k => k.replace(/\s+/g, '') === userText.replace(/\s+/g, '')));
+
+            if (isMatch) {
+                input.className = "w-full bg-emerald-950/40 border-2 border-emerald-500 rounded-xl px-4 py-4 text-emerald-400 font-extrabold text-lg transition-all outline-none animate-bounce-slow";
+                handleCorrectAnswer(null);
+            } else {
+                input.className = "w-full bg-red-950/40 border-2 border-red-500 rounded-xl px-4 py-4 text-red-400 font-extrabold text-lg transition-all outline-none animate-shake";
+                handleIncorrectAnswer(null, correctCountry.code);
+                
+                // Show floating helper popup showing true spelling
+                showCustomAlert(`정답은: [${correctCountry.name}] 입니다.`, "fa-spell-check");
+            }
+
+            setTimeout(() => {
+                input.className = "w-full bg-slate-950 border-2 border-slate-800 focus:border-indigo-500 rounded-xl px-4 py-4 text-white font-extrabold text-lg placeholder-slate-500 transition-all outline-none";
+                gameState.currentQuestionIndex++;
+                loadNextQuestion();
+            }, 1800);
+        }
+
+        // Auto submission hook when pressing enter inside input
+        document.getElementById('typing-input').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                submitTypingAnswer();
+            }
+        });
+
+        function renderTypingSuggestions() {
+            const container = document.getElementById('typing-suggestions');
+            container.innerHTML = "";
+            
+            // Generate some random helper characters or partial syllables
+            const correctName = gameState.currentQuestion.name;
+            const syllableCount = correctName.length;
+            
+            const hintSpan = document.createElement('span');
+            hintSpan.className = "px-3 py-1 bg-slate-900 border border-slate-800 rounded-full text-slate-400 font-medium";
+            hintSpan.innerText = `힌트: ${syllableCount}글자 국명 / 자음: ${getConsonants(correctName)}`;
+            container.appendChild(hintSpan);
+        }
+
+        function getConsonants(str) {
+            const hangulConsonants = ["ㄱ","ㄲ","ㄴ","ㄷ","ㄸ","ㄹ","ㅁ","ㅂ","ㅃ","ㅅ","ㅆ","ㅇ","ㅈ","ㅉ","ㅊ","ㅋ","ㅌ","ㅍ","ㅎ"];
+            let result = "";
+            for (let i = 0; i < str.length; i++) {
+                const code = str.charCodeAt(i) - 44032;
+                if (code > -1 && code < 11172) {
+                    result += hangulConsonants[Math.floor(code / 588)];
+                } else {
+                    result += str.charAt(i); // non-hangul fallback
+                }
+            }
+            return result;
+        }
+
+        /* ================= GAME ACTION OUTCOMES ================= */
+        function handleCorrectAnswer(selectedButtonElement) {
+            playSound('correct');
+            triggerConfetti();
+
+            // Calculate streak & point weights
+            gameState.streak++;
+            const pointsScored = 100 + (gameState.streak * 10);
+            gameState.score += pointsScored;
+
+            // Update streak HUD
+            if (gameState.streak >= 2) {
+                const streakWrapper = document.getElementById('streak-wrapper');
+                streakWrapper.classList.remove('opacity-0');
+                document.getElementById('streak-count').innerHTML = `<i class="fa-solid fa-fire text-amber-500 mr-1 animate-pulse"></i>${gameState.streak}`;
+            }
+
+            if (selectedButtonElement) {
+                // Style clicked element as beautiful green success
+                selectedButtonElement.className = "choice-btn py-4 px-6 rounded-2xl border border-emerald-500 bg-emerald-500/10 text-emerald-400 font-bold text-base md:text-lg flex items-center justify-between transition-all scale-102";
+                const checkIcon = selectedButtonElement.querySelector('.choice-icon');
+                checkIcon.className = "choice-icon fa-solid fa-circle-check text-emerald-400 opacity-100";
+            }
+        }
+
+        function handleIncorrectAnswer(selectedButtonElement, correctCode) {
+            playSound('incorrect');
+            gameState.streak = 0;
+            document.getElementById('streak-wrapper').classList.add('opacity-0');
+
+            // Apply shaking visual penalty to the main flag box
+            const flagBox = document.getElementById('main-flag-card');
+            flagBox.classList.add('animate-shake', 'border-red-500/50');
+            setTimeout(() => {
+                flagBox.classList.remove('animate-shake', 'border-red-500/50');
+            }, 600);
+
+            // Record incorrect item for final reviews page
+            gameState.incorrectReviews.push({
+                question: gameState.currentQuestion,
+                userAttempt: selectedButtonElement ? selectedButtonElement.querySelector('.btn-text').innerText : document.getElementById('typing-input').value
+            });
+
+            if (selectedButtonElement) {
+                // Colorize tapped wrong answer to red
+                selectedButtonElement.className = "choice-btn py-4 px-6 rounded-2xl border border-red-500 bg-red-500/10 text-red-400 font-bold text-base md:text-lg flex items-center justify-between transition-all scale-98";
+                const checkIcon = selectedButtonElement.querySelector('.choice-icon');
+                checkIcon.className = "choice-icon fa-solid fa-circle-xmark text-red-400 opacity-100";
+
+                // Highlight correct button choice too as standard game helper helper UI design
+                document.querySelectorAll('.choice-btn').forEach(btn => {
+                    if (btn.dataset.countryCode === correctCode) {
+                        btn.className = "choice-btn py-4 px-6 rounded-2xl border border-emerald-500 bg-emerald-500/10 text-emerald-400 font-bold text-base md:text-lg flex items-center justify-between transition-all";
+                        btn.querySelector('.choice-icon').className = "choice-icon fa-solid fa-circle-check text-emerald-400 opacity-100";
+                    }
+                });
+            }
+
+            // In timeattack mode, penalty 3 seconds
+            if (gameState.selectedMode === 'timeattack') {
+                gameState.timeLimit = Math.max(0, gameState.timeLimit - 3);
+                showCustomAlert("벌칙! 시간 -3초 감소", "fa-triangle-exclamation");
+            }
+        }
+
+        /* ================= TIMER HANDLING ================= */
+        function startTimer() {
+            document.getElementById('time-left').innerText = gameState.timeLimit;
+            clearInterval(gameState.timerInterval);
+
+            gameState.timerInterval = setInterval(() => {
+                gameState.timeLimit--;
+                document.getElementById('time-left').innerText = gameState.timeLimit;
+
+                // Warning flashing on critical times
+                if (gameState.timeLimit <= 10) {
+                    document.getElementById('timer-box').classList.add('animate-pulse-fast');
+                } else {
+                    document.getElementById('timer-box').classList.remove('animate-pulse-fast');
+                }
+
+                if (gameState.timeLimit <= 0) {
+                    clearInterval(gameState.timerInterval);
+                    endGame();
+                }
+            }, 1000);
+        }
+
+        /* ================= GAME END & STATISTICS ================= */
+        function endGame() {
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+            }
+
+            playSound('levelup');
+            showPanel('result-panel');
+
+            // Format dynamic messages
+            const points = gameState.score;
+            let ratioText = "";
+            let pointsText = `${points}점`;
+
+            if (gameState.selectedMode === 'timeattack') {
+                ratioText = `총 ${gameState.currentQuestionIndex}문제 중 ${gameState.currentQuestionIndex - gameState.incorrectReviews.length}문제 정답`;
+            } else {
+                ratioText = `${10 - gameState.incorrectReviews.length} / 10`;
+            }
+
+            document.getElementById('result-score-ratio').innerText = ratioText;
+            document.getElementById('result-score-points').innerText = pointsText;
+
+            // Generate customized evaluation messages
+            const scorePercent = gameState.selectedMode === 'timeattack' 
+                ? (gameState.currentQuestionIndex - gameState.incorrectReviews.length) 
+                : (10 - gameState.incorrectReviews.length);
+
+            let msg = "";
+            let evaluation = "";
+            let iconClass = "fa-trophy";
+
+            if (gameState.selectedMode === 'timeattack') {
+                if (scorePercent >= 20) {
+                    msg = "초인적인 스피드!";
+                    evaluation = "경이적인 시간 관리와 직관력으로 20개 이상의 문제를 정복하셨습니다. 완벽한 국기 고수군요!";
+                    iconClass = "fa-fire-flame-curved text-amber-400";
+                } else if (scorePercent >= 10) {
+                    msg = "준수한 활약!";
+                    evaluation = "시간 압박 속에서도 10개 이상 맞추셨군요. 훌륭한 실력입니다!";
+                    iconClass = "fa-ranking-star text-indigo-400";
+                } else {
+                    msg = "더 빠르게 달릴 수 있어요!";
+                    evaluation = "시간이 부족했나요? 다음 플레이에는 조금 더 자신있게 탭해 보세요!";
+                    iconClass = "fa-child text-slate-400";
+                }
+            } else {
+                if (scorePercent === 10) {
+                    msg = "퍼펙트! 완벽합니다!";
+                    evaluation = "오답율 0%! 전 세계 국기를 완벽하게 꿰뚫고 계시군요. 진정한 지리학 석사학위 수여 대상입니다!";
+                    iconClass = "fa-medal text-amber-400";
+                } else if (scorePercent >= 8) {
+                    msg = "훌륭한 눈썰미!";
+                    evaluation = "거의 모든 국기를 다 맞추셨네요! 한두 가지 헷갈리는 국가들만 국기 도감에서 추가 학습해 보시길 권장합니다.";
+                    iconClass = "fa-award text-indigo-400";
+                } else if (scorePercent >= 5) {
+                    msg = "나쁘지 않은 도전!";
+                    evaluation = "좋은 시도였습니다! 세계 지리에 대한 기초 지식이 탄탄하시네요. 다음 판에는 고득점을 노려봅시다.";
+                    iconClass = "fa-thumbs-up text-slate-300";
+                } else {
+                    msg = "도감 학습이 필요할지도?";
+                    evaluation = "괜찮습니다! 누구나 처음에는 서투른 법입니다. 국기 도감을 몇 분 훑어본 후 다시 도전해 보세요!";
+                    iconClass = "fa-book text-slate-500";
+                }
+            }
+
+            document.getElementById('result-message').innerText = msg;
+            document.getElementById('result-evaluation-text').innerText = evaluation;
+            
+            const badgeIcon = document.getElementById('result-badge-icon');
+            badgeIcon.className = `fa-solid ${iconClass}`;
+
+            // Save records
+            saveLocalStats(scorePercent, points);
+            renderIncorrectReview();
+        }
+
+        function renderIncorrectReview() {
+            const container = document.getElementById('wrong-answers-container');
+            const reviewBox = document.getElementById('wrong-answers-review');
+
+            if (gameState.incorrectReviews.length === 0) {
+                reviewBox.classList.add('hidden');
+                return;
+            }
+
+            reviewBox.classList.remove('hidden');
+            container.innerHTML = "";
+
+            gameState.incorrectReviews.forEach(item => {
+                const el = document.createElement('div');
+                el.className = "flex items-center gap-4 bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 hover:border-slate-700/80 transition-all";
+                el.innerHTML = `
+                    <div class="w-16 aspect-[3/2] rounded overflow-hidden border border-slate-800 shadow">
+                        <img src="https://flagcdn.com/w320/${item.question.code}.png" class="w-full h-full object-cover" alt="">
+                    </div>
+                    <div>
+                        <h5 class="font-bold text-white text-sm">${item.question.name}</h5>
+                        <p class="text-xs text-slate-500">내가 쓴 답: <span class="text-red-400 line-through">${item.userAttempt || '무응답'}</span> | 정답: <span class="text-emerald-400 font-semibold">${item.question.name}</span></p>
+                    </div>
+                `;
+                container.appendChild(el);
+            });
+        }
+
+        function restartGame() {
+            showPanel('welcome-panel');
+            startGame();
+        }
+
+        /* ================= NEW CUSTOM CONFIRM DIALOG LOGIC ================= */
+        function confirmExitGame() {
+            // Pause timer if Time Attack mode to prevent unfair time loss
+            if (gameState.selectedMode === 'timeattack' && gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+            }
+            document.getElementById('confirm-exit-modal').classList.remove('hidden');
+        }
+
+        function closeConfirmExit() {
+            document.getElementById('confirm-exit-modal').classList.add('hidden');
+            // Resume timer if Time Attack is active and player hasn't answered yet
+            if (gameState.selectedMode === 'timeattack' && !gameState.hasAnswered) {
+                startTimer();
+            }
+        }
+
+        function exitGameConfirmed() {
+            document.getElementById('confirm-exit-modal').classList.add('hidden');
+            goHome();
+        }
+
+        function resetAllStats() {
+            document.getElementById('confirm-reset-modal').classList.remove('hidden');
+        }
+
+        function closeConfirmReset() {
+            document.getElementById('confirm-reset-modal').classList.add('hidden');
+        }
+
+        function resetStatsConfirmed() {
+            document.getElementById('confirm-reset-modal').classList.add('hidden');
+            localStorage.removeItem('flag_quiz_stats');
+            loadLocalStats();
+            showCustomAlert("통계 기록이 정상적으로 초기화되었습니다.", "fa-trash");
+        }
+
+        /* ================= LOCAL STORAGE STATS ================= */
+        function loadLocalStats() {
+            const stats = JSON.parse(localStorage.getItem('flag_quiz_stats')) || {
+                totalGames: 0,
+                totalCorrect: 0,
+                bestClassic: 0,
+                bestTimeattack: 0,
+                bestTyping: 0
+            };
+
+            document.getElementById('best-classic').innerText = `${stats.bestClassic}점`;
+            document.getElementById('best-timeattack').innerText = `${stats.bestTimeattack}개`;
+            document.getElementById('best-typing').innerText = `${stats.bestTyping}개`;
+
+            // Populate Modals too
+            document.getElementById('stat-total-games').innerText = `${stats.totalGames}회`;
+            document.getElementById('stat-total-correct').innerText = `${stats.totalCorrect}회`;
+            document.getElementById('stat-best-classic').innerText = `${stats.bestClassic}점`;
+            document.getElementById('stat-best-timeattack').innerText = `${stats.bestTimeattack}개`;
+            document.getElementById('stat-best-typing').innerText = `${stats.bestTyping}개`;
+        }
+
+        function saveLocalStats(correctCount, points) {
+            let stats = JSON.parse(localStorage.getItem('flag_quiz_stats')) || {
+                totalGames: 0,
+                totalCorrect: 0,
+                bestClassic: 0,
+                bestTimeattack: 0,
+                bestTyping: 0
+            };
+
+            stats.totalGames++;
+            stats.totalCorrect += correctCount;
+
+            if (gameState.selectedMode === 'classic') {
+                stats.bestClassic = Math.max(stats.bestClassic, points);
+            } else if (gameState.selectedMode === 'timeattack') {
+                stats.bestTimeattack = Math.max(stats.bestTimeattack, correctCount);
+            } else if (gameState.selectedMode === 'typing') {
+                stats.bestTyping = Math.max(stats.bestTyping, correctCount);
+            }
+
+            localStorage.setItem('flag_quiz_stats', JSON.stringify(stats));
+        }
+
+        /* ================= DIALOG OPENERS ================= */
+        function openHelp() {
+            document.getElementById('help-modal').classList.remove('hidden');
+        }
+        function closeHelp() {
+            document.getElementById('help-modal').classList.add('hidden');
+        }
+        function openStats() {
+            loadLocalStats();
+            document.getElementById('stats-modal').classList.remove('hidden');
+        }
+        function closeStats() {
+            document.getElementById('stats-modal').classList.add('hidden');
+        }
+
+        /* ================= GALLERY (DICTIONARY) ENGINE ================= */
+        function openGallery() {
+            showPanel('gallery-panel');
+            
+            // Build gallery layout
+            const grid = document.getElementById('gallery-grid');
+            grid.innerHTML = "";
+
+            COUNTRIES.forEach(c => {
+                const el = document.createElement('div');
+                el.className = "gallery-item bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow flex flex-col items-center justify-between text-center space-y-3 transition-transform hover:-translate-y-1";
+                el.dataset.continent = c.continent;
+                el.dataset.name = c.name;
+                
+                el.innerHTML = `
+                    <div class="w-full aspect-[3/2] rounded-xl overflow-hidden shadow border border-slate-800">
+                        <img src="https://flagcdn.com/w320/${c.code}.png" class="w-full h-full object-cover" loading="lazy">
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-white text-sm md:text-base">${c.name}</h4>
+                        <span class="inline-block mt-1 px-2 py-0.5 rounded-full text-2xs uppercase tracking-wide bg-slate-800 text-slate-400 font-bold">${getContinentKorean(c.continent)}</span>
+                    </div>
+                `;
+                grid.appendChild(el);
+            });
+        }
+
+        function filterGallery() {
+            const query = document.getElementById('gallery-search').value.toLowerCase().trim();
+            const filterVal = document.getElementById('gallery-filter').value;
+
+            const items = document.querySelectorAll('.gallery-item');
+            items.forEach(item => {
+                const name = item.dataset.name;
+                const continent = item.dataset.continent;
+
+                const nameMatch = name.includes(query);
+                const continentMatch = filterVal === 'all' || continent === filterVal;
+
+                if (nameMatch && continentMatch) {
+                    item.classList.remove('hidden');
+                } else {
+                    item.classList.add('hidden');
+                }
+            });
+        }
+
+        /* ================= SYSTEM HELPER UTILITIES ================= */
+        function getContinentKorean(con) {
+            const mapping = {
+                all: "전체",
+                asia: "아시아",
+                europe: "유럽",
+                americas: "아메리카",
+                africa: "아프리카",
+                oceania: "오세아니아"
+            };
+            return mapping[con] || con;
+        }
+
+        function showCustomAlert(msg, icon = "fa-info") {
+            const box = document.getElementById('alert-box');
+            document.getElementById('alert-icon').className = `fa-solid ${icon} text-indigo-400 text-lg`;
+            document.getElementById('alert-message').innerText = msg;
+
+            box.className = "fixed top-6 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md border border-indigo-500 text-slate-100 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 z-50 transform translate-y-0 opacity-100 transition-all duration-300";
+            
+            setTimeout(() => {
+                box.className = "fixed top-6 left-1/2 -translate-x-1/2 bg-slate-900/90 backdrop-blur-md border border-indigo-500 text-slate-100 px-6 py-4 rounded-2xl shadow-2xl flex items-center gap-3 z-50 transform -translate-y-24 opacity-0 transition-all duration-300";
+            }, 3000);
+        }
+
+        // Keep standard fallback
+        function showAlert(msg) {
+            showCustomAlert(msg);
+        }
+
+        /* ================= HIGH GRAPHICS EFFECTS (CONFETTI) ================= */
+        let particles = [];
+        let canvas, ctx;
+
+        function initParticleEngine() {
+            canvas = document.getElementById('particle-canvas');
+            ctx = canvas.getContext('2d');
+            resizeCanvas();
+            window.addEventListener('resize', resizeCanvas);
+            tickParticleEngine();
+        }
+
+        function resizeCanvas() {
+            if (canvas) {
+                canvas.width = canvas.parentElement.clientWidth;
+                canvas.height = canvas.parentElement.clientHeight;
+            }
+        }
+
+        function triggerConfetti() {
+            if (!canvas) return;
+            const colors = ['#6366f1', '#a855f7', '#ec4899', '#10b981', '#f59e0b'];
+            
+            for (let i = 0; i < 40; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 12,
+                    vy: (Math.random() - 0.7) * 12,
+                    radius: Math.random() * 5 + 3,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    opacity: 1,
+                    decay: Math.random() * 0.015 + 0.01
+                });
+            }
+        }
+
+        function tickParticleEngine() {
+            requestAnimationFrame(tickParticleEngine);
+            if (!ctx) return;
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.2; // Gravity force simulation
+                p.opacity -= p.decay;
+
+                if (p.opacity <= 0) {
+                    particles.splice(i, 1);
+                    continue;
+                }
+
+                ctx.save();
+                ctx.globalAlpha = p.opacity;
+                ctx.fillStyle = p.color;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+    </script>
+</body>
+</html>
