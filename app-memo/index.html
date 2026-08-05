@@ -276,7 +276,7 @@
                 <!-- Setup Code Box -->
                 <div>
                     <div class="flex items-center justify-between mb-2">
-                        <h3 class="font-bold text-slate-800">📋 Google Apps Script (GAS) 코드</h3>
+                        <h3 class="font-bold text-slate-800">📋 Google Apps Script (GAS) 코드 (초고속 버전)</h3>
                         <button onclick="copyGasCode()" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
                             <i class="fa-regular fa-copy"></i> 코드 전체 복사
                         </button>
@@ -284,8 +284,6 @@
                     <pre class="bg-slate-900 text-emerald-400 p-4 rounded-xl text-xs font-mono overflow-x-auto max-h-48 custom-scrollbar" id="gasCodeBlock">
 /** @OnlyCurrentDoc */
 
-// 🔑 [1단계 필수] 권한 승인용 테스트 함수
-// 앱스 스크립트 상단에서 testSetup을 선택하고 [▶ 실행]을 눌러 권한 승인을 완료하세요!
 function testSetup() {
   var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
   if (sheet.getLastRow() === 0) {
@@ -342,24 +340,20 @@ function doPost(e) {
     
     if (action === "update") {
       var memo = contents.memo;
-      var data = sheet.getDataRange().getValues();
-      for (var i = 1; i < data.length; i++) {
-        if (String(data[i][0]) === String(memo.id)) {
-          sheet.getRange(i + 1, 1, 1, 8).setValues([[memo.id, memo.title, memo.content, memo.category, memo.color, memo.isPinned, memo.createdAt, memo.updatedAt]]);
-          break;
-        }
+      // TextFinder로 고속 행 탐색
+      var cell = sheet.getRange("A:A").createTextFinder(String(memo.id)).matchEntireCell(true).findNext();
+      if (cell) {
+        var rowIndex = cell.getRow();
+        sheet.getRange(rowIndex, 1, 1, 8).setValues([[memo.id, memo.title, memo.content, memo.category, memo.color, memo.isPinned, memo.createdAt, memo.updatedAt]]);
       }
       return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
     }
     
     if (action === "delete") {
       var id = contents.id;
-      var data = sheet.getDataRange().getValues();
-      for (var i = 1; i < data.length; i++) {
-        if (String(data[i][0]) === String(id)) {
-          sheet.deleteRow(i + 1);
-          break;
-        }
+      var cell = sheet.getRange("A:A").createTextFinder(String(id)).matchEntireCell(true).findNext();
+      if (cell) {
+        sheet.deleteRow(cell.getRow());
       }
       return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
     }
@@ -423,8 +417,6 @@ function doPost(e) {
     <script>
         // =========================================================================
         // 🔑 [필수 설정] 아래 따옴표 안에 구글 앱스 스크립트 배포 URL을 입력하세요.
-        // 입력 후에는 웹 앱을 새로고침하거나 어느 환경에서 접속해도 자동으로 연동됩니다.
-        // 예시: const CONFIG_GAS_URL = 'https://script.google.com/macros/s/AKfycbx.../exec';
         // =========================================================================
         const CONFIG_GAS_URL = 'https://script.google.com/macros/s/AKfycbyaMosXhx-2HHIvaOKKE1VerHxlGrEdjVMmucfjVPuGHPjbWZQpmaQu7NFypWyM4iET/exec';
 
@@ -436,15 +428,18 @@ function doPost(e) {
         let gasUrl = CONFIG_GAS_URL || localStorage.getItem('gas_memo_url') || '';
         let targetDeleteId = null;
 
-        // Initialize App
+        // Initialize App (캐시 우선 고속 로딩)
         window.onload = function() {
+            // 1. 화면 먼저 즉시 출력 (0초 대기)
+            loadLocalMemos();
+
+            // 2. 구글 시트 연동 시 백그라운드 비동기 동기화
             if (gasUrl) {
                 document.getElementById('gasUrlInput').value = gasUrl;
                 updateStatusBadge(true);
                 fetchMemosFromGAS();
             } else {
                 updateStatusBadge(false);
-                loadLocalMemos();
             }
         };
 
@@ -463,13 +458,22 @@ function doPost(e) {
             }
         }
 
+        let syncBannerTimer = null;
         function showSyncBanner(show) {
             const banner = document.getElementById('syncBanner');
-            if (show) banner.classList.remove('hidden');
-            else banner.classList.add('hidden');
+            if (show) {
+                banner.classList.remove('hidden');
+                // 배너가 길게 남아있지 않도록 최대 1.2초 후 자동 숨김
+                if (syncBannerTimer) clearTimeout(syncBannerTimer);
+                syncBannerTimer = setTimeout(() => {
+                    banner.classList.add('hidden');
+                }, 1200);
+            } else {
+                banner.classList.add('hidden');
+            }
         }
 
-        // Fetch Memos from Google Apps Script
+        // Fetch Memos from Google Apps Script (백그라운드 동기화)
         async function fetchMemosFromGAS() {
             if (!gasUrl) return;
             showSyncBanner(true);
@@ -480,14 +484,11 @@ function doPost(e) {
                     memos = result.data;
                     saveLocalMemosBackup();
                     renderMemos();
-                    showToast('구글 시트에서 메모를 불러왔습니다.', 'success');
                 }
             } catch (err) {
                 console.error("GAS Sync Error:", err);
-                showToast('구글 시트 연동 실패. 로컬 데이터로 표시합니다.', 'error');
-                loadLocalMemos();
             } finally {
-                showSyncBanner(false);
+                setTimeout(() => showSyncBanner(false), 300);
             }
         }
 
@@ -535,7 +536,7 @@ function doPost(e) {
             ];
         }
 
-        async function saveMemo() {
+        function saveMemo() {
             const id = document.getElementById('memoId').value;
             const title = document.getElementById('memoTitle').value.trim();
             const content = document.getElementById('memoContent').value.trim();
@@ -560,6 +561,7 @@ function doPost(e) {
                 updatedAt: now
             };
 
+            // 1. UI 및 로컬 데이터 즉시 업데이트 (0초 지연)
             if (isNew) {
                 memos.unshift(memoData);
             } else {
@@ -570,28 +572,20 @@ function doPost(e) {
             saveLocalMemosBackup();
             renderMemos();
             closeMemoModal();
+            showToast(isNew ? '메모가 저장되었습니다!' : '메모가 수정되었습니다!', 'success');
 
-            // Sync to GAS if URL present
+            // 2. 구글 시트에 비동기 백그라운드 동기화 (대기 없음)
             if (gasUrl) {
                 showSyncBanner(true);
-                try {
-                    await fetch(gasUrl, {
-                        method: 'POST',
-                        mode: 'no-cors', // standard workaround for GAS CORS
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            action: isNew ? 'create' : 'update',
-                            memo: memoData
-                        })
-                    });
-                    showToast(isNew ? '구글 시트에 새 메모 추가 완료!' : '구글 시트 메모 수정 완료!', 'success');
-                } catch (err) {
-                    showToast('구글 시트 저장 실패 (로컬에만 반영됨)', 'error');
-                } finally {
-                    showSyncBanner(false);
-                }
-            } else {
-                showToast(isNew ? '새 메모가 생성되었습니다 (데모 모드)' : '메모가 수정되었습니다', 'success');
+                fetch(gasUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: isNew ? 'create' : 'update',
+                        memo: memoData
+                    })
+                }).catch(err => console.error("GAS Save Error:", err));
             }
         }
 
@@ -607,37 +601,31 @@ function doPost(e) {
             targetDeleteId = null;
         }
 
-        async function executeDeleteMemo() {
+        function executeDeleteMemo() {
             if (!targetDeleteId) return;
             const id = targetDeleteId;
             closeConfirmModal();
             closeMemoModal();
 
+            // 1. UI 및 로컬 즉시 반영
             memos = memos.filter(m => m.id !== id);
             saveLocalMemosBackup();
             renderMemos();
+            showToast('메모가 삭제되었습니다.', 'info');
 
+            // 2. 구글 시트 백그라운드 비동기 삭제
             if (gasUrl) {
                 showSyncBanner(true);
-                try {
-                    await fetch(gasUrl, {
-                        method: 'POST',
-                        mode: 'no-cors',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'delete', id: id })
-                    });
-                    showToast('구글 시트에서 메모 삭제 완료', 'success');
-                } catch (err) {
-                    showToast('삭제 실패', 'error');
-                } finally {
-                    showSyncBanner(false);
-                }
-            } else {
-                showToast('메모가 삭제되었습니다.', 'info');
+                fetch(gasUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'delete', id: id })
+                }).catch(err => console.error("GAS Delete Error:", err));
             }
         }
 
-        async function togglePin(id, event) {
+        function togglePin(id, event) {
             if (event) event.stopPropagation();
             const memo = memos.find(m => m.id === id);
             if (!memo) return;
