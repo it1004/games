@@ -503,37 +503,16 @@ function doPost(e) {
                 try {
                     memos = JSON.parse(saved);
                 } catch(e) {
-                    memos = getSampleMemos();
+                    memos = [];
                 }
             } else {
-                memos = getSampleMemos();
+                memos = [];
             }
             renderMemos();
         }
 
         function getSampleMemos() {
-            return [
-                {
-                    id: '1',
-                    title: '🚀 구글 시트 연동 안내',
-                    content: '상단의 [구글 시트 연동 방법] 버튼을 클릭하여 제공된 앱스 스크립트 코드를 구글 시트에 붙여넣어 보세요!\n나만의 고유 DB가 쉽게 생성됩니다.',
-                    category: '중요',
-                    color: '#fef9c3',
-                    isPinned: true,
-                    createdAt: new Date().toLocaleDateString('ko-KR'),
-                    updatedAt: new Date().toLocaleDateString('ko-KR')
-                },
-                {
-                    id: '2',
-                    title: '💡 다음 주 프로젝트 아이디어',
-                    content: '1. AI 기반 자동 요약 기능 추가\n2. 태그별 필터링 기능 강화\n3. 다크모드 스타일링 적용',
-                    category: '아이디어',
-                    color: '#e0f2fe',
-                    isPinned: false,
-                    createdAt: new Date().toLocaleDateString('ko-KR'),
-                    updatedAt: new Date().toLocaleDateString('ko-KR')
-                }
-            ];
+            return [];
         }
 
         function saveMemo() {
