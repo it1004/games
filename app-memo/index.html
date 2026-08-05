@@ -1,1 +1,920 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>스마트 메모 & 구글 시트 DB</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Pretendard', 'sans-serif'],
+                    },
+                    colors: {
+                        noteYellow: '#fef9c3',
+                        noteGreen: '#dcfce7',
+                        noteBlue: '#e0f2fe',
+                        notePurple: '#f3e8ff',
+                        notePink: '#ffe4e6',
+                        noteGray: '#f1f5f9',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Pretendard', sans-serif; }
+        .line-clamp-3 {
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen flex flex-col text-slate-800">
 
+    <!-- Top Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-20 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center font-bold text-xl shadow-md shadow-emerald-200">
+                    <i class="fa-solid fa-[#ffffff] fa-pen-to-square"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-slate-800 leading-tight">스마트 노트</h1>
+                    <p class="text-xs text-slate-500">Google Sheets DB 연동 메모장</p>
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2 sm:gap-3">
+                <!-- Status Badge -->
+                <div id="statusBadge" class="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200">
+                    <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></span>
+                    <span id="statusText">데모 모드 (로컬 저장)</span>
+                </div>
+
+                <!-- Setup Guide Button -->
+                <button onclick="openGuideModal()" class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 text-xs sm:text-sm font-medium transition">
+                    <i class="fa-solid fa-[#10b981] fa-file-code"></i>
+                    <span class="hidden sm:inline">구글 시트 연동 방법</span>
+                </button>
+
+                <!-- Settings Button -->
+                <button onclick="openSettingsModal()" class="p-2 rounded-lg text-slate-600 hover:bg-slate-100 transition" title="DB 설정">
+                    <i class="fa-solid fa-gear text-base"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+
+        <!-- Controls Bar -->
+        <div class="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between mb-6">
+            <!-- Search & Filter -->
+            <div class="flex flex-1 flex-col sm:flex-row gap-3">
+                <div class="relative flex-1">
+                    <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm"></i>
+                    <input type="text" id="searchInput" oninput="handleSearch()" placeholder="메모 검색 (제목, 내용)..." 
+                           class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition shadow-sm">
+                </div>
+                
+                <!-- Category Select Filter -->
+                <select id="categoryFilter" onchange="renderMemos()" class="bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition shadow-sm">
+                    <option value="ALL"> 모든 카테고리</option>
+                    <option value="개인">👤 개인</option>
+                    <option value="업무">💼 업무</option>
+                    <option value="아이디어">💡 아이디어</option>
+                    <option value="할일">✅ 할일</option>
+                    <option value="중요">⭐ 중요</option>
+                </select>
+            </div>
+
+            <!-- View Options & New Note Button -->
+            <div class="flex items-center gap-3 justify-between md:justify-end">
+                <div class="flex items-center bg-slate-200/70 p-1 rounded-xl">
+                    <button id="btnGridView" onclick="setViewMode('grid')" class="p-2 rounded-lg text-xs font-medium text-slate-700 bg-white shadow-sm transition">
+                        <i class="fa-solid fa-border-all"></i>
+                    </button>
+                    <button id="btnListView" onclick="setViewMode('list')" class="p-2 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-800 transition">
+                        <i class="fa-solid fa-list"></i>
+                    </button>
+                </div>
+
+                <!-- Sort Order -->
+                <select id="sortSelect" onchange="renderMemos()" class="bg-white border border-slate-200 rounded-xl px-3 py-2 text-sm text-slate-600 focus:outline-none shadow-sm">
+                    <option value="newest">최신순</option>
+                    <option value="oldest">오래된순</option>
+                    <option value="title">제목순</option>
+                </select>
+
+                <!-- New Note Btn -->
+                <button onclick="openMemoModal()" class="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-medium text-sm transition shadow-md shadow-emerald-200 active:scale-95">
+                    <i class="fa-solid fa-plus"></i>
+                    <span>새 메모</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Sync Indicator Banner -->
+        <div id="syncBanner" class="hidden mb-4 p-3 bg-blue-50 border border-blue-200 rounded-xl flex items-center justify-between text-xs text-blue-800">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-circle-notch fa-spin text-blue-600"></i>
+                <span>구글 스프레드시트와 데이터를 동기화하고 있습니다...</span>
+            </div>
+        </div>
+
+        <!-- Memo List / Grid Container -->
+        <div id="memoContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <!-- Memo items injected dynamically -->
+        </div>
+
+        <!-- Empty State -->
+        <div id="emptyState" class="hidden flex-col items-center justify-center py-16 text-center">
+            <div class="w-16 h-16 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center mb-4 text-2xl">
+                <i class="fa-regular fa-note-sticky"></i>
+            </div>
+            <h3 class="text-slate-700 font-semibold text-base mb-1">작성된 메모가 없습니다</h3>
+            <p class="text-slate-400 text-sm max-w-xs mb-4">새 메모 작성 버튼을 눌러 소중한 생각이나 일정, 업무를 기록해보세요.</p>
+            <button onclick="openMemoModal()" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-sm font-medium hover:bg-emerald-700 transition">
+                첫 메모 만들기
+            </button>
+        </div>
+    </main>
+
+    <!-- Create / Edit Memo Modal -->
+    <div id="memoModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl transform transition-all flex flex-col max-h-[90vh]">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                <h2 id="modalTitle" class="font-bold text-slate-800 text-lg">새 메모 작성</h2>
+                <button onclick="closeMemoModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
+                <input type="hidden" id="memoId">
+                
+                <!-- Category & Pin -->
+                <div class="flex items-center justify-between gap-3">
+                    <div class="flex-1">
+                        <label class="block text-xs font-medium text-slate-500 mb-1">카테고리</label>
+                        <select id="memoCategory" class="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                            <option value="개인">👤 개인</option>
+                            <option value="업무">💼 업무</option>
+                            <option value="아이디어">💡 아이디어</option>
+                            <option value="할일">✅ 할일</option>
+                            <option value="중요">⭐ 중요</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-slate-500 mb-1">고정 여부</label>
+                        <button type="button" id="pinToggleBtn" onclick="togglePinInModal()" 
+                                class="flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 text-slate-600 text-sm font-medium hover:bg-slate-50 transition">
+                            <i id="pinIcon" class="fa-solid fa-thumbtack text-slate-400"></i>
+                            <span id="pinText">상단 고정</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Title Input -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">제목</label>
+                    <input type="text" id="memoTitle" placeholder="메모 제목을 입력하세요" 
+                           class="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-semibold text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+
+                <!-- Color Selector -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1.5">노트 색상</label>
+                    <div class="flex items-center gap-2.5">
+                        <button type="button" onclick="selectColor('#fef9c3')" class="color-btn w-8 h-8 rounded-full border-2 border-slate-300 bg-noteYellow flex items-center justify-center transition hover:scale-110" data-color="#fef9c3"></button>
+                        <button type="button" onclick="selectColor('#dcfce7')" class="color-btn w-8 h-8 rounded-full border-2 border-transparent bg-noteGreen flex items-center justify-center transition hover:scale-110" data-color="#dcfce7"></button>
+                        <button type="button" onclick="selectColor('#e0f2fe')" class="color-btn w-8 h-8 rounded-full border-2 border-transparent bg-noteBlue flex items-center justify-center transition hover:scale-110" data-color="#e0f2fe"></button>
+                        <button type="button" onclick="selectColor('#f3e8ff')" class="color-btn w-8 h-8 rounded-full border-2 border-transparent bg-notePurple flex items-center justify-center transition hover:scale-110" data-color="#f3e8ff"></button>
+                        <button type="button" onclick="selectColor('#ffe4e6')" class="color-btn w-8 h-8 rounded-full border-2 border-transparent bg-notePink flex items-center justify-center transition hover:scale-110" data-color="#ffe4e6"></button>
+                        <button type="button" onclick="selectColor('#f1f5f9')" class="color-btn w-8 h-8 rounded-full border-2 border-transparent bg-noteGray flex items-center justify-center transition hover:scale-110" data-color="#f1f5f9"></button>
+                    </div>
+                </div>
+
+                <!-- Content Textarea -->
+                <div>
+                    <label class="block text-xs font-medium text-slate-500 mb-1">내용</label>
+                    <textarea id="memoContent" rows="6" placeholder="내용을 작성하세요..." 
+                              class="w-full bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 custom-scrollbar resize-none"></textarea>
+                </div>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-between">
+                <button type="button" id="deleteBtn" onclick="confirmDeleteMemo()" class="hidden text-rose-600 hover:text-rose-700 text-sm font-medium px-3 py-1.5 rounded-lg hover:bg-rose-50 transition">
+                    <i class="fa-solid fa-trash-can mr-1"></i> 삭제
+                </button>
+                <div class="flex items-center gap-2 ml-auto">
+                    <button type="button" onclick="closeMemoModal()" class="px-4 py-2 border border-slate-200 text-slate-600 rounded-xl text-sm font-medium hover:bg-slate-100 transition">
+                        취소
+                    </button>
+                    <button type="button" onclick="saveMemo()" class="px-5 py-2 bg-emerald-600 text-white rounded-xl text-sm font-medium hover:bg-emerald-700 transition shadow-sm">
+                        저장하기
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings & Guide Modal -->
+    <div id="settingsModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-2xl w-full overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-database text-emerald-600"></i>
+                    <h2 class="font-bold text-slate-800 text-base">구글 스프레드시트 연동 설정</h2>
+                </div>
+                <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="p-6 space-y-6 overflow-y-auto custom-scrollbar flex-1 text-sm text-slate-600">
+                <!-- Gas URL Input Section -->
+                <div class="bg-emerald-50 border border-emerald-200 p-4 rounded-xl">
+                    <label class="block font-semibold text-slate-800 mb-1">앱스 스크립트 웹 앱 URL (Web App URL)</label>
+                    <p class="text-xs text-slate-500 mb-3">구글 앱스 스크립트 배포 시 얻은 `https://script.google.com/macros/s/.../exec` 주소를 입력해 주세요.</p>
+                    <div class="flex gap-2">
+                        <input type="text" id="gasUrlInput" placeholder="https://script.google.com/macros/s/.../exec" 
+                               class="flex-1 bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <button onclick="saveGasUrl()" class="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-semibold hover:bg-emerald-700 transition">
+                            저장 및 연동
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Setup Code Box -->
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="font-bold text-slate-800">📋 Google Apps Script (GAS) 코드</h3>
+                        <button onclick="copyGasCode()" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700 flex items-center gap-1 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                            <i class="fa-regular fa-copy"></i> 코드 전체 복사
+                        </button>
+                    </div>
+                    <pre class="bg-slate-900 text-emerald-400 p-4 rounded-xl text-xs font-mono overflow-x-auto max-h-48 custom-scrollbar" id="gasCodeBlock">
+/** @OnlyCurrentDoc */
+
+// 🔑 [1단계 필수] 권한 승인용 테스트 함수
+// 앱스 스크립트 상단에서 testSetup을 선택하고 [▶ 실행]을 눌러 권한 승인을 완료하세요!
+function testSetup() {
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(["id", "title", "content", "category", "color", "isPinned", "createdAt", "updatedAt"]);
+  }
+  Logger.log("스프레드시트 연결 성공!");
+}
+
+function doGet(e) {
+  var action = e ? e.parameter.action : null;
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(["id", "title", "content", "category", "color", "isPinned", "createdAt", "updatedAt"]);
+  }
+  
+  if (action === "read") {
+    var data = sheet.getDataRange().getValues();
+    var rows = data.slice(1);
+    var memos = rows.map(function(row) {
+      return {
+        id: String(row[0]),
+        title: String(row[1]),
+        content: String(row[2]),
+        category: String(row[3]),
+        color: String(row[4]),
+        isPinned: row[5] === true || String(row[5]).toLowerCase() === "true",
+        createdAt: String(row[6]),
+        updatedAt: String(row[7])
+      };
+    });
+    return ContentService.createTextOutput(JSON.stringify({ status: "success", data: memos }))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  return ContentService.createTextOutput(JSON.stringify({ status: "success", message: "API Ready" }))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  try {
+    var contents = JSON.parse(e.postData.contents);
+    var action = contents.action;
+    var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    
+    if (sheet.getLastRow() === 0) {
+      sheet.appendRow(["id", "title", "content", "category", "color", "isPinned", "createdAt", "updatedAt"]);
+    }
+    
+    if (action === "create") {
+      var memo = contents.memo;
+      sheet.appendRow([memo.id, memo.title, memo.content, memo.category, memo.color, memo.isPinned, memo.createdAt, memo.updatedAt]);
+      return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    if (action === "update") {
+      var memo = contents.memo;
+      var data = sheet.getDataRange().getValues();
+      for (var i = 1; i < data.length; i++) {
+        if (String(data[i][0]) === String(memo.id)) {
+          sheet.getRange(i + 1, 1, 1, 8).setValues([[memo.id, memo.title, memo.content, memo.category, memo.color, memo.isPinned, memo.createdAt, memo.updatedAt]]);
+          break;
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    if (action === "delete") {
+      var id = contents.id;
+      var data = sheet.getDataRange().getValues();
+      for (var i = 1; i < data.length; i++) {
+        if (String(data[i][0]) === String(id)) {
+          sheet.deleteRow(i + 1);
+          break;
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({ status: "success" })).setMimeType(ContentService.MimeType.JSON);
+    }
+  } catch (err) {
+    return ContentService.createTextOutput(JSON.stringify({ status: "error", message: err.toString() })).setMimeType(ContentService.MimeType.JSON);
+  }
+}</pre>
+                </div>
+
+                <!-- 5 Steps Guide -->
+                <div class="space-y-3 border-t border-slate-100 pt-4">
+                    <h3 class="font-bold text-slate-800">🚀 승인 차단 해결 및 연동 순서</h3>
+                    <ol class="list-decimal list-inside space-y-2 text-xs text-slate-600 leading-relaxed">
+                        <li><strong>접속 위치 확인:</strong> 반드시 구글 시트 상단 <strong>[확장 프로그램] ➔ [Apps Script]</strong>로 접속해야 합니다. (별도 탭으로 연 `script.google.com`에서 만드시면 차단됩니다)</li>
+                        <li>위의 코드를 맨 위의 <code class="bg-slate-100 px-1 py-0.5 rounded text-emerald-700 font-bold">/** @OnlyCurrentDoc */</code> 주석까지 **전체 복사**하여 붙여넣고 저장(Ctrl+S)합니다.</li>
+                        <li><strong>🔑 권한 승인:</strong> 상단 함수 드롭다운에서 <span class="bg-amber-100 text-amber-800 font-bold px-1.5 py-0.5 rounded">testSetup</span>을 선택하고 <span class="bg-emerald-100 text-emerald-800 font-bold px-1.5 py-0.5 rounded">▶ 실행</span> 버튼을 누릅니다.</li>
+                        <li><strong>승인 창 우회:</strong> [권한 검토] ➔ [계정 선택] ➔ 좌측 하단 <span class="font-bold text-rose-600 underline">고급 (Advanced)</span> ➔ <span class="font-bold text-rose-600 underline">[프로젝트명](으)로 이동(안전하지 않음)</span> ➔ <strong>[허용 (Allow)]</strong> 클릭하면 차단 없이 승인됩니다.</li>
+                        <li>우측 상단 <strong>[배포] ➔ [새 배포]</strong> ➔ 톱니바퀴 ➔ <strong>'웹 앱 (Web App)'</strong> 선택 후, <strong>액세스 권한: '모든 사용자 (Anyone)'</strong> 설정하여 배포 URL을 생성합니다.</li>
+                    </ol>
+                </div>
+
+                <!-- Troubleshooting Section for Google App Block Error -->
+                <div class="bg-amber-50 border border-amber-200 p-4 rounded-xl space-y-2">
+                    <h4 class="font-bold text-amber-800 text-xs flex items-center gap-1.5">
+                        <i class="fa-solid fa-triangle-exclamation text-amber-600"></i>
+                        🚨 계속해서 권한 오류나 차단이 발생하는 경우 Check-List
+                    </h4>
+                    <ul class="list-disc list-inside text-xs text-amber-900 space-y-1.5 leading-relaxed">
+                        <li><strong>다중 구글 계정 로그인 충돌:</strong> 크롬 브라우저에 구글 계정이 여러 개 로그인되어 있으면 앱스 스크립트 권한 승인이 꼬입니다. <strong>크롬 시크릿 창(Ctrl+Shift+N)</strong>을 열어서 해당 구글 계정 1개만 로그인 후 진행해 보세요.</li>
+                        <li><strong>회사/학교(Workspace) 계정 정책:</strong> 조직 보안 정책상 외부 연결이 차단된 경우일 수 있으니, **개인 구글 계정(@gmail.com)**으로 진행해 주시기 바랍니다.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="px-6 py-3 bg-slate-50 border-t border-slate-100 text-right">
+                <button onclick="closeSettingsModal()" class="px-4 py-2 bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold hover:bg-slate-300 transition">
+                    닫기
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Delete Confirm Modal -->
+    <div id="confirmModal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+        <div class="bg-white rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl">
+            <div class="w-12 h-12 bg-rose-100 text-rose-600 rounded-full flex items-center justify-center mx-auto mb-3 text-lg">
+                <i class="fa-solid fa-trash-can"></i>
+            </div>
+            <h3 class="font-bold text-slate-800 text-base mb-1">메모를 삭제하시겠습니까?</h3>
+            <p class="text-xs text-slate-500 mb-6">삭제된 메모는 복구할 수 없습니다.</p>
+            <div class="flex gap-2">
+                <button onclick="closeConfirmModal()" class="flex-1 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-semibold transition">취소</button>
+                <button onclick="executeDeleteMemo()" class="flex-1 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-semibold transition shadow-sm">삭제하기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col gap-2"></div>
+
+    <script>
+        // =========================================================================
+        // 🔑 [필수 설정] 아래 따옴표 안에 구글 앱스 스크립트 배포 URL을 입력하세요.
+        // 입력 후에는 웹 앱을 새로고침하거나 어느 환경에서 접속해도 자동으로 연동됩니다.
+        // 예시: const CONFIG_GAS_URL = 'https://script.google.com/macros/s/AKfycbx.../exec';
+        // =========================================================================
+        const CONFIG_GAS_URL = 'https://script.google.com/macros/s/AKfycbyaMosXhx-2HHIvaOKKE1VerHxlGrEdjVMmucfjVPuGHPjbWZQpmaQu7NFypWyM4iET/exec';
+
+        // State variables
+        let memos = [];
+        let viewMode = 'grid'; // 'grid' | 'list'
+        let currentSelectedColor = '#fef9c3';
+        let currentIsPinned = false;
+        let gasUrl = CONFIG_GAS_URL || localStorage.getItem('gas_memo_url') || '';
+        let targetDeleteId = null;
+
+        // Initialize App
+        window.onload = function() {
+            if (gasUrl) {
+                document.getElementById('gasUrlInput').value = gasUrl;
+                updateStatusBadge(true);
+                fetchMemosFromGAS();
+            } else {
+                updateStatusBadge(false);
+                loadLocalMemos();
+            }
+        };
+
+        function updateStatusBadge(isConnected) {
+            const statusBadge = document.getElementById('statusBadge');
+            const statusText = document.getElementById('statusText');
+            
+            if (isConnected) {
+                statusBadge.className = "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200";
+                statusBadge.querySelector('span').className = "w-2 h-2 rounded-full bg-emerald-500 animate-pulse";
+                statusText.innerText = "구글 시트 연동됨";
+            } else {
+                statusBadge.className = "flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-200";
+                statusBadge.querySelector('span').className = "w-2 h-2 rounded-full bg-amber-500 animate-pulse";
+                statusText.innerText = "데모 모드 (로컬 저장)";
+            }
+        }
+
+        function showSyncBanner(show) {
+            const banner = document.getElementById('syncBanner');
+            if (show) banner.classList.remove('hidden');
+            else banner.classList.add('hidden');
+        }
+
+        // Fetch Memos from Google Apps Script
+        async function fetchMemosFromGAS() {
+            if (!gasUrl) return;
+            showSyncBanner(true);
+            try {
+                const response = await fetch(`${gasUrl}?action=read`);
+                const result = await response.json();
+                if (result.status === 'success' && Array.isArray(result.data)) {
+                    memos = result.data;
+                    saveLocalMemosBackup();
+                    renderMemos();
+                    showToast('구글 시트에서 메모를 불러왔습니다.', 'success');
+                }
+            } catch (err) {
+                console.error("GAS Sync Error:", err);
+                showToast('구글 시트 연동 실패. 로컬 데이터로 표시합니다.', 'error');
+                loadLocalMemos();
+            } finally {
+                showSyncBanner(false);
+            }
+        }
+
+        // Save local backup
+        function saveLocalMemosBackup() {
+            localStorage.setItem('local_memos_backup', JSON.stringify(memos));
+        }
+
+        function loadLocalMemos() {
+            const saved = localStorage.getItem('local_memos_backup');
+            if (saved) {
+                try {
+                    memos = JSON.parse(saved);
+                } catch(e) {
+                    memos = getSampleMemos();
+                }
+            } else {
+                memos = getSampleMemos();
+            }
+            renderMemos();
+        }
+
+        function getSampleMemos() {
+            return [
+                {
+                    id: '1',
+                    title: '🚀 구글 시트 연동 안내',
+                    content: '상단의 [구글 시트 연동 방법] 버튼을 클릭하여 제공된 앱스 스크립트 코드를 구글 시트에 붙여넣어 보세요!\n나만의 고유 DB가 쉽게 생성됩니다.',
+                    category: '중요',
+                    color: '#fef9c3',
+                    isPinned: true,
+                    createdAt: new Date().toLocaleDateString('ko-KR'),
+                    updatedAt: new Date().toLocaleDateString('ko-KR')
+                },
+                {
+                    id: '2',
+                    title: '💡 다음 주 프로젝트 아이디어',
+                    content: '1. AI 기반 자동 요약 기능 추가\n2. 태그별 필터링 기능 강화\n3. 다크모드 스타일링 적용',
+                    category: '아이디어',
+                    color: '#e0f2fe',
+                    isPinned: false,
+                    createdAt: new Date().toLocaleDateString('ko-KR'),
+                    updatedAt: new Date().toLocaleDateString('ko-KR')
+                }
+            ];
+        }
+
+        async function saveMemo() {
+            const id = document.getElementById('memoId').value;
+            const title = document.getElementById('memoTitle').value.trim();
+            const content = document.getElementById('memoContent').value.trim();
+            const category = document.getElementById('memoCategory').value;
+
+            if (!title) {
+                showToast('제목을 입력해주세요!', 'error');
+                return;
+            }
+
+            const now = new Date().toLocaleDateString('ko-KR');
+            let isNew = !id;
+
+            const memoData = {
+                id: id || 'memo_' + Date.now(),
+                title,
+                content,
+                category,
+                color: currentSelectedColor,
+                isPinned: currentIsPinned,
+                createdAt: isNew ? now : (memos.find(m => m.id === id)?.createdAt || now),
+                updatedAt: now
+            };
+
+            if (isNew) {
+                memos.unshift(memoData);
+            } else {
+                const idx = memos.findIndex(m => m.id === id);
+                if (idx !== -1) memos[idx] = memoData;
+            }
+
+            saveLocalMemosBackup();
+            renderMemos();
+            closeMemoModal();
+
+            // Sync to GAS if URL present
+            if (gasUrl) {
+                showSyncBanner(true);
+                try {
+                    await fetch(gasUrl, {
+                        method: 'POST',
+                        mode: 'no-cors', // standard workaround for GAS CORS
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: isNew ? 'create' : 'update',
+                            memo: memoData
+                        })
+                    });
+                    showToast(isNew ? '구글 시트에 새 메모 추가 완료!' : '구글 시트 메모 수정 완료!', 'success');
+                } catch (err) {
+                    showToast('구글 시트 저장 실패 (로컬에만 반영됨)', 'error');
+                } finally {
+                    showSyncBanner(false);
+                }
+            } else {
+                showToast(isNew ? '새 메모가 생성되었습니다 (데모 모드)' : '메모가 수정되었습니다', 'success');
+            }
+        }
+
+        function confirmDeleteMemo() {
+            const id = document.getElementById('memoId').value;
+            if (!id) return;
+            targetDeleteId = id;
+            document.getElementById('confirmModal').classList.remove('hidden');
+        }
+
+        function closeConfirmModal() {
+            document.getElementById('confirmModal').classList.add('hidden');
+            targetDeleteId = null;
+        }
+
+        async function executeDeleteMemo() {
+            if (!targetDeleteId) return;
+            const id = targetDeleteId;
+            closeConfirmModal();
+            closeMemoModal();
+
+            memos = memos.filter(m => m.id !== id);
+            saveLocalMemosBackup();
+            renderMemos();
+
+            if (gasUrl) {
+                showSyncBanner(true);
+                try {
+                    await fetch(gasUrl, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'delete', id: id })
+                    });
+                    showToast('구글 시트에서 메모 삭제 완료', 'success');
+                } catch (err) {
+                    showToast('삭제 실패', 'error');
+                } finally {
+                    showSyncBanner(false);
+                }
+            } else {
+                showToast('메모가 삭제되었습니다.', 'info');
+            }
+        }
+
+        async function togglePin(id, event) {
+            if (event) event.stopPropagation();
+            const memo = memos.find(m => m.id === id);
+            if (!memo) return;
+
+            memo.isPinned = !memo.isPinned;
+            saveLocalMemosBackup();
+            renderMemos();
+
+            if (gasUrl) {
+                fetch(gasUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'update', memo: memo })
+                });
+            }
+        }
+
+        function handleSearch() {
+            renderMemos();
+        }
+
+        function setViewMode(mode) {
+            viewMode = mode;
+            const btnGrid = document.getElementById('btnGridView');
+            const btnList = document.getElementById('btnListView');
+
+            if (mode === 'grid') {
+                btnGrid.className = "p-2 rounded-lg text-xs font-medium text-slate-700 bg-white shadow-sm transition";
+                btnList.className = "p-2 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-800 transition";
+            } else {
+                btnList.className = "p-2 rounded-lg text-xs font-medium text-slate-700 bg-white shadow-sm transition";
+                btnGrid.className = "p-2 rounded-lg text-xs font-medium text-slate-500 hover:text-slate-800 transition";
+            }
+            renderMemos();
+        }
+
+        function renderMemos() {
+            const container = document.getElementById('memoContainer');
+            const emptyState = document.getElementById('emptyState');
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const categoryFilter = document.getElementById('categoryFilter').value;
+            const sortOrder = document.getElementById('sortSelect').value;
+
+            // Filtering
+            let filtered = memos.filter(m => {
+                const matchQuery = m.title.toLowerCase().includes(query) || m.content.toLowerCase().includes(query);
+                const matchCategory = categoryFilter === 'ALL' || m.category === categoryFilter;
+                return matchQuery && matchCategory;
+            });
+
+            // Sorting
+            filtered.sort((a, b) => {
+                if (a.isPinned !== b.isPinned) return b.isPinned ? 1 : -1; // Pinned first
+                if (sortOrder === 'newest') return b.id.localeCompare(a.id);
+                if (sortOrder === 'oldest') return a.id.localeCompare(b.id);
+                if (sortOrder === 'title') return a.title.localeCompare(b.title);
+                return 0;
+            });
+
+            if (filtered.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            emptyState.classList.remove('flex');
+
+            if (viewMode === 'grid') {
+                container.className = "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4";
+                container.innerHTML = filtered.map(m => `
+                    <div onclick="openMemoModal('${m.id}')" 
+                         style="background-color: ${m.color || '#fef9c3'};" 
+                         class="group relative rounded-2xl p-5 shadow-sm border border-slate-200/60 hover:shadow-md hover:-translate-y-0.5 transition cursor-pointer flex flex-col justify-between min-h-[180px]">
+                        
+                        <div>
+                            <div class="flex items-start justify-between gap-2 mb-2">
+                                <span class="inline-block px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-white/70 text-slate-700 backdrop-blur-sm border border-slate-200/40">
+                                    ${getCategoryEmoji(m.category)} ${m.category}
+                                </span>
+                                <button onclick="togglePin('${m.id}', event)" class="p-1 text-slate-400 hover:text-amber-500 transition">
+                                    <i class="fa-solid fa-thumbtack ${m.isPinned ? 'text-amber-500 transform rotate-45' : 'text-slate-300'}"></i>
+                                </button>
+                            </div>
+
+                            <h3 class="font-bold text-slate-800 text-base mb-1.5 leading-snug break-all">${escapeHtml(m.title)}</h3>
+                            <p class="text-slate-600 text-xs line-clamp-3 whitespace-pre-wrap break-all leading-relaxed">${escapeHtml(m.content)}</p>
+                        </div>
+
+                        <div class="mt-4 pt-3 border-t border-slate-900/5 flex items-center justify-between text-[11px] text-slate-400">
+                            <span>${m.createdAt || ''}</span>
+                            <span class="opacity-0 group-hover:opacity-100 transition text-slate-600 font-medium">수정 <i class="fa-solid fa-chevron-right text-[9px]"></i></span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                container.className = "flex flex-col gap-3";
+                container.innerHTML = filtered.map(m => `
+                    <div onclick="openMemoModal('${m.id}')" 
+                         style="background-color: ${m.color || '#fef9c3'};" 
+                         class="group rounded-xl p-4 shadow-sm border border-slate-200/60 hover:shadow-md transition cursor-pointer flex items-center justify-between gap-4">
+                        
+                        <div class="flex items-center gap-3 flex-1 min-w-0">
+                            <button onclick="togglePin('${m.id}', event)" class="p-1 text-slate-400 hover:text-amber-500 transition flex-shrink-0">
+                                <i class="fa-solid fa-thumbtack ${m.isPinned ? 'text-amber-500 transform rotate-45' : 'text-slate-300'}"></i>
+                            </button>
+                            <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-white/70 text-slate-700 border border-slate-200/40 flex-shrink-0">
+                                ${m.category}
+                            </span>
+                            <h3 class="font-bold text-slate-800 text-sm truncate flex-1">${escapeHtml(m.title)}</h3>
+                        </div>
+
+                        <div class="flex items-center gap-4 text-xs text-slate-400 flex-shrink-0">
+                            <span class="hidden sm:inline">${m.createdAt || ''}</span>
+                            <i class="fa-solid fa-chevron-right text-slate-400 text-xs"></i>
+                        </div>
+                    </div>
+                `).join('');
+            }
+        }
+
+        function getCategoryEmoji(cat) {
+            switch(cat) {
+                case '개인': return '👤';
+                case '업무': return '💼';
+                case '아이디어': return '💡';
+                case '할일': return '✅';
+                case '중요': return '⭐';
+                default: return '📝';
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        // Modal logic
+        function openMemoModal(id = null) {
+            const modal = document.getElementById('memoModal');
+            const deleteBtn = document.getElementById('deleteBtn');
+            const modalTitle = document.getElementById('modalTitle');
+
+            if (id) {
+                const memo = memos.find(m => m.id === id);
+                if (!memo) return;
+                document.getElementById('memoId').value = memo.id;
+                document.getElementById('memoTitle').value = memo.title;
+                document.getElementById('memoContent').value = memo.content;
+                document.getElementById('memoCategory').value = memo.category || '개인';
+                selectColor(memo.color || '#fef9c3');
+                currentIsPinned = !!memo.isPinned;
+                updatePinUI();
+                modalTitle.innerText = "메모 수정";
+                deleteBtn.classList.remove('hidden');
+            } else {
+                document.getElementById('memoId').value = '';
+                document.getElementById('memoTitle').value = '';
+                document.getElementById('memoContent').value = '';
+                document.getElementById('memoCategory').value = '개인';
+                selectColor('#fef9c3');
+                currentIsPinned = false;
+                updatePinUI();
+                modalTitle.innerText = "새 메모 작성";
+                deleteBtn.classList.add('hidden');
+            }
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeMemoModal() {
+            document.getElementById('memoModal').classList.add('hidden');
+        }
+
+        function selectColor(colorHex) {
+            currentSelectedColor = colorHex;
+            document.querySelectorAll('.color-btn').forEach(btn => {
+                if (btn.getAttribute('data-color') === colorHex) {
+                    btn.classList.remove('border-transparent');
+                    btn.classList.add('border-slate-800');
+                } else {
+                    btn.classList.remove('border-slate-800');
+                    btn.classList.add('border-transparent');
+                }
+            });
+        }
+
+        function togglePinInModal() {
+            currentIsPinned = !currentIsPinned;
+            updatePinUI();
+        }
+
+        function updatePinUI() {
+            const icon = document.getElementById('pinIcon');
+            const text = document.getElementById('pinText');
+            if (currentIsPinned) {
+                icon.className = "fa-solid fa-thumbtack text-amber-500 transform rotate-45";
+                text.innerText = "상단 고정됨";
+            } else {
+                icon.className = "fa-solid fa-thumbtack text-slate-400";
+                text.innerText = "상단 고정";
+            }
+        }
+
+        function openSettingsModal() {
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+
+        function closeSettingsModal() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+
+        function openGuideModal() {
+            openSettingsModal();
+        }
+
+        function saveGasUrl() {
+            const url = document.getElementById('gasUrlInput').value.trim();
+            gasUrl = url;
+            localStorage.setItem('gas_memo_url', url);
+            updateStatusBadge(!!url);
+            
+            if (url) {
+                showToast('구글 시트 URL이 저장되었습니다. 메모를 동기화합니다.', 'success');
+                fetchMemosFromGAS();
+            } else {
+                showToast('URL이 해제되어 데모 모드로 변경되었습니다.', 'info');
+                loadLocalMemos();
+            }
+            closeSettingsModal();
+        }
+
+        function copyGasCode() {
+            const code = document.getElementById('gasCodeBlock').innerText;
+            navigator.clipboard.writeText(code).then(() => {
+                showToast('구글 앱스 스크립트 코드가 복사되었습니다!', 'success');
+            }).catch(() => {
+                const textarea = document.createElement('textarea');
+                textarea.value = code;
+                document.body.appendChild(textarea);
+                textarea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textarea);
+                showToast('구글 앱스 스크립트 코드가 복사되었습니다!', 'success');
+            });
+        }
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+
+            let iconClass = 'fa-info-circle text-blue-500';
+            let borderClass = 'border-blue-200';
+            if (type === 'success') {
+                iconClass = 'fa-check-circle text-emerald-500';
+                borderClass = 'border-emerald-200';
+            } else if (type === 'error') {
+                iconClass = 'fa-exclamation-circle text-rose-500';
+                borderClass = 'border-rose-200';
+            }
+
+            toast.className = `flex items-center gap-2 bg-white text-slate-800 border ${borderClass} px-4 py-3 rounded-xl shadow-lg text-xs font-medium transform transition-all duration-300 translate-y-2 opacity-0`;
+            toast.innerHTML = `<i class="fa-solid ${iconClass} text-sm"></i> <span>${message}</span>`;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
