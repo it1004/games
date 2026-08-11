@@ -1,1 +1,700 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>웹캠 모션 컨트롤 갤러그</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- MediaPipe Libraries for Face Mesh & Pose -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/face_mesh.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js" crossorigin="anonymous"></script>
+    <style>
+        body {
+            background-color: #050510;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow: hidden;
+            user-select: none;
+        }
+        .glow-text {
+            text-shadow: 0 0 10px rgba(0, 255, 255, 0.7);
+        }
+        .glow-box {
+            box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col items-center justify-center relative overflow-hidden">
 
+    <!-- Game Header Bar (Active when playing) -->
+    <div id="gameHeader" class="hidden absolute top-3 left-6 z-20 flex gap-6 items-center bg-slate-900/80 px-5 py-2.5 rounded-2xl border border-cyan-500/30 backdrop-blur-md">
+        <div>
+            <div class="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">SCORE</div>
+            <div id="scoreText" class="text-xl font-black text-white glow-text">0</div>
+        </div>
+        <div>
+            <div class="text-[10px] text-rose-400 font-bold uppercase tracking-wider">LIVES</div>
+            <div id="livesText" class="text-xl font-black text-rose-400 flex gap-1">❤️❤️❤️</div>
+        </div>
+        <div>
+            <div class="text-[10px] text-yellow-400 font-bold uppercase tracking-wider">STAGE</div>
+            <div id="stageText" class="text-xl font-black text-yellow-300">1</div>
+        </div>
+    </div>
+
+    <!-- Main Game Canvas Container -->
+    <div class="relative w-full h-full flex items-center justify-center">
+        <canvas id="gameCanvas" class="bg-black shadow-2xl rounded-lg border border-slate-800/80"></canvas>
+    </div>
+
+    <!-- Right-Top Compact HUD & Camera Monitor (Dynamic Positioning) -->
+    <div id="camContainer" class="absolute z-20 transition-all duration-500 ease-in-out flex flex-col items-center">
+        <!-- Inside start modal initially, moved by JS -->
+    </div>
+
+    <!-- Start / Setup Screen Overlay Modal -->
+    <div id="overlayModal" class="absolute inset-0 bg-slate-950/90 backdrop-blur-md z-30 flex flex-col items-center justify-center p-6 text-center">
+        <div class="max-w-2xl w-full bg-slate-900/90 border border-slate-700/80 p-6 md:p-8 rounded-3xl shadow-2xl flex flex-col items-center gap-6">
+            <div>
+                <h1 class="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-500 mb-2 tracking-wider">
+                    FACE & POSE GALAGA
+                </h1>
+                <p class="text-slate-400 text-xs md:text-sm">얼굴 표정과 몸짓으로 조작하는 웹캠 아케이드 슈팅 게임</p>
+            </div>
+
+            <!-- Pre-game Camera Preview Box & Control Guide Container -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full items-center">
+                
+                <!-- WebCam Target Container (Initial Position) -->
+                <div id="webcamHome" class="flex flex-col items-center justify-center">
+                    <div id="camBox" class="relative w-60 aspect-video bg-black rounded-xl overflow-hidden border-2 border-cyan-500/50 shadow-lg group">
+                        <video id="webcam" class="w-full h-full object-cover -scale-x-100" playsinline></video>
+                        <canvas id="webcamOverlay" class="absolute top-0 left-0 w-full h-full pointer-events-none -scale-x-100"></canvas>
+                        <div id="camStatus" class="absolute bottom-1 left-2 text-[10px] bg-black/70 px-2 py-0.5 rounded text-cyan-300">
+                            카메라 대기 중
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Guide Manual -->
+                <div class="text-left text-xs space-y-2.5 bg-slate-950/70 p-4 rounded-xl border border-slate-800">
+                    <div class="font-bold text-cyan-300 text-sm border-b border-slate-800 pb-1.5 flex justify-between items-center">
+                        🎮 조작 안내
+                        <span id="aiActiveBadge" class="text-[10px] px-1.5 py-0.5 bg-rose-500/20 text-rose-300 rounded border border-rose-500/30 font-normal">대기 중</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-base">↔️</span>
+                        <div><b>몸 기울이기:</b> 좌/우 이동</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-base">😮</span>
+                        <div><b>입 크게 벌리기:</b> 2줄 연사 총알</div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-base">🙌</span>
+                        <div><b>양손 높이 들기:</b> 쌍둥이 기체 합체</div>
+                    </div>
+                    <div class="text-[11px] text-slate-500 pt-1 border-t border-slate-800/60">
+                        ⚡ 기본 총알은 자동 연사됩니다.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Start Game Button -->
+            <button id="startBtn" class="w-full max-w-sm py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-base md:text-lg rounded-full shadow-lg hover:shadow-cyan-500/40 transition-all duration-300 transform hover:-translate-y-0.5">
+                게임 시작 (웹캠 권한 허용)
+            </button>
+        </div>
+    </div>
+
+    <!-- Mini Cam Widget (Floats top right when playing) -->
+    <div id="miniCamHud" class="hidden absolute top-3 right-3 z-20 flex flex-col gap-2 w-48 bg-slate-900/85 p-2 rounded-xl border border-slate-700/80 shadow-2xl backdrop-blur-md transition-all">
+        <div class="flex items-center justify-between text-[11px] text-slate-300 border-b border-slate-800 pb-1">
+            <span class="font-bold text-cyan-400">웹캠 모니터</span>
+            <button id="toggleCamBtn" class="text-[10px] text-slate-400 hover:text-white px-1">접기 🔼</button>
+        </div>
+        
+        <div id="camBoxSlot" class="w-full">
+            <!-- Camera box moves here dynamically during gameplay -->
+        </div>
+
+        <div id="miniStatusBox" class="text-[10px] space-y-1 bg-slate-950/60 p-2 rounded border border-slate-800">
+            <div class="flex justify-between">
+                <span class="text-slate-400">이동:</span>
+                <span id="statusTilt" class="font-semibold text-cyan-300">중앙</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-slate-400">입 (2줄):</span>
+                <span id="statusMouth" class="font-semibold text-slate-500">닫힘</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-slate-400">기체 (양손):</span>
+                <span id="statusHands" class="font-semibold text-slate-500">1대</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. GAME CONSTANTS & STATE ---
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        function resizeCanvas() {
+            canvas.width = Math.min(window.innerWidth - 30, 1000);
+            canvas.height = window.innerHeight - 30;
+        }
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+
+        let gameState = 'START';
+        let score = 0;
+        let lives = 3;
+        let stage = 1;
+
+        let visionControl = {
+            tilt: 0,
+            mouthOpen: false,
+            bothHandsUp: false
+        };
+
+        // --- 2. GAME ENTITIES ---
+        class Player {
+            constructor() {
+                this.x = canvas.width / 2;
+                this.y = canvas.height - 70;
+                this.speed = 8;
+                this.autoFireTimer = 0;
+            }
+
+            update() {
+                this.x += visionControl.tilt * this.speed;
+
+                const margin = visionControl.bothHandsUp ? 45 : 25;
+                if (this.x < margin) this.x = margin;
+                if (this.x > canvas.width - margin) this.x = canvas.width - margin;
+
+                this.autoFireTimer++;
+                const fireInterval = visionControl.mouthOpen ? 7 : 11;
+                if (this.autoFireTimer >= fireInterval) {
+                    this.autoFireTimer = 0;
+                    this.shoot();
+                }
+            }
+
+            shoot() {
+                if (visionControl.mouthOpen) {
+                    if (visionControl.bothHandsUp) {
+                        bullets.push(new Bullet(this.x - 28, this.y, -3, true));
+                        bullets.push(new Bullet(this.x - 16, this.y, -1, true));
+                        bullets.push(new Bullet(this.x + 16, this.y, 1, true));
+                        bullets.push(new Bullet(this.x + 28, this.y, 3, true));
+                    } else {
+                        bullets.push(new Bullet(this.x - 12, this.y, 0, true));
+                        bullets.push(new Bullet(this.x + 12, this.y, 0, true));
+                    }
+                } else {
+                    if (visionControl.bothHandsUp) {
+                        bullets.push(new Bullet(this.x - 22, this.y, 0, false));
+                        bullets.push(new Bullet(this.x + 22, this.y, 0, false));
+                    } else {
+                        bullets.push(new Bullet(this.x, this.y, 0, false));
+                    }
+                }
+            }
+
+            draw() {
+                if (visionControl.bothHandsUp) {
+                    this.drawShipShape(this.x - 22, this.y);
+                    this.drawShipShape(this.x + 22, this.y);
+                } else {
+                    this.drawShipShape(this.x, this.y);
+                }
+            }
+
+            drawShipShape(x, y) {
+                ctx.save();
+                ctx.translate(x, y);
+
+                ctx.fillStyle = '#00f0ff';
+                ctx.beginPath();
+                ctx.moveTo(0, -20);
+                ctx.lineTo(15, 15);
+                ctx.lineTo(5, 10);
+                ctx.lineTo(0, 15);
+                ctx.lineTo(-5, 10);
+                ctx.lineTo(-15, 15);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.fillStyle = '#ff2a6d';
+                ctx.fillRect(-14, 5, 4, 8);
+                ctx.fillRect(10, 5, 4, 8);
+
+                ctx.fillStyle = '#fff';
+                ctx.beginPath();
+                ctx.arc(0, -2, 4, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = Math.random() > 0.5 ? '#ff9e00' : '#ff0055';
+                ctx.beginPath();
+                ctx.moveTo(-4, 15);
+                ctx.lineTo(0, 23 + Math.random() * 5);
+                ctx.lineTo(4, 15);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        class Bullet {
+            constructor(x, y, vx = 0, isPowered = false) {
+                this.x = x;
+                this.y = y;
+                this.vx = vx;
+                this.vy = -13;
+                this.radius = isPowered ? 4 : 3;
+                this.isPowered = isPowered;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.fillStyle = this.isPowered ? '#ffe600' : '#00ffff';
+                ctx.shadowColor = this.isPowered ? '#ffe600' : '#00ffff';
+                ctx.shadowBlur = this.isPowered ? 8 : 4;
+
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        class Enemy {
+            constructor(x, y, row) {
+                this.startX = x;
+                this.startY = y;
+                this.x = x;
+                this.y = y;
+                this.row = row;
+                this.width = 30;
+                this.height = 30;
+                this.angle = 0;
+                this.isDiving = false;
+                this.diveSpeedX = 0;
+                this.diveSpeedY = 0;
+            }
+
+            update() {
+                if (!this.isDiving) {
+                    this.angle += 0.03;
+                    this.x = this.startX + Math.sin(this.angle + this.row) * 45;
+                    this.y = this.startY + Math.cos(this.angle) * 12;
+
+                    if (Math.random() < 0.0009 * stage) {
+                        this.isDiving = true;
+                        this.diveSpeedX = (player.x - this.x) / 55;
+                        this.diveSpeedY = 3.5 + stage * 0.4;
+                    }
+                } else {
+                    this.x += this.diveSpeedX;
+                    this.y += this.diveSpeedY;
+
+                    if (this.y > canvas.height + 50) {
+                        this.y = -30;
+                        this.isDiving = false;
+                    }
+                }
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+
+                if (this.row === 0) {
+                    ctx.fillStyle = '#ff0055';
+                    ctx.fillRect(-12, -10, 24, 20);
+                    ctx.fillStyle = '#ffcc00';
+                    ctx.fillRect(-8, -12, 16, 4);
+                } else if (this.row === 1) {
+                    ctx.fillStyle = '#ff3300';
+                    ctx.beginPath();
+                    ctx.arc(0, 0, 10, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(-14, -4, 28, 8);
+                } else {
+                    ctx.fillStyle = '#00aaff';
+                    ctx.beginPath();
+                    ctx.moveTo(0, 12);
+                    ctx.lineTo(-12, -10);
+                    ctx.lineTo(12, -10);
+                    ctx.closePath();
+                    ctx.fill();
+                }
+
+                ctx.restore();
+            }
+        }
+
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.color = color;
+                this.vx = (Math.random() - 0.5) * 6;
+                this.vy = (Math.random() - 0.5) * 6;
+                this.life = 1.0;
+                this.decay = Math.random() * 0.03 + 0.02;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = Math.max(0, this.life);
+                ctx.fillStyle = this.color;
+                ctx.fillRect(this.x, this.y, 3, 3);
+                ctx.restore();
+            }
+        }
+
+        // --- 3. GAME INSTANTIATION & LOOPS ---
+        let player = new Player();
+        let bullets = [];
+        let enemies = [];
+        let particles = [];
+        let stars = [];
+
+        for (let i = 0; i < 100; i++) {
+            stars.push({
+                x: Math.random() * canvas.width,
+                y: Math.random() * canvas.height,
+                size: Math.random() * 2,
+                speed: Math.random() * 1.5 + 0.5
+            });
+        }
+
+        function initEnemies() {
+            enemies = [];
+            const cols = 8;
+            const rows = 4;
+            const spacingX = 55;
+            const spacingY = 40;
+            const startX = (canvas.width - (cols - 1) * spacingX) / 2;
+
+            for (let r = 0; r < rows; r++) {
+                for (let c = 0; c < cols; c++) {
+                    enemies.push(new Enemy(startX + c * spacingX, 70 + r * spacingY, r));
+                }
+            }
+        }
+
+        function createExplosion(x, y, color = '#ff5500') {
+            for (let i = 0; i < 20; i++) {
+                particles.push(new Particle(x, y, color));
+            }
+        }
+
+        function updateGame() {
+            if (gameState !== 'PLAYING') return;
+
+            player.update();
+
+            bullets.forEach((b, index) => {
+                b.update();
+                if (b.y < -10 || b.x < 0 || b.x > canvas.width) {
+                    bullets.splice(index, 1);
+                }
+            });
+
+            enemies.forEach((enemy, eIndex) => {
+                enemy.update();
+
+                bullets.forEach((b, bIndex) => {
+                    const dist = Math.hypot(b.x - enemy.x, b.y - enemy.y);
+                    if (dist < enemy.width / 2 + b.radius) {
+                        createExplosion(enemy.x, enemy.y, '#ffea00');
+                        enemies.splice(eIndex, 1);
+                        bullets.splice(bIndex, 1);
+                        score += 100;
+                        document.getElementById('scoreText').innerText = score;
+                    }
+                });
+
+                const playerHitRadius = visionControl.bothHandsUp ? 40 : 20;
+                const playerDist = Math.hypot(player.x - enemy.x, player.y - enemy.y);
+                if (playerDist < playerHitRadius) {
+                    createExplosion(player.x, player.y, '#ff0000');
+                    createExplosion(enemy.x, enemy.y, '#ffaa00');
+                    enemies.splice(eIndex, 1);
+                    handlePlayerHit();
+                }
+            });
+
+            if (enemies.length === 0) {
+                stage++;
+                document.getElementById('stageText').innerText = stage;
+                initEnemies();
+            }
+
+            particles.forEach((p, index) => {
+                p.update();
+                if (p.life <= 0) particles.splice(index, 1);
+            });
+
+            stars.forEach(star => {
+                star.y += star.speed;
+                if (star.y > canvas.height) {
+                    star.y = 0;
+                    star.x = Math.random() * canvas.width;
+                }
+            });
+        }
+
+        function handlePlayerHit() {
+            lives--;
+            updateLivesUI();
+            if (lives <= 0) {
+                gameState = 'GAMEOVER';
+                showGameOverScreen();
+            }
+        }
+
+        function updateLivesUI() {
+            let hearts = '';
+            for (let i = 0; i < lives; i++) hearts += '❤️';
+            document.getElementById('livesText').innerText = hearts || '💀';
+        }
+
+        function drawGame() {
+            ctx.fillStyle = '#050510';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#ffffff';
+            stars.forEach(s => {
+                ctx.fillRect(s.x, s.y, s.size, s.size);
+            });
+
+            if (gameState === 'PLAYING') {
+                player.draw();
+                bullets.forEach(b => b.draw());
+                enemies.forEach(e => e.draw());
+                particles.forEach(p => p.draw());
+            }
+        }
+
+        function gameLoop() {
+            updateGame();
+            drawGame();
+            requestAnimationFrame(gameLoop);
+        }
+
+        function showGameOverScreen() {
+            // Move cam back to home
+            document.getElementById('webcamHome').appendChild(document.getElementById('camBox'));
+            document.getElementById('miniCamHud').classList.add('hidden');
+            document.getElementById('gameHeader').classList.add('hidden');
+
+            const modal = document.getElementById('overlayModal');
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+            modal.innerHTML = `
+                <div class="max-w-md w-full bg-slate-900/90 border border-slate-700/80 p-8 rounded-3xl shadow-2xl flex flex-col items-center gap-4">
+                    <h1 class="text-4xl font-black text-rose-500 glow-text">GAME OVER</h1>
+                    <p class="text-lg text-slate-200">최종 점수: <span class="text-cyan-400 font-bold">${score}</span></p>
+                    <p class="text-xs text-slate-400">도달 스테이지: ${stage}</p>
+                    <button id="restartBtn" class="w-full mt-4 py-3.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-lg rounded-full shadow-lg hover:shadow-cyan-500/40 transition-all">
+                        다시 도전하기
+                    </button>
+                </div>
+            `;
+            document.getElementById('restartBtn').addEventListener('click', () => {
+                location.reload();
+            });
+        }
+
+        function startGame() {
+            score = 0;
+            lives = 3;
+            stage = 1;
+            document.getElementById('scoreText').innerText = '0';
+            document.getElementById('stageText').innerText = '1';
+            updateLivesUI();
+
+            player = new Player();
+            initEnemies();
+
+            // Move Cam Box into Mini HUD on Top Right
+            document.getElementById('camBoxSlot').appendChild(document.getElementById('camBox'));
+            document.getElementById('miniCamHud').classList.remove('hidden');
+            document.getElementById('gameHeader').classList.remove('hidden');
+
+            document.getElementById('overlayModal').style.display = 'none';
+            gameState = 'PLAYING';
+        }
+
+        // --- 4. MEDIAPIPE VISION AI CONTROLLER ---
+        const videoElement = document.getElementById('webcam');
+        const overlayCanvas = document.getElementById('webcamOverlay');
+        const overlayCtx = overlayCanvas.getContext('2d');
+
+        async function initVisionAI() {
+            const statusBadge = document.getElementById('aiActiveBadge');
+            const camStatus = document.getElementById('camStatus');
+
+            const faceMesh = new FaceMesh({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+            });
+            faceMesh.setOptions({
+                maxNumFaces: 1,
+                refineLandmarks: true,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+            faceMesh.onResults(onFaceResults);
+
+            const pose = new Pose({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/pose/${file}`
+            });
+            pose.setOptions({
+                modelComplexity: 0,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+            pose.onResults(onPoseResults);
+
+            const camera = new Camera(videoElement, {
+                onFrame: async () => {
+                    await faceMesh.send({ image: videoElement });
+                    await pose.send({ image: videoElement });
+                },
+                width: 320,
+                height: 240
+            });
+
+            try {
+                await camera.start();
+                camStatus.innerText = "웹캠 정상 작동 중";
+                statusBadge.innerText = "비전 AI 가동";
+                statusBadge.className = "text-[10px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 rounded border border-emerald-500/30 font-normal";
+            } catch (err) {
+                camStatus.innerText = "카메라 연결 실패";
+                console.error("Camera access error:", err);
+            }
+        }
+
+        function onFaceResults(results) {
+            overlayCanvas.width = videoElement.videoWidth || 320;
+            overlayCanvas.height = videoElement.videoHeight || 240;
+            overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+            if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
+                const landmarks = results.multiFaceLandmarks[0];
+
+                const leftEye = landmarks[33];
+                const rightEye = landmarks[263];
+                const eyeDx = rightEye.x - leftEye.x;
+                const eyeDy = rightEye.y - leftEye.y;
+                const angle = Math.atan2(eyeDy, eyeDx) * (180 / Math.PI);
+
+                const tiltUI = document.getElementById('statusTilt');
+                if (angle > 7) {
+                    visionControl.tilt = -1;
+                    tiltUI.innerText = "⬅️ 왼쪽";
+                    tiltUI.className = "font-semibold text-cyan-400";
+                } else if (angle < -7) {
+                    visionControl.tilt = 1;
+                    tiltUI.innerText = "오른쪽 ➡️";
+                    tiltUI.className = "font-semibold text-cyan-400";
+                } else {
+                    visionControl.tilt = 0;
+                    tiltUI.innerText = "중앙";
+                    tiltUI.className = "font-semibold text-slate-300";
+                }
+
+                const topLip = landmarks[13];
+                const bottomLip = landmarks[14];
+                const mouthDist = Math.hypot(topLip.x - bottomLip.x, topLip.y - bottomLip.y);
+
+                const mouthUI = document.getElementById('statusMouth');
+                if (mouthDist > 0.045) {
+                    visionControl.mouthOpen = true;
+                    mouthUI.innerText = "😮 2줄 연사";
+                    mouthUI.className = "font-semibold text-yellow-300 animate-pulse";
+                } else {
+                    visionControl.mouthOpen = false;
+                    mouthUI.innerText = "닫힘";
+                    mouthUI.className = "font-semibold text-slate-400";
+                }
+
+                overlayCtx.fillStyle = visionControl.mouthOpen ? '#ffe600' : '#00ffff';
+                overlayCtx.beginPath();
+                overlayCtx.arc(landmarks[1].x * overlayCanvas.width, landmarks[1].y * overlayCanvas.height, 4, 0, Math.PI * 2);
+                overlayCtx.fill();
+            }
+        }
+
+        function onPoseResults(results) {
+            if (results.poseLandmarks) {
+                const landmarks = results.poseLandmarks;
+                const leftWrist = landmarks[15];
+                const rightWrist = landmarks[16];
+                const leftShoulder = landmarks[11];
+                const rightShoulder = landmarks[12];
+
+                const handsUI = document.getElementById('statusHands');
+
+                if (leftWrist && rightWrist && leftShoulder && rightShoulder) {
+                    const isLeftUp = leftWrist.y < leftShoulder.y;
+                    const isRightUp = rightWrist.y < rightShoulder.y;
+
+                    if (isLeftUp && isRightUp) {
+                        visionControl.bothHandsUp = true;
+                        handsUI.innerText = "🙌 2대 (합체)";
+                        handsUI.className = "font-semibold text-emerald-400 animate-bounce";
+                    } else {
+                        visionControl.bothHandsUp = false;
+                        handsUI.innerText = "1대";
+                        handsUI.className = "font-semibold text-slate-400";
+                    }
+                }
+            }
+        }
+
+        // Cam HUD Fold Toggle Action
+        let camFolded = false;
+        document.getElementById('toggleCamBtn').addEventListener('click', () => {
+            camFolded = !camFolded;
+            const camSlot = document.getElementById('camBoxSlot');
+            const toggleBtn = document.getElementById('toggleCamBtn');
+            if (camFolded) {
+                camSlot.classList.add('hidden');
+                toggleBtn.innerText = "펴기 🔽";
+            } else {
+                camSlot.classList.remove('hidden');
+                toggleBtn.innerText = "접기 🔼";
+            }
+        });
+
+        // Initialize Application Events
+        document.getElementById('startBtn').addEventListener('click', async () => {
+            await initVisionAI();
+            startGame();
+        });
+
+        gameLoop();
+    </script>
+</body>
+</html>
