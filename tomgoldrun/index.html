@@ -1,1 +1,1824 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>톰골드런 3D - Talking Tom Gold Run</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * {
+            font-family: 'Jua', 'Nunito', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #1a102f;
+        }
+        #canvas-container {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+        }
+        .btn-gold {
+            background: linear-gradient(180deg, #ffd700 0%, #ff8c00 100%);
+            box-shadow: 0 6px 0 #b35900, 0 10px 15px rgba(0,0,0,0.4);
+            transition: all 0.1s ease;
+        }
+        .btn-gold:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #b35900, 0 5px 10px rgba(0,0,0,0.4);
+        }
+        .btn-blue {
+            background: linear-gradient(180deg, #38ef7d 0%, #11998e 100%);
+            box-shadow: 0 6px 0 #0a5c55, 0 10px 15px rgba(0,0,0,0.4);
+            transition: all 0.1s ease;
+        }
+        .btn-blue:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #0a5c55, 0 5px 10px rgba(0,0,0,0.4);
+        }
+        .glass-panel {
+            background: rgba(20, 15, 38, 0.85);
+            backdrop-filter: blur(12px);
+            border: 3px solid rgba(255, 215, 0, 0.3);
+            border-radius: 2rem;
+        }
+        .text-stroke {
+            -webkit-text-stroke: 1.5px #000;
+        }
+        /* Custom Keyframe animations */
+        @keyframes floatAnim {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        .floating {
+            animation: floatAnim 2.5s ease-in-out infinite;
+        }
+        @keyframes pulseGlow {
+            0%, 100% { filter: drop-shadow(0 0 15px rgba(255, 215, 0, 0.8)); }
+            50% { filter: drop-shadow(0 0 30px rgba(255, 215, 0, 1)); }
+        }
+        .glow-gold {
+            animation: pulseGlow 1.8s infinite;
+        }
+        /* Custom visual flair for HUD elements */
+        .glass-panel {
+            background: rgba(18, 22, 42, 0.85);
+            backdrop-filter: blur(14px);
+            border: 2.5px solid rgba(255, 215, 0, 0.4);
+            border-radius: 2rem;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-white overflow-hidden">
 
+    <div id="canvas-container"></div>
+
+    <!-- UI LAYER (Z-INDEX 10) -->
+    <div id="ui-layer" class="relative z-10 w-full h-full pointer-events-none flex flex-col justify-between p-4">
+
+        <!-- TOP HUD -->
+        <div id="hud-screen" class="hidden pointer-events-none w-full max-w-4xl mx-auto flex justify-between items-start pt-2 px-2">
+            <!-- Score & Distance -->
+            <div class="glass-panel px-5 py-2 flex items-center space-x-3 shadow-2xl pointer-events-auto">
+                <i class="fa-solid fa-person-running text-2xl text-amber-400"></i>
+                <div>
+                    <div class="text-xs text-amber-300 font-bold uppercase tracking-wider">거리</div>
+                    <div id="hud-score" class="text-2xl md:text-3xl font-black text-white text-stroke">0 m</div>
+                </div>
+            </div>
+
+            <!-- Active Power-ups Bar -->
+            <div id="powerup-bar" class="flex space-x-2 pointer-events-auto"></div>
+
+            <!-- Gold Counter & Pause -->
+            <div class="flex items-center space-x-3">
+                <div class="glass-panel px-5 py-2 flex items-center space-x-3 shadow-2xl pointer-events-auto">
+                    <i class="fa-solid fa-coins text-2xl text-yellow-400 glow-gold"></i>
+                    <div>
+                        <div class="text-xs text-yellow-300 font-bold uppercase tracking-wider">획득 금괴</div>
+                        <div id="hud-gold" class="text-2xl md:text-3xl font-black text-yellow-400 text-stroke">0</div>
+                    </div>
+                </div>
+                <button id="btn-pause" class="glass-panel w-12 h-12 flex items-center justify-center text-xl text-white hover:text-amber-400 pointer-events-auto transition">
+                    <i class="fa-solid fa-pause"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- MOBILE TOUCH CONTROLS OVERLAY -->
+        <div id="touch-controls" class="hidden pointer-events-auto w-full max-w-lg mx-auto pb-4 grid grid-cols-3 gap-3 md:hidden opacity-80">
+            <div></div>
+            <button id="btn-touch-up" class="glass-panel py-4 text-3xl text-amber-300 active:bg-amber-500/30">
+                <i class="fa-solid fa-arrow-up"></i>
+            </button>
+            <div></div>
+            <button id="btn-touch-left" class="glass-panel py-4 text-3xl text-amber-300 active:bg-amber-500/30">
+                <i class="fa-solid fa-arrow-left"></i>
+            </button>
+            <button id="btn-touch-down" class="glass-panel py-4 text-3xl text-amber-300 active:bg-amber-500/30">
+                <i class="fa-solid fa-arrow-down"></i>
+            </button>
+            <button id="btn-touch-right" class="glass-panel py-4 text-3xl text-amber-300 active:bg-amber-500/30">
+                <i class="fa-solid fa-arrow-right"></i>
+            </button>
+        </div>
+
+        <!-- MAIN MENU SCREEN -->
+        <div id="main-menu" class="pointer-events-auto my-auto w-full max-w-md mx-auto glass-panel p-8 text-center flex flex-col items-center shadow-2xl border-4 border-amber-400/40">
+            <div class="relative mb-2">
+                <h1 class="text-5xl md:text-6xl font-black tracking-wider text-transparent bg-clip-text bg-gradient-to-b from-yellow-300 via-amber-400 to-orange-500 text-stroke floating drop-shadow-lg">
+                    톰골드런 3D
+                </h1>
+                <span class="text-xs bg-amber-500 text-slate-900 font-extrabold px-3 py-1 rounded-full uppercase tracking-widest absolute -top-3 -right-2 transform rotate-12 shadow">GOLD RUN</span>
+            </div>
+            <p class="text-amber-200 text-sm mb-6">도둑 락쿤을 쫓고 빼앗긴 금괴를 되찾으세요!</p>
+
+            <!-- Character Preview Card -->
+            <div class="bg-slate-800/80 rounded-2xl p-4 w-full mb-6 border border-amber-500/30 flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <div id="menu-char-avatar" class="w-14 h-14 rounded-xl bg-gradient-to-tr from-indigo-600 to-sky-400 flex items-center justify-center text-3xl text-white shadow">
+                        🐱
+                    </div>
+                    <div class="text-left">
+                        <div id="menu-char-name" class="font-bold text-lg text-white">톰 (Tom)</div>
+                        <div id="menu-char-skill" class="text-xs text-amber-300">스피드 가속 +10%</div>
+                    </div>
+                </div>
+                <button id="btn-open-shop" class="bg-amber-500/20 border border-amber-400 text-amber-300 px-3 py-1.5 rounded-xl text-xs font-bold hover:bg-amber-500 hover:text-slate-900 transition">
+                    선택 / 상점
+                </button>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="grid grid-cols-2 gap-3 w-full mb-6 text-center">
+                <div class="bg-slate-900/60 rounded-xl p-3 border border-slate-700">
+                    <div class="text-xs text-slate-400">최고 기록</div>
+                    <div id="menu-highscore" class="text-xl font-black text-amber-400">0 m</div>
+                </div>
+                <div class="bg-slate-900/60 rounded-xl p-3 border border-slate-700">
+                    <div class="text-xs text-slate-400">보유 금괴</div>
+                    <div id="menu-total-gold" class="text-xl font-black text-yellow-400">0 🪙</div>
+                </div>
+            </div>
+
+            <!-- Main Menu Game Speed Selection -->
+            <div class="bg-slate-900/80 rounded-2xl p-3.5 mb-5 border border-amber-500/30 text-left w-full shadow-inner">
+                <div class="flex justify-between items-center mb-2">
+                    <span class="text-xs text-amber-300 font-extrabold uppercase tracking-wider flex items-center gap-1">
+                        <i class="fa-solid fa-gauge-high text-amber-400"></i> 시작 달리기 속도
+                    </span>
+                    <span id="menu-speed-label" class="text-xs font-black text-amber-200 bg-amber-500/20 px-2.5 py-0.5 rounded-md border border-amber-400/30">보통 (1.0x)</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <button id="menu-btn-speed-slow" onclick="setGameSpeedMultiplier(0.75)" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 py-2 rounded-xl text-xs font-bold transition active:scale-95">느림 (0.75x)</button>
+                    <button id="menu-btn-speed-normal" onclick="setGameSpeedMultiplier(1.0)" class="bg-amber-500 text-slate-950 py-2 rounded-xl text-xs font-black shadow transition active:scale-95">보통 (1.0x)</button>
+                    <button id="menu-btn-speed-fast" onclick="setGameSpeedMultiplier(1.35)" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 py-2 rounded-xl text-xs font-bold transition active:scale-95">빠름 (1.35x)</button>
+                </div>
+            </div>
+
+            <!-- Start Button -->
+            <button id="btn-start-game" class="btn-gold w-full py-4 rounded-2xl text-2xl font-black text-slate-900 tracking-wider mb-4 hover:brightness-110 flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-play"></i>
+                <span>달리기 시작!</span>
+            </button>
+
+            <!-- Audio Toggle & Guide -->
+            <div class="flex items-center justify-between w-full text-xs text-slate-400 px-2">
+                <button id="btn-toggle-sound" class="hover:text-amber-300 transition flex items-center space-x-1">
+                    <i id="sound-icon" class="fa-solid fa-volume-high text-amber-400"></i>
+                    <span id="sound-text">사운드 ON</span>
+                </button>
+                <span>조작: 방향키 / WASD / 스와이프</span>
+            </div>
+        </div>
+
+        <!-- SHOP MODAL -->
+        <div id="shop-modal" class="hidden pointer-events-auto fixed inset-0 bg-slate-950/80 backdrop-blur-md z-30 flex items-center justify-center p-4">
+            <div class="glass-panel w-full max-w-xl p-6 border-2 border-amber-400/50 flex flex-col max-h-[90vh]">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-2xl font-black text-amber-400 flex items-center space-x-2">
+                        <i class="fa-solid fa-store"></i>
+                        <span>캐릭터 & 아이템 상점</span>
+                    </h2>
+                    <div class="flex items-center space-x-2 bg-slate-900 px-3 py-1.5 rounded-full border border-yellow-500/40">
+                        <i class="fa-solid fa-coins text-yellow-400"></i>
+                        <span id="shop-total-gold" class="font-extrabold text-yellow-400">0</span>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="flex border-b border-slate-700 mb-4 space-x-4">
+                    <button id="tab-chars" class="py-2 px-4 border-b-2 border-amber-400 text-amber-300 font-bold">캐릭터</button>
+                    <button id="tab-upgrades" class="py-2 px-4 border-b-2 border-transparent text-slate-400 font-bold hover:text-white">아이템 강화</button>
+                </div>
+
+                <div id="shop-content-chars" class="overflow-y-auto space-y-3 pr-1 flex-1">
+                    <!-- Tom Card -->
+                    <div class="bg-slate-800/90 rounded-2xl p-4 border-2 border-amber-400 flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-16 h-16 rounded-2xl bg-indigo-600 flex items-center justify-center text-3xl shadow">🐱</div>
+                            <div>
+                                <h3 class="font-black text-lg text-white">톰 (Tom)</h3>
+                                <p class="text-xs text-amber-300">기본 캐릭터 • 스피드 가속</p>
+                            </div>
+                        </div>
+                        <button id="select-char-tom" class="bg-amber-400 text-slate-900 font-extrabold px-4 py-2 rounded-xl text-sm shadow">선택됨</button>
+                    </div>
+                    <!-- Angela Card -->
+                    <div class="bg-slate-800/90 rounded-2xl p-4 border border-slate-700 flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-16 h-16 rounded-2xl bg-pink-500 flex items-center justify-center text-3xl shadow">😽</div>
+                            <div>
+                                <h3 class="font-black text-lg text-white">앙젤라 (Angela)</h3>
+                                <p class="text-xs text-pink-300">금괴 획득 시 추가 점수 20%</p>
+                            </div>
+                        </div>
+                        <button id="select-char-angela" class="btn-gold text-slate-900 font-extrabold px-4 py-2 rounded-xl text-sm shadow">
+                            500 🪙 잠금해제
+                        </button>
+                    </div>
+                    <!-- Hank Card -->
+                    <div class="bg-slate-800/90 rounded-2xl p-4 border border-slate-700 flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-16 h-16 rounded-2xl bg-sky-500 flex items-center justify-center text-3xl shadow">🐶</div>
+                            <div>
+                                <h3 class="font-black text-lg text-white">행크 (Hank)</h3>
+                                <p class="text-xs text-sky-300">자석 & 보호막 지속시간 +3초</p>
+                            </div>
+                        </div>
+                        <button id="select-char-hank" class="btn-gold text-slate-900 font-extrabold px-4 py-2 rounded-xl text-sm shadow">
+                            1000 🪙 잠금해제
+                        </button>
+                    </div>
+                </div>
+
+                <div id="shop-content-upgrades" class="hidden overflow-y-auto space-y-3 pr-1 flex-1">
+                    <!-- Magnet Upgrade -->
+                    <div class="bg-slate-800/90 rounded-2xl p-4 border border-slate-700 flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 rounded-xl bg-red-600 flex items-center justify-center text-xl text-white">🧲</div>
+                            <div>
+                                <h3 class="font-black text-white">금괴 자석</h3>
+                                <p id="upg-magnet-desc" class="text-xs text-slate-400">지속시간: 8초</p>
+                            </div>
+                        </div>
+                        <button id="btn-upg-magnet" class="btn-blue text-white font-extrabold px-4 py-2 rounded-xl text-sm">
+                            200 🪙 강화
+                        </button>
+                    </div>
+                    <!-- Shield Upgrade -->
+                    <div class="bg-slate-800/90 rounded-2xl p-4 border border-slate-700 flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-xl text-white">🛡️</div>
+                            <div>
+                                <h3 class="font-black text-white">안전 보호막</h3>
+                                <p id="upg-shield-desc" class="text-xs text-slate-400">지속시간: 1회 충돌 방어</p>
+                            </div>
+                        </div>
+                        <button id="btn-upg-shield" class="btn-blue text-white font-extrabold px-4 py-2 rounded-xl text-sm">
+                            250 🪙 강화
+                        </button>
+                    </div>
+                    <!-- Jetpack Upgrade -->
+                    <div class="bg-slate-800/90 rounded-2xl p-4 border border-slate-700 flex items-center justify-between">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 rounded-xl bg-purple-600 flex items-center justify-center text-xl text-white">🚀</div>
+                            <div>
+                                <h3 class="font-black text-white">하늘 제트팩</h3>
+                                <p id="upg-jetpack-desc" class="text-xs text-slate-400">공중 날기 지속시간: 6초</p>
+                            </div>
+                        </div>
+                        <button id="btn-upg-jetpack" class="btn-blue text-white font-extrabold px-4 py-2 rounded-xl text-sm">
+                            300 🪙 강화
+                        </button>
+                    </div>
+                </div>
+
+                <button id="btn-close-shop" class="mt-4 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 rounded-xl w-full">
+                    닫기
+                </button>
+            </div>
+        </div>
+
+        <!-- GAME OVER MODAL -->
+        <div id="gameover-modal" class="hidden pointer-events-auto fixed inset-0 bg-slate-950/85 backdrop-blur-md z-40 flex items-center justify-center p-4">
+            <div class="glass-panel w-full max-w-md p-8 text-center border-4 border-red-500/50 shadow-2xl flex flex-col items-center">
+                <div class="text-6xl mb-2">💥</div>
+                <h2 class="text-4xl font-black text-red-500 text-stroke tracking-wider mb-1">충돌 발생!</h2>
+                <p class="text-slate-300 text-sm mb-6">달리기가 종료되었습니다!</p>
+
+                <!-- Highscore alert badge -->
+                <div id="new-record-badge" class="hidden bg-gradient-to-r from-amber-400 to-yellow-300 text-slate-950 font-black px-4 py-1.5 rounded-full text-xs uppercase mb-4 tracking-widest shadow-lg glow-gold">
+                    🎉 최고 기록 경신! 🎉
+                </div>
+
+                <!-- Result Cards -->
+                <div class="bg-slate-900/80 rounded-2xl p-4 w-full space-y-3 mb-6 border border-slate-800">
+                    <div class="flex justify-between items-center border-b border-slate-800 pb-2">
+                        <span class="text-slate-400 font-bold">최종 달려간 거리</span>
+                        <span id="go-score" class="text-2xl font-black text-amber-400">0 m</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-400 font-bold">획득한 금괴</span>
+                        <span id="go-gold" class="text-2xl font-black text-yellow-400">0 🪙</span>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-3 w-full">
+                    <button id="btn-restart" class="btn-gold py-4 rounded-2xl text-slate-900 font-black text-xl flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-rotate-right"></i>
+                        <span>다시 하기</span>
+                    </button>
+                    <button id="btn-go-menu" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-white font-black py-4 rounded-2xl text-xl">
+                        메뉴로
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- PAUSE MODAL -->
+        <div id="pause-modal" class="hidden pointer-events-auto fixed inset-0 bg-slate-950/80 backdrop-blur-md z-30 flex items-center justify-center p-4">
+            <div class="glass-panel w-full max-w-sm p-6 text-center border-2 border-amber-400/40">
+                <h2 class="text-3xl font-black text-amber-400 mb-4">일시 정지</h2>
+                
+                <!-- Speed Modifier Control -->
+                <div class="bg-slate-900/80 rounded-2xl p-4 mb-5 border border-slate-700 text-left">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-xs text-amber-300 font-bold uppercase tracking-wider">🏃 달리기 속도 조절</span>
+                        <span id="speed-label" class="text-sm font-black text-white">보통 (1.0x)</span>
+                    </div>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button id="btn-speed-slow" onclick="setGameSpeedMultiplier(0.75)" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 py-2 rounded-xl text-xs font-bold transition">느림 (0.75x)</button>
+                        <button id="btn-speed-normal" onclick="setGameSpeedMultiplier(1.0)" class="bg-amber-500 text-slate-950 py-2 rounded-xl text-xs font-black shadow transition">보통 (1.0x)</button>
+                        <button id="btn-speed-fast" onclick="setGameSpeedMultiplier(1.35)" class="bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 py-2 rounded-xl text-xs font-bold transition">빠름 (1.35x)</button>
+                    </div>
+                </div>
+
+                <div class="space-y-3">
+                    <button id="btn-resume" class="btn-gold w-full py-3 rounded-xl font-black text-slate-900 text-lg">
+                        이어서 하기
+                    </button>
+                    <button id="btn-pause-menu" class="bg-slate-800 hover:bg-slate-700 text-white font-bold w-full py-3 rounded-xl">
+                        메인 메뉴로
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- GAME ENGINE CODE -->
+    <script>
+        // Web Audio Synthesizer for Arcade SFX and Dynamic BGM
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.enabled = true;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioCtx();
+                }
+            }
+
+            playCoin() {
+                if (!this.enabled || !this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sine';
+                osc.frequency.setValueAtTime(987.77, this.ctx.currentTime); // B5
+                osc.frequency.exponentialRampToValueAtTime(1318.51, this.ctx.currentTime + 0.12); // E6
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.12);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.12);
+            }
+
+            playJump() {
+                if (!this.enabled || !this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'triangle';
+                osc.frequency.setValueAtTime(250, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(600, this.ctx.currentTime + 0.2);
+                gain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.2);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.2);
+            }
+
+            playSlide() {
+                if (!this.enabled || !this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(300, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(120, this.ctx.currentTime + 0.25);
+                gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.25);
+            }
+
+            playPowerup() {
+                if (!this.enabled || !this.ctx) return;
+                const now = this.ctx.currentTime;
+                const notes = [523.25, 659.25, 783.99, 1046.50]; // C5, E5, G5, C6
+                notes.forEach((freq, idx) => {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+                    gain.gain.setValueAtTime(0.25, now + idx * 0.08);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + idx * 0.08 + 0.2);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start(now + idx * 0.08);
+                    osc.stop(now + idx * 0.08 + 0.2);
+                });
+            }
+
+            playCrash() {
+                if (!this.enabled || !this.ctx) return;
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = 'sawtooth';
+                osc.frequency.setValueAtTime(150, this.ctx.currentTime);
+                osc.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.4);
+                gain.gain.setValueAtTime(0.5, this.ctx.currentTime);
+                gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.4);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + 0.4);
+            }
+        }
+
+        const sound = new SoundEngine();
+
+        // GAME STATE & CONSTANTS
+        const LANES = [-3.2, 0, 3.2];
+        const STATE = {
+            MENU: 0,
+            PLAYING: 1,
+            PAUSED: 2,
+            GAMEOVER: 3
+        };
+
+        let gameState = STATE.MENU;
+        let score = 0;
+        let goldCollected = 0;
+        let totalGold = parseInt(localStorage.getItem('tom_gold_total') || '0');
+        let highScore = parseInt(localStorage.getItem('tom_gold_highscore') || '0');
+
+        // Unlocks & Selected Character
+        let selectedCharacter = localStorage.getItem('tom_gold_char') || 'tom';
+        let unlockedChars = JSON.parse(localStorage.getItem('tom_gold_unlocked') || '["tom"]');
+
+        // Upgrades Levels
+        let upgrades = JSON.parse(localStorage.getItem('tom_gold_upgrades') || '{"magnet":1, "shield":1, "jetpack":1}');
+
+        // Active Powerups
+        let activePowerups = {
+            magnet: 0,   // time remaining
+            shield: false,
+            jetpack: 0,
+            multiplier: 0
+        };
+
+        let scene, camera, renderer;
+        let playerGroup, playerMeshGroup, playerLimbs = {}, playerTail, playerParticles = [];
+        let currentLane = 1; // 0: Left, 1: Middle, 2: Right
+        let targetX = 0;
+        let playerY = 0;
+        let playerVelocityY = 0;
+        let isJumping = false;
+        let isSliding = false;
+        let slideTimer = 0;
+
+        let gameSpeed = 0.12;
+        const BASE_SPEED = 0.12;
+        let speedMultiplier = parseFloat(localStorage.getItem('tom_gold_speed') || '1.0'); // User adjustable speed multiplier
+        let worldOffset = 0;
+        let lastSpawnZ = 0;
+
+        let obstacles = [];
+        let goldItems = [];
+        let powerupItems = [];
+        let environmentDecoration = [];
+        let clouds = [];
+        let dustParticles = [];
+
+        const container = document.getElementById('canvas-container');
+
+        function initThree() {
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color(0x4fa8ff); // Vibrant atmospheric blue
+            scene.fog = new THREE.FogExp2(0x60b2ff, 0.008);
+
+            camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 220);
+            camera.position.set(0, 5.5, 11);
+            camera.lookAt(0, 2, -10);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+            container.appendChild(renderer.domElement);
+
+            // Enhanced Lighting setup
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            // Hemisphere Light for sky/ground bounce reflection
+            const hemiLight = new THREE.HemisphereLight(0x87ceeb, 0x3d5c20, 0.5);
+            scene.add(hemiLight);
+
+            const dirLight = new THREE.DirectionalLight(0xfffaed, 1.1);
+            dirLight.position.set(25, 45, 20);
+            dirLight.castShadow = true;
+            dirLight.shadow.mapSize.width = 2048;
+            dirLight.shadow.mapSize.height = 2048;
+            dirLight.shadow.camera.near = 0.5;
+            dirLight.shadow.camera.far = 180;
+            dirLight.shadow.camera.left = -22;
+            dirLight.shadow.camera.right = 22;
+            dirLight.shadow.camera.top = 22;
+            dirLight.shadow.camera.bottom = -22;
+            scene.add(dirLight);
+
+            createSunAndClouds();
+            createEnvironmentTrack();
+            createPlayerCharacter();
+
+            window.addEventListener('resize', onWindowResize);
+        }
+
+        function createSunAndClouds() {
+            // Stylized Sun
+            const sunGroup = new THREE.Group();
+            const sunMesh = new THREE.Mesh(
+                new THREE.SphereGeometry(6, 16, 16),
+                new THREE.MeshBasicMaterial({ color: 0xffea00 })
+            );
+            const sunHalo = new THREE.Mesh(
+                new THREE.RingGeometry(6.5, 11, 24),
+                new THREE.MeshBasicMaterial({ color: 0xfffa85, side: THREE.DoubleSide, transparent: true, opacity: 0.4 })
+            );
+            sunGroup.add(sunMesh, sunHalo);
+            sunGroup.position.set(30, 45, -120);
+            scene.add(sunGroup);
+
+            // Floating 3D Clouds
+            const cloudMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.9, flatShading: true });
+            for (let i = 0; i < 12; i++) {
+                const cloud = new THREE.Group();
+                const pCount = 3 + Math.floor(Math.random() * 4);
+                for (let j = 0; j < pCount; j++) {
+                    const part = new THREE.Mesh(
+                        new THREE.SphereGeometry(2 + Math.random() * 2.5, 8, 8),
+                        cloudMat
+                    );
+                    part.position.set(j * 2, Math.random() * 1.5, Math.random() * 1.5);
+                    cloud.add(part);
+                }
+                cloud.position.set(
+                    (Math.random() - 0.5) * 160,
+                    25 + Math.random() * 15,
+                    -Math.random() * 180
+                );
+                scene.add(cloud);
+                clouds.push(cloud);
+            }
+        }
+
+        function createEnvironmentTrack() {
+            // Main Road Surface with Asphalt Detail
+            const roadGeo = new THREE.PlaneGeometry(12.4, 320);
+            const roadMat = new THREE.MeshStandardMaterial({ color: 0x2c3038, roughness: 0.75 });
+            const road = new THREE.Mesh(roadGeo, roadMat);
+            road.rotation.x = -Math.PI / 2;
+            road.position.z = -100;
+            road.receiveShadow = true;
+            scene.add(road);
+
+            // Yellow Dashed Lane Dividers with subtle glow
+            [-1.6, 1.6].forEach(xPos => {
+                for (let i = 0; i < 32; i++) {
+                    const stripeGeo = new THREE.PlaneGeometry(0.25, 3.5);
+                    const stripeMat = new THREE.MeshBasicMaterial({ color: 0xf1c40f });
+                    const stripe = new THREE.Mesh(stripeGeo, stripeMat);
+                    stripe.rotation.x = -Math.PI / 2;
+                    stripe.position.set(xPos, 0.015, -i * 10);
+                    scene.add(stripe);
+                    environmentDecoration.push({ mesh: stripe, initialZ: -i * 10, type: 'stripe' });
+                }
+            });
+
+            // Crosswalk Zebra Markings at intervals
+            for (let i = 0; i < 4; i++) {
+                const crosswalkGroup = new THREE.Group();
+                for (let s = -5; s <= 5; s += 1.2) {
+                    const stripe = new THREE.Mesh(
+                        new THREE.PlaneGeometry(0.7, 11.5),
+                        new THREE.MeshBasicMaterial({ color: 0xecf0f1 })
+                    );
+                    stripe.rotation.x = -Math.PI / 2;
+                    stripe.position.x = s;
+                    crosswalkGroup.add(stripe);
+                }
+                const zPos = -i * 80 - 20;
+                crosswalkGroup.position.set(0, 0.02, zPos);
+                scene.add(crosswalkGroup);
+                environmentDecoration.push({ mesh: crosswalkGroup, initialZ: zPos, type: 'crosswalk' });
+            }
+
+            // Sidewalks with Alternating Red/White Curbs & Street Props
+            [-7.8, 7.8].forEach(xSide => {
+                const sidewalkGeo = new THREE.BoxGeometry(3.2, 0.45, 320);
+                const sidewalkMat = new THREE.MeshStandardMaterial({ color: 0xbdc3c7, roughness: 0.6 });
+                const sidewalk = new THREE.Mesh(sidewalkGeo, sidewalkMat);
+                sidewalk.position.set(xSide, 0.12, -100);
+                sidewalk.receiveShadow = true;
+                scene.add(sidewalk);
+
+                // Red and White Curb Edge Blocks
+                const curbX = xSide > 0 ? xSide - 1.65 : xSide + 1.65;
+                for (let i = 0; i < 80; i++) {
+                    const curbGeo = new THREE.BoxGeometry(0.3, 0.48, 3.8);
+                    const curbMat = new THREE.MeshStandardMaterial({
+                        color: i % 2 === 0 ? 0xe74c3c : 0xffffff,
+                        roughness: 0.5
+                    });
+                    const curb = new THREE.Mesh(curbGeo, curbMat);
+                    const zPos = -i * 4;
+                    curb.position.set(curbX, 0.14, zPos);
+                    scene.add(curb);
+                    environmentDecoration.push({ mesh: curb, initialZ: zPos, type: 'curb' });
+                }
+
+                // Streetlamps & Lush Trees
+                for (let i = 0; i < 16; i++) {
+                    const zPos = -i * 20;
+
+                    // Streetlamp
+                    const lampGroup = new THREE.Group();
+                    const pole = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.08, 0.1, 4.5, 8),
+                        new THREE.MeshStandardMaterial({ color: 0x34495e, metalness: 0.8 })
+                    );
+                    pole.position.y = 2.25;
+                    const bulb = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.35, 12, 12),
+                        new THREE.MeshBasicMaterial({ color: 0xfff3a0 })
+                    );
+                    bulb.position.set(xSide > 0 ? -0.6 : 0.6, 4.4, 0);
+                    lampGroup.add(pole, bulb);
+                    lampGroup.position.set(xSide > 0 ? xSide - 0.5 : xSide + 0.5, 0, zPos);
+                    scene.add(lampGroup);
+                    environmentDecoration.push({ mesh: lampGroup, initialZ: zPos, type: 'lamp' });
+
+                    // Stylized Trees
+                    const treeGroup = new THREE.Group();
+                    const trunk = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.25, 0.35, 2, 8),
+                        new THREE.MeshStandardMaterial({ color: 0x5e3a0f })
+                    );
+                    trunk.position.y = 1;
+                    const leavesMat = new THREE.MeshStandardMaterial({ color: i % 2 === 0 ? 0x27ae60 : 0x2ecc71, roughness: 0.8 });
+                    const leaves1 = new THREE.Mesh(new THREE.ConeGeometry(1.6, 2.5, 8), leavesMat);
+                    leaves1.position.y = 2.6;
+                    const leaves2 = new THREE.Mesh(new THREE.ConeGeometry(1.2, 2.0, 8), leavesMat);
+                    leaves2.position.y = 3.6;
+                    treeGroup.add(trunk, leaves1, leaves2);
+                    treeGroup.position.set(xSide > 0 ? xSide + 1.2 : xSide - 1.2, 0, zPos - 10);
+                    scene.add(treeGroup);
+                    environmentDecoration.push({ mesh: treeGroup, initialZ: zPos - 10, type: 'tree' });
+                }
+
+                // Vibrant City Buildings with Lit Window Grids
+                const bColors = [0xe74c3c, 0x3498db, 0xf39c12, 0x9b59b6, 0x1abc9c, 0x34495e];
+                for (let i = 0; i < 12; i++) {
+                    const h = 12 + Math.random() * 12;
+                    const bGroup = new THREE.Group();
+                    const bMesh = new THREE.Mesh(
+                        new THREE.BoxGeometry(6.5, h, 9),
+                        new THREE.MeshStandardMaterial({ color: bColors[i % bColors.length], roughness: 0.5 })
+                    );
+                    bMesh.position.y = h / 2;
+                    bMesh.castShadow = true;
+                    bMesh.receiveShadow = true;
+                    bGroup.add(bMesh);
+
+                    // Add Windows
+                    const winMat = new THREE.MeshBasicMaterial({ color: 0xfff9d2 });
+                    for (let wy = 3; wy < h - 2; wy += 2.5) {
+                        for (let wx = -2; wx <= 2; wx += 2) {
+                            if (Math.random() > 0.2) {
+                                const win = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 1.4), winMat);
+                                win.position.set(wx, wy, (xSide > 0 ? -4.51 : 4.51));
+                                if (xSide > 0) win.rotation.y = Math.PI;
+                                bGroup.add(win);
+                            }
+                        }
+                    }
+
+                    const zPos = -i * 25;
+                    bGroup.position.set(xSide + (xSide > 0 ? 5.2 : -5.2), 0, zPos);
+                    scene.add(bGroup);
+                    environmentDecoration.push({ mesh: bGroup, initialZ: zPos, type: 'building' });
+                }
+            });
+        }
+
+        function createPlayerCharacter() {
+            playerGroup = new THREE.Group();
+
+            playerMeshGroup = new THREE.Group();
+            playerGroup.add(playerMeshGroup);
+
+            updatePlayerMesh();
+
+            playerGroup.position.set(LANES[currentLane], 0, 0);
+            scene.add(playerGroup);
+        }
+
+        function updatePlayerMesh() {
+            // Clear existing model children
+            while (playerMeshGroup.children.length > 0) {
+                playerMeshGroup.remove(playerMeshGroup.children[0]);
+            }
+
+            let bodyColor = 0x808b96;  // Tom (Grey)
+            let earColor = 0xffa0a0;   // Inner ear pink
+            let eyeColor = 0x2ecc71;   // Green eyes
+            let snoutColor = 0xf2f4f4; // White muzzle
+
+            if (selectedCharacter === 'angela') {
+                bodyColor = 0xffffff;  // Angela (Pure White)
+                earColor = 0xff85a1;   // Pink ears
+                eyeColor = 0x3498db;   // Sparkling Blue
+                snoutColor = 0xfff0f5;
+            } else if (selectedCharacter === 'hank') {
+                bodyColor = 0x3498db;  // Hank (Blue/White Dog)
+                earColor = 0x5d4037;   // Brown floppy ears
+                eyeColor = 0x2c3e50;
+                snoutColor = 0xffffff;
+            }
+
+            const bodyMat = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.4 });
+            const earMat = new THREE.MeshStandardMaterial({ color: earColor, roughness: 0.5 });
+            const eyeMat = new THREE.MeshBasicMaterial({ color: eyeColor });
+            const snoutMat = new THREE.MeshStandardMaterial({ color: snoutColor, roughness: 0.3 });
+            const whiteMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const darkMat = new THREE.MeshBasicMaterial({ color: 0x111111 });
+
+            // Torso / Shirt
+            const torsoGeo = new THREE.CylinderGeometry(0.48, 0.38, 1.15, 16);
+            const torso = new THREE.Mesh(torsoGeo, bodyMat);
+            torso.position.y = 0.85;
+            torso.castShadow = true;
+            playerMeshGroup.add(torso);
+
+            // Cute Belly Patch
+            const belly = new THREE.Mesh(
+                new THREE.SphereGeometry(0.35, 12, 12),
+                snoutMat
+            );
+            belly.scale.set(0.9, 1.2, 0.4);
+            belly.position.set(0, 0.82, 0.28);
+            playerMeshGroup.add(belly);
+
+            // Head
+            const headGeo = new THREE.SphereGeometry(0.58, 20, 20);
+            const head = new THREE.Mesh(headGeo, bodyMat);
+            head.position.y = 1.72;
+            head.scale.set(1, 0.92, 1);
+            head.castShadow = true;
+            playerMeshGroup.add(head);
+
+            // Muzzle / Snout
+            const muzzle = new THREE.Mesh(
+                new THREE.SphereGeometry(0.28, 14, 14),
+                snoutMat
+            );
+            muzzle.scale.set(1.1, 0.7, 0.8);
+            muzzle.position.set(0, 1.62, 0.42);
+            playerMeshGroup.add(muzzle);
+
+            // Nose
+            const nose = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 10), darkMat);
+            nose.position.set(0, 1.7, 0.65);
+            playerMeshGroup.add(nose);
+
+            // Ears (Cat pointed vs Dog floppy)
+            if (selectedCharacter === 'hank') {
+                // Hank Floppy Ears
+                [-0.42, 0.42].forEach(x => {
+                    const earGeo = new THREE.BoxGeometry(0.22, 0.5, 0.2);
+                    const ear = new THREE.Mesh(earGeo, earMat);
+                    ear.position.set(x, 1.85, 0);
+                    ear.rotation.z = x > 0 ? -0.4 : 0.4;
+                    playerMeshGroup.add(ear);
+                });
+                // Hank Eye Patch
+                const patch = new THREE.Mesh(new THREE.SphereGeometry(0.18, 10, 10), new THREE.MeshBasicMaterial({ color: 0x5d4037 }));
+                patch.position.set(0.18, 1.78, 0.48);
+                playerMeshGroup.add(patch);
+            } else {
+                // Tom & Angela Pointed Ears
+                [-0.32, 0.32].forEach(x => {
+                    const earOuter = new THREE.Mesh(new THREE.ConeGeometry(0.22, 0.48, 12), bodyMat);
+                    earOuter.position.set(x, 2.28, 0);
+                    earOuter.rotation.z = x > 0 ? -0.28 : 0.28;
+
+                    const earInner = new THREE.Mesh(new THREE.ConeGeometry(0.14, 0.36, 12), earMat);
+                    earInner.position.set(x, 2.26, 0.04);
+                    earInner.rotation.z = x > 0 ? -0.28 : 0.28;
+
+                    playerMeshGroup.add(earOuter, earInner);
+                });
+            }
+
+            // Angela Bow Accessory
+            if (selectedCharacter === 'angela') {
+                const bowMat = new THREE.MeshStandardMaterial({ color: 0xff4081 });
+                const bowCenter = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), bowMat);
+                bowCenter.position.set(-0.3, 2.2, 0.2);
+
+                const bowLeft = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.25, 8), bowMat);
+                bowLeft.rotation.z = Math.PI / 2;
+                bowLeft.position.set(-0.42, 2.2, 0.2);
+
+                const bowRight = new THREE.Mesh(new THREE.ConeGeometry(0.15, 0.25, 8), bowMat);
+                bowRight.rotation.z = -Math.PI / 2;
+                bowRight.position.set(-0.18, 2.2, 0.2);
+
+                playerMeshGroup.add(bowCenter, bowLeft, bowRight);
+            }
+
+            // Expressive Eyes with Sparkle Highlights
+            [-0.18, 0.18].forEach(x => {
+                const eyeBg = new THREE.Mesh(new THREE.SphereGeometry(0.13, 10, 10), whiteMat);
+                eyeBg.position.set(x, 1.78, 0.46);
+
+                const pupil = new THREE.Mesh(new THREE.SphereGeometry(0.07, 10, 10), eyeMat);
+                pupil.position.set(x, 1.78, 0.55);
+
+                const shine = new THREE.Mesh(new THREE.SphereGeometry(0.03, 8, 8), whiteMat);
+                shine.position.set(x + 0.02, 1.81, 0.6);
+
+                playerMeshGroup.add(eyeBg, pupil, shine);
+            });
+
+            // Whiskers (For Tom & Angela)
+            if (selectedCharacter !== 'hank') {
+                [-1, 1].forEach(side => {
+                    [-0.05, 0.05].forEach(yRot => {
+                        const whisker = new THREE.Mesh(
+                            new THREE.CylinderGeometry(0.01, 0.01, 0.3, 4),
+                            darkMat
+                        );
+                        whisker.rotation.z = Math.PI / 2;
+                        whisker.rotation.y = side * 0.3 + yRot;
+                        whisker.position.set(side * 0.32, 1.62, 0.5);
+                        playerMeshGroup.add(whisker);
+                    });
+                });
+            }
+
+            // Tail (Waving Animation Group)
+            playerTail = new THREE.Group();
+            const tailGeo = new THREE.CylinderGeometry(0.08, 0.05, 0.7, 8);
+            const tailMesh = new THREE.Mesh(tailGeo, bodyMat);
+            tailMesh.position.y = -0.35;
+            tailMesh.rotation.x = -0.8;
+            playerTail.add(tailMesh);
+            playerTail.position.set(0, 0.6, -0.35);
+            playerMeshGroup.add(playerTail);
+
+            // Limbs & Shoes
+            const legGeo = new THREE.CylinderGeometry(0.12, 0.1, 0.55, 10);
+            const armGeo = new THREE.CylinderGeometry(0.1, 0.08, 0.55, 10);
+            const shoeGeo = new THREE.BoxGeometry(0.22, 0.18, 0.38);
+            const shoeMat = new THREE.MeshStandardMaterial({ color: 0x2980b9 });
+
+            // Left Leg & Shoe
+            const leftLegPivot = new THREE.Group();
+            leftLegPivot.position.set(-0.2, 0.42, 0);
+            const leftLeg = new THREE.Mesh(legGeo, bodyMat);
+            leftLeg.position.y = -0.28;
+            const leftShoe = new THREE.Mesh(shoeGeo, shoeMat);
+            leftShoe.position.set(0, -0.52, 0.08);
+            leftLegPivot.add(leftLeg, leftShoe);
+            playerMeshGroup.add(leftLegPivot);
+
+            // Right Leg & Shoe
+            const rightLegPivot = new THREE.Group();
+            rightLegPivot.position.set(0.2, 0.42, 0);
+            const rightLeg = new THREE.Mesh(legGeo, bodyMat);
+            rightLeg.position.y = -0.28;
+            const rightShoe = new THREE.Mesh(shoeGeo, shoeMat);
+            rightShoe.position.set(0, -0.52, 0.08);
+            rightLegPivot.add(rightLeg, rightShoe);
+            playerMeshGroup.add(rightLegPivot);
+
+            // Arms
+            const leftArmPivot = new THREE.Group();
+            leftArmPivot.position.set(-0.52, 1.2, 0);
+            const leftArm = new THREE.Mesh(armGeo, bodyMat);
+            leftArm.position.y = -0.25;
+            leftArmPivot.add(leftArm);
+            playerMeshGroup.add(leftArmPivot);
+
+            const rightArmPivot = new THREE.Group();
+            rightArmPivot.position.set(0.52, 1.2, 0);
+            const rightArm = new THREE.Mesh(armGeo, bodyMat);
+            rightArm.position.y = -0.25;
+            rightArmPivot.add(rightArm);
+            playerMeshGroup.add(rightArmPivot);
+
+            playerLimbs = {
+                leftLeg: leftLegPivot,
+                rightLeg: rightLegPivot,
+                leftArm: leftArmPivot,
+                rightArm: rightArmPivot
+            };
+
+            // Shield Hologram Bubble
+            const shieldGeo = new THREE.SphereGeometry(1.25, 20, 20);
+            const shieldMat = new THREE.MeshBasicMaterial({
+                color: 0x00f0ff,
+                transparent: true,
+                opacity: 0.4,
+                wireframe: true
+            });
+            const shieldMesh = new THREE.Mesh(shieldGeo, shieldMat);
+            shieldMesh.name = 'shieldAura';
+            shieldMesh.position.y = 1.0;
+            shieldMesh.visible = false;
+            playerGroup.add(shieldMesh);
+        }
+
+        function spawnObstaclesAndGold() {
+            const spawnZ = -130;
+            const randPattern = Math.random();
+
+            if (randPattern < 0.45) {
+                // Low Barrier or High Arch
+                const laneIdx = Math.floor(Math.random() * 3);
+                const isHigh = Math.random() > 0.5;
+
+                const obsGroup = new THREE.Group();
+                if (isHigh) {
+                    // High Archway
+                    const archTop = new THREE.Mesh(
+                        new THREE.BoxGeometry(2.8, 0.45, 0.45),
+                        new THREE.MeshStandardMaterial({ color: 0xe74c3c, roughness: 0.4 })
+                    );
+                    archTop.position.y = 2.45;
+
+                    const pLeft = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.15, 0.15, 3, 10),
+                        new THREE.MeshStandardMaterial({ color: 0x7f8c8d })
+                    );
+                    pLeft.position.set(-1.3, 1.5, 0);
+                    const pRight = pLeft.clone();
+                    pRight.position.x = 1.3;
+
+                    // Warning sign badge
+                    const sign = new THREE.Mesh(
+                        new THREE.BoxGeometry(0.8, 0.4, 0.1),
+                        new THREE.MeshBasicMaterial({ color: 0xf1c40f })
+                    );
+                    sign.position.set(0, 2.45, 0.25);
+
+                    obsGroup.add(archTop, pLeft, pRight, sign);
+                    obsGroup.userData = { type: 'high_arch', bounds: { minY: 1.8, maxY: 3.5, width: 2.6 } };
+                } else {
+                    // Low Construction Barricade with Flashing Lights
+                    const bar = new THREE.Mesh(
+                        new THREE.BoxGeometry(2.6, 0.9, 0.35),
+                        new THREE.MeshStandardMaterial({ color: 0xd35400, roughness: 0.5 })
+                    );
+                    bar.position.y = 0.45;
+                    bar.castShadow = true;
+
+                    // Stripe Decal
+                    const stripe = new THREE.Mesh(
+                        new THREE.BoxGeometry(2.62, 0.25, 0.37),
+                        new THREE.MeshBasicMaterial({ color: 0xffffff })
+                    );
+                    stripe.position.y = 0.55;
+
+                    // Warning Light Beacons on top
+                    [-1.1, 1.1].forEach(x => {
+                        const beacon = new THREE.Mesh(
+                            new THREE.CylinderGeometry(0.1, 0.1, 0.25, 8),
+                            new THREE.MeshBasicMaterial({ color: 0xf1c40f })
+                        );
+                        beacon.position.set(x, 0.98, 0);
+                        obsGroup.add(beacon);
+                    });
+
+                    obsGroup.add(bar, stripe);
+                    obsGroup.userData = { type: 'low_barricade', bounds: { minY: 0, maxY: 1.2, width: 2.6 } };
+                }
+
+                obsGroup.position.set(LANES[laneIdx], 0, spawnZ);
+                scene.add(obsGroup);
+                obstacles.push(obsGroup);
+
+            } else if (randPattern < 0.75) {
+                // High Detail Delivery Truck / Bus
+                const laneIdx = Math.floor(Math.random() * 3);
+                const truckGroup = new THREE.Group();
+
+                // Main Cargo Body
+                const bodyMesh = new THREE.Mesh(
+                    new THREE.BoxGeometry(2.7, 2.6, 6.5),
+                    new THREE.MeshStandardMaterial({ color: 0x2980b9, roughness: 0.3, metalness: 0.2 })
+                );
+                bodyMesh.position.y = 1.4;
+                bodyMesh.castShadow = true;
+                truckGroup.add(bodyMesh);
+
+                // Windshield
+                const glass = new THREE.Mesh(
+                    new THREE.BoxGeometry(2.5, 1.0, 0.1),
+                    new THREE.MeshBasicMaterial({ color: 0x74b9ff })
+                );
+                glass.position.set(0, 1.9, 3.26);
+                truckGroup.add(glass);
+
+                // Glowing Headlights
+                [-0.9, 0.9].forEach(x => {
+                    const headlight = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.18, 10, 10),
+                        new THREE.MeshBasicMaterial({ color: 0xfffae6 })
+                    );
+                    headlight.position.set(x, 0.8, 3.26);
+                    truckGroup.add(headlight);
+                });
+
+                // Detailed Wheels with Chrome Hubcaps
+                [[-1.35, 0.45, 1.8], [1.35, 0.45, 1.8], [-1.35, 0.45, -1.8], [1.35, 0.45, -1.8]].forEach(pos => {
+                    const wheelGroup = new THREE.Group();
+                    const tire = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.42, 0.42, 0.3, 12),
+                        new THREE.MeshStandardMaterial({ color: 0x111111, roughness: 0.9 })
+                    );
+                    tire.rotation.z = Math.PI / 2;
+                    const hub = new THREE.Mesh(
+                        new THREE.CylinderGeometry(0.2, 0.2, 0.32, 10),
+                        new THREE.MeshStandardMaterial({ color: 0xbdc3c7, metalness: 0.8 })
+                    );
+                    hub.rotation.z = Math.PI / 2;
+                    wheelGroup.add(tire, hub);
+                    wheelGroup.position.set(pos[0], pos[1], pos[2]);
+                    truckGroup.add(wheelGroup);
+                });
+
+                truckGroup.userData = { type: 'truck', bounds: { minY: 0, maxY: 3.1, width: 2.7 } };
+                truckGroup.position.set(LANES[laneIdx], 0, spawnZ);
+                scene.add(truckGroup);
+                obstacles.push(truckGroup);
+
+            } else {
+                // Spawn Power-up Icon
+                const laneIdx = Math.floor(Math.random() * 3);
+                const types = ['magnet', 'shield', 'jetpack', 'multiplier'];
+                const pType = types[Math.floor(Math.random() * types.length)];
+
+                const powerupMesh = createPowerup3DMesh(pType);
+                powerupMesh.position.set(LANES[laneIdx], 1.2, spawnZ);
+                powerupMesh.userData = { type: pType };
+                scene.add(powerupMesh);
+                powerupItems.push(powerupMesh);
+            }
+
+            // Spawn Gold Bar Trail (Inverted Chamfer Ingot Shape)
+            const goldLane = Math.floor(Math.random() * 3);
+            const count = 5 + Math.floor(Math.random() * 5);
+            for (let i = 0; i < count; i++) {
+                const goldGroup = new THREE.Group();
+                const goldGeo = new THREE.BoxGeometry(0.55, 0.22, 0.85);
+                const goldMat = new THREE.MeshStandardMaterial({
+                    color: 0xffd700,
+                    metalness: 0.95,
+                    roughness: 0.15
+                });
+                const goldMesh = new THREE.Mesh(goldGeo, goldMat);
+                goldMesh.castShadow = true;
+                goldGroup.add(goldMesh);
+
+                // Sparkling Star Ring
+                const starRing = new THREE.Mesh(
+                    new THREE.RingGeometry(0.5, 0.6, 8),
+                    new THREE.MeshBasicMaterial({ color: 0xfffa85, side: THREE.DoubleSide, transparent: true, opacity: 0.6 })
+                );
+                starRing.rotation.x = Math.PI / 2;
+                goldGroup.add(starRing);
+
+                const yPos = (i > 1 && i < count - 1 && Math.random() > 0.5) ? 2.2 : 0.6;
+                goldGroup.position.set(LANES[goldLane], yPos, spawnZ - (i * 3.2));
+                scene.add(goldGroup);
+                goldItems.push(goldGroup);
+            }
+        }
+
+        function createPowerup3DMesh(type) {
+            const group = new THREE.Group();
+            let geo, mat;
+
+            if (type === 'magnet') {
+                geo = new THREE.TorusGeometry(0.48, 0.16, 12, 20);
+                mat = new THREE.MeshStandardMaterial({ color: 0xe74c3c, metalness: 0.85, roughness: 0.2 });
+            } else if (type === 'shield') {
+                geo = new THREE.OctahedronGeometry(0.52);
+                mat = new THREE.MeshStandardMaterial({ color: 0x3498db, metalness: 0.6, roughness: 0.2 });
+            } else if (type === 'jetpack') {
+                geo = new THREE.CylinderGeometry(0.22, 0.22, 0.85, 12);
+                mat = new THREE.MeshStandardMaterial({ color: 0x9b59b6, metalness: 0.8, roughness: 0.2 });
+            } else {
+                geo = new THREE.BoxGeometry(0.65, 0.65, 0.65);
+                mat = new THREE.MeshStandardMaterial({ color: 0xf1c40f, metalness: 0.9, roughness: 0.1 });
+            }
+
+            const mesh = new THREE.Mesh(geo, mat);
+            group.add(mesh);
+
+            // Translucent Outer Aura Glow
+            const aura = new THREE.Mesh(
+                new THREE.SphereGeometry(0.85, 12, 12),
+                new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.35, wireframe: true })
+            );
+            group.add(aura);
+
+            return group;
+        }
+
+        function updateGameLogic() {
+            if (gameState !== STATE.PLAYING) return;
+
+            // Increment Score/Distance cleanly (factoring in user speed multiplier)
+            score += gameSpeed * speedMultiplier * 4;
+            gameSpeed += 0.00003; // Smooth progression
+
+            // Jetpack flying logic
+            if (activePowerups.jetpack > 0) {
+                activePowerups.jetpack--;
+                playerY = 4.8; // Fly elevated above obstacles
+
+                // Spawn Jetpack Flame Particles
+                if (Math.random() > 0.3) {
+                    const flame = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.12, 6, 6),
+                        new THREE.MeshBasicMaterial({ color: Math.random() > 0.5 ? 0xff4500 : 0xffa500 })
+                    );
+                    flame.position.set(
+                        playerGroup.position.x + (Math.random() - 0.5) * 0.4,
+                        playerY + 0.2,
+                        playerGroup.position.z + 0.5
+                    );
+                    scene.add(flame);
+                    dustParticles.push({ mesh: flame, life: 15 });
+                }
+            } else {
+                // Jump & Gravity
+                if (isJumping) {
+                    playerY += playerVelocityY;
+                    playerVelocityY -= 0.014;
+                    if (playerY <= 0) {
+                        playerY = 0;
+                        isJumping = false;
+                    }
+                }
+            }
+
+            // Slide timer
+            if (isSliding) {
+                slideTimer--;
+                if (slideTimer <= 0) {
+                    isSliding = false;
+                }
+            }
+
+            // Smooth Lateral Interpolation
+            playerGroup.position.x += (targetX - playerGroup.position.x) * 0.32;
+            playerGroup.position.y = playerY;
+
+            // Character Dynamic Scale & Tilt Transformations
+            if (isSliding) {
+                playerMeshGroup.scale.set(1.2, 0.48, 1.2);
+            } else if (isJumping) {
+                playerMeshGroup.scale.set(0.88, 1.12, 0.88);
+            } else {
+                playerMeshGroup.scale.set(1, 1, 1);
+            }
+
+            // Character Running Limb Cycle & Tail Swing
+            const animTime = Date.now() * 0.012 * ((gameSpeed * speedMultiplier) / BASE_SPEED);
+            if (playerLimbs.leftLeg) {
+                playerLimbs.leftLeg.rotation.x = Math.sin(animTime) * 0.85;
+                playerLimbs.rightLeg.rotation.x = -Math.sin(animTime) * 0.85;
+                playerLimbs.leftArm.rotation.x = -Math.sin(animTime) * 0.85;
+                playerLimbs.rightArm.rotation.x = Math.sin(animTime) * 0.85;
+            }
+            if (playerTail) {
+                playerTail.rotation.y = Math.sin(animTime * 1.5) * 0.4;
+            }
+
+            // Spawn Running Dust Particles
+            if (!isJumping && activePowerups.jetpack <= 0 && Math.random() > 0.6) {
+                const dust = new THREE.Mesh(
+                    new THREE.SphereGeometry(0.08, 6, 6),
+                    new THREE.MeshBasicMaterial({ color: 0xbdc3c7, transparent: true, opacity: 0.6 })
+                );
+                dust.position.set(
+                    playerGroup.position.x + (Math.random() - 0.5) * 0.3,
+                    0.05,
+                    playerGroup.position.z + 0.4
+                );
+                scene.add(dust);
+                dustParticles.push({ mesh: dust, life: 12 });
+            }
+
+            // Update Particle Life Cycle
+            for (let i = dustParticles.length - 1; i >= 0; i--) {
+                const p = dustParticles[i];
+                p.mesh.position.z += gameSpeed * 3;
+                p.mesh.scale.multiplyScalar(0.92);
+                p.life--;
+                if (p.life <= 0) {
+                    scene.remove(p.mesh);
+                    dustParticles.splice(i, 1);
+                }
+            }
+
+            // Shield Hologram Glow
+            const shieldMesh = playerGroup.getObjectByName('shieldAura');
+            if (shieldMesh) {
+                shieldMesh.visible = activePowerups.shield;
+                shieldMesh.rotation.y += 0.06;
+            }
+
+            // Environment Motion Loop
+            environmentDecoration.forEach(item => {
+                item.mesh.position.z += gameSpeed * speedMultiplier * 6;
+                if (item.mesh.position.z > 20) {
+                    item.mesh.position.z = item.initialZ - 130;
+                }
+            });
+
+            // Sky Clouds Drifting
+            clouds.forEach(c => {
+                c.position.x += 0.02;
+                if (c.position.x > 80) c.position.x = -80;
+            });
+
+            // Spawning Mechanism
+            worldOffset += gameSpeed * speedMultiplier * 6;
+            if (worldOffset - lastSpawnZ > 35) {
+                lastSpawnZ = worldOffset;
+                spawnObstaclesAndGold();
+            }
+
+            // Obstacles Collision
+            for (let i = obstacles.length - 1; i >= 0; i--) {
+                const obs = obstacles[i];
+                obs.position.z += gameSpeed * speedMultiplier * 6;
+
+                if (Math.abs(obs.position.z - playerGroup.position.z) < 1.2) {
+                    if (Math.abs(obs.position.x - playerGroup.position.x) < 1.2) {
+                        const b = obs.userData.bounds;
+                        let isHit = false;
+
+                        if (obs.userData.type === 'low_barricade' && playerY < b.maxY) {
+                            isHit = true;
+                        } else if (obs.userData.type === 'high_arch' && (!isSliding || playerY > 0.5)) {
+                            isHit = true;
+                        } else if (obs.userData.type === 'truck' && playerY < b.maxY) {
+                            isHit = true;
+                        }
+
+                        if (isHit) {
+                            if (activePowerups.shield) {
+                                activePowerups.shield = false;
+                                sound.playPowerup();
+                                scene.remove(obs);
+                                obstacles.splice(i, 1);
+                                continue;
+                            } else {
+                                triggerGameOver();
+                                return;
+                            }
+                        }
+                    }
+                }
+
+                if (obs.position.z > 15) {
+                    scene.remove(obs);
+                    obstacles.splice(i, 1);
+                }
+            }
+
+            // Gold Pickups
+            for (let i = goldItems.length - 1; i >= 0; i--) {
+                const gold = goldItems[i];
+                gold.position.z += gameSpeed * speedMultiplier * 6;
+                gold.rotation.y += 0.06;
+
+                // Magnet Attraction
+                if (activePowerups.magnet > 0 && gold.position.z < 15 && gold.position.z > -30) {
+                    gold.position.x += (playerGroup.position.x - gold.position.x) * 0.22;
+                    gold.position.y += (playerGroup.position.y + 0.8 - gold.position.y) * 0.22;
+                }
+
+                const dist = playerGroup.position.distanceTo(gold.position);
+                if (dist < 1.8) {
+                    let earned = 1;
+                    if (selectedCharacter === 'angela') earned *= 1.2;
+                    if (activePowerups.multiplier > 0) earned *= 2;
+
+                    goldCollected += Math.round(earned);
+                    sound.playCoin();
+                    scene.remove(gold);
+                    goldItems.splice(i, 1);
+                    continue;
+                }
+
+                if (gold.position.z > 15) {
+                    scene.remove(gold);
+                    goldItems.splice(i, 1);
+                }
+            }
+
+            // Power-up Pickups
+            for (let i = powerupItems.length - 1; i >= 0; i--) {
+                const p = powerupItems[i];
+                p.position.z += gameSpeed * speedMultiplier * 6;
+                p.rotation.y += 0.05;
+
+                const dist = playerGroup.position.distanceTo(p.position);
+                if (dist < 1.8) {
+                    const type = p.userData.type;
+                    const durationBonus = (selectedCharacter === 'hank' ? 3 : 0);
+
+                    if (type === 'magnet') activePowerups.magnet = (upgrades.magnet * 120) + (durationBonus * 60);
+                    if (type === 'shield') activePowerups.shield = true;
+                    if (type === 'jetpack') activePowerups.jetpack = (upgrades.jetpack * 100) + (durationBonus * 60);
+                    if (type === 'multiplier') activePowerups.multiplier = 300;
+
+                    sound.playPowerup();
+                    scene.remove(p);
+                    powerupItems.splice(i, 1);
+                    continue;
+                }
+
+                if (p.position.z > 15) {
+                    scene.remove(p);
+                    powerupItems.splice(i, 1);
+                }
+            }
+
+            if (activePowerups.magnet > 0) activePowerups.magnet--;
+            if (activePowerups.multiplier > 0) activePowerups.multiplier--;
+
+            updateHUD();
+        }
+
+        function updateHUD() {
+            const currentDist = Math.floor(score);
+            document.getElementById('hud-score').innerText = `${currentDist} m`;
+            document.getElementById('hud-gold').innerText = goldCollected;
+
+            // Power-up indicators UI
+            const pBar = document.getElementById('powerup-bar');
+            pBar.innerHTML = '';
+
+            if (activePowerups.magnet > 0) {
+                pBar.innerHTML += `<div class="bg-red-600/80 px-3 py-1 rounded-full text-xs font-bold text-white flex items-center space-x-1 shadow"><span>🧲 자석</span></div>`;
+            }
+            if (activePowerups.shield) {
+                pBar.innerHTML += `<div class="bg-blue-600/80 px-3 py-1 rounded-full text-xs font-bold text-white flex items-center space-x-1 shadow"><span>🛡️ 보호막</span></div>`;
+            }
+            if (activePowerups.jetpack > 0) {
+                pBar.innerHTML += `<div class="bg-purple-600/80 px-3 py-1 rounded-full text-xs font-bold text-white flex items-center space-x-1 shadow"><span>🚀 제트팩</span></div>`;
+            }
+            if (activePowerups.multiplier > 0) {
+                pBar.innerHTML += `<div class="bg-yellow-500/80 px-3 py-1 rounded-full text-xs font-bold text-slate-950 flex items-center space-x-1 shadow"><span>⚡ 2배 점수</span></div>`;
+            }
+
+            document.getElementById('menu-highscore').innerText = `${highScore} m`;
+            document.getElementById('menu-total-gold').innerText = `${totalGold} 🪙`;
+            document.getElementById('shop-total-gold').innerText = totalGold;
+        }
+
+        function triggerGameOver() {
+            gameState = STATE.GAMEOVER;
+            sound.playCrash();
+
+            totalGold += goldCollected;
+            localStorage.setItem('tom_gold_total', totalGold.toString());
+
+            const finalScore = Math.floor(score);
+            let isNewRecord = false;
+            if (finalScore > highScore) {
+                highScore = finalScore;
+                localStorage.setItem('tom_gold_highscore', highScore.toString());
+                isNewRecord = true;
+            }
+
+            document.getElementById('go-score').innerText = `${finalScore} m`;
+            document.getElementById('go-gold').innerText = `+${goldCollected} 🪙`;
+
+            const badge = document.getElementById('new-record-badge');
+            if (isNewRecord) badge.classList.remove('hidden');
+            else badge.classList.add('hidden');
+
+            document.getElementById('hud-screen').classList.add('hidden');
+            document.getElementById('touch-controls').classList.add('hidden');
+            document.getElementById('gameover-modal').classList.remove('hidden');
+        }
+
+        function pauseGame() {
+            if (gameState === STATE.PLAYING) {
+                gameState = STATE.PAUSED;
+                document.getElementById('pause-modal').classList.remove('hidden');
+            }
+        }
+
+        function resumeGame() {
+            if (gameState === STATE.PAUSED) {
+                gameState = STATE.PLAYING;
+                document.getElementById('pause-modal').classList.add('hidden');
+            }
+        }
+
+        function quitToMenu() {
+            gameState = STATE.MENU;
+            document.getElementById('hud-screen').classList.add('hidden');
+            document.getElementById('touch-controls').classList.add('hidden');
+            document.getElementById('pause-modal').classList.add('hidden');
+            document.getElementById('gameover-modal').classList.add('hidden');
+            document.getElementById('main-menu').classList.remove('hidden');
+            updateHUD();
+        }
+
+        function openShop() {
+            document.getElementById('shop-modal').classList.remove('hidden');
+            updateShopUI();
+        }
+
+        function closeShop() {
+            document.getElementById('shop-modal').classList.add('hidden');
+            updateMenuCharPreview();
+        }
+
+        function switchShopTab(tab) {
+            if (tab === 'chars') {
+                document.getElementById('tab-chars').className = "py-2 px-4 border-b-2 border-amber-400 text-amber-300 font-bold";
+                document.getElementById('tab-upgrades').className = "py-2 px-4 border-b-2 border-transparent text-slate-400 font-bold hover:text-white";
+                document.getElementById('shop-content-chars').classList.remove('hidden');
+                document.getElementById('shop-content-upgrades').classList.add('hidden');
+            } else {
+                document.getElementById('tab-upgrades').className = "py-2 px-4 border-b-2 border-amber-400 text-amber-300 font-bold";
+                document.getElementById('tab-chars').className = "py-2 px-4 border-b-2 border-transparent text-slate-400 font-bold hover:text-white";
+                document.getElementById('shop-content-upgrades').classList.remove('hidden');
+                document.getElementById('shop-content-chars').classList.add('hidden');
+            }
+        }
+
+        function selectCharacter(id) {
+            selectedCharacter = id;
+            localStorage.setItem('tom_gold_char', id);
+            updatePlayerMesh();
+            updateShopUI();
+            updateMenuCharPreview();
+        }
+
+        function buyOrSelectChar(id, cost) {
+            if (unlockedChars.includes(id)) {
+                selectCharacter(id);
+            } else if (totalGold >= cost) {
+                totalGold -= cost;
+                unlockedChars.push(id);
+                localStorage.setItem('tom_gold_total', totalGold.toString());
+                localStorage.setItem('tom_gold_unlocked', JSON.stringify(unlockedChars));
+                selectCharacter(id);
+            }
+        }
+
+        function buyUpgrade(type, cost) {
+            if (totalGold >= cost) {
+                totalGold -= cost;
+                upgrades[type] = (upgrades[type] || 1) + 1;
+                localStorage.setItem('tom_gold_total', totalGold.toString());
+                localStorage.setItem('tom_gold_upgrades', JSON.stringify(upgrades));
+                updateShopUI();
+            }
+        }
+
+        function updateShopUI() {
+            document.getElementById('shop-total-gold').innerText = totalGold;
+
+            // Angela Button
+            const angelaBtn = document.getElementById('select-char-angela');
+            if (unlockedChars.includes('angela')) {
+                angelaBtn.innerText = selectedCharacter === 'angela' ? '선택됨' : '선택';
+                angelaBtn.className = selectedCharacter === 'angela' ? "bg-amber-400 text-slate-900 font-extrabold px-4 py-2 rounded-xl text-sm shadow" : "bg-slate-700 text-white font-extrabold px-4 py-2 rounded-xl text-sm shadow hover:bg-slate-600";
+            }
+
+            // Hank Button
+            const hankBtn = document.getElementById('select-char-hank');
+            if (unlockedChars.includes('hank')) {
+                hankBtn.innerText = selectedCharacter === 'hank' ? '선택됨' : '선택';
+                hankBtn.className = selectedCharacter === 'hank' ? "bg-amber-400 text-slate-900 font-extrabold px-4 py-2 rounded-xl text-sm shadow" : "bg-slate-700 text-white font-extrabold px-4 py-2 rounded-xl text-sm shadow hover:bg-slate-600";
+            }
+
+            // Upgrade Labels
+            document.getElementById('upg-magnet-desc').innerText = `지속시간: Level ${upgrades.magnet} (${8 + upgrades.magnet * 2}초)`;
+            document.getElementById('upg-shield-desc').innerText = `지속시간: Level ${upgrades.shield} (1회 충돌 완충)`;
+            document.getElementById('upg-jetpack-desc').innerText = `공중 비행: Level ${upgrades.jetpack} (${5 + upgrades.jetpack * 2}초)`;
+        }
+
+        function updateMenuCharPreview() {
+            const avatar = document.getElementById('menu-char-avatar');
+            const name = document.getElementById('menu-char-name');
+            const skill = document.getElementById('menu-char-skill');
+
+            if (selectedCharacter === 'angela') {
+                if (avatar) {
+                    avatar.innerText = '😽';
+                    avatar.className = 'w-14 h-14 rounded-xl bg-gradient-to-tr from-pink-500 to-rose-400 flex items-center justify-center text-3xl text-white shadow';
+                }
+                if (name) name.innerText = '앙젤라 (Angela)';
+                if (skill) skill.innerText = '금괴 획득 시 추가 점수 20%';
+            } else if (selectedCharacter === 'hank') {
+                if (avatar) {
+                    avatar.innerText = '🐶';
+                    avatar.className = 'w-14 h-14 rounded-xl bg-gradient-to-tr from-sky-500 to-indigo-500 flex items-center justify-center text-3xl text-white shadow';
+                }
+                if (name) name.innerText = '행크 (Hank)';
+                if (skill) skill.innerText = '자석 & 보호막 지속시간 +3초';
+            } else {
+                if (avatar) {
+                    avatar.innerText = '🐱';
+                    avatar.className = 'w-14 h-14 rounded-xl bg-gradient-to-tr from-indigo-600 to-sky-400 flex items-center justify-center text-3xl text-white shadow';
+                }
+                if (name) name.innerText = '톰 (Tom)';
+                if (skill) skill.innerText = '스피드 가속 +10%';
+            }
+        }
+
+        function setGameSpeedMultiplier(mult) {
+            speedMultiplier = mult;
+            localStorage.setItem('tom_gold_speed', mult.toString());
+            updateSpeedUI();
+        }
+
+        function updateSpeedUI() {
+            const labelText = speedMultiplier === 0.75 ? "느림 (0.75x)" : (speedMultiplier === 1.35 ? "빠름 (1.35x)" : "보통 (1.0x)");
+            
+            // Main menu speed controls
+            const menuSlow = document.getElementById('menu-btn-speed-slow');
+            const menuNorm = document.getElementById('menu-btn-speed-normal');
+            const menuFast = document.getElementById('menu-btn-speed-fast');
+            const menuLabel = document.getElementById('menu-speed-label');
+
+            if (menuLabel) menuLabel.innerText = labelText;
+            if (menuSlow) menuSlow.className = speedMultiplier === 0.75 ? "bg-amber-500 text-slate-950 py-2 rounded-xl text-xs font-black shadow transition active:scale-95" : "bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 py-2 rounded-xl text-xs font-bold transition active:scale-95";
+            if (menuNorm) menuNorm.className = speedMultiplier === 1.0 ? "bg-amber-500 text-slate-950 py-2 rounded-xl text-xs font-black shadow transition active:scale-95" : "bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 py-2 rounded-xl text-xs font-bold transition active:scale-95";
+            if (menuFast) menuFast.className = speedMultiplier === 1.35 ? "bg-amber-500 text-slate-950 py-2 rounded-xl text-xs font-black shadow transition active:scale-95" : "bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 py-2 rounded-xl text-xs font-bold transition active:scale-95";
+
+            // Pause modal speed controls
+            const pauseSlow = document.getElementById('btn-speed-slow');
+            const pauseNorm = document.getElementById('btn-speed-normal');
+            const pauseFast = document.getElementById('btn-speed-fast');
+            const pauseLabel = document.getElementById('speed-label');
+
+            if (pauseLabel) pauseLabel.innerText = labelText;
+            if (pauseSlow) pauseSlow.className = speedMultiplier === 0.75 ? "bg-amber-500 text-slate-950 py-2 rounded-xl text-xs font-black shadow transition" : "bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 py-2 rounded-xl text-xs font-bold transition";
+            if (pauseNorm) pauseNorm.className = speedMultiplier === 1.0 ? "bg-amber-500 text-slate-950 py-2 rounded-xl text-xs font-black shadow transition" : "bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 py-2 rounded-xl text-xs font-bold transition";
+            if (pauseFast) pauseFast.className = speedMultiplier === 1.35 ? "bg-amber-500 text-slate-950 py-2 rounded-xl text-xs font-black shadow transition" : "bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-300 py-2 rounded-xl text-xs font-bold transition";
+        }
+
+        function startGame() {
+            sound.init();
+            
+            // Clear existing scene obstacles and collectibles
+            obstacles.forEach(obs => scene.remove(obs));
+            goldItems.forEach(g => scene.remove(g));
+            powerupItems.forEach(p => scene.remove(p));
+            dustParticles.forEach(d => scene.remove(d.mesh));
+
+            obstacles = [];
+            goldItems = [];
+            powerupItems = [];
+            dustParticles = [];
+
+            // Reset state variables
+            score = 0;
+            goldCollected = 0;
+            gameSpeed = BASE_SPEED;
+            worldOffset = 0;
+            lastSpawnZ = 0;
+            currentLane = 1;
+            targetX = LANES[1];
+            playerY = 0;
+            playerVelocityY = 0;
+            isJumping = false;
+            isSliding = false;
+            slideTimer = 0;
+
+            activePowerups = {
+                magnet: 0,
+                shield: false,
+                jetpack: 0,
+                multiplier: 0
+            };
+
+            if (playerGroup) {
+                playerGroup.position.set(LANES[currentLane], 0, 0);
+            }
+
+            gameState = STATE.PLAYING;
+
+            // Toggle screens
+            document.getElementById('main-menu').classList.add('hidden');
+            document.getElementById('gameover-modal').classList.add('hidden');
+            document.getElementById('pause-modal').classList.add('hidden');
+            document.getElementById('hud-screen').classList.remove('hidden');
+            document.getElementById('touch-controls').classList.remove('hidden');
+
+            updateHUD();
+        }
+
+        function moveLeft() {
+            if (gameState !== STATE.PLAYING) return;
+            if (currentLane > 0) {
+                currentLane--;
+                targetX = LANES[currentLane];
+                sound.playSlide();
+            }
+        }
+
+        function moveRight() {
+            if (gameState !== STATE.PLAYING) return;
+            if (currentLane < 2) {
+                currentLane++;
+                targetX = LANES[currentLane];
+                sound.playSlide();
+            }
+        }
+
+        function jump() {
+            if (gameState !== STATE.PLAYING) return;
+            if (!isJumping && activePowerups.jetpack <= 0) {
+                isJumping = true;
+                playerVelocityY = 0.28;
+                sound.playJump();
+            }
+        }
+
+        function slide() {
+            if (gameState !== STATE.PLAYING) return;
+            if (!isSliding) {
+                isSliding = true;
+                slideTimer = 35;
+                sound.playSlide();
+            }
+        }
+
+        function setupEventListeners() {
+            // Keyboard Listener
+            window.addEventListener('keydown', (e) => {
+                if (gameState === STATE.PLAYING) {
+                    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') moveLeft();
+                    else if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') moveRight();
+                    else if (e.key === 'ArrowUp' || e.key === 'w' || e.key === 'W' || e.key === ' ') jump();
+                    else if (e.key === 'ArrowDown' || e.key === 's' || e.key === 'S') slide();
+                    else if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') pauseGame();
+                }
+            });
+
+            // Touch Swipe Gestures
+            let touchStartX = 0;
+            let touchStartY = 0;
+            window.addEventListener('touchstart', (e) => {
+                if (e.touches.length > 0) {
+                    touchStartX = e.touches[0].clientX;
+                    touchStartY = e.touches[0].clientY;
+                }
+            }, { passive: true });
+
+            window.addEventListener('touchend', (e) => {
+                if (e.changedTouches.length > 0 && gameState === STATE.PLAYING) {
+                    const touchEndX = e.changedTouches[0].clientX;
+                    const touchEndY = e.changedTouches[0].clientY;
+                    const deltaX = touchEndX - touchStartX;
+                    const deltaY = touchEndY - touchStartY;
+
+                    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                        if (deltaX > 35) moveRight();
+                        else if (deltaX < -35) moveLeft();
+                    } else {
+                        if (deltaY > 35) slide();
+                        else if (deltaY < -35) jump();
+                    }
+                }
+            }, { passive: true });
+
+            // UI Button Handlers
+            document.getElementById('btn-start-game').addEventListener('click', startGame);
+            document.getElementById('btn-pause').addEventListener('click', pauseGame);
+            document.getElementById('btn-resume').addEventListener('click', resumeGame);
+            document.getElementById('btn-pause-menu').addEventListener('click', quitToMenu);
+            document.getElementById('btn-restart').addEventListener('click', startGame);
+            document.getElementById('btn-go-menu').addEventListener('click', quitToMenu);
+            document.getElementById('btn-open-shop').addEventListener('click', openShop);
+            document.getElementById('btn-close-shop').addEventListener('click', closeShop);
+
+            document.getElementById('tab-chars').addEventListener('click', () => switchShopTab('chars'));
+            document.getElementById('tab-upgrades').addEventListener('click', () => switchShopTab('upgrades'));
+
+            document.getElementById('select-char-tom').addEventListener('click', () => selectCharacter('tom'));
+            document.getElementById('select-char-angela').addEventListener('click', () => buyOrSelectChar('angela', 500));
+            document.getElementById('select-char-hank').addEventListener('click', () => buyOrSelectChar('hank', 1000));
+
+            document.getElementById('btn-upg-magnet').addEventListener('click', () => buyUpgrade('magnet', 200));
+            document.getElementById('btn-upg-shield').addEventListener('click', () => buyUpgrade('shield', 250));
+            document.getElementById('btn-upg-jetpack').addEventListener('click', () => buyUpgrade('jetpack', 300));
+
+            document.getElementById('btn-toggle-sound').addEventListener('click', () => {
+                sound.enabled = !sound.enabled;
+                document.getElementById('sound-text').innerText = sound.enabled ? '사운드 ON' : '사운드 OFF';
+                document.getElementById('sound-icon').className = sound.enabled ? 'fa-solid fa-volume-high text-amber-400' : 'fa-solid fa-volume-xmark text-slate-500';
+            });
+
+            // Mobile Touch Overlay Controls
+            document.getElementById('btn-touch-up').addEventListener('click', jump);
+            document.getElementById('btn-touch-down').addEventListener('click', slide);
+            document.getElementById('btn-touch-left').addEventListener('click', moveLeft);
+            document.getElementById('btn-touch-right').addEventListener('click', moveRight);
+        }
+
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            updateGameLogic();
+
+            // Dynamic Camera Follow with slight bounce
+            if (playerGroup) {
+                camera.position.x += (playerGroup.position.x * 0.25 - camera.position.x) * 0.1;
+                camera.position.y = 5.5 + (playerGroup.position.y * 0.35);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        window.onload = () => {
+            initThree();
+            setupEventListeners();
+            updateHUD();
+            updateMenuCharPreview();
+            updateSpeedUI();
+            animate();
+        };
+    </script>
+</body>
+</html>
