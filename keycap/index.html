@@ -1,1 +1,958 @@
 
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>3D 키캡 퐁퐁 스카이 점프!</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Jua&display=swap');
+
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background: linear-gradient(135deg, #080710 0%, #13112c 50%, #05040a 100%);
+            font-family: 'Jua', sans-serif, Arial;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100%;
+            max-width: 440px;
+            height: 100vh;
+            max-height: 780px;
+            background: radial-gradient(circle at 50% 20%, #1d123a 0%, #0a0718 70%, #030208 100%);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.8), 0 0 35px rgba(123, 44, 191, 0.3);
+            border-radius: 24px;
+            overflow: hidden;
+            border: 3px solid rgba(255, 255, 255, 0.15);
+        }
+
+        /* 반짝이는 우주 별 배경 효과 */
+        .star {
+            position: absolute;
+            background: #ffffff;
+            border-radius: 50%;
+            opacity: 0.8;
+            pointer-events: none;
+            animation: twinkle ease-in-out infinite alternate;
+        }
+
+        @keyframes twinkle {
+            0% { transform: scale(0.6); opacity: 0.3; box-shadow: 0 0 2px #fff; }
+            100% { transform: scale(1.4); opacity: 1; box-shadow: 0 0 8px #70e000; }
+        }
+
+        .star1 { width: 3px; height: 3px; top: 12%; left: 15%; animation-duration: 2.1s; }
+        .star2 { width: 4px; height: 4px; top: 35%; left: 80%; animation-duration: 3.2s; }
+        .star3 { width: 2px; height: 2px; top: 68%; left: 25%; animation-duration: 1.8s; }
+        .star4 { width: 5px; height: 5px; top: 82%; left: 70%; animation-duration: 2.7s; box-shadow: 0 0 10px #4cc9f0; }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            z-index: 2;
+        }
+
+        /* HUD - 점수 및 헤더 UI */
+        #hud {
+            position: absolute;
+            top: 15px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 20px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .score-box {
+            background: rgba(15, 12, 35, 0.75);
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 20px;
+            color: #4cc9f0;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5), inset 0 0 10px rgba(76, 201, 240, 0.2);
+            backdrop-filter: blur(8px);
+            border: 1.5px solid rgba(76, 201, 240, 0.4);
+            text-shadow: 0 0 8px rgba(76, 201, 240, 0.6);
+        }
+
+        /* 게임 시작 / 오버 오버레이 */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(5, 3, 15, 0.75);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 20;
+            backdrop-filter: blur(10px);
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+
+        .overlay.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .modal {
+            background: linear-gradient(145deg, #16122c 0%, #0a0718 100%);
+            width: 85%;
+            padding: 28px 20px;
+            border-radius: 28px;
+            text-align: center;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.8), 0 0 30px rgba(114, 9, 183, 0.4);
+            border: 2px solid rgba(160, 32, 240, 0.5);
+            transform: scale(1);
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.6); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .modal h1 {
+            font-size: 30px;
+            margin-bottom: 10px;
+            background: linear-gradient(to right, #4cc9f0, #f72585);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 10px rgba(76, 201, 240, 0.5);
+        }
+
+        .modal p {
+            color: #b8c1ec;
+            font-size: 17px;
+            margin-bottom: 8px;
+        }
+
+        .title-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #7209b7, #4cc9f0);
+            color: white;
+            font-size: 20px;
+            padding: 6px 20px;
+            border-radius: 30px;
+            margin: 12px 0 20px 0;
+            box-shadow: 0 0 15px rgba(76, 201, 240, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+        }
+
+        .btn-start {
+            background: linear-gradient(135deg, #f72585 0%, #7209b7 100%);
+            color: white;
+            border: none;
+            padding: 14px 38px;
+            font-size: 24px;
+            font-family: 'Jua', sans-serif, Arial;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(247, 37, 133, 0.5);
+            transition: all 0.15s ease;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .btn-start:active {
+            transform: translateY(3px);
+            box-shadow: 0 2px 10px rgba(247, 37, 133, 0.5);
+        }
+
+        /* 터치 컨트롤 버튼 (모바일용) */
+        #touch-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 25px;
+            z-index: 10;
+        }
+
+        .touch-btn {
+            width: 70px;
+            height: 70px;
+            background: rgba(20, 16, 45, 0.65);
+            border: 2px solid rgba(76, 201, 240, 0.5);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 30px;
+            color: #4cc9f0;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.5), inset 0 0 10px rgba(76, 201, 240, 0.3);
+            touch-action: manipulation;
+            backdrop-filter: blur(6px);
+            text-shadow: 0 0 10px #4cc9f0;
+        }
+
+        .touch-btn:active {
+            background: rgba(76, 201, 240, 0.3);
+            transform: scale(0.92);
+        }
+
+        /* 조작 가이드 */
+        .controls-hint {
+            font-size: 14px;
+            color: #8d99ae;
+            margin-top: 15px;
+            line-height: 1.4;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <!-- 배경 별빛 파티클 -->
+        <div class="star star1"></div>
+        <div class="star star2"></div>
+        <div class="star star3"></div>
+        <div class="star star4"></div>
+
+        <!-- 점수 표시 -->
+        <div id="hud">
+            <div class="score-box">점수: <span id="current-score">0</span>m</div>
+            <div class="score-box" style="color:#f72585; border-color: rgba(247, 37, 133, 0.4); text-shadow: 0 0 8px rgba(247, 37, 133, 0.6);">최고: <span id="high-score">0</span>m</div>
+        </div>
+
+        <!-- 메인 캔버스 -->
+        <canvas id="gameCanvas"></canvas>
+
+        <!-- 모바일 방향 조작 버튼 -->
+        <div id="touch-controls">
+            <div class="touch-btn" id="btn-left">◀</div>
+            <div class="touch-btn" id="btn-right">▶</div>
+        </div>
+
+        <!-- 모달 / 오버레이 화면 -->
+        <div id="overlay" class="overlay">
+            <div class="modal" id="modal-content">
+                <h1 id="modal-title">키캡 퐁퐁 점프!</h1>
+                <p id="modal-desc">알록달록 3D 키캡을 밟고<br>우주 끝까지 뛰어올라봐요!</p>
+                
+                <div id="result-box" style="display: none;">
+                    <p style="margin-top: 10px; font-size: 20px;">최종 점수: <b id="final-score" style="color:#f72585; font-size: 28px;">0</b> m</p>
+                    <div id="player-title" class="title-badge">🚀 초보 우주비행사</div>
+                </div>
+
+                <br>
+                <button class="btn-start" id="btn-play">게임 시작!</button>
+
+                <div class="controls-hint">
+                    🎮 <b>조작 방법</b><br>
+                    키보드 방향키 [◀] [▶] 또는 [A] [D]<br>
+                    (모바일은 화면 하단 버튼 터치)
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Canvas roundRect Polyfill (구형 렌더러 호환용)
+        if (!CanvasRenderingContext2D.prototype.roundRect) {
+            CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+                if (typeof r === 'undefined') r = 0;
+                if (typeof r === 'number') r = {tl: r, tr: r, br: r, bl: r};
+                else {
+                    var defaultRadius = {tl: 0, tr: 0, br: 0, bl: 0};
+                    for (var side in defaultRadius) {
+                        r[side] = r[side] || defaultRadius[side];
+                    }
+                }
+                this.beginPath();
+                this.moveTo(x + r.tl, y);
+                this.lineTo(x + w - r.tr, y);
+                this.quadraticCurveTo(x + w, y, x + w, y + r.tr);
+                this.lineTo(x + w, y + h - r.br);
+                this.quadraticCurveTo(x + w, y + h, x + w - r.br, y + h);
+                this.lineTo(x + r.bl, y + h);
+                this.quadraticCurveTo(x, y + h, x, y + h - r.bl);
+                this.lineTo(x, y + r.tl);
+                this.quadraticCurveTo(x, y, x + r.tl, y);
+                this.closePath();
+                return this;
+            };
+        }
+
+        // Web Audio API 효과음 생성 시스템
+        class SoundEffects {
+            constructor() {
+                this.ctx = null;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContextClass) {
+                        this.ctx = new AudioContextClass();
+                    }
+                }
+            }
+
+            playBounce() {
+                if (!this.ctx) return;
+                try {
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.exponentialRampToValueAtTime(800, now + 0.08);
+
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.08);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } catch(e) {}
+            }
+
+            playSpring() {
+                if (!this.ctx) return;
+                try {
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(1200, now + 0.35);
+
+                    gain.gain.setValueAtTime(0.4, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.start(now);
+                    osc.stop(now + 0.35);
+                } catch(e) {}
+            }
+
+            playBreak() {
+                if (!this.ctx) return;
+                try {
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.linearRampToValueAtTime(60, now + 0.15);
+
+                    gain.gain.setValueAtTime(0.3, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.start(now);
+                    osc.stop(now + 0.15);
+                } catch(e) {}
+            }
+
+            playGameOver() {
+                if (!this.ctx) return;
+                try {
+                    const now = this.ctx.currentTime;
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(400, now);
+                    osc.frequency.linearRampToValueAtTime(150, now + 0.5);
+
+                    gain.gain.setValueAtTime(0.4, now);
+                    gain.gain.exponentialRampToValueAtTime(0.01, now + 0.5);
+
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+
+                    osc.start(now);
+                    osc.stop(now + 0.5);
+                } catch(e) {}
+            }
+        }
+
+        const sound = new SoundEffects();
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const CANVAS_WIDTH = 400;
+        const CANVAS_HEIGHT = 700;
+        canvas.width = CANVAS_WIDTH;
+        canvas.height = CANVAS_HEIGHT;
+
+        const overlay = document.getElementById('overlay');
+        const modalTitle = document.getElementById('modal-title');
+        const modalDesc = document.getElementById('modal-desc');
+        const resultBox = document.getElementById('result-box');
+        const finalScoreEl = document.getElementById('final-score');
+        const playerTitleEl = document.getElementById('player-title');
+        const currentScoreEl = document.getElementById('current-score');
+        const highScoreEl = document.getElementById('high-score');
+        const btnPlay = document.getElementById('btn-play');
+
+        let isGameRunning = false;
+        let score = 0;
+        let highScore = localStorage.getItem('keycap_high_score') || 0;
+        highScoreEl.textContent = Math.floor(highScore);
+
+        let cameraY = 0;
+        let keycapList = [];
+        let particleList = [];
+
+        const keys = {
+            left: false,
+            right: false
+        };
+
+        const pastelColors = [
+            { top: '#FFB3BA', side: '#E598A0', label: 'A' },
+            { top: '#BAFFC9', side: '#9EE0AE', label: 'S' },
+            { top: '#BAE1FF', side: '#9EC2E0', label: 'D' },
+            { top: '#FFFFBA', side: '#E0E09E', label: 'W' },
+            { top: '#E8AEFF', side: '#C98EE0', label: 'SPACE' }
+        ];
+
+        class Player {
+            constructor() {
+                this.width = 46;
+                this.height = 46;
+                this.x = CANVAS_WIDTH / 2 - this.width / 2;
+                this.y = CANVAS_HEIGHT - 200;
+                this.vx = 0;
+                this.vy = 0;
+                this.gravity = 0.38;
+                this.jumpPower = -12.5;
+                this.facingRight = true;
+                this.squish = 1;
+            }
+
+            update() {
+                const moveSpeed = 6.8;
+                if (keys.left) {
+                    this.vx = -moveSpeed;
+                    this.facingRight = false;
+                } else if (keys.right) {
+                    this.vx = moveSpeed;
+                    this.facingRight = true;
+                } else {
+                    this.vx *= 0.82;
+                }
+
+                this.x += this.vx;
+
+                if (this.x < -this.width / 2) {
+                    this.x = CANVAS_WIDTH - this.width / 2;
+                } else if (this.x > CANVAS_WIDTH - this.width / 2) {
+                    this.x = -this.width / 2;
+                }
+
+                this.vy += this.gravity;
+                this.y += this.vy;
+
+                this.squish += (1 - this.squish) * 0.15;
+            }
+
+            jump(powerMultiplier = 1) {
+                this.vy = this.jumpPower * powerMultiplier;
+                this.squish = 0.65;
+            }
+
+            draw() {
+                ctx.save();
+                ctx.translate(this.x + this.width / 2, this.y + this.height / 2 - cameraY);
+                ctx.scale(1 / this.squish, this.squish);
+
+                const dir = this.facingRight ? 1 : -1;
+
+                // 추진 불꽃
+                if (this.vy < 0) {
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.moveTo(-10, 20);
+                    ctx.lineTo(0, 38 + Math.random() * 10);
+                    ctx.lineTo(10, 20);
+                    ctx.closePath();
+                    ctx.fillStyle = '#f72585';
+                    ctx.fill();
+
+                    ctx.beginPath();
+                    ctx.moveTo(-5, 20);
+                    ctx.lineTo(0, 30 + Math.random() * 6);
+                    ctx.lineTo(5, 20);
+                    ctx.closePath();
+                    ctx.fillStyle = '#4cc9f0';
+                    ctx.fill();
+                    ctx.restore();
+                }
+
+                // 그림자
+                ctx.beginPath();
+                ctx.ellipse(0, 22, 18, 5, 0, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.4)';
+                ctx.fill();
+
+                // 귀
+                ctx.fillStyle = '#2b2d42';
+                ctx.beginPath();
+                ctx.moveTo(-18, -12); ctx.lineTo(-24, -28); ctx.lineTo(-10, -20);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(18, -12); ctx.lineTo(24, -28); ctx.lineTo(10, -20);
+                ctx.fill();
+
+                ctx.fillStyle = '#f72585';
+                ctx.beginPath();
+                ctx.moveTo(-16, -14); ctx.lineTo(-21, -24); ctx.lineTo(-11, -19);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.moveTo(16, -14); ctx.lineTo(21, -24); ctx.lineTo(11, -19);
+                ctx.fill();
+
+                // 헬멧
+                ctx.beginPath();
+                ctx.arc(0, 0, 23, 0, Math.PI * 2);
+                ctx.fillStyle = '#1d2d44';
+                ctx.fill();
+                ctx.lineWidth = 2.5;
+                ctx.strokeStyle = '#4cc9f0';
+                ctx.stroke();
+
+                // 바이저
+                ctx.beginPath();
+                ctx.ellipse(dir * 2, -1, 16, 14, 0, 0, Math.PI * 2);
+                const visorGrad = ctx.createLinearGradient(-15, -15, 15, 15);
+                visorGrad.addColorStop(0, '#4cc9f0');
+                visorGrad.addColorStop(0.7, '#7209b7');
+                visorGrad.addColorStop(1, '#3a0ca3');
+                ctx.fillStyle = visorGrad;
+                ctx.fill();
+                ctx.lineWidth = 1.5;
+                ctx.strokeStyle = '#80e5ff';
+                ctx.stroke();
+
+                // 눈
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(dir * 5 - 5, -1, 3.2, 0, Math.PI * 2);
+                ctx.arc(dir * 5 + 6, -1, 3.2, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#05030a';
+                ctx.beginPath();
+                ctx.arc(dir * 5 - 5, 0, 1.8, 0, Math.PI * 2);
+                ctx.arc(dir * 5 + 6, 0, 1.8, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.restore();
+            }
+        }
+
+        class Keycap {
+            constructor(x, y, type = 'normal') {
+                this.x = x;
+                this.y = y;
+                this.width = 76;
+                this.height = 22;
+                this.depth = 12;
+                this.type = type;
+                
+                this.pressOffset = 0;
+                this.isPressed = false;
+
+                this.vx = (Math.random() < 0.5 ? 1 : -1) * (1.8 + Math.random() * 1.5);
+
+                this.isBreaking = false;
+                this.breakTimer = 0;
+                this.brokenAlpha = 1;
+
+                const style = pastelColors[Math.floor(Math.random() * pastelColors.length)];
+                this.label = style.label;
+                
+                if (type === 'normal') {
+                    this.topColor = style.top;
+                    this.sideColor = style.side;
+                } else if (type === 'spring') {
+                    this.topColor = '#70e000';
+                    this.sideColor = '#38b000';
+                    this.label = '⚡';
+                } else if (type === 'broken') {
+                    this.topColor = '#ff6b6b';
+                    this.sideColor = '#c92a2a';
+                    this.label = '✖';
+                } else if (type === 'moving') {
+                    this.topColor = '#4cc9f0';
+                    this.sideColor = '#4361ee';
+                    this.label = '↔';
+                }
+            }
+
+            update() {
+                if (this.isPressed) {
+                    this.pressOffset += 2;
+                    if (this.pressOffset >= this.depth - 2) {
+                        this.isPressed = false;
+                    }
+                } else if (this.pressOffset > 0) {
+                    this.pressOffset -= 1.5;
+                    if (this.pressOffset < 0) this.pressOffset = 0;
+                }
+
+                if (this.type === 'moving') {
+                    this.x += this.vx;
+                    if (this.x <= 10 || this.x + this.width >= CANVAS_WIDTH - 10) {
+                        this.vx *= -1;
+                    }
+                }
+
+                if (this.isBreaking) {
+                    this.breakTimer++;
+                    this.brokenAlpha -= 0.04;
+                }
+            }
+
+            press() {
+                this.isPressed = true;
+                this.pressOffset = 2;
+            }
+
+            draw() {
+                if (this.brokenAlpha <= 0) return;
+
+                ctx.save();
+                ctx.globalAlpha = this.brokenAlpha;
+
+                const drawY = this.y - cameraY + this.pressOffset;
+                const h = this.height;
+                const d = this.depth - this.pressOffset;
+
+                // 1. 하단 그림자
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
+                ctx.beginPath();
+                ctx.roundRect(this.x - 2, drawY + d + 2, this.width + 4, h, 8);
+                ctx.fill();
+
+                // 2. 키캡 측면
+                if (d > 0) {
+                    ctx.fillStyle = this.sideColor;
+                    ctx.beginPath();
+                    ctx.roundRect(this.x, drawY + h / 2, this.width, h / 2 + d, 8);
+                    ctx.fill();
+                }
+
+                // 3. 키캡 상단
+                ctx.fillStyle = this.topColor;
+                ctx.beginPath();
+                ctx.roundRect(this.x, drawY, this.width, h, 6);
+                ctx.fill();
+
+                ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+
+                // 4. 키캡 각인 (선명한 짙은 어두운색 텍스트 연출)
+                ctx.fillStyle = '#050508'; // 진한 검정 어두운색
+                ctx.font = 'bold 15px Jua, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                
+                // 가독성을 극대화하기 위한 흰색 외각 후광 아우트라인 효과
+                ctx.shadowColor = 'rgba(255, 255, 255, 0.9)';
+                ctx.shadowBlur = 4;
+                ctx.fillText(this.label, this.x + this.width / 2, drawY + h / 2);
+
+                // 5. 스프링 장식
+                if (this.type === 'spring') {
+                    ctx.shadowBlur = 0;
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    const spX = this.x + this.width / 2;
+                    const spY = drawY;
+                    ctx.moveTo(spX - 8, spY);
+                    ctx.lineTo(spX + 8, spY - 5);
+                    ctx.lineTo(spX - 8, spY - 10);
+                    ctx.lineTo(spX + 8, spY - 15);
+                    ctx.stroke();
+                }
+
+                // 6. 깨짐 표현
+                if (this.type === 'broken' && this.isBreaking) {
+                    ctx.shadowBlur = 0;
+                    ctx.strokeStyle = '#ffffff';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(this.x + 15, drawY + 2);
+                    ctx.lineTo(this.x + 35, drawY + h - 2);
+                    ctx.lineTo(this.x + 55, drawY + 4);
+                    ctx.stroke();
+                }
+
+                ctx.restore();
+            }
+        }
+
+        class Particle {
+            constructor(x, y, isRainbow = false) {
+                this.x = x;
+                this.y = y;
+                this.size = Math.random() * 6 + 4;
+                this.vx = (Math.random() - 0.5) * 8;
+                this.vy = (Math.random() - 0.5) * 8 - 2;
+                this.gravity = 0.15;
+                this.life = 1.0;
+                this.decay = Math.random() * 0.03 + 0.02;
+
+                if (isRainbow) {
+                    const colors = ['#FF6B6B', '#FFD166', '#06D6A0', '#118AB2', '#8338EC'];
+                    this.color = colors[Math.floor(Math.random() * colors.length)];
+                } else {
+                    this.color = '#FFF';
+                }
+            }
+
+            update() {
+                this.x += this.vx;
+                this.vy += this.gravity;
+                this.y += this.vy;
+                this.life -= this.decay;
+            }
+
+            draw() {
+                if (this.life <= 0) return;
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y - cameraY, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        let player = new Player();
+
+        function createParticles(x, y, count = 15, isRainbow = false) {
+            for (let i = 0; i < count; i++) {
+                particleList.push(new Particle(x, y, isRainbow));
+            }
+        }
+
+        function initGame() {
+            sound.init();
+            score = 0;
+            cameraY = 0;
+            currentScoreEl.textContent = '0';
+            player = new Player();
+            particleList = [];
+            keycapList = [];
+
+            keycapList.push(new Keycap(CANVAS_WIDTH / 2 - 38, CANVAS_HEIGHT - 100, 'normal'));
+
+            let currentY = CANVAS_HEIGHT - 100;
+            for (let i = 0; i < 15; i++) {
+                currentY -= Math.floor(Math.random() * 40 + 60);
+                const x = Math.random() * (CANVAS_WIDTH - 80) + 10;
+                const type = getRandomKeycapType();
+                keycapList.push(new Keycap(x, currentY, type));
+            }
+
+            isGameRunning = true;
+            overlay.classList.add('hidden');
+            requestAnimationFrame(gameLoop);
+        }
+
+        function getRandomKeycapType() {
+            const rand = Math.random();
+            if (rand < 0.6) return 'normal';
+            if (rand < 0.75) return 'moving';
+            if (rand < 0.88) return 'spring';
+            return 'broken';
+        }
+
+        function spawnNewKeycaps() {
+            let minY = CANVAS_HEIGHT;
+            for (let k of keycapList) {
+                if (k.y < minY) minY = k.y;
+            }
+
+            while (minY > cameraY - 200) {
+                minY -= Math.floor(Math.random() * 45 + 55);
+                const x = Math.random() * (CANVAS_WIDTH - 80) + 10;
+                const type = getRandomKeycapType();
+                keycapList.push(new Keycap(x, minY, type));
+            }
+        }
+
+        function getTitle(score) {
+            if (score < 300) return '🚀 초보 우주비행사';
+            if (score < 800) return '🌌 은하수 탐험가';
+            if (score < 1500) return '⚡ 코스믹 키캡 마스터';
+            if (score < 2500) return '🛸 스페이스 챔피언';
+            return '👑 전설의 우주 점프왕';
+        }
+
+        function gameOver() {
+            isGameRunning = false;
+            sound.playGameOver();
+
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('keycap_high_score', highScore);
+                highScoreEl.textContent = Math.floor(highScore);
+            }
+
+            modalTitle.textContent = "우주 탐사 완료!";
+            modalDesc.textContent = "아쉽네요! 우주 속으로 추락했어요.";
+            finalScoreEl.textContent = Math.floor(score);
+            playerTitleEl.textContent = getTitle(score);
+            resultBox.style.display = 'block';
+            btnPlay.textContent = "다시 발사하기!";
+
+            overlay.classList.remove('hidden');
+        }
+
+        function gameLoop() {
+            if (!isGameRunning) return;
+
+            player.update();
+
+            const targetCameraY = player.y - CANVAS_HEIGHT * 0.45;
+            if (targetCameraY < cameraY) {
+                cameraY = targetCameraY;
+                score = Math.floor(-cameraY);
+                currentScoreEl.textContent = score;
+            }
+
+            keycapList.forEach((keycap) => {
+                keycap.update();
+
+                if (
+                    player.vy > 0 &&
+                    player.x + player.width > keycap.x &&
+                    player.x < keycap.x + keycap.width &&
+                    player.y + player.height >= keycap.y &&
+                    player.y + player.height <= keycap.y + keycap.height + 12
+                ) {
+                    if (keycap.type === 'broken') {
+                        if (!keycap.isBreaking) {
+                            keycap.isBreaking = true;
+                            sound.playBreak();
+                            player.jump(0.6);
+                            createParticles(player.x + 23, player.y + 46, 8, false);
+                        }
+                    } else if (keycap.type === 'spring') {
+                        keycap.press();
+                        player.jump(1.85);
+                        sound.playSpring();
+                        createParticles(player.x + 23, player.y + 46, 25, true);
+                    } else {
+                        keycap.press();
+                        player.jump(1.0);
+                        sound.playBounce();
+                        createParticles(player.x + 23, player.y + 46, 10, false);
+                    }
+                }
+            });
+
+            keycapList = keycapList.filter(k => k.brokenAlpha > 0 && k.y < cameraY + CANVAS_HEIGHT + 100);
+            spawnNewKeycaps();
+
+            particleList.forEach(p => p.update());
+            particleList = particleList.filter(p => p.life > 0);
+
+            if (player.y - cameraY > CANVAS_HEIGHT + 50) {
+                gameOver();
+                return;
+            }
+
+            ctx.clearRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+            for (let i = 0; i < 20; i++) {
+                const starX = (i * 73 + 15) % CANVAS_WIDTH;
+                const starY = (i * 97 - cameraY * 0.3) % CANVAS_HEIGHT;
+                const adjustedY = starY < 0 ? starY + CANVAS_HEIGHT : starY;
+                ctx.beginPath();
+                ctx.arc(starX, adjustedY, (i % 3) + 1, 0, Math.PI * 2);
+                ctx.fill();
+            }
+
+            keycapList.forEach(k => k.draw());
+            particleList.forEach(p => p.draw());
+            player.draw();
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                keys.left = true;
+            }
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                keys.right = true;
+            }
+        });
+
+        window.addEventListener('keyup', (e) => {
+            if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') {
+                keys.left = false;
+            }
+            if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') {
+                keys.right = false;
+            }
+        });
+
+        const btnLeft = document.getElementById('btn-left');
+        const btnRight = document.getElementById('btn-right');
+
+        const bindTouch = (btn, keyName) => {
+            btn.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                keys[keyName] = true;
+            });
+            btn.addEventListener('touchend', (e) => {
+                e.preventDefault();
+                keys[keyName] = false;
+            });
+            btn.addEventListener('mousedown', () => { keys[keyName] = true; });
+            btn.addEventListener('mouseup', () => { keys[keyName] = false; });
+        };
+
+        bindTouch(btnLeft, 'left');
+        bindTouch(btnRight, 'right');
+
+        btnPlay.addEventListener('click', () => {
+            initGame();
+        });
+    </script>
+</body>
+</html>
