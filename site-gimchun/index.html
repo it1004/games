@@ -1,1 +1,996 @@
+<!DOCTYPE html>
+<html lang="ko" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>김천 관광 가이드 - Gimcheon Travel Guide</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkbg: '#0F172A',
+                        darkcard: '#1E293B',
+                        darkborder: '#334155',
+                        cyanaccent: '#06B6D4',
+                        goldaccent: '#F59E0B',
+                        purpleaccent: '#8B5CF6'
+                    },
+                    fontFamily: {
+                        sans: ['Pretendard', 'Inter', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Custom Styles -->
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        body {
+            font-family: 'Pretendard', sans-serif;
+            background-color: #0F172A;
+            color: #F8FAFC;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0F172A;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #06B6D4;
+        }
+        /* Glassmorphism Effect */
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glass-nav {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        /* Card Hover Effects */
+        .spot-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .spot-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 24px -10px rgba(6, 182, 212, 0.3);
+        }
+    </style>
+</head>
+<body class="bg-darkbg text-slate-100 min-h-screen flex flex-col antialiased selection:bg-cyanaccent selection:text-slate-900">
 
+    <!-- Navigation Bar -->
+    <nav class="fixed top-0 left-0 right-0 z-40 glass-nav transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <a href="#" class="flex items-center gap-2.5 group">
+                <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-rose-500 to-red-600 flex items-center justify-center text-white font-bold text-base shadow-md shadow-rose-500/30 group-hover:scale-105 transition-transform">
+                    <i class="fa-solid fa-mountain-sun"></i>
+                </div>
+                <div>
+                    <span class="text-lg font-bold tracking-tight bg-gradient-to-r from-white via-slate-200 to-cyanaccent bg-clip-text text-transparent">김천 관광</span>
+                    <span class="block text-[10px] text-cyanaccent tracking-widest font-semibold uppercase -mt-1">Gimcheon Tour</span>
+                </div>
+            </a>
+
+            <!-- Desktop Menu -->
+            <div class="hidden md:flex items-center gap-7 font-medium text-sm text-slate-300">
+                <a href="#spots" class="hover:text-cyanaccent transition-colors">주요명소</a>
+                <a href="#festivals" class="hover:text-cyanaccent transition-colors">축제소개</a>
+                <a href="#foods" class="hover:text-cyanaccent transition-colors">먹거리</a>
+                <a href="#osami" class="hover:text-cyanaccent transition-colors">오삼이</a>
+                <button onclick="toggleFavoritesModal()" class="flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-200 border border-slate-700/60 text-xs transition-all hover:border-cyanaccent/50">
+                    <i class="fa-solid fa-heart text-pink-500"></i>
+                    <span>찜한 명소</span>
+                    <span id="fav-count" class="ml-0.5 text-[11px] px-1.5 py-0.2 rounded-full bg-pink-500/20 text-pink-400 font-bold">0</span>
+                </button>
+            </div>
+
+            <!-- Mobile Menu Toggle Button -->
+            <button onclick="toggleMobileMenu()" class="md:hidden p-2 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800 focus:outline-none">
+                <i class="fa-solid fa-bars text-lg" id="menu-icon"></i>
+            </button>
+        </div>
+
+        <!-- Mobile Menu Dropdown -->
+        <div id="mobile-menu" class="hidden md:hidden glass border-t border-slate-800 px-4 pt-3 pb-6 space-y-3">
+            <a href="#spots" onclick="toggleMobileMenu()" class="block py-2 px-3 rounded-lg hover:bg-slate-800 text-slate-200 text-sm">주요명소</a>
+            <a href="#festivals" onclick="toggleMobileMenu()" class="block py-2 px-3 rounded-lg hover:bg-slate-800 text-slate-200 text-sm">축제소개</a>
+            <a href="#foods" onclick="toggleMobileMenu()" class="block py-2 px-3 rounded-lg hover:bg-slate-800 text-slate-200 text-sm">먹거리</a>
+            <a href="#osami" onclick="toggleMobileMenu()" class="block py-2 px-3 rounded-lg hover:bg-slate-800 text-slate-200 text-sm">오삼이</a>
+            <button onclick="toggleFavoritesModal(); toggleMobileMenu();" class="w-full flex items-center justify-between py-2 px-3 rounded-lg bg-slate-800 text-slate-200 border border-slate-700 text-sm">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-heart text-pink-500"></i>
+                    <span>찜한 명소 목록</span>
+                </div>
+                <span id="fav-count-mobile" class="text-xs px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-400 font-bold">0</span>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <header class="relative pt-28 pb-16 md:pt-36 md:pb-24 overflow-hidden flex items-center justify-center min-h-[55vh] md:min-h-[60vh]">
+        <!-- Background Overlay & Image -->
+        <div class="absolute inset-0 z-0">
+            <img src="https://images.unsplash.com/photo-1506744038136-46273834b3fb?q=80&w=2000&auto=format&fit=crop" 
+                 alt="김천 풍경" 
+                 class="w-full h-full object-cover opacity-20 filter brightness-90 contrast-110 scale-105">
+            <div class="absolute inset-0 bg-gradient-to-t from-darkbg via-darkbg/80 to-transparent"></div>
+        </div>
+
+        <div class="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 text-center">
+            <!-- Sleeker Compact Badge -->
+            <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full glass border border-cyanaccent/30 text-cyanaccent text-xs font-medium mb-5 shadow-sm">
+                <i class="fa-solid fa-sparkles text-goldaccent text-xs"></i>
+                <span>전통과 자연이 선율을 이루는 도시</span>
+            </div>
+            
+            <!-- Compact & Balanced Main Heading -->
+            <h1 class="text-2xl sm:text-4xl md:text-5xl font-extrabold tracking-tight mb-5 leading-tight text-white">
+                나는 지금 <span class="bg-gradient-to-r from-cyanaccent via-teal-300 to-goldaccent bg-clip-text text-transparent">김천</span>에 있습니다<br class="hidden sm:inline">
+                <span class="text-xl sm:text-3xl md:text-4xl font-bold text-slate-200 mt-2 block sm:inline">김천(金泉)으로 떠나는 여정</span>
+            </h1>
+            
+            <p class="max-w-xl mx-auto text-xs sm:text-sm md:text-base text-slate-300 mb-8 leading-relaxed font-light">
+                연화지의 야경부터 천년고찰 직지사, 사명대사 공원의 평화로운 기운까지.<br class="hidden sm:inline">
+                자연의 휴식과 문화의 감동을 김천에서 만나보세요.
+            </p>
+
+            <!-- Compact Action Buttons -->
+            <div class="flex flex-row gap-3 justify-center items-center">
+                <a href="#spots" class="px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl bg-gradient-to-r from-cyanaccent to-blue-600 text-slate-900 text-xs sm:text-sm font-bold hover:brightness-110 transition-all shadow-md shadow-cyanaccent/20 flex items-center justify-center gap-2 group">
+                    <span>관광지 둘러보기</span>
+                    <i class="fa-solid fa-arrow-down text-xs group-hover:translate-y-0.5 transition-transform"></i>
+                </a>
+                <a href="#osami" class="px-5 py-2.5 sm:px-6 sm:py-3 rounded-xl glass hover:bg-slate-800/80 text-slate-200 text-xs sm:text-sm font-semibold border border-slate-700 transition-all flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-paw text-goldaccent text-xs"></i>
+                    <span>오삼이 소개</span>
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex-grow w-full space-y-28">
+
+        <!-- Spot Search & Filter Section -->
+        <section id="spots" class="scroll-mt-24">
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-6">
+                <div>
+                    <h2 class="text-3xl font-bold text-white mb-2 flex items-center gap-3">
+                        <span class="w-2 h-8 bg-cyanaccent rounded-full"></span>
+                        김천 대표 관광 명소
+                    </h2>
+                    <p class="text-slate-400">김천이 자랑하는 보석 같은 여행지들을 카테고리별로 찾아보세요.</p>
+                </div>
+
+                <!-- Search Input -->
+                <div class="relative w-full md:w-80">
+                    <input type="text" id="search-input" oninput="filterSpots()" placeholder="명소 이름 또는 태그 검색..." 
+                        class="w-full py-3 pl-11 pr-4 bg-darkcard border border-darkborder rounded-xl text-slate-200 placeholder-slate-500 focus:outline-none focus:border-cyanaccent focus:ring-1 focus:ring-cyanaccent transition-all text-sm">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-3.5 text-slate-500"></i>
+                </div>
+            </div>
+
+            <!-- Category Filter Buttons -->
+            <div class="flex flex-wrap gap-2 sm:gap-3 mb-8" id="category-filters">
+                <button onclick="setCategory('all')" class="cat-btn active px-5 py-2.5 rounded-xl font-medium text-sm transition-all bg-cyanaccent text-slate-900 shadow-md shadow-cyanaccent/20">
+                    <i class="fa-solid fa-border-all mr-1.5"></i>전체보기
+                </button>
+                <button onclick="setCategory('nature')" class="cat-btn px-5 py-2.5 rounded-xl font-medium text-sm transition-all bg-darkcard text-slate-400 hover:text-white border border-darkborder hover:border-slate-600">
+                    <i class="fa-solid fa-leaf text-emerald-400 mr-1.5"></i>자연 / 힐링
+                </button>
+                <button onclick="setCategory('history')" class="cat-btn px-5 py-2.5 rounded-xl font-medium text-sm transition-all bg-darkcard text-slate-400 hover:text-white border border-darkborder hover:border-slate-600">
+                    <i class="fa-solid fa-gopuram text-amber-400 mr-1.5"></i>역사 / 사찰
+                </button>
+                <button onclick="setCategory('park')" class="cat-btn px-5 py-2.5 rounded-xl font-medium text-sm transition-all bg-darkcard text-slate-400 hover:text-white border border-darkborder hover:border-slate-600">
+                    <i class="fa-solid fa-tree-city text-cyan-400 mr-1.5"></i>공원 / 체험
+                </button>
+                <button onclick="setCategory('night')" class="cat-btn px-5 py-2.5 rounded-xl font-medium text-sm transition-all bg-darkcard text-slate-400 hover:text-white border border-darkborder hover:border-slate-600">
+                    <i class="fa-solid fa-moon text-purple-400 mr-1.5"></i>야경 명소
+                </button>
+            </div>
+
+            <!-- Tourist Cards Grid -->
+            <div id="spots-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+                <!-- Cards dynamically injected via JS -->
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="hidden py-16 text-center">
+                <i class="fa-solid fa-compass text-5xl text-slate-600 mb-4"></i>
+                <h3 class="text-xl font-semibold text-slate-300">검색 결과가 없습니다</h3>
+                <p class="text-slate-500 text-sm mt-1">다른 검색어나 카테고리를 선택해 보세요.</p>
+            </div>
+        </section>
+
+        <!-- Festivals Section -->
+        <section id="festivals" class="scroll-mt-24">
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-12">
+                <div>
+                    <span class="text-pink-400 text-xs font-bold tracking-widest uppercase bg-pink-500/10 px-3 py-1 rounded-full border border-pink-500/20">Annual Festivals</span>
+                    <h2 class="text-3xl font-bold text-white mt-2 flex items-center gap-3">
+                        <span class="w-2 h-8 bg-pink-500 rounded-full"></span>
+                        김천 대표 축제 소개
+                    </h2>
+                </div>
+                <p class="text-slate-400 text-sm max-w-md mt-2 md:mt-0">사계절 내내 즐거움이 가득한 김천의 신나는 축제 현장 속으로 여러분을 초대합니다.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Festival 1: 연화지 벚꽃축제 -->
+                <div class="glass rounded-3xl overflow-hidden border border-slate-700/60 group hover:border-pink-500/50 transition-all duration-300">
+                    <div class="h-52 overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1522383225653-ed111181a951?q=80&w=800&auto=format&fit=crop" alt="연화지 벚꽃축제" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-darkcard via-transparent to-transparent"></div>
+                        <span class="absolute top-4 left-4 bg-pink-500 text-white font-bold text-xs px-3 py-1 rounded-full shadow-lg backdrop-blur-md">
+                            <i class="fa-solid fa-seedling mr-1"></i>봄 축제
+                        </span>
+                        <span class="absolute bottom-3 right-4 text-xs font-semibold bg-slate-900/80 text-pink-300 px-3 py-1 rounded-lg border border-slate-700">
+                            매년 3월 말 ~ 4월 초
+                        </span>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-white mb-2 group-hover:text-pink-400 transition-colors">연화지 벚꽃축제</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed mb-4">
+                            연못을 둘러싼 환상적인 벚꽃길과 밤 하늘을 밝히는 감성 야간 조명쇼! 연화지의 고즈넉한 수변 야경과 벚꽃비 아래에서 낭만적인 봄날의 추억을 선사합니다.
+                        </p>
+                        <div class="space-y-2 text-xs text-slate-400 border-t border-slate-700/60 pt-4">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-location-dot text-pink-400 w-4"></i>
+                                <span>장소: 김천 연화지 일원</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-star text-goldaccent w-4"></i>
+                                <span>주요행사: 야간 벚꽃 라이트업, 버스킹, 포토존</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Festival 2: 포도축제 -->
+                <div class="glass rounded-3xl overflow-hidden border border-slate-700/60 group hover:border-purpleaccent/50 transition-all duration-300">
+                    <div class="h-52 overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1537640538966-79f369143f8f?q=80&w=800&auto=format&fit=crop" alt="김천 포도축제" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-darkcard via-transparent to-transparent"></div>
+                        <span class="absolute top-4 left-4 bg-purpleaccent text-white font-bold text-xs px-3 py-1 rounded-full shadow-lg backdrop-blur-md">
+                            <i class="fa-solid fa-wine-glass mr-1"></i>여름/가을 축제
+                        </span>
+                        <span class="absolute bottom-3 right-4 text-xs font-semibold bg-slate-900/80 text-purple-300 px-3 py-1 rounded-lg border border-slate-700">
+                            매년 8월 ~ 9월 경
+                        </span>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-white mb-2 group-hover:text-purpleaccent transition-colors">김천 포도축제</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed mb-4">
+                            전국 최고 품질을 자랑하는 김천 샤인머스캣과 캠벨 포도를 직접 맛보고 체험하는 축제! 포도 수확 체험, 와인 만들기, 과일 경매 등 풍성한 즐길거리가 가득합니다.
+                        </p>
+                        <div class="space-y-2 text-xs text-slate-400 border-t border-slate-700/60 pt-4">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-location-dot text-purpleaccent w-4"></i>
+                                <span>장소: 김천 종합운동장 / 대항면 농원 일원</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-basket-shopping text-cyanaccent w-4"></i>
+                                <span>주요행사: 샤인머스캣 따기 체험, 포도 할인 직거래장터</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Festival 3: 김밥축제 -->
+                <div class="glass rounded-3xl overflow-hidden border border-slate-700/60 group hover:border-goldaccent/50 transition-all duration-300">
+                    <div class="h-52 overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1656428254987-45d97432714b?q=80&w=800&auto=format&fit=crop" alt="김천 김밥축제" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-darkcard via-transparent to-transparent"></div>
+                        <span class="absolute top-4 left-4 bg-goldaccent text-slate-950 font-bold text-xs px-3 py-1 rounded-full shadow-lg backdrop-blur-md">
+                            <i class="fa-solid fa-fire mr-1"></i>시그니처 가을 축제
+                        </span>
+                        <span class="absolute bottom-3 right-4 text-xs font-semibold bg-slate-900/80 text-amber-300 px-3 py-1 rounded-lg border border-slate-700">
+                            매년 10월 경
+                        </span>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-white mb-2 group-hover:text-goldaccent transition-colors">김천 김밥축제</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed mb-4">
+                            "김천 하면 김밥천국?" 센스 있는 유머를 지역 시그니처 축제로 탄생시킨 화제의 미식 축제! 이색 프리미엄 수제 김밥 콘테스트와 레트로 문화 공연이 펼쳐집니다.
+                        </p>
+                        <div class="space-y-2 text-xs text-slate-400 border-t border-slate-700/60 pt-4">
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-location-dot text-goldaccent w-4"></i>
+                                <span>장소: 사명대사 공원 일원</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <i class="fa-solid fa-utensils text-emerald-400 w-4"></i>
+                                <span>주요행사: 전국 이색 김밥 경연대회, 김밥 쿡방 피크닉</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Gimcheon Local Foods Section -->
+        <section id="foods" class="scroll-mt-24">
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-12">
+                <div>
+                    <span class="text-goldaccent text-xs font-bold tracking-widest uppercase bg-goldaccent/10 px-3 py-1 rounded-full border border-goldaccent/20">Local Flavors</span>
+                    <h2 class="text-3xl font-bold text-white mt-2 flex items-center gap-3">
+                        <span class="w-2 h-8 bg-goldaccent rounded-full"></span>
+                        먹거리
+                    </h2>
+                </div>
+                <p class="text-slate-400 text-sm max-w-md mt-2 md:mt-0">여행의 즐거움을 완성하는 김천 특산물과 오직 이곳에서만 맛볼 수 있는 별미를 소개합니다.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Food Item 1 -->
+                <div class="glass rounded-3xl overflow-hidden border border-slate-700/60 group hover:border-goldaccent/50 transition-all duration-300">
+                    <div class="h-48 overflow-hidden relative">
+                        <img src="https://www.gc.go.kr/design/culture/img/sub/foodImg13.jpg" alt="지례 흑돼지" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-darkcard via-transparent to-transparent"></div>
+                        <span class="absolute top-4 left-4 bg-amber-500/90 text-slate-950 font-bold text-xs px-3 py-1 rounded-full backdrop-blur-md">
+                            <i class="fa-solid fa-utensils mr-1"></i>대표 요리
+                        </span>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-white mb-2 group-hover:text-goldaccent transition-colors">지례 흑돼지 구이</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed mb-4">
+                            김천 지례면의 특산품으로 쫄깃한 껍질과 고소한 지방, 풍부한 육즙이 일품인 흑돼지 요리입니다. 고추장 양념구이도 큰 인기입니다.
+                        </p>
+                        <div class="flex items-center text-xs text-slate-500 border-t border-slate-700/60 pt-4">
+                            <i class="fa-solid fa-location-dot text-goldaccent mr-1"></i>
+                            <span>추천 장소: 김천시 지례면 흑돼지 골목</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Food Item 2 -->
+                <div class="glass rounded-3xl overflow-hidden border border-slate-700/60 group hover:border-cyanaccent/50 transition-all duration-300">
+                    <div class="h-48 overflow-hidden relative">
+                        <img src="https://www.gc.go.kr/design/culture/img/sub/foodImg02.jpg" alt="김천 샤인머스캣과 자두" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-darkcard via-transparent to-transparent"></div>
+                        <span class="absolute top-4 left-4 bg-cyanaccent/90 text-slate-950 font-bold text-xs px-3 py-1 rounded-full backdrop-blur-md">
+                            <i class="fa-solid fa-apple-whole mr-1"></i>명품 과일
+                        </span>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-white mb-2 group-hover:text-cyanaccent transition-colors">김천 자두 & 샤인머스캣</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed mb-4">
+                            전국 최고 생산량과 당도를 자랑하는 김천의 대표 과일! 달콤함이 가득한 샤인머스캣과 새콤달콤한 자두는 선물용으로 최고입니다.
+                        </p>
+                        <div class="flex items-center text-xs text-slate-500 border-t border-slate-700/60 pt-4">
+                            <i class="fa-solid fa-calendar text-cyanaccent mr-1"></i>
+                            <span>제철: 자두(6~8월) / 샤인머스캣(8~11월)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Food Item 3 -->
+                <div class="glass rounded-3xl overflow-hidden border border-slate-700/60 group hover:border-purpleaccent/50 transition-all duration-300">
+                    <div class="h-48 overflow-hidden relative">
+                        <img src="https://images.unsplash.com/photo-1532347231146-80afc9e3df2b?q=80&w=685&auto=format&fit=crop" alt="김천 수제 김밥" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500">
+                        <div class="absolute inset-0 bg-gradient-to-t from-darkcard via-transparent to-transparent"></div>
+                        <span class="absolute top-4 left-4 bg-purple-500/90 text-white font-bold text-xs px-3 py-1 rounded-full backdrop-blur-md">
+                            <i class="fa-solid fa-fire mr-1"></i>SNS 화제
+                        </span>
+                    </div>
+                    <div class="p-6">
+                        <h3 class="text-xl font-bold text-white mb-2 group-hover:text-purpleaccent transition-colors">김천 김밥</h3>
+                        <p class="text-slate-400 text-sm leading-relaxed mb-4">
+                            '김밥천국' 유머에서 시작하여 전국적인 흥행을 이끌어낸 김천의 김밥 문화! 독창적인 재료가 들어간 프리미엄 수제 김밥을 경험하세요.
+                        </p>
+                        <div class="flex items-center text-xs text-slate-500 border-t border-slate-700/60 pt-4">
+                            <i class="fa-solid fa-star text-purpleaccent mr-1"></i>
+                            <span>특징: 매년 가을 '김천 김밥 축제' 개최</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Osami Mascot Section -->
+        <section id="osami" class="scroll-mt-24">
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-12">
+                <div>
+                    <span class="text-cyanaccent text-xs font-bold tracking-widest uppercase bg-cyanaccent/10 px-3 py-1 rounded-full border border-cyanaccent/20">City Mascot</span>
+                    <h2 class="text-3xl font-bold text-white mt-2 flex items-center gap-3">
+                        <span class="w-2 h-8 bg-cyanaccent rounded-full"></span>
+                        김천시 캐릭터 "오삼이" (KM-53)
+                    </h2>
+                </div>
+                <p class="text-slate-400 text-sm max-w-md mt-2 md:mt-0">지리산에서 김천 수도산까지 자유를 찾아 여행을 떠난 반달가슴곰 모험가!</p>
+            </div>
+
+            <!-- Osami Main Banner Card -->
+            <div class="glass rounded-3xl overflow-hidden border border-cyanaccent/30 p-6 sm:p-10 mb-8 bg-gradient-to-r from-darkcard via-slate-900/90 to-darkcard relative">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+                    <!-- Text Info -->
+                    <div class="lg:col-span-7 space-y-4">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-goldaccent/20 text-goldaccent text-xs font-bold border border-goldaccent/30">
+                            <i class="fa-solid fa-crown"></i>
+                            <span>김천 관광 홍보대사</span>
+                        </div>
+                        <h3 class="text-3xl sm:text-4xl font-extrabold text-white">
+                            모험왕 반달가슴곰 <span class="text-cyanaccent">오삼이</span>
+                        </h3>
+                        <p class="text-slate-300 text-sm sm:text-base leading-relaxed font-light">
+                            국립공원 지리산에 방사되었으나 고속도로를 건너 김천 수도산까지 무려 세 번이나 거듭 찾아온 모험심 강한 실제 반달가슴곰 **'KM-53'**을 모티브로 탄생했습니다.<br><br>
+                            자유를 사랑하고 김천의 청정 자연과 명품 과일(포도·자두)을 가장 좋아하며, 김천 구석구석을 누비며 관광객들에게 행복을 전해주는 친근한 가이드입니다!
+                        </p>
+
+                        <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-4 border-t border-slate-800">
+                            <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                                <span class="block text-xs text-slate-500 font-semibold">이름 유래</span>
+                                <span class="text-sm font-bold text-cyanaccent">KM-53 🐻</span>
+                            </div>
+                            <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                                <span class="block text-xs text-slate-500 font-semibold">최애 음식</span>
+                                <span class="text-sm font-bold text-goldaccent">샤인머스캣 & 자두</span>
+                            </div>
+                            <div class="bg-slate-900/80 p-3 rounded-xl border border-slate-800 col-span-2 sm:col-span-1">
+                                <span class="block text-xs text-slate-500 font-semibold">주요 활동지</span>
+                                <span class="text-sm font-bold text-emerald-400">수도산 & 연화지</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Visual Art Box -->
+                    <div class="lg:col-span-5 flex justify-center">
+                        <div class="relative w-full max-w-sm rounded-3xl overflow-hidden border border-cyanaccent/30 bg-slate-900 shadow-2xl group">
+                            <div class="h-64 sm:h-72 overflow-hidden relative bg-slate-800">
+                                <img src="https://www.gc.go.kr/design/main/img/sub01/532_family/osam_intro01.jpg" alt="김천시 마스코트 오삼이" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://placehold.co/400x400/1e293b/06b6d4?text=Osami'">
+                                <div class="absolute inset-0 bg-gradient-to-t from-darkcard via-transparent to-transparent"></div>
+                            </div>
+                            <div class="p-5 text-center">
+                                <h4 class="text-xl font-bold text-white mb-1">오삼이 (Osami)</h4>
+                                <p class="text-xs text-slate-400">"김천 수도산이 제 최고의 보금자리예요!"</p>
+                                <div class="mt-3 flex justify-center gap-2">
+                                    <span class="text-xs px-2.5 py-1 rounded-md bg-slate-800 text-pink-400 border border-slate-700">#귀여움</span>
+                                    <span class="text-xs px-2.5 py-1 rounded-md bg-slate-800 text-cyanaccent border border-slate-700">#모험가</span>
+                                    <span class="text-xs px-2.5 py-1 rounded-md bg-slate-800 text-amber-400 border border-slate-700">#김천사랑</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Osami Cards Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="glass p-6 rounded-2xl border border-slate-800 space-y-3 hover:border-cyanaccent/40 transition-all">
+                    <div class="w-12 h-12 rounded-xl bg-cyanaccent/10 border border-cyanaccent/30 flex items-center justify-center text-cyanaccent text-xl">
+                        <i class="fa-solid fa-compass"></i>
+                    </div>
+                    <h4 class="text-lg font-bold text-white">오삼이의 수도산 모험담</h4>
+                    <p class="text-slate-400 text-sm font-light leading-relaxed">
+                        거친 위험과 장애물을 넘어서 자신이 원하는 보금자리인 수도산을 향해 끊임없이 나아갔던 오삼이의 씩씩한 모험 정신을 만나보세요.
+                    </p>
+                </div>
+
+                <div class="glass p-6 rounded-2xl border border-slate-800 space-y-3 hover:border-goldaccent/40 transition-all">
+                    <div class="w-12 h-12 rounded-xl bg-goldaccent/10 border border-goldaccent/30 flex items-center justify-center text-goldaccent text-xl">
+                        <i class="fa-solid fa-camera"></i>
+                    </div>
+                    <h4 class="text-lg font-bold text-white">오삼이 포토존 찾기</h4>
+                    <p class="text-slate-400 text-sm font-light leading-relaxed">
+                        연화지 수변공원, 사명대사 공원, 김천역 등 관광 명소 곳곳에 설치된 오삼이 조형물과 함께 귀여운 인증샷을 남겨보세요!
+                    </p>
+                </div>
+
+                <div class="glass p-6 rounded-2xl border border-slate-800 space-y-3 hover:border-purpleaccent/40 transition-all">
+                    <div class="w-12 h-12 rounded-xl bg-purpleaccent/10 border border-purpleaccent/30 flex items-center justify-center text-purpleaccent text-xl">
+                        <i class="fa-solid fa-bag-shopping"></i>
+                    </div>
+                    <h4 class="text-lg font-bold text-white">오삼이 캐릭터 굿즈</h4>
+                    <p class="text-slate-400 text-sm font-light leading-relaxed">
+                        인형, 키링, 에코백, 카카오톡 이모티콘 등 김천 여행을 추억할 수 있는 오삼이의 굿즈 상품들이 사랑받고 있습니다.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Detail Spot Modal -->
+    <div id="spot-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 sm:p-6 bg-slate-950/80 backdrop-blur-md transition-opacity duration-300">
+        <div class="glass w-full max-w-3xl rounded-3xl overflow-hidden border border-slate-700 shadow-2xl transform transition-all my-8 max-h-[90vh] flex flex-col">
+            <!-- Modal Header Image -->
+            <div class="relative h-64 sm:h-80 w-full flex-shrink-0">
+                <img id="modal-img" src="" alt="" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-darkcard via-transparent to-black/40"></div>
+                <button onclick="closeModal()" class="absolute top-4 right-4 w-10 h-10 rounded-full bg-slate-900/80 text-slate-300 hover:text-white hover:bg-slate-800 flex items-center justify-center transition-all border border-slate-700">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+                <div class="absolute bottom-4 left-6 right-6">
+                    <div class="flex items-center gap-2 mb-2">
+                        <span id="modal-category" class="px-3 py-1 rounded-full text-xs font-bold bg-cyanaccent/90 text-slate-950"></span>
+                        <span id="modal-rating" class="text-xs font-bold text-goldaccent bg-slate-900/80 px-2.5 py-1 rounded-full border border-slate-700">
+                            <i class="fa-solid fa-star mr-1"></i>4.8
+                        </span>
+                    </div>
+                    <h2 id="modal-title" class="text-2xl sm:text-3xl font-extrabold text-white"></h2>
+                </div>
+            </div>
+
+            <!-- Modal Content Body -->
+            <div class="p-6 sm:p-8 overflow-y-auto space-y-6 text-slate-300 text-sm sm:text-base leading-relaxed flex-grow">
+                <div>
+                    <h3 class="text-white font-bold text-lg mb-2 flex items-center gap-2">
+                        <i class="fa-solid fa-circle-info text-cyanaccent"></i>명소 상세 소개
+                    </h3>
+                    <p id="modal-desc" class="text-slate-300 font-light"></p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-darkcard p-4 rounded-2xl border border-darkborder">
+                    <div class="flex items-start gap-3">
+                        <i class="fa-solid fa-location-dot text-cyanaccent mt-1"></i>
+                        <div>
+                            <span class="block text-xs text-slate-500 font-semibold">주소</span>
+                            <span id="modal-location" class="text-xs sm:text-sm text-slate-200"></span>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-3">
+                        <i class="fa-solid fa-clock text-goldaccent mt-1"></i>
+                        <div>
+                            <span class="block text-xs text-slate-500 font-semibold">운영시간 / 추천시간</span>
+                            <span id="modal-hours" class="text-xs sm:text-sm text-slate-200">연중무휴 / 24시간 입장 가능</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-white font-bold text-sm mb-2">대표 추천 키워드</h4>
+                    <div id="modal-tags" class="flex flex-wrap gap-2"></div>
+                </div>
+            </div>
+
+            <!-- Modal Footer Actions -->
+            <div class="p-4 sm:p-6 bg-darkcard/80 border-t border-slate-800 flex items-center justify-between flex-shrink-0">
+                <button id="modal-fav-btn" onclick="" class="px-5 py-2.5 rounded-xl border border-slate-700 bg-slate-800 hover:bg-slate-700 text-slate-200 text-sm font-semibold flex items-center gap-2 transition-all">
+                    <i class="fa-solid fa-heart text-slate-400" id="modal-fav-icon"></i>
+                    <span id="modal-fav-text">즐겨찾기 추가</span>
+                </button>
+                <button onclick="openMapUrl()" class="px-6 py-2.5 rounded-xl bg-cyanaccent text-slate-900 font-bold text-sm hover:brightness-110 shadow-lg shadow-cyanaccent/20 flex items-center gap-2 transition-all">
+                    <i class="fa-solid fa-map-location-dot"></i>
+                    <span>지도에서 보기</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Favorites List Modal -->
+    <div id="favorites-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+        <div class="glass w-full max-w-lg rounded-3xl overflow-hidden border border-slate-700 shadow-2xl p-6">
+            <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-800">
+                <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-heart text-pink-500"></i> 내가 찜한 여행지
+                </h3>
+                <button onclick="toggleFavoritesModal()" class="text-slate-400 hover:text-white p-2">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div id="favorites-list" class="max-h-80 overflow-y-auto space-y-3 pr-1">
+                <!-- Favorites items rendered via JS -->
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-slate-800 text-right">
+                <button onclick="toggleFavoritesModal()" class="px-5 py-2 rounded-xl bg-slate-800 text-slate-300 text-sm hover:bg-slate-700">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="glass border-t border-slate-800 mt-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-rose-500 to-red-600 flex items-center justify-center text-white font-bold text-base shadow-md shadow-rose-500/30">
+                        <i class="fa-solid fa-mountain-sun"></i>
+                    </div>
+                    <span class="text-lg font-bold text-white tracking-tight">김천 관광 스마트 가이드</span>
+                </div>
+                
+                <p class="text-xs text-slate-500 text-center md:text-left">
+                    본 사이트는 김천의 매력적인 관광지를 알리기 위해 제작된 현대적 웹 안내 페이지입니다.<br>
+                    © 2026 Gimcheon Tourism Guide. All rights reserved.
+                </p>
+
+                <div class="flex gap-4 text-slate-400">
+                    <a href="https://www.gc.go.kr" target="_blank" rel="noopener text-sm hover:text-cyanaccent" title="김천시청 공식 홈페이지">
+                        <i class="fa-solid fa-building-columns text-lg"></i>
+                    </a>
+                    <a href="javascript:void(0)" onclick="alert('김천 관광안내 전화: 054-420-6633')" class="text-sm hover:text-cyanaccent" title="관광 안내 문의">
+                        <i class="fa-solid fa-phone text-lg"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // Gimcheon Spots Data
+        const spotsData = [
+            {
+                id: 'yeonhwaji',
+                name: '연화지',
+                category: 'night',
+                categoryName: '야경 / 힐링',
+                image: 'https://www.gc.go.kr/design/culture/img/sub/doImg5-1.jpg',
+                location: '경상북도 김천시 교동 820-1',
+                rating: 4.9,
+                tags: ['벚꽃명소', '수변야경', '연못산책', 'SNS핫플'],
+                shortDesc: '봄철 흐드러진 벚꽃과 연못에 반사된 야경이 환상적인 김천 최고의 감성 명소.',
+                fullDesc: '연화지는 조선 시대 봉산틀에 조성되었던 못으로, 물이 맑고 아름다워 연꽃을 심었던 것에서 유래했습니다. 특히 봄철 연못 둘레를 따라 만개하는 벚꽃과 야간에 조명이 들어올 때의 수려한 반영 야경은 전국에서 관광객들이 몰려드는 김천 제일의 경관을 자랑합니다.'
+            },
+            {
+                id: 'jikjisa',
+                name: '직지사 (直指寺)',
+                category: 'history',
+                categoryName: '역사 / 사찰',
+                image: 'https://www.gc.go.kr/design/culture/img/sub/jikImg1-1_230330.jpg',
+                location: '경상북도 김천시 대항면 직지사길 85',
+                rating: 4.8,
+                tags: ['천년고찰', '템플스테이', '문화재', '황악산'],
+                shortDesc: '황악산 자락에 자리잡은 신라 시대 천년고찰이자 고즈넉한 평화를 선물하는 사찰.',
+                fullDesc: '아도화상이 창건한 신라 고찰 직지사는 동국제일가람으로 불립니다. 울창한 소나무 숲과 천년의 역사가 숨쉬는 석탑, 석조약사여래좌상 등 수많은 보물들을 간직하고 있습니다. 마음을 비우는 템플스테이와 고즈넉한 사찰 산책길로 인기가 높습니다.'
+            },
+            {
+                id: 'samyeong',
+                name: '사명대사 공원',
+                category: 'park',
+                categoryName: '공원 / 문화',
+                image: 'https://www.gc.go.kr/design/culture/img/sub/jikImg7-1_230330.jpg',
+                location: '경상북도 김천시 대항면 운수리 94-1',
+                rating: 4.9,
+                tags: ['평화의탑', '한옥체험', '야간조명', '가족여행'],
+                shortDesc: '웅장한 5층 목조 평화의 탑과 아름다운 한옥 풍경이 어우러진 체류형 친환경 공원.',
+                fullDesc: '사명대사 공원은 직지사 인근에 위치한 체류형 테마공원입니다. 국내 최고 높이의 목조 탑인 \'평화의 탑\'이 중심을 이루며, 한옥 숙박체험, 건강문화원, 전통 차 체험 등을 제공합니다. 특히 밤에는 평화의 탑에 입체적인 조명이 켜져 화려하고 장엄한 볼거리를 선사합니다.'
+            },
+            {
+                id: 'obong',
+                name: '오봉저수지',
+                category: 'nature',
+                categoryName: '자연 / 레저',
+                image: 'https://www.gc.go.kr/design/culture/img/sub/doImg6-1_230330.jpg',
+                location: '경상북도 김천시 남면 오봉리',
+                rating: 4.7,
+                tags: ['수변데크길', '수상레저', '드라이브', '둘레길'],
+                shortDesc: '넓게 펼쳐진 호수 위 데크길을 따라 걷는 시원하고 여유로운 수변 산책로.',
+                fullDesc: '김천에서 가장 큰 저수지로, 산자락에 둘러싸인 맑은 호수가 장관을 이룹니다. 저수지 둘레를 따라 조성된 약 4.5km의 수변 데크 산책로는 평탄하여 남녀노소 걸으며 호수 뷰를 감상하기에 최적입니다. 여름철에는 수상스키 등 수상 레포츠 공간으로도 사랑받습니다.'
+            },
+            {
+                id: 'sudosan',
+                name: '수도산 자연휴양림',
+                category: 'nature',
+                categoryName: '자연 / 힐링',
+                image: 'https://www.gc.go.kr/design/culture/img/sub/suImg7-1.jpg',
+                location: '경상북도 김천시 대덕면 추량리 산105',
+                rating: 4.8,
+                tags: ['숲속의집', '산림욕', '청정자연', '계곡'],
+                shortDesc: '울창한 숲과 맑은 계곡 속에서 완벽한 피로 회복을 경험할 수 있는 청정 휴양림.',
+                fullDesc: '수도산 자락 깊은 숲속에 위치하여 피톤치드가 가득한 자연 휴양지입니다. 숲속의 집, 통나무집, 물놀이장 및 탐방로가 잘 갖추어져 있어 도심을 벗어나 깊은 휴식을 원하는 여행객들에게 최고의 힐링 장소를 제공합니다.'
+            },
+            {
+                id: 'jikji-park',
+                name: '직지문화공원',
+                category: 'park',
+                categoryName: '공원 / 체험',
+                image: 'https://www.gc.go.kr/design/culture/img/sub/jikImg2-1.jpg',
+                location: '경상북도 김천시 대항면 운수리 31-1',
+                rating: 4.6,
+                tags: ['음악분수', '조각공원', '피크닉', '산책로'],
+                shortDesc: '대형 음악분수와 유명 조각가들의 예술 작품이 조성된 시민과 관광객의 휴식처.',
+                fullDesc: '직지사 입구에 위치한 대규모 문화공원으로, 야간 음악분수 쇼와 다양한 조각 작품, 원형 음악당, 시비(詩碑) 등이 아기자기하게 꾸며져 있습니다. 시원하게 쏟아지는 인공 폭포와 계곡 형태의 수로가 있어 피크닉 장소로 인기가 높습니다.'
+            },
+            {
+                id: 'chupungryeong',
+                name: '추풍령 테마파크',
+                category: 'park',
+                categoryName: '공원 / 체험',
+                image: 'https://www.gc.go.kr/design/culture/img/sub/jikImg9-1.jpg',
+                location: '경상북도 김천시 봉산면 추풍령로 419',
+                rating: 4.8,
+                tags: ['어드벤처', '짚와이어', '테마파크', '전망대'],
+                shortDesc: '추풍령 자락에 펼쳐진 스릴 넘치는 액티비티와 울창한 숲속 어드벤처 체험 공간.',
+                fullDesc: '추풍령 테마파크는 경부고속도로 추풍령휴게소 인근에 위치한 종합 어드벤처 테마파크입니다. 익스트림 짚와이어, 숲속 어드벤처, 화려한 전망대와 수목원이 어우러져 가족 단위 및 연인 관광객들에게 잊지 못할 액티비티와 휴식을 선사합니다.'
+            },
+            {
+                id: 'buhangdam',
+                name: '김천 부항댐',
+                category: 'nature',
+                categoryName: '자연 / 레저',
+                image: 'https://www.gc.go.kr/design/culture/img/sub/buImg1-1.jpg',
+                location: '경상북도 김천시 부항면 부항댐길 852',
+                rating: 4.9,
+                tags: ['출렁다리', '짚와이어', '수변산책로', '드라이브'],
+                shortDesc: '아찔한 출렁다리와 짚와이어, 수려한 수변 산책로가 어우러진 김천의 대표 레저 명소.',
+                fullDesc: '김천 부항댐은 맑은 청정 호수를 배경으로 수변 둘레길과 국내 최고 수준의 아찔함을 선사하는 짚와이어, 호수 위를 가로지르는 부항댐 출렁다리가 설치되어 있습니다. 탁 트인 호수 풍경을 감상하며 스릴과 힐링을 동시에 즐길 수 있습니다.'
+            },
+            {
+                id: 'sannaedul',
+                name: '산내들 오토캠핑장',
+                category: 'nature',
+                categoryName: '자연 / 캠핑',
+                image: 'https://www.gc.go.kr/design/culture/img/sub/buImg02.jpg',
+                location: '경상북도 김천시 지례면 부항댐길 20',
+                rating: 4.7,
+                tags: ['오토캠핑', '부항댐', '가족캠핑', '힐링산책'],
+                shortDesc: '부항댐 하류의 맑은 물소리와 풍성한 녹지 속에서 즐기는 영남권 으뜸 캠핑장.',
+                fullDesc: '산내들 오토캠핑장은 부항댐 하류 깨끗한 하천변에 위치하여 쾌적한 사이트와 편의시설을 자랑합니다. 야외 물놀이장, 인조잔디 축구장, 수변 산책로가 인접하여 가족 단위 캠퍼들에게 차박과 캠핑 명소로 각광받고 있습니다.'
+            }
+        ];
+
+        // Global State Variables
+        let currentCategory = 'all';
+        let searchQuery = '';
+        let favorites = JSON.parse(localStorage.getItem('gimcheon_favs')) || [];
+        let currentModalSpotId = null;
+
+        // Initialize App on DOM Load
+        document.addEventListener('DOMContentLoaded', () => {
+            renderSpots();
+            updateFavCount();
+        });
+
+        // Render Spot Cards
+        function renderSpots() {
+            const grid = document.getElementById('spots-grid');
+            const emptyState = document.getElementById('empty-state');
+            grid.innerHTML = '';
+
+            const filtered = spotsData.filter(spot => {
+                const matchesCategory = (currentCategory === 'all') || (spot.category === currentCategory);
+                const matchesSearch = spot.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                      spot.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                                      spot.location.toLowerCase().includes(searchQuery.toLowerCase());
+                return matchesCategory && matchesSearch;
+            });
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                return;
+            } else {
+                emptyState.classList.add('hidden');
+            }
+
+            filtered.forEach(spot => {
+                const isFav = favorites.includes(spot.id);
+                const card = document.createElement('div');
+                card.className = 'spot-card glass rounded-3xl overflow-hidden border border-slate-800 flex flex-col justify-between group cursor-pointer';
+                
+                card.innerHTML = `
+                    <div>
+                        <div class="relative h-56 overflow-hidden">
+                            <img src="${spot.image}" alt="${spot.name}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                            <div class="absolute inset-0 bg-gradient-to-t from-darkcard via-transparent to-black/20"></div>
+                            
+                            <!-- Category Badge -->
+                            <span class="absolute top-4 left-4 text-xs font-bold px-3 py-1 rounded-full bg-slate-900/80 text-cyanaccent border border-slate-700 backdrop-blur-md">
+                                ${spot.categoryName}
+                            </span>
+
+                            <!-- Favorite Button -->
+                            <button onclick="event.stopPropagation(); toggleFavorite('${spot.id}')" 
+                                class="absolute top-4 right-4 w-9 h-9 rounded-full bg-slate-900/80 border border-slate-700 text-slate-300 hover:text-pink-500 flex items-center justify-center transition-all ${isFav ? 'text-pink-500 bg-pink-500/10 border-pink-500/30' : ''}">
+                                <i class="fa-solid fa-heart ${isFav ? 'text-pink-500' : ''}"></i>
+                            </button>
+
+                            <!-- Rating -->
+                            <div class="absolute bottom-3 left-4 flex items-center gap-1 text-xs font-bold text-goldaccent bg-slate-950/70 px-2.5 py-1 rounded-md backdrop-blur-sm">
+                                <i class="fa-solid fa-star"></i>
+                                <span>${spot.rating}</span>
+                            </div>
+                        </div>
+
+                        <div class="p-6">
+                            <h3 class="text-xl font-bold text-white mb-2 group-hover:text-cyanaccent transition-colors flex items-center justify-between">
+                                <span>${spot.name}</span>
+                            </h3>
+                            
+                            <p class="text-slate-400 text-sm line-clamp-2 mb-4 leading-relaxed font-light">
+                                ${spot.shortDesc}
+                            </p>
+
+                            <div class="flex flex-wrap gap-1.5 mb-4">
+                                ${spot.tags.map(tag => `<span class="text-[11px] font-medium px-2.5 py-0.5 rounded-md bg-slate-800 text-slate-400 border border-slate-700/50">#${tag}</span>`).join('')}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="px-6 pb-6 pt-0 flex items-center justify-between border-t border-slate-800/60 mt-2">
+                        <span class="text-xs text-slate-500 truncate max-w-[180px] flex items-center gap-1">
+                            <i class="fa-solid fa-location-dot text-slate-600"></i> ${spot.location.split(' ')[2]} ${spot.location.split(' ')[3] || ''}
+                        </span>
+                        <button onclick="openModal('${spot.id}')" class="text-xs font-bold text-cyanaccent hover:text-cyan-300 flex items-center gap-1 transition-colors">
+                            <span>자세히 보기</span>
+                            <i class="fa-solid fa-chevron-right text-[10px]"></i>
+                        </button>
+                    </div>
+                `;
+
+                grid.appendChild(card);
+            });
+        }
+
+        // Category Filter Set
+        function setCategory(category) {
+            currentCategory = category;
+            
+            // Update Active Filter UI
+            const buttons = document.querySelectorAll('#category-filters .cat-btn');
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-cyanaccent', 'text-slate-900', 'shadow-md', 'shadow-cyanaccent/20');
+                btn.classList.add('bg-darkcard', 'text-slate-400', 'border', 'border-darkborder');
+            });
+
+            event.currentTarget.classList.remove('bg-darkcard', 'text-slate-400', 'border', 'border-darkborder');
+            event.currentTarget.classList.add('bg-cyanaccent', 'text-slate-900', 'shadow-md', 'shadow-cyanaccent/20');
+
+            renderSpots();
+        }
+
+        // Search Input Filter
+        function filterSpots() {
+            searchQuery = document.getElementById('search-input').value.trim();
+            renderSpots();
+        }
+
+        // Favorite Toggle Functionality
+        function toggleFavorite(spotId) {
+            if (favorites.includes(spotId)) {
+                favorites = favorites.filter(id => id !== spotId);
+            } else {
+                favorites.push(spotId);
+            }
+            localStorage.setItem('gimcheon_favs', JSON.stringify(favorites));
+            
+            updateFavCount();
+            renderSpots();
+
+            // Update modal state if open
+            if (currentModalSpotId === spotId) {
+                updateModalFavBtn(spotId);
+            }
+
+            renderFavoritesList();
+        }
+
+        function updateFavCount() {
+            const count = favorites.length;
+            document.getElementById('fav-count').innerText = count;
+            document.getElementById('fav-count-mobile').innerText = count;
+        }
+
+        // Detail Modal Logic
+        function openModal(spotId) {
+            const spot = spotsData.find(s => s.id === spotId);
+            if (!spot) return;
+
+            currentModalSpotId = spotId;
+
+            document.getElementById('modal-img').src = spot.image;
+            document.getElementById('modal-title').innerText = spot.name;
+            document.getElementById('modal-category').innerText = spot.categoryName;
+            document.getElementById('modal-rating').innerHTML = `<i class="fa-solid fa-star mr-1"></i>${spot.rating}`;
+            document.getElementById('modal-desc').innerText = spot.fullDesc;
+            document.getElementById('modal-location').innerText = spot.location;
+
+            const tagsContainer = document.getElementById('modal-tags');
+            tagsContainer.innerHTML = spot.tags.map(t => `<span class="text-xs px-3 py-1 rounded-lg bg-slate-800 text-cyanaccent border border-slate-700 font-medium">#${t}</span>`).join('');
+
+            updateModalFavBtn(spotId);
+
+            const modal = document.getElementById('spot-modal');
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function updateModalFavBtn(spotId) {
+            const isFav = favorites.includes(spotId);
+            const btn = document.getElementById('modal-fav-btn');
+            const icon = document.getElementById('modal-fav-icon');
+            const text = document.getElementById('modal-fav-text');
+
+            btn.onclick = () => toggleFavorite(spotId);
+
+            if (isFav) {
+                icon.className = 'fa-solid fa-heart text-pink-500';
+                text.innerText = '찜한 명소에서 제거';
+                btn.classList.add('border-pink-500/50', 'bg-pink-500/10');
+            } else {
+                icon.className = 'fa-solid fa-heart text-slate-400';
+                text.innerText = '즐겨찾기 추가';
+                btn.classList.remove('border-pink-500/50', 'bg-pink-500/10');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('spot-modal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+            currentModalSpotId = null;
+        }
+
+        // Open Map
+        function openMapUrl() {
+            if (!currentModalSpotId) return;
+            const spot = spotsData.find(s => s.id === currentModalSpotId);
+            const query = encodeURIComponent(`김천 ${spot.name}`);
+            window.open(`https://map.naver.com/v5/search/${query}`, '_blank');
+        }
+
+        // Favorites Modal Toggle
+        function toggleFavoritesModal() {
+            const modal = document.getElementById('favorites-modal');
+            if (modal.classList.contains('hidden')) {
+                renderFavoritesList();
+                modal.classList.remove('hidden');
+            } else {
+                modal.classList.add('hidden');
+            }
+        }
+
+        function renderFavoritesList() {
+            const list = document.getElementById('favorites-list');
+            list.innerHTML = '';
+
+            if (favorites.length === 0) {
+                list.innerHTML = `
+                    <div class="text-center py-8 text-slate-500 text-sm">
+                        <i class="fa-regular fa-heart text-3xl mb-2 block"></i>
+                        찜한 명소가 없습니다. 하트 버튼을 눌러 등록해 보세요!
+                    </div>
+                `;
+                return;
+            }
+
+            favorites.forEach(id => {
+                const spot = spotsData.find(s => s.id === id);
+                if (!spot) return;
+
+                const item = document.createElement('div');
+                item.className = 'flex items-center justify-between p-3 rounded-2xl bg-darkcard border border-darkborder hover:border-slate-600 transition-all';
+                item.innerHTML = `
+                    <div class="flex items-center gap-3 cursor-pointer" onclick="toggleFavoritesModal(); openModal('${spot.id}');">
+                        <img src="${spot.image}" class="w-12 h-12 rounded-xl object-cover" alt="">
+                        <div>
+                            <h4 class="text-sm font-bold text-white">${spot.name}</h4>
+                            <span class="text-xs text-slate-400">${spot.categoryName}</span>
+                        </div>
+                    </div>
+                    <button onclick="toggleFavorite('${spot.id}')" class="text-slate-500 hover:text-pink-500 p-2">
+                        <i class="fa-solid fa-trash text-sm"></i>
+                    </button>
+                `;
+                list.appendChild(item);
+            });
+        }
+
+        // Mobile Menu Toggle
+        function toggleMobileMenu() {
+            const menu = document.getElementById('mobile-menu');
+            menu.classList.toggle('hidden');
+        }
+    </script>
+</body>
+</html>
