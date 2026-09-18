@@ -1,1 +1,981 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 모션 가위바위보 게임 - AI Motion RSP</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Noto+Sans+KR:wght@400;600;700;900&display=swap" rel="stylesheet">
+    
+    <!-- MediaPipe Hands & Camera Utils libraries for Hand Tracking -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
 
+    <style>
+        body {
+            font-family: 'Outfit', 'Noto Sans KR', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.15) 0px, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(236, 72, 153, 0.15) 0px, transparent 50%);
+            min-height: 100vh;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+
+        .glass-card {
+            background: rgba(51, 65, 85, 0.5);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .neon-glow-indigo {
+            box-shadow: 0 0 25px rgba(99, 102, 241, 0.4);
+        }
+
+        .neon-glow-pink {
+            box-shadow: 0 0 25px rgba(236, 72, 153, 0.4);
+        }
+
+        .neon-glow-emerald {
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.4);
+        }
+
+        /* Mirror canvas for camera feed */
+        #output_canvas {
+            transform: scaleX(-1);
+        }
+
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.05); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+
+        .pulse-active {
+            animation: pulse-ring 1.5s infinite ease-in-out;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 23, 42, 0.6);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(99, 102, 241, 0.5);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="p-3 sm:p-6 overflow-x-hidden">
+
+    <div class="max-w-7xl mx-auto mb-6">
+        <header class="glass-panel rounded-2xl p-4 flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="w-12 h-12 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-500 flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+                    <i class="fa-solid fa-hand-fist"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl sm:text-2xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400">
+                        AI 모션 가위바위보 ⚔️
+                    </h1>
+                    <p class="text-xs text-slate-400">웹캠 카메라 손 동작 인식으로 즐기는 인공지능 대결</p>
+                </div>
+            </div>
+
+            <!-- Header Controls & Badges -->
+            <div class="flex items-center gap-3 text-xs sm:text-sm">
+                <div class="flex items-center space-x-2 glass-card px-3 py-1.5 rounded-xl border border-slate-700">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping"></span>
+                    <span id="ai-status-text" class="text-slate-300 font-medium">AI 준비 완료</span>
+                </div>
+                
+                <button id="audio-toggle-btn" class="glass-card hover:bg-slate-700/60 transition-colors p-2.5 rounded-xl text-slate-300">
+                    <i class="fa-solid fa-volume-high text-indigo-400" id="audio-icon"></i>
+                </button>
+
+                <button id="reset-stats-btn" class="glass-card hover:bg-slate-700/60 transition-colors px-3 py-2 rounded-xl text-slate-300 font-medium flex items-center gap-1.5">
+                    <i class="fa-solid fa-rotate-left text-slate-400"></i>
+                    <span>전적 리셋</span>
+                </button>
+            </div>
+        </header>
+    </div>
+
+    <main class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- ================= LEFT COLUMN: BATTLE SCREEN (대결 화면) ================= -->
+        <section class="lg:col-span-7 flex flex-col space-y-6">
+            
+            <!-- Score & Stats Bar -->
+            <div class="glass-panel rounded-2xl p-5 relative overflow-hidden">
+                <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
+                
+                <div class="grid grid-cols-3 gap-2 text-center items-center">
+                    <!-- Player Score -->
+                    <div class="flex flex-col items-center">
+                        <span class="text-xs font-bold uppercase tracking-wider text-indigo-400 mb-1">나 (YOU)</span>
+                        <div class="text-3xl sm:text-4xl font-black text-indigo-300" id="user-score">0</div>
+                        <span class="text-[11px] text-slate-400 mt-1">연승: <span id="user-streak" class="text-indigo-400 font-bold">0</span></span>
+                    </div>
+
+                    <!-- VS Center Badge -->
+                    <div class="flex flex-col items-center">
+                        <div class="w-10 h-10 rounded-full bg-slate-800 border border-slate-600 flex items-center justify-center font-black text-slate-300 text-sm italic shadow-inner">
+                            VS
+                        </div>
+                        <span class="text-xs font-semibold text-slate-400 mt-1" id="round-count-label">ROUND 1</span>
+                    </div>
+
+                    <!-- AI Score -->
+                    <div class="flex flex-col items-center">
+                        <span class="text-xs font-bold uppercase tracking-wider text-pink-400 mb-1">컴퓨터 (AI)</span>
+                        <div class="text-3xl sm:text-4xl font-black text-pink-300" id="ai-score">0</div>
+                        <span class="text-[11px] text-slate-400 mt-1" id="ai-mood-badge">기분: 🤖 평범</span>
+                    </div>
+                </div>
+
+                <!-- Match Progress Bar -->
+                <div class="w-full bg-slate-800 h-2 rounded-full mt-4 overflow-hidden flex">
+                    <div id="user-progress-bar" class="bg-indigo-500 h-full transition-all duration-500" style="width: 50%;"></div>
+                    <div id="ai-progress-bar" class="bg-pink-500 h-full transition-all duration-500" style="width: 50%;"></div>
+                </div>
+            </div>
+
+            <!-- Main Battle Arena -->
+            <div class="glass-panel rounded-2xl p-6 flex flex-col items-center justify-between min-h-[360px] relative">
+                
+                <!-- Match Mode Selector & Difficulty -->
+                <div class="w-full flex flex-wrap items-center justify-between gap-2 border-b border-slate-700/60 pb-3 mb-4">
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs text-slate-400 font-semibold">게임 모드:</span>
+                        <select id="game-mode-select" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-2.5 py-1.5 text-indigo-300 font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                            <option value="countdown">카운트다운 ("가위 바위 보!")</option>
+                            <option value="realtime">실시간 홀드 인식 (지속 1초)</option>
+                        </select>
+                    </div>
+
+                    <div class="flex items-center space-x-2">
+                        <span class="text-xs text-slate-400 font-semibold">AI 난이도:</span>
+                        <select id="ai-difficulty-select" class="bg-slate-800 border border-slate-700 text-xs rounded-lg px-2.5 py-1.5 text-pink-300 font-semibold focus:outline-none focus:ring-1 focus:ring-pink-500">
+                            <option value="normal">보통 (랜덤 패턴)</option>
+                            <option value="smart">지능형 (패턴 분석)</option>
+                            <option value="hard">매운맛 😈</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Battle Stage Hands Display -->
+                <div class="w-full grid grid-cols-2 gap-4 my-auto relative">
+                    
+                    <!-- Player Card -->
+                    <div id="player-card" class="glass-card rounded-2xl p-5 flex flex-col items-center justify-center border-2 border-indigo-500/30 transition-all duration-300">
+                        <span class="text-xs text-indigo-400 font-bold mb-2">플레이어 제출</span>
+                        <div id="player-hand-icon" class="text-6xl sm:text-7xl my-3 transition-transform duration-300 transform hover:scale-110">
+                            ❓
+                        </div>
+                        <span id="player-hand-text" class="text-sm font-extrabold text-slate-300">카메라 손 대기 중</span>
+                    </div>
+
+                    <!-- AI Card -->
+                    <div id="ai-card" class="glass-card rounded-2xl p-5 flex flex-col items-center justify-center border-2 border-pink-500/30 transition-all duration-300">
+                        <span class="text-xs text-pink-400 font-bold mb-2">AI 컴퓨터 제출</span>
+                        <div id="ai-hand-icon" class="text-6xl sm:text-7xl my-3 transition-transform duration-300">
+                            🤖
+                        </div>
+                        <span id="ai-hand-text" class="text-sm font-extrabold text-slate-300">선택 대기</span>
+                    </div>
+
+                    <!-- Center Overlay Message / Countdown -->
+                    <div id="battle-center-overlay" class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <div id="countdown-display" class="hidden text-5xl sm:text-7xl font-black text-amber-400 drop-shadow-[0_5px_15px_rgba(251,191,36,0.6)] animate-bounce">
+                            READY
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Result Banner -->
+                <div id="result-banner" class="w-full mt-4 py-3 px-4 rounded-xl text-center font-extrabold text-lg sm:text-xl transition-all duration-300 bg-slate-800/80 text-slate-300 border border-slate-700">
+                    카메라에 손을 비추고 <span class="text-indigo-400">[대결 시작]</span> 버튼을 누르세요!
+                </div>
+
+                <!-- Battle Trigger Button -->
+                <div class="w-full mt-5 flex justify-center">
+                    <button id="start-battle-btn" class="w-full sm:w-3/4 py-3.5 px-6 rounded-xl font-extrabold text-base sm:text-lg text-white bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 hover:from-indigo-500 hover:to-pink-500 active:scale-95 transition-all shadow-lg neon-glow-indigo flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-play text-amber-300"></i>
+                        <span>가위바위보 대결 시작!</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Game History Log -->
+            <div class="glass-panel rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-sm font-bold text-slate-300 flex items-center gap-2">
+                        <i class="fa-solid fa-clock-rotate-left text-indigo-400"></i>
+                        최근 라운드 기록
+                    </h3>
+                    <span id="history-count" class="text-xs text-slate-400">0회 진행</span>
+                </div>
+                
+                <div id="history-container" class="space-y-2 max-h-40 overflow-y-auto pr-1 text-xs">
+                    <p class="text-center text-slate-500 py-4">아직 진행된 라운드가 없습니다.</p>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- ================= RIGHT COLUMN: CAMERA SCREEN (카메라 화면) ================= -->
+        <section class="lg:col-span-5 flex flex-col space-y-6">
+            
+            <!-- Camera Feed Box -->
+            <div class="glass-panel rounded-2xl p-5 flex flex-col space-y-4 relative">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <i class="fa-solid fa-video text-pink-400"></i>
+                        <h2 class="text-base font-bold text-slate-200">카메라 모션 인식</h2>
+                    </div>
+                    <!-- Detection Status Indicator -->
+                    <div id="hand-detect-badge" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-xs">
+                        <span id="hand-detect-dot" class="w-2 h-2 rounded-full bg-amber-500"></span>
+                        <span id="hand-detect-text" class="text-slate-300 font-medium">손 탐색 중...</span>
+                    </div>
+                </div>
+
+                <!-- Video / Canvas Container -->
+                <div class="relative w-full aspect-video bg-slate-950 rounded-xl overflow-hidden border border-slate-700/80 shadow-inner flex items-center justify-center">
+                    <!-- Hidden Raw Video element -->
+                    <video id="webcam" class="hidden" playsinline muted></video>
+                    
+                    <!-- Canvas Overlay for MediaPipe Skeleton & Mirror Frame -->
+                    <canvas id="output_canvas" class="w-full h-full object-cover"></canvas>
+
+                    <!-- Camera Off / Permission Overlay Placeholder -->
+                    <div id="camera-placeholder" class="absolute inset-0 bg-slate-900/90 flex flex-col items-center justify-center p-6 text-center space-y-3 z-10">
+                        <div class="w-16 h-16 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-2xl">
+                            <i class="fa-solid fa-camera-retro"></i>
+                        </div>
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-200">카메라가 꺼져 있습니다</h3>
+                            <p class="text-xs text-slate-400 mt-1">아래 [카메라 켜기] 버튼을 눌러 카메라 권한을 허용해주세요.</p>
+                        </div>
+                        <button id="enable-cam-btn" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-semibold text-xs transition-colors shadow">
+                            카메라 켜기
+                        </button>
+                    </div>
+
+                    <!-- Live Detected Choice Overlay Badge on Top of Video -->
+                    <div id="detected-gesture-floating" class="absolute top-3 left-3 bg-slate-900/80 backdrop-blur-md border border-slate-700/80 px-3 py-1.5 rounded-xl flex items-center space-x-2 text-xs font-bold text-emerald-400 shadow-md">
+                        <span>현재 인식:</span>
+                        <span id="current-gesture-label" class="text-white text-sm">--</span>
+                    </div>
+
+                    <!-- Gesture Hold Lock Progress Bar (For Realtime Mode) -->
+                    <div id="hold-progress-container" class="absolute bottom-0 left-0 w-full h-1.5 bg-slate-800">
+                        <div id="hold-progress-bar" class="h-full bg-gradient-to-r from-indigo-500 to-pink-500 transition-all duration-75" style="width: 0%;"></div>
+                    </div>
+                </div>
+
+                <!-- Camera Action Controls -->
+                <div class="grid grid-cols-2 gap-2 text-xs">
+                    <button id="toggle-camera-btn" class="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-semibold flex items-center justify-center gap-2 transition-colors">
+                        <i class="fa-solid fa-power-off text-indigo-400"></i>
+                        <span id="toggle-cam-text">카메라 꺼짐</span>
+                    </button>
+
+                    <button id="toggle-skeleton-btn" class="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-semibold flex items-center justify-center gap-2 transition-colors">
+                        <i class="fa-solid fa-bone text-pink-400"></i>
+                        <span id="toggle-skeleton-text">관절선 보기: ON</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Gesture Guide & Gesture Recognition Tips -->
+            <div class="glass-panel rounded-2xl p-5 space-y-3">
+                <h3 class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
+                    <i class="fa-solid fa-hand-sparkles text-amber-400"></i>
+                    손 동작 인식가이드
+                </h3>
+                
+                <div class="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div class="glass-card p-3 rounded-xl border border-slate-700/60 flex flex-col items-center">
+                        <span class="text-3xl mb-1">✊</span>
+                        <span class="font-bold text-indigo-300">바위</span>
+                        <span class="text-[10px] text-slate-400 mt-1">주먹을 쥡니다</span>
+                    </div>
+
+                    <div class="glass-card p-3 rounded-xl border border-slate-700/60 flex flex-col items-center">
+                        <span class="text-3xl mb-1">✌️</span>
+                        <span class="font-bold text-indigo-300">가위</span>
+                        <span class="text-[10px] text-slate-400 mt-1">검지와 중지 펴기</span>
+                    </div>
+
+                    <div class="glass-card p-3 rounded-xl border border-slate-700/60 flex flex-col items-center">
+                        <span class="text-3xl mb-1">🖐️</span>
+                        <span class="font-bold text-indigo-300">보</span>
+                        <span class="text-[10px] text-slate-400 mt-1">손바닥 펼치기</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual Click Backup Controls (If camera is unavailable) -->
+            <div class="glass-panel rounded-2xl p-5">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-bold text-slate-400">수동 선택 (카메라 대체용)</span>
+                    <span class="text-[11px] text-slate-500">클릭 즉시 반영</span>
+                </div>
+                <div class="grid grid-cols-3 gap-2">
+                    <button class="manual-choice-btn py-2.5 rounded-xl glass-card hover:bg-indigo-600/30 border border-slate-700 font-bold text-sm text-slate-200 transition-colors" data-choice="ROCK">
+                        ✊ 바위
+                    </button>
+                    <button class="manual-choice-btn py-2.5 rounded-xl glass-card hover:bg-indigo-600/30 border border-slate-700 font-bold text-sm text-slate-200 transition-colors" data-choice="SCISSORS">
+                        ✌️ 가위
+                    </button>
+                    <button class="manual-choice-btn py-2.5 rounded-xl glass-card hover:bg-indigo-600/30 border border-slate-700 font-bold text-sm text-slate-200 transition-colors" data-choice="PAPER">
+                        🖐️ 보
+                    </button>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <script>
+        /* Web Audio API Sound Effects Synthesizer */
+        class SoundEffects {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    this.ctx = new AudioContext();
+                }
+            }
+
+            playTone(freq, type, duration, gainValue = 0.1) {
+                if (this.muted) return;
+                this.init();
+                try {
+                    const osc = this.ctx.createOscillator();
+                    const gain = this.ctx.createGain();
+                    osc.type = type;
+                    osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                    gain.gain.setValueAtTime(gainValue, this.ctx.currentTime);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + duration);
+                    osc.connect(gain);
+                    gain.connect(this.ctx.destination);
+                    osc.start();
+                    osc.stop(this.ctx.currentTime + duration);
+                } catch(e) {}
+            }
+
+            playBeep() {
+                this.playTone(600, 'sine', 0.15, 0.15);
+            }
+
+            playGo() {
+                this.playTone(900, 'triangle', 0.3, 0.2);
+            }
+
+            playWin() {
+                if (this.muted) return;
+                this.init();
+                const now = this.ctx.currentTime;
+                [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+                    setTimeout(() => this.playTone(freq, 'sine', 0.3, 0.15), i * 100);
+                });
+            }
+
+            playLose() {
+                if (this.muted) return;
+                this.init();
+                [400, 350, 300, 250].forEach((freq, i) => {
+                    setTimeout(() => this.playTone(freq, 'sawtooth', 0.25, 0.1), i * 120);
+                });
+            }
+
+            playDraw() {
+                this.playTone(440, 'square', 0.2, 0.1);
+            }
+        }
+
+        const sound = new SoundEffects();
+    </script>
+
+    <script>
+        // Game State Variables
+        const state = {
+            userScore: 0,
+            aiScore: 0,
+            streak: 0,
+            totalRounds: 0,
+            history: [],
+            cameraActive: false,
+            showSkeleton: true,
+            currentRawGesture: 'NONE', // 'ROCK', 'SCISSORS', 'PAPER', 'NONE'
+            heldGesture: 'NONE',
+            holdStartTime: 0,
+            holdDurationNeeded: 1000, // 1 second for realtime mode
+            isPlayingRound: false,
+            gameMode: 'countdown', // 'countdown' or 'realtime'
+            difficulty: 'normal',
+            audioMuted: false
+        };
+
+        // Icons & Korean Names mapping
+        const HAND_INFO = {
+            'ROCK': { emoji: '✊', name: '바위', beats: 'SCISSORS' },
+            'SCISSORS': { emoji: '✌️', name: '가위', beats: 'PAPER' },
+            'PAPER': { emoji: '🖐️', name: '보', beats: 'ROCK' },
+            'NONE': { emoji: '❓', name: '손 안보임' },
+            'UNKNOWN': { emoji: '🤔', name: '인식 중...' }
+        };
+
+        // DOM Element References
+        const elements = {
+            webcam: document.getElementById('webcam'),
+            canvas: document.getElementById('output_canvas'),
+            canvasCtx: document.getElementById('output_canvas').getContext('2d'),
+            cameraPlaceholder: document.getElementById('camera-placeholder'),
+            enableCamBtn: document.getElementById('enable-cam-btn'),
+            toggleCameraBtn: document.getElementById('toggle-camera-btn'),
+            toggleCamText: document.getElementById('toggle-cam-text'),
+            toggleSkeletonBtn: document.getElementById('toggle-skeleton-btn'),
+            toggleSkeletonText: document.getElementById('toggle-skeleton-text'),
+            
+            handDetectDot: document.getElementById('hand-detect-dot'),
+            handDetectText: document.getElementById('hand-detect-text'),
+            currentGestureLabel: document.getElementById('current-gesture-label'),
+            holdProgressBar: document.getElementById('hold-progress-bar'),
+
+            userScore: document.getElementById('user-score'),
+            aiScore: document.getElementById('ai-score'),
+            userStreak: document.getElementById('user-streak'),
+            roundCountLabel: document.getElementById('round-count-label'),
+            userProgressBar: document.getElementById('user-progress-bar'),
+            aiProgressBar: document.getElementById('ai-progress-bar'),
+            aiMoodBadge: document.getElementById('ai-mood-badge'),
+
+            playerHandIcon: document.getElementById('player-hand-icon'),
+            playerHandText: document.getElementById('player-hand-text'),
+            aiHandIcon: document.getElementById('ai-hand-icon'),
+            aiHandText: document.getElementById('ai-hand-text'),
+            playerCard: document.getElementById('player-card'),
+            aiCard: document.getElementById('ai-card'),
+
+            countdownDisplay: document.getElementById('countdown-display'),
+            resultBanner: document.getElementById('result-banner'),
+            startBattleBtn: document.getElementById('start-battle-btn'),
+            
+            gameModeSelect: document.getElementById('game-mode-select'),
+            aiDifficultySelect: document.getElementById('ai-difficulty-select'),
+            audioToggleBtn: document.getElementById('audio-toggle-btn'),
+            audioIcon: document.getElementById('audio-icon'),
+            resetStatsBtn: document.getElementById('reset-stats-btn'),
+            
+            historyContainer: document.getElementById('history-container'),
+            historyCount: document.getElementById('history-count')
+        };
+
+        let cameraUtilsInstance = null;
+        let handsInstance = null;
+    </script>
+
+    <script>
+        /* Hand Landmark Classification Logic */
+        function classifyHandGesture(landmarks) {
+            if (!landmarks || landmarks.length < 21) return 'NONE';
+
+            const wrist = landmarks[0];
+
+            // Helper distance function
+            function dist(p1, p2) {
+                const dx = p1.x - p2.x;
+                const dy = p1.y - p2.y;
+                const dz = (p1.z || 0) - (p2.z || 0);
+                return Math.sqrt(dx * dx + dy * dy + dz * dz);
+            }
+
+            // Finger Tips & PIP Joints
+            // Index: Tip=8, PIP=6
+            // Middle: Tip=12, PIP=10
+            // Ring: Tip=16, PIP=14
+            // Pinky: Tip=20, PIP=18
+            const isIndexExtended = dist(landmarks[8], wrist) > dist(landmarks[6], wrist) * 1.1;
+            const isMiddleExtended = dist(landmarks[12], wrist) > dist(landmarks[10], wrist) * 1.1;
+            const isRingExtended = dist(landmarks[16], wrist) > dist(landmarks[14], wrist) * 1.1;
+            const isPinkyExtended = dist(landmarks[20], wrist) > dist(landmarks[18], wrist) * 1.1;
+
+            let extCount = 0;
+            if (isIndexExtended) extCount++;
+            if (isMiddleExtended) extCount++;
+            if (isRingExtended) extCount++;
+            if (isPinkyExtended) extCount++;
+
+            // SCISSORS (가위): Index & Middle extended, Ring & Pinky folded
+            if (isIndexExtended && isMiddleExtended && !isRingExtended && !isPinkyExtended) {
+                return 'SCISSORS';
+            }
+
+            // PAPER (보): 3 or 4 fingers extended
+            if (extCount >= 3) {
+                return 'PAPER';
+            }
+
+            // ROCK (바위): 0 or 1 finger extended (and index & middle not both extended)
+            if (extCount <= 1) {
+                return 'ROCK';
+            }
+
+            return 'UNKNOWN';
+        }
+    </script>
+
+    <script>
+        /* Initialize MediaPipe Hands */
+        function initMediaPipe() {
+            handsInstance = new Hands({
+                locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
+            });
+
+            handsInstance.setOptions({
+                maxNumHands: 1,
+                modelComplexity: 1,
+                minDetectionConfidence: 0.65,
+                minTrackingConfidence: 0.65
+            });
+
+            handsInstance.onResults(onHandResults);
+        }
+
+        /* Render Frame and Process Results */
+        function onHandResults(results) {
+            const width = elements.canvas.width;
+            const height = elements.canvas.height;
+            const ctx = elements.canvasCtx;
+
+            ctx.save();
+            ctx.clearRect(0, 0, width, height);
+
+            // Draw Webcam Frame Flipped Horizontally
+            ctx.drawImage(results.image, 0, 0, width, height);
+
+            if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                const landmarks = results.multiHandLandmarks[0];
+
+                // Draw Skeleton Overlay if enabled
+                if (state.showSkeleton) {
+                    drawConnectors(ctx, landmarks, HAND_CONNECTIONS, { color: '#00FFC8', lineWidth: 3 });
+                    drawLandmarks(ctx, landmarks, { color: '#FF0055', lineWidth: 1, radius: 4 });
+                }
+
+                // Classify gesture
+                const detected = classifyHandGesture(landmarks);
+                updateGestureDetectionState(detected);
+
+            } else {
+                updateGestureDetectionState('NONE');
+            }
+
+            ctx.restore();
+        }
+
+        /* Update Hand Recognition HUD elements */
+        function updateGestureDetectionState(gesture) {
+            state.currentRawGesture = gesture;
+
+            if (gesture === 'NONE') {
+                elements.handDetectDot.className = 'w-2 h-2 rounded-full bg-amber-500';
+                elements.handDetectText.textContent = '손 탐색 중...';
+                elements.currentGestureLabel.textContent = '손 없음';
+                elements.currentGestureLabel.className = 'text-slate-400 text-sm';
+                state.heldGesture = 'NONE';
+                elements.holdProgressBar.style.width = '0%';
+
+                if (!state.isPlayingRound) {
+                    elements.playerHandIcon.textContent = '❓';
+                    elements.playerHandText.textContent = '카메라 손 대기 중';
+                }
+                return;
+            }
+
+            // Hand detected
+            elements.handDetectDot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+            elements.handDetectText.textContent = '손 감지됨';
+
+            const info = HAND_INFO[gesture] || HAND_INFO['UNKNOWN'];
+            elements.currentGestureLabel.textContent = `${info.emoji} ${info.name}`;
+            elements.currentGestureLabel.className = 'text-emerald-400 text-sm font-bold';
+
+            if (!state.isPlayingRound) {
+                elements.playerHandIcon.textContent = info.emoji;
+                elements.playerHandText.textContent = info.name;
+            }
+
+            // Handle Realtime Hold Mode
+            if (state.gameMode === 'realtime' && !state.isPlayingRound && gesture !== 'UNKNOWN') {
+                if (state.heldGesture === gesture) {
+                    const elapsed = Date.now() - state.holdStartTime;
+                    const percent = Math.min(100, (elapsed / state.holdDurationNeeded) * 100);
+                    elements.holdProgressBar.style.width = `${percent}%`;
+
+                    if (elapsed >= state.holdDurationNeeded) {
+                        elements.holdProgressBar.style.width = '0%';
+                        triggerRoundResolution(gesture);
+                    }
+                } else {
+                    state.heldGesture = gesture;
+                    state.holdStartTime = Date.now();
+                    elements.holdProgressBar.style.width = '0%';
+                }
+            } else {
+                elements.holdProgressBar.style.width = '0%';
+            }
+        }
+    </script>
+
+    <script>
+        /* Start/Stop Camera Utility */
+        async function startCamera() {
+            if (state.cameraActive) return;
+
+            try {
+                if (!handsInstance) initMediaPipe();
+
+                elements.cameraPlaceholder.classList.add('hidden');
+
+                // Adjust Canvas resolution dynamically
+                elements.canvas.width = 640;
+                elements.canvas.height = 480;
+
+                cameraUtilsInstance = new Camera(elements.webcam, {
+                    onFrame: async () => {
+                        if (state.cameraActive && handsInstance) {
+                            await handsInstance.send({ image: elements.webcam });
+                        }
+                    },
+                    width: 640,
+                    height: 480
+                });
+
+                await cameraUtilsInstance.start();
+                state.cameraActive = true;
+                elements.toggleCamText.textContent = '카메라 켜짐';
+                elements.toggleCameraBtn.classList.replace('bg-slate-800', 'bg-indigo-950');
+                elements.toggleCameraBtn.classList.add('border-indigo-500');
+            } catch (err) {
+                console.error("Camera error:", err);
+                alert("카메라에 접근할 수 없습니다. 웹캠 허용 상태를 확인해주세요.");
+                elements.cameraPlaceholder.classList.remove('hidden');
+                state.cameraActive = false;
+            }
+        }
+
+        function stopCamera() {
+            if (cameraUtilsInstance) {
+                cameraUtilsInstance.stop();
+            }
+            state.cameraActive = false;
+            elements.toggleCamText.textContent = '카메라 꺼짐';
+            elements.toggleCameraBtn.classList.replace('bg-indigo-950', 'bg-slate-800');
+            elements.toggleCameraBtn.classList.remove('border-indigo-500');
+            elements.cameraPlaceholder.classList.remove('hidden');
+            updateGestureDetectionState('NONE');
+        }
+    </script>
+
+    <script>
+        /* AI Move Calculation according to Difficulty */
+        function getAIMove(userMove) {
+            const moves = ['ROCK', 'SCISSORS', 'PAPER'];
+
+            if (state.difficulty === 'normal' || userMove === 'NONE' || userMove === 'UNKNOWN') {
+                return moves[Math.floor(Math.random() * moves.length)];
+            }
+
+            if (state.difficulty === 'smart') {
+                // 60% chance to counter player's current gesture
+                if (Math.random() < 0.6) {
+                    if (userMove === 'ROCK') return 'PAPER';
+                    if (userMove === 'SCISSORS') return 'ROCK';
+                    if (userMove === 'PAPER') return 'SCISSORS';
+                }
+                return moves[Math.floor(Math.random() * moves.length)];
+            }
+
+            if (state.difficulty === 'hard') {
+                // 85% chance to win against player!
+                if (Math.random() < 0.85) {
+                    if (userMove === 'ROCK') return 'PAPER';
+                    if (userMove === 'SCISSORS') return 'ROCK';
+                    if (userMove === 'PAPER') return 'SCISSORS';
+                }
+            }
+
+            return moves[Math.floor(Math.random() * moves.length)];
+        }
+
+        /* Evaluate Winner */
+        function determineWinner(user, ai) {
+            if (user === ai) return 'DRAW';
+            if (HAND_INFO[user].beats === ai) return 'USER';
+            return 'AI';
+        }
+
+        /* Countdown & Battle Trigger Sequence */
+        function startCountdownBattle() {
+            if (state.isPlayingRound) return;
+
+            state.isPlayingRound = true;
+            elements.startBattleBtn.disabled = true;
+            elements.startBattleBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+            const countdownSteps = ['가위! ✌️', '바위! ✊', '보! 🖐️'];
+            let stepIndex = 0;
+
+            elements.countdownDisplay.classList.remove('hidden');
+            elements.resultBanner.textContent = '안 내면 진 거 가위 바위 보!';
+            elements.resultBanner.className = 'w-full mt-4 py-3 px-4 rounded-xl text-center font-extrabold text-lg bg-amber-500/20 text-amber-300 border border-amber-500/50 animate-pulse';
+
+            // Spinning AI icon effect
+            elements.aiHandIcon.className = 'text-6xl sm:text-7xl my-3 animate-spin';
+            elements.aiHandIcon.textContent = '🌀';
+            elements.aiHandText.textContent = '고민 중...';
+
+            const interval = setInterval(() => {
+                if (stepIndex < countdownSteps.length) {
+                    elements.countdownDisplay.textContent = countdownSteps[stepIndex];
+                    sound.playBeep();
+                    stepIndex++;
+                } else {
+                    clearInterval(interval);
+                    elements.countdownDisplay.classList.add('hidden');
+                    sound.playGo();
+
+                    // Lock user choice from camera frame
+                    let finalUserChoice = state.currentRawGesture;
+                    if (finalUserChoice === 'NONE' || finalUserChoice === 'UNKNOWN') {
+                        finalUserChoice = 'ROCK'; // Default fallback if no hand seen
+                    }
+
+                    triggerRoundResolution(finalUserChoice);
+                }
+            }, 800);
+        }
+
+        /* Resolve Round Results & Update Stats */
+        function triggerRoundResolution(userMove) {
+            state.isPlayingRound = true;
+            const aiMove = getAIMove(userMove);
+            const winner = determineWinner(userMove, aiMove);
+
+            state.totalRounds++;
+
+            // Update Cards UI
+            elements.playerHandIcon.textContent = HAND_INFO[userMove].emoji;
+            elements.playerHandText.textContent = HAND_INFO[userMove].name;
+
+            elements.aiHandIcon.className = 'text-6xl sm:text-7xl my-3 transform scale-110';
+            elements.aiHandIcon.textContent = HAND_INFO[aiMove].emoji;
+            elements.aiHandText.textContent = HAND_INFO[aiMove].name;
+
+            elements.playerCard.classList.remove('border-indigo-500/30', 'neon-glow-indigo');
+            elements.aiCard.classList.remove('border-pink-500/30', 'neon-glow-pink');
+
+            if (winner === 'USER') {
+                state.userScore++;
+                state.streak++;
+                sound.playWin();
+                
+                elements.resultBanner.textContent = `🎉 승리했습니다! (${HAND_INFO[userMove].name} vs ${HAND_INFO[aiMove].name})`;
+                elements.resultBanner.className = 'w-full mt-4 py-3 px-4 rounded-xl text-center font-extrabold text-lg sm:text-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 neon-glow-emerald';
+                
+                elements.playerCard.classList.add('neon-glow-indigo', 'border-indigo-400');
+                elements.aiMoodBadge.textContent = '기분: 😭 분함';
+
+            } else if (winner === 'AI') {
+                state.aiScore++;
+                state.streak = 0;
+                sound.playLose();
+
+                elements.resultBanner.textContent = `😭 패배했습니다... (${HAND_INFO[userMove].name} vs ${HAND_INFO[aiMove].name})`;
+                elements.resultBanner.className = 'w-full mt-4 py-3 px-4 rounded-xl text-center font-extrabold text-lg sm:text-xl bg-pink-500/20 text-pink-300 border border-pink-500/50 neon-glow-pink';
+                
+                elements.aiCard.classList.add('neon-glow-pink', 'border-pink-400');
+                elements.aiMoodBadge.textContent = '기분: 🥳 신남';
+
+            } else {
+                state.streak = 0;
+                sound.playDraw();
+
+                elements.resultBanner.textContent = `🤝 무승부입니다! (${HAND_INFO[userMove].name})`;
+                elements.resultBanner.className = 'w-full mt-4 py-3 px-4 rounded-xl text-center font-extrabold text-lg sm:text-xl bg-slate-700 text-slate-200 border border-slate-600';
+                
+                elements.aiMoodBadge.textContent = '기분: 😮 아쉬움';
+            }
+
+            // Update Scores & Progress Bars
+            elements.userScore.textContent = state.userScore;
+            elements.aiScore.textContent = state.aiScore;
+            elements.userStreak.textContent = state.streak;
+            elements.roundCountLabel.textContent = `ROUND ${state.totalRounds + 1}`;
+
+            const total = (state.userScore + state.aiScore) || 1;
+            const userRatio = Math.round((state.userScore / total) * 100);
+            elements.userProgressBar.style.width = `${userRatio}%`;
+            elements.aiProgressBar.style.width = `${100 - userRatio}%`;
+
+            // Append History
+            addHistoryRecord(state.totalRounds, userMove, aiMove, winner);
+
+            // Re-enable Start Button after short delay
+            setTimeout(() => {
+                state.isPlayingRound = false;
+                elements.startBattleBtn.disabled = false;
+                elements.startBattleBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }, 1800);
+        }
+
+        /* History Logger UI */
+        function addHistoryRecord(roundNum, user, ai, winner) {
+            if (state.history.length === 0) {
+                elements.historyContainer.innerHTML = '';
+            }
+
+            let badgeClass = '';
+            let resultText = '';
+
+            if (winner === 'USER') {
+                badgeClass = 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40';
+                resultText = '승리';
+            } else if (winner === 'AI') {
+                badgeClass = 'bg-pink-500/20 text-pink-400 border-pink-500/40';
+                resultText = '패배';
+            } else {
+                badgeClass = 'bg-slate-700 text-slate-300 border-slate-600';
+                resultText = '무승부';
+            }
+
+            const item = document.createElement('div');
+            item.className = 'glass-card p-2.5 rounded-xl flex items-center justify-between border border-slate-700/50';
+            item.innerHTML = `
+                <div class="flex items-center space-x-2">
+                    <span class="font-bold text-slate-400">#${roundNum}</span>
+                    <span class="text-slate-300">나 (${HAND_INFO[user].emoji}) vs AI (${HAND_INFO[ai].emoji})</span>
+                </div>
+                <span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold border ${badgeClass}">${resultText}</span>
+            `;
+
+            elements.historyContainer.prepend(item);
+            state.history.push({ roundNum, user, ai, winner });
+            elements.historyCount.textContent = `${state.history.length}회 진행`;
+        }
+    </script>
+
+    <script>
+        /* Event Listeners Setup */
+        window.addEventListener('DOMContentLoaded', () => {
+            
+            // Enable Camera Button
+            elements.enableCamBtn.addEventListener('click', startCamera);
+
+            // Toggle Camera Button
+            elements.toggleCameraBtn.addEventListener('click', () => {
+                if (state.cameraActive) {
+                    stopCamera();
+                } else {
+                    startCamera();
+                }
+            });
+
+            // Toggle Skeleton View
+            elements.toggleSkeletonBtn.addEventListener('click', () => {
+                state.showSkeleton = !state.showSkeleton;
+                elements.toggleSkeletonText.textContent = `관절선 보기: ${state.showSkeleton ? 'ON' : 'OFF'}`;
+            });
+
+            // Start Battle Button
+            elements.startBattleBtn.addEventListener('click', () => {
+                if (state.gameMode === 'countdown') {
+                    startCountdownBattle();
+                } else {
+                    if (state.currentRawGesture !== 'NONE' && state.currentRawGesture !== 'UNKNOWN') {
+                        triggerRoundResolution(state.currentRawGesture);
+                    } else {
+                        alert("카메라에 손을 비춰 가위, 바위, 보 동작을 만들어 주세요!");
+                    }
+                }
+            });
+
+            // Manual Choice Buttons Fallback
+            document.querySelectorAll('.manual-choice-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const choice = e.currentTarget.getAttribute('data-choice');
+                    triggerRoundResolution(choice);
+                });
+            });
+
+            // Game Mode Dropdown
+            elements.gameModeSelect.addEventListener('change', (e) => {
+                state.gameMode = e.target.value;
+            });
+
+            // Difficulty Dropdown
+            elements.aiDifficultySelect.addEventListener('change', (e) => {
+                state.difficulty = e.target.value;
+            });
+
+            // Audio Mute Toggle
+            elements.audioToggleBtn.addEventListener('click', () => {
+                sound.muted = !sound.muted;
+                if (sound.muted) {
+                    elements.audioIcon.className = 'fa-solid fa-volume-xmark text-slate-500';
+                } else {
+                    elements.audioIcon.className = 'fa-solid fa-volume-high text-indigo-400';
+                }
+            });
+
+            // Reset Statistics
+            elements.resetStatsBtn.addEventListener('click', () => {
+                state.userScore = 0;
+                state.aiScore = 0;
+                state.streak = 0;
+                state.totalRounds = 0;
+                state.history = [];
+
+                elements.userScore.textContent = '0';
+                elements.aiScore.textContent = '0';
+                elements.userStreak.textContent = '0';
+                elements.roundCountLabel.textContent = 'ROUND 1';
+                elements.userProgressBar.style.width = '50%';
+                elements.aiProgressBar.style.width = '50%';
+
+                elements.historyContainer.innerHTML = '<p class="text-center text-slate-500 py-4">아직 진행된 라운드가 없습니다.</p>';
+                elements.historyCount.textContent = '0회 진행';
+                elements.resultBanner.textContent = '전적이 리셋되었습니다. 대결을 다시 시작하세요!';
+                elements.resultBanner.className = 'w-full mt-4 py-3 px-4 rounded-xl text-center font-extrabold text-lg bg-slate-800/80 text-slate-300 border border-slate-700';
+            });
+
+            // Auto-prompt camera permission on start
+            startCamera();
+        });
+    </script>
+</body>
+</html>
