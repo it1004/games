@@ -1,1 +1,1588 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>GALAGA 3D - Motion Space Shooter</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js (3D Engine) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Tone.js (Procedural Sound Synthesizer) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <!-- Google Fonts: Orbitron & Noto Sans KR -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700;900&family=Orbitron:wght@500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #03050c;
+            font-family: 'Orbitron', 'Noto Sans KR', sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        #game-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: 1;
+            display: block;
+        }
+        .neon-text-cyan {
+            text-shadow: 0 0 10px rgba(34, 211, 238, 0.8), 0 0 25px rgba(34, 211, 238, 0.5);
+        }
+        .neon-text-pink {
+            text-shadow: 0 0 10px rgba(244, 63, 94, 0.8), 0 0 25px rgba(244, 63, 94, 0.5);
+        }
+        .glass-panel {
+            background: rgba(10, 17, 40, 0.72);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            box-shadow: 0 0 30px rgba(2, 132, 199, 0.25);
+        }
+        .btn-arcade {
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-arcade:hover {
+            transform: translateY(-2px) scale(1.02);
+            box-shadow: 0 0 25px rgba(34, 211, 238, 0.6);
+        }
+        .btn-arcade:active {
+            transform: translateY(1px) scale(0.98);
+        }
+        /* 웹캠 미니 모니터 좌우 반전 (거울 모드) */
+        .mirror-canvas {
+            transform: scaleX(-1);
+        }
+        @keyframes pulseGlow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+        .animate-pulse-fast {
+            animation: pulseGlow 1.5s infinite;
+        }
+    </style>
+</head>
+<body class="text-white">
 
+    <!-- 3D 렌더링 캔버스 -->
+    <canvas id="game-canvas"></canvas>
+
+    <!-- 비전 모션 인식용 숨김 비디오 엘리먼트 -->
+    <video id="webcam-video" autoplay playsinline muted class="hidden"></video>
+
+    <!-- 상단 HUD (게임 진행 중에만 표시) -->
+    <div id="hud-container" class="hidden fixed top-0 left-0 w-full z-20 p-3 sm:p-5 pointer-events-none flex flex-col justify-between">
+        <div class="flex items-start justify-between w-full gap-2">
+            <!-- 좌측: 점수 & 웨이브 정보 -->
+            <div class="glass-panel rounded-2xl px-4 py-2.5 sm:px-6 sm:py-3 flex items-center gap-4 sm:gap-8 pointer-events-auto">
+                <div>
+                    <div class="text-[10px] sm:text-xs text-cyan-400 tracking-widest uppercase">SCORE</div>
+                    <div id="hud-score" class="text-xl sm:text-3xl font-black text-white neon-text-cyan">000000</div>
+                </div>
+                <div class="h-8 w-px bg-cyan-500/30"></div>
+                <div>
+                    <div class="text-[10px] sm:text-xs text-amber-400 tracking-widest uppercase">STAGE</div>
+                    <div id="hud-wave" class="text-lg sm:text-2xl font-bold text-amber-300">WAVE 1</div>
+                </div>
+                <div class="hidden md:block h-8 w-px bg-cyan-500/30"></div>
+                <div class="hidden md:block">
+                    <div class="text-xs text-purple-400 tracking-widest uppercase">WEAPON</div>
+                    <div id="hud-weapon" class="text-lg font-bold text-purple-300">AUTO LASER LV.1</div>
+                </div>
+            </div>
+
+            <!-- 중앙/우측: 체력 게이지 및 메인화면 버튼 -->
+            <div class="flex items-center gap-2 sm:gap-4 pointer-events-auto">
+                <!-- 실드/라이프 게이지 -->
+                <div class="glass-panel rounded-2xl px-3 py-2 sm:px-5 sm:py-3 flex flex-col items-end">
+                    <div class="text-[10px] sm:text-xs text-rose-400 tracking-widest uppercase mb-1">SHIELD INTEGRITY</div>
+                    <div id="hud-lives" class="flex items-center gap-1.5 text-lg sm:text-2xl">
+                        <!-- JS에서 하트/실드 아이콘 렌더링 -->
+                    </div>
+                </div>
+
+                <!-- 게임 도중 메인화면으로 이동하는 버튼 -->
+                <button id="btn-home" class="btn-arcade glass-panel hover:bg-rose-600/40 border-rose-400/50 text-white rounded-2xl px-3.5 py-3 sm:px-5 sm:py-3.5 flex items-center gap-2 cursor-pointer shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 sm:h-6 sm:w-6 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    </svg>
+                    <span class="text-xs sm:text-sm font-bold tracking-wider hidden sm:inline">메인화면</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- 모션 인식 상태 피드백 바 (모션 모드 활성화 시 표시) -->
+        <div id="motion-hud-wrapper" class="hidden mt-3 flex items-start justify-between w-full">
+            <div class="glass-panel rounded-2xl p-2 flex flex-col items-center pointer-events-auto border-emerald-400/40">
+                <div class="relative w-32 h-20 sm:w-44 sm:h-28 rounded-xl overflow-hidden bg-black/80 border border-emerald-500/40">
+                    <canvas id="motion-preview-canvas" width="160" height="100" class="w-full h-full object-cover mirror-canvas"></canvas>
+                    <!-- 중앙 기준선 및 현재 감지된 몸 중심점 표시 -->
+                    <div class="absolute inset-y-0 left-1/2 w-px bg-white/30"></div>
+                    <div id="motion-tracker-dot" class="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-emerald-400 shadow-[0_0_10px_#34d399] transition-all duration-75" style="left: 50%;"></div>
+                </div>
+                <div class="w-full flex items-center justify-between px-1 pt-1.5 text-[10px] sm:text-xs">
+                    <span class="text-emerald-400 font-bold flex items-center gap-1">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> BODY TRACKING
+                    </span>
+                    <button id="btn-recalibrate" class="text-cyan-300 hover:text-white underline cursor-pointer">중앙 보정</button>
+                </div>
+            </div>
+
+            <!-- 웨이브 클리어 / 경고 배너 -->
+            <div id="stage-banner" class="hidden mx-auto mt-6 px-8 py-3 rounded-full glass-panel border-cyan-400 text-center">
+                <span id="stage-banner-text" class="text-xl sm:text-3xl font-black tracking-widest text-cyan-300 neon-text-cyan">WAVE 1 START</span>
+            </div>
+            <div class="w-32 sm:w-44 hidden sm:block"></div>
+        </div>
+    </div>
+
+    <!-- 메인 타이틀 오버레이 화면 -->
+    <div id="main-menu" class="fixed inset-0 z-30 flex items-center justify-center p-4 bg-gradient-to-b from-slate-950/75 via-indigo-950/55 to-slate-950/85 backdrop-blur-sm">
+        <div class="glass-panel max-w-2xl w-full rounded-3xl p-6 sm:p-10 text-center relative overflow-hidden">
+            <!-- 상단 장식 라인 -->
+            <div class="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-cyan-400 via-purple-500 to-rose-500"></div>
+
+            <div class="inline-block px-4 py-1 rounded-full bg-cyan-500/20 border border-cyan-400/40 text-cyan-300 text-xs sm:text-sm font-bold tracking-widest mb-3">
+                3D SPACE ARCADE EDITION
+            </div>
+
+            <h1 class="text-4xl sm:text-6xl font-black tracking-tight mb-2 bg-clip-text text-transparent bg-gradient-to-r from-cyan-300 via-white to-purple-300 neon-text-cyan">
+                GALAGA 3D
+            </h1>
+            <h2 class="text-lg sm:text-2xl font-bold text-rose-400 tracking-widest mb-6 neon-text-pink">
+                MOTION INTERCEPTOR
+            </h2>
+
+            <!-- 게임 가이드 카드 -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-7 text-left">
+                <div class="bg-slate-900/70 border border-slate-700/80 rounded-2xl p-3.5">
+                    <div class="text-cyan-400 font-bold text-sm mb-1 flex items-center gap-1.5">
+                        <span>🏃</span> 모션 조종
+                    </div>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        카메라 앞에서 몸을 좌우로 움직이면 전투기가 우주 전장을 넓고 빠르게 가로지릅니다.
+                    </p>
+                </div>
+                <div class="bg-slate-900/70 border border-slate-700/80 rounded-2xl p-3.5">
+                    <div class="text-amber-400 font-bold text-sm mb-1 flex items-center gap-1.5">
+                        <span>⚡</span> 자동 플라즈마 연사
+                    </div>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        사격 버튼을 누를 필요 없이 듀얼 레이저가 자동으로 발사되어 적 편대를 격추합니다.
+                    </p>
+                </div>
+                <div class="bg-slate-900/70 border border-slate-700/80 rounded-2xl p-3.5">
+                    <div class="text-purple-400 font-bold text-sm mb-1 flex items-center gap-1.5">
+                        <span>🛸</span> 입체 우주 전투
+                    </div>
+                    <p class="text-xs text-slate-300 leading-relaxed">
+                        파워업 캡슐을 획득해 무기 레벨을 올리고 보스 함선을 물리치세요!
+                    </p>
+                </div>
+            </div>
+
+            <!-- 상태 알림 메시지 박스 (alert 대신 사용) -->
+            <div id="menu-status-msg" class="hidden mb-5 px-4 py-3 rounded-xl bg-amber-500/20 border border-amber-400/50 text-amber-200 text-xs sm:text-sm font-medium">
+            </div>
+
+            <!-- 플레이 모드 선택 버튼 -->
+            <div class="flex flex-col sm:flex-row gap-3.5 justify-center">
+                <button id="btn-start-motion" class="btn-arcade flex-1 py-4 px-6 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-black text-base sm:text-lg tracking-wide shadow-lg shadow-cyan-500/30 flex items-center justify-center gap-2.5 cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    <span>모션 인식으로 출격</span>
+                </button>
+
+                <button id="btn-start-classic" class="btn-arcade flex-1 py-4 px-6 rounded-2xl bg-slate-800/90 hover:bg-slate-700 border border-cyan-400/40 text-cyan-200 font-bold text-base sm:text-lg tracking-wide flex items-center justify-center gap-2.5 cursor-pointer">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                    </svg>
+                    <span>마우스 / 터치 / 키보드</span>
+                </button>
+            </div>
+
+            <div class="mt-5 text-[11px] sm:text-xs text-slate-400">
+                * 웹캠 권한이 없거나 어두운 환경에서도 마우스/터치/방향키로 즉시 플레이 가능합니다.
+            </div>
+        </div>
+    </div>
+
+    <!-- 게임 오버 모달 -->
+    <div id="gameover-modal" class="hidden fixed inset-0 z-40 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+        <div class="glass-panel max-w-md w-full rounded-3xl p-7 sm:p-9 text-center border-rose-500/50">
+            <div class="text-rose-500 text-sm font-bold tracking-widest uppercase mb-1">MISSION FAILED</div>
+            <h2 class="text-3xl sm:text-5xl font-black text-white neon-text-pink mb-6">GAME OVER</h2>
+
+            <div class="bg-slate-900/80 rounded-2xl p-5 mb-6 border border-slate-700/80 space-y-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-400 text-sm">FINAL SCORE</span>
+                    <span id="final-score" class="text-2xl sm:text-3xl font-black text-cyan-300">0</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-400 text-sm">REACHED WAVE</span>
+                    <span id="final-wave" class="text-lg font-bold text-amber-300">WAVE 1</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-slate-400 text-sm">HIGH SCORE</span>
+                    <span id="final-highscore" class="text-lg font-bold text-purple-300">0</span>
+                </div>
+            </div>
+
+            <div class="flex flex-col sm:flex-row gap-3">
+                <button id="btn-retry" class="btn-arcade flex-1 py-3.5 px-5 rounded-2xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-black text-base cursor-pointer">
+                    다시 출격하기
+                </button>
+                <button id="btn-gameover-home" class="btn-arcade flex-1 py-3.5 px-5 rounded-2xl bg-slate-800 hover:bg-slate-700 border border-slate-600 text-slate-200 font-bold text-base cursor-pointer">
+                    메인화면으로
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * GALAGA 3D - Motion Space Shooter
+         * - Three.js 기반 3D 우주 전장 & 입체 기체/적 함대/성운/블랙홀/행성 연출
+         * - 웹캠 실시간 광학/프레임 차분 및 피부/실루엣 무게중심 추적 엔진 (넓고 빠른 좌우 이동 매핑)
+         * - Tone.js 기반 실시간 Web Audio 신디사이저 효과음 (외부 파일 불필요)
+         */
+
+        // ==========================================
+        // 1. 사운드 시스템 (Tone.js)
+        // ==========================================
+        const SoundFX = {
+            initialized: false,
+            laserSynth: null,
+            explosionSynth: null,
+            powerupSynth: null,
+            hitSynth: null,
+
+            async init() {
+                if (this.initialized) return;
+                try {
+                    await Tone.start();
+                    // 레이저 발사음
+                    this.laserSynth = new Tone.PolySynth(Tone.Synth, {
+                        oscillator: { type: "sawtooth" },
+                        envelope: { attack: 0.005, decay: 0.08, sustain: 0, release: 0.05 },
+                        volume: -18
+                    }).toDestination();
+
+                    // 폭발음 (노이즈 기반)
+                    this.explosionSynth = new Tone.NoiseSynth({
+                        noise: { type: "brown" },
+                        envelope: { attack: 0.01, decay: 0.35, sustain: 0, release: 0.1 },
+                        volume: -10
+                    }).toDestination();
+
+                    // 파워업 획득음
+                    this.powerupSynth = new Tone.Synth({
+                        oscillator: { type: "triangle" },
+                        envelope: { attack: 0.01, decay: 0.15, sustain: 0.1, release: 0.2 },
+                        volume: -10
+                    }).toDestination();
+
+                    // 피격 경고음
+                    this.hitSynth = new Tone.MembraneSynth({
+                        volume: -6
+                    }).toDestination();
+
+                    this.initialized = true;
+                } catch (e) {
+                    console.warn("Audio init skipped:", e);
+                }
+            },
+
+            playLaser(level = 1) {
+                if (!this.initialized || !this.laserSynth) return;
+                try {
+                    const note = level >= 3 ? "C6" : (level === 2 ? "A5" : "G5");
+                    this.laserSynth.triggerAttackRelease(note, "32n");
+                } catch (e) {}
+            },
+
+            playExplosion() {
+                if (!this.initialized || !this.explosionSynth) return;
+                try {
+                    this.explosionSynth.triggerAttackRelease("8n");
+                } catch (e) {}
+            },
+
+            playPowerup() {
+                if (!this.initialized || !this.powerupSynth) return;
+                try {
+                    const now = Tone.now();
+                    this.powerupSynth.triggerAttackRelease("C5", "16n", now);
+                    this.powerupSynth.triggerAttackRelease("E5", "16n", now + 0.07);
+                    this.powerupSynth.triggerAttackRelease("G5", "16n", now + 0.14);
+                    this.powerupSynth.triggerAttackRelease("C6", "8n", now + 0.21);
+                } catch (e) {}
+            },
+
+            playHit() {
+                if (!this.initialized || !this.hitSynth) return;
+                try {
+                    this.hitSynth.triggerAttackRelease("C2", "8n");
+                } catch (e) {}
+            }
+        };
+
+        // ==========================================
+        // 2. 모션 트래커 (웹캠 몸 좌우 움직임 고속 감지)
+        // ==========================================
+        const MotionController = {
+            active: false,
+            stream: null,
+            video: document.getElementById('webcam-video'),
+            previewCanvas: document.getElementById('motion-preview-canvas'),
+            previewCtx: null,
+            offscreenCanvas: document.createElement('canvas'),
+            offscreenCtx: null,
+            prevFrameData: null,
+            rawNormalizedX: 0,      // -1.0 (맨 왼쪽) ~ +1.0 (맨 오른쪽)
+            smoothedX: 0,
+            centerOffset: 0,        // 중앙 보정 오프셋
+            sensitivity: 2.35,      // 몸을 조금만 좌우로 움직여도 화면 끝까지 넓고 빠르게 이동하도록 증폭 계수 설정
+
+            initCanvas() {
+                this.previewCtx = this.previewCanvas.getContext('2d');
+                this.offscreenCanvas.width = 80;
+                this.offscreenCanvas.height = 50;
+                this.offscreenCtx = this.offscreenCanvas.getContext('2d', { willReadFrequently: true });
+            },
+
+            async start() {
+                this.initCanvas();
+                try {
+                    this.stream = await navigator.mediaDevices.getUserMedia({
+                        video: { width: { ideal: 320 }, height: { ideal: 240 }, facingMode: "user" },
+                        audio: false
+                    });
+                    this.video.srcObject = this.stream;
+                    await this.video.play();
+                    this.active = true;
+                    this.prevFrameData = null;
+                    this.centerOffset = 0;
+                    this.smoothedX = 0;
+                    return true;
+                } catch (err) {
+                    console.warn("Webcam access denied or unavailable:", err);
+                    this.active = false;
+                    return false;
+                }
+            },
+
+            stop() {
+                this.active = false;
+                if (this.stream) {
+                    this.stream.getTracks().forEach(track => track.stop());
+                    this.stream = null;
+                }
+                this.video.srcObject = null;
+            },
+
+            recalibrate() {
+                // 현재 감지된 위치를 기준 중앙(0)으로 재설정
+                this.centerOffset = this.rawNormalizedX;
+            },
+
+            update() {
+                if (!this.active || this.video.readyState < 2) return 0;
+
+                const w = this.offscreenCanvas.width;
+                const h = this.offscreenCanvas.height;
+
+                // 분석용 저해상도 캔버스에 현재 프레임 그리기
+                this.offscreenCtx.drawImage(this.video, 0, 0, w, h);
+                const frame = this.offscreenCtx.getImageData(0, 0, w, h);
+                const data = frame.data;
+
+                // 미니 프리뷰 캔버스 업데이트
+                if (this.previewCtx) {
+                    this.previewCtx.drawImage(this.video, 0, 0, this.previewCanvas.width, this.previewCanvas.height);
+                }
+
+                let weightedX = 0;
+                let totalWeight = 0;
+
+                // 1) 프레임 차분(움직임) + 배경 대비 상체 실루엣/밝기 대비 하이브리드 추적
+                // 몸을 움직일 때 즉각적인 움직임 무게중심을 잡고, 멈춰 있을 때도 상체 위치를 유지하도록 결합
+                if (this.prevFrameData) {
+                    for (let y = 4; y < h - 2; y++) {
+                        for (let x = 2; x < w - 2; x++) {
+                            const idx = (y * w + x) * 4;
+                            const r = data[idx], g = data[idx + 1], b = data[idx + 2];
+                            const pr = this.prevFrameData[idx], pg = this.prevFrameData[idx + 1], pb = this.prevFrameData[idx + 2];
+
+                            const diff = Math.abs(r - pr) + Math.abs(g - pg) + Math.abs(b - pb);
+
+                            // 피부톤(인물 얼굴/손/상체) 가중치 보너스
+                            const isSkinLike = (r > 85 && g > 40 && b > 20 && r > g && r > b && Math.abs(r - g) > 12);
+
+                            if (diff > 32) {
+                                // 움직임이 감지된 픽셀에 높은 가중치 부여
+                                const weight = diff * (isSkinLike ? 2.5 : 1.5);
+                                weightedX += x * weight;
+                                totalWeight += weight;
+                            } else if (isSkinLike) {
+                                // 정지 상태에서도 인물 위치를 놓치지 않도록 기본 가중치 부여
+                                const weight = 18;
+                                weightedX += x * weight;
+                                totalWeight += weight;
+                            }
+                        }
+                    }
+                }
+
+                // 현재 프레임 저장
+                if (!this.prevFrameData) {
+                    this.prevFrameData = new Uint8ClampedArray(data.length);
+                }
+                this.prevFrameData.set(data);
+
+                if (totalWeight > 250) {
+                    const avgX = weightedX / totalWeight; // 0 ~ w
+                    // 거울 모드이므로 왼쪽(x가 작음)이 화면 오른쪽(+), 오른쪽(x가 큼)이 화면 왼쪽(-)
+                    const norm = ((w / 2) - avgX) / (w / 2); // -1 ~ +1
+                    this.rawNormalizedX = norm;
+                }
+
+                // 중앙 보정 적용 및 민감도 증폭 (몸을 좌우로 움직이면 비행기가 넓고 빠르게 끝까지 이동)
+                let adjusted = (this.rawNormalizedX - this.centerOffset) * this.sensitivity;
+                adjusted = Math.max(-1, Math.min(1, adjusted));
+
+                // 빠르고 매끄러운 반응성을 위한 고속 지수 보간 (0.38 계수로 즉각 반응)
+                this.smoothedX += (adjusted - this.smoothedX) * 0.38;
+
+                // 미니 모니터 점 위치 업데이트
+                const dot = document.getElementById('motion-tracker-dot');
+                if (dot) {
+                    const percent = 50 + (this.smoothedX * 46);
+                    dot.style.left = `${percent}%`;
+                }
+
+                return this.smoothedX;
+            }
+        };
+
+        // ==========================================
+        // 3. 3D 우주 전장 & 게임 엔진 (Three.js)
+        // ==========================================
+        const Game = {
+            scene: null,
+            camera: null,
+            renderer: null,
+            state: 'MENU', // 'MENU', 'PLAYING', 'GAMEOVER'
+            controlMode: 'CLASSIC', // 'MOTION' or 'CLASSIC'
+
+            // 플레이어 상태
+            playerGroup: null,
+            engineGlowLeft: null,
+            engineGlowRight: null,
+            shieldMesh: null,
+            playerX: 0,
+            targetPlayerX: 0,
+            maxBoundsX: 24, // 비행기가 좌우로 넓게 이동할 수 있는 전장 폭
+            invulnerableTimer: 0,
+
+            // 게임 수치
+            score: 0,
+            highScore: parseInt(localStorage.getItem('galaga3d_highscore') || '0', 10),
+            wave: 1,
+            lives: 3,
+            weaponLevel: 1,
+            fireCooldown: 0,
+            waveTimer: 0,
+            waveTransitioning: false,
+
+            // 오브젝트 풀/배열
+            bullets: [],
+            enemyBullets: [],
+            enemies: [],
+            particles: [],
+            powerups: [],
+
+            // 우주 배경 오브젝트
+            starFieldNear: null,
+            starFieldFar: null,
+            nebulaClouds: [],
+            planetGroup: null,
+            warpStreaks: null,
+
+            // 키보드/포인터 입력
+            keys: { left: false, right: false },
+            pointerActive: false,
+
+            clock: new THREE.Clock(),
+
+            init() {
+                const canvas = document.getElementById('game-canvas');
+                this.scene = new THREE.Scene();
+                this.scene.fog = new THREE.FogExp2(0x030614, 0.0045);
+
+                // 카메라 설정 (입체적인 3D 백뷰 + 약간 내려다보는 구도)
+                this.camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+                this.camera.position.set(0, 16, 36);
+                this.camera.lookAt(0, 0, -28);
+
+                this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: "high-performance" });
+                this.renderer.setSize(window.innerWidth, window.innerHeight);
+                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                this.renderer.toneMappingExposure = 1.25;
+
+                this.setupLights();
+                this.createRealisticSpaceBackground();
+                this.createPlayerShip();
+                this.bindEvents();
+
+                // 데모용 배경 적 함대 스폰 (메인 메뉴 뒤에서 우주 전투 분위기 연출)
+                this.spawnDemoFleet();
+
+                this.animate();
+            },
+
+            setupLights() {
+                const ambientLight = new THREE.AmbientLight(0x334477, 1.3);
+                this.scene.add(ambientLight);
+
+                // 주 광원 (항성 빛)
+                const sunLight = new THREE.DirectionalLight(0xdbeafe, 2.2);
+                sunLight.position.set(30, 50, 20);
+                this.scene.add(sunLight);
+
+                // 네온 림 라이트 (우주선 윤곽 강조)
+                const rimLight = new THREE.DirectionalLight(0x38bdf8, 1.4);
+                rimLight.position.set(-25, 10, -30);
+                this.scene.add(rimLight);
+
+                const magentaLight = new THREE.PointLight(0xe879f9, 1.5, 120);
+                magentaLight.position.set(0, 20, -40);
+                this.scene.add(magentaLight);
+            },
+
+            // 실감나는 다층 우주 배경 (별무리, 성운, 고리 행성, 워프 유성)
+            createRealisticSpaceBackground() {
+                // 1) 원거리 은하수 별빛
+                const farGeo = new THREE.BufferGeometry();
+                const farCount = 2800;
+                const farPos = new Float32Array(farCount * 3);
+                const farColors = new Float32Array(farCount * 3);
+                const starPalette = [
+                    new THREE.Color(0xffffff),
+                    new THREE.Color(0xbae6fd),
+                    new THREE.Color(0xfde68a),
+                    new THREE.Color(0xf5d0fe),
+                    new THREE.Color(0x93c5fd)
+                ];
+
+                for (let i = 0; i < farCount; i++) {
+                    farPos[i * 3] = (Math.random() - 0.5) * 380;
+                    farPos[i * 3 + 1] = (Math.random() - 0.5) * 240;
+                    farPos[i * 3 + 2] = -Math.random() * 350 + 40;
+
+                    const col = starPalette[Math.floor(Math.random() * starPalette.length)];
+                    farColors[i * 3] = col.r;
+                    farColors[i * 3 + 1] = col.g;
+                    farColors[i * 3 + 2] = col.b;
+                }
+                farGeo.setAttribute('position', new THREE.BufferAttribute(farPos, 3));
+                farGeo.setAttribute('color', new THREE.BufferAttribute(farColors, 3));
+                const farMat = new THREE.PointsMaterial({
+                    size: 0.65,
+                    vertexColors: true,
+                    transparent: true,
+                    opacity: 0.9
+                });
+                this.starFieldFar = new THREE.Points(farGeo, farMat);
+                this.scene.add(this.starFieldFar);
+
+                // 2) 근거리 고속 우주 먼지/별
+                const nearGeo = new THREE.BufferGeometry();
+                const nearCount = 600;
+                const nearPos = new Float32Array(nearCount * 3);
+                for (let i = 0; i < nearCount; i++) {
+                    nearPos[i * 3] = (Math.random() - 0.5) * 140;
+                    nearPos[i * 3 + 1] = (Math.random() - 0.5) * 90;
+                    nearPos[i * 3 + 2] = -Math.random() * 200 + 30;
+                }
+                nearGeo.setAttribute('position', new THREE.BufferAttribute(nearPos, 3));
+                const nearMat = new THREE.PointsMaterial({
+                    color: 0x7dd3fc,
+                    size: 0.9,
+                    transparent: true,
+                    opacity: 0.75
+                });
+                this.starFieldNear = new THREE.Points(nearGeo, nearMat);
+                this.scene.add(this.starFieldNear);
+
+                // 3) 3D 텍스처 생성 유틸리티 (성운 구름 & 행성 표면)
+                const createGlowTexture = (color1, color2) => {
+                    const c = document.createElement('canvas');
+                    c.width = 256;
+                    c.height = 256;
+                    const ctx = c.getContext('2d');
+                    const grad = ctx.createRadialGradient(128, 128, 10, 128, 128, 128);
+                    grad.addColorStop(0, color1);
+                    grad.addColorStop(0.5, color2);
+                    grad.addColorStop(1, 'rgba(0,0,0,0)');
+                    ctx.fillStyle = grad;
+                    ctx.fillRect(0, 0, 256, 256);
+                    return new THREE.CanvasTexture(c);
+                };
+
+                // 성운 스프라이트 배치
+                const nebulaConfigs = [
+                    { x: -65, y: 25, z: -160, scale: 150, c1: 'rgba(56, 189, 248, 0.22)', c2: 'rgba(99, 102, 241, 0.08)' },
+                    { x: 75, y: -15, z: -190, scale: 180, c1: 'rgba(232, 121, 249, 0.20)', c2: 'rgba(139, 92, 246, 0.07)' },
+                    { x: 0, y: 45, z: -220, scale: 210, c1: 'rgba(14, 165, 233, 0.16)', c2: 'rgba(30, 27, 75, 0.05)' }
+                ];
+
+                nebulaConfigs.forEach(cfg => {
+                    const mat = new THREE.SpriteMaterial({
+                        map: createGlowTexture(cfg.c1, cfg.c2),
+                        transparent: true,
+                        blending: THREE.AdditiveBlending,
+                        depthWrite: false
+                    });
+                    const sprite = new THREE.Sprite(mat);
+                    sprite.position.set(cfg.x, cfg.y, cfg.z);
+                    sprite.scale.set(cfg.scale, cfg.scale, 1);
+                    this.scene.add(sprite);
+                    this.nebulaClouds.push(sprite);
+                });
+
+                // 4) 거대 외계 행성과 고리 시스템 (우주 원경)
+                this.planetGroup = new THREE.Group();
+                this.planetGroup.position.set(58, 28, -175);
+
+                // 행성 텍스처 캔버스 생성
+                const pCanvas = document.createElement('canvas');
+                pCanvas.width = 512;
+                pCanvas.height = 256;
+                const pCtx = pCanvas.getContext('2d');
+                const pGrad = pCtx.createLinearGradient(0, 0, 0, 256);
+                pGrad.addColorStop(0, '#1e1b4b');
+                pGrad.addColorStop(0.25, '#312e81');
+                pGrad.addColorStop(0.5, '#0284c7');
+                pGrad.addColorStop(0.75, '#4c1d95');
+                pGrad.addColorStop(1, '#0f172a');
+                pCtx.fillStyle = pGrad;
+                pCtx.fillRect(0, 0, 512, 256);
+                // 행성 대기 띠
+                pCtx.fillStyle = 'rgba(125, 211, 252, 0.18)';
+                pCtx.fillRect(0, 70, 512, 18);
+                pCtx.fillRect(0, 140, 512, 26);
+
+                const planetTex = new THREE.CanvasTexture(pCanvas);
+                const planetMesh = new THREE.Mesh(
+                    new THREE.SphereGeometry(24, 36, 36),
+                    new THREE.MeshStandardMaterial({
+                        map: planetTex,
+                        roughness: 0.7,
+                        metalness: 0.1
+                    })
+                );
+                this.planetGroup.add(planetMesh);
+
+                // 행성 고리
+                const ringGeo = new THREE.RingGeometry(30, 46, 64);
+                const ringMat = new THREE.MeshBasicMaterial({
+                    color: 0x38bdf8,
+                    side: THREE.DoubleSide,
+                    transparent: true,
+                    opacity: 0.35
+                });
+                const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+                ringMesh.rotation.x = Math.PI * 0.38;
+                ringMesh.rotation.y = -0.25;
+                this.planetGroup.add(ringMesh);
+
+                this.scene.add(this.planetGroup);
+            },
+
+            // 플레이어 3D 갤러그 스타파이터 제작
+            createPlayerShip() {
+                this.playerGroup = new THREE.Group();
+
+                // 메인 동체 (화이트 & 메탈릭 실버)
+                const bodyMat = new THREE.MeshStandardMaterial({
+                    color: 0xf8fafc,
+                    metalness: 0.55,
+                    roughness: 0.25
+                });
+                const redAccentMat = new THREE.MeshStandardMaterial({
+                    color: 0xf43f5e,
+                    emissive: 0x881337,
+                    emissiveIntensity: 0.4,
+                    metalness: 0.4,
+                    roughness: 0.3
+                });
+                const blueAccentMat = new THREE.MeshStandardMaterial({
+                    color: 0x0ea5e9,
+                    emissive: 0x0369a1,
+                    emissiveIntensity: 0.5
+                });
+                const canopyMat = new THREE.MeshStandardMaterial({
+                    color: 0x38bdf8,
+                    emissive: 0x0284c7,
+                    emissiveIntensity: 0.8,
+                    metalness: 0.9,
+                    roughness: 0.1
+                });
+
+                // 중앙 기수 (코)
+                const noseGeo = new THREE.ConeGeometry(0.95, 5.2, 12);
+                noseGeo.rotateX(-Math.PI / 2);
+                const nose = new THREE.Mesh(noseGeo, bodyMat);
+                nose.position.set(0, 0, -1.2);
+                this.playerGroup.add(nose);
+
+                // 조종석 캐노피
+                const canopyGeo = new THREE.SphereGeometry(0.75, 16, 16);
+                canopyGeo.scale(0.85, 0.65, 1.9);
+                const canopy = new THREE.Mesh(canopyGeo, canopyMat);
+                canopy.position.set(0, 0.55, -0.3);
+                this.playerGroup.add(canopy);
+
+                // 주 날개 (델타 윙)
+                const wingGeo = new THREE.BoxGeometry(7.2, 0.22, 2.4);
+                const mainWing = new THREE.Mesh(wingGeo, bodyMat);
+                mainWing.position.set(0, -0.1, 0.6);
+                this.playerGroup.add(mainWing);
+
+                // 날개 끝단 윙팁 & 레이저 포드 (갤러그 시그니처 레드 포인트)
+                const podGeo = new THREE.CylinderGeometry(0.25, 0.35, 3.0, 10);
+                podGeo.rotateX(Math.PI / 2);
+
+                const leftPod = new THREE.Mesh(podGeo, redAccentMat);
+                leftPod.position.set(-3.5, 0, 0.1);
+                this.playerGroup.add(leftPod);
+
+                const rightPod = new THREE.Mesh(podGeo, redAccentMat);
+                rightPod.position.set(3.5, 0, 0.1);
+                this.playerGroup.add(rightPod);
+
+                // 수직 꼬리 날개 2개
+                const tailGeo = new THREE.BoxGeometry(0.2, 1.4, 1.5);
+                const leftTail = new THREE.Mesh(tailGeo, blueAccentMat);
+                leftTail.position.set(-1.3, 0.65, 1.3);
+                leftTail.rotation.z = 0.25;
+                this.playerGroup.add(leftTail);
+
+                const rightTail = new THREE.Mesh(tailGeo, blueAccentMat);
+                rightTail.position.set(1.3, 0.65, 1.3);
+                rightTail.rotation.z = -0.25;
+                this.playerGroup.add(rightTail);
+
+                // 트윈 플라즈마 추진기 불꽃
+                const thrusterGeo = new THREE.ConeGeometry(0.45, 2.4, 12);
+                thrusterGeo.rotateX(Math.PI / 2);
+                const thrusterMat = new THREE.MeshBasicMaterial({
+                    color: 0x22d3ee,
+                    transparent: true,
+                    opacity: 0.9
+                });
+
+                this.engineGlowLeft = new THREE.Mesh(thrusterGeo, thrusterMat);
+                this.engineGlowLeft.position.set(-0.7, -0.1, 2.6);
+                this.playerGroup.add(this.engineGlowLeft);
+
+                this.engineGlowRight = new THREE.Mesh(thrusterGeo, thrusterMat);
+                this.engineGlowRight.position.set(0.7, -0.1, 2.6);
+                this.playerGroup.add(this.engineGlowRight);
+
+                // 에너지 실드 구체 (무적/피격 보호 시 시각화)
+                const shieldGeo = new THREE.SphereGeometry(4.3, 24, 24);
+                const shieldMat = new THREE.MeshBasicMaterial({
+                    color: 0x38bdf8,
+                    transparent: true,
+                    opacity: 0.0,
+                    wireframe: true
+                });
+                this.shieldMesh = new THREE.Mesh(shieldGeo, shieldMat);
+                this.playerGroup.add(this.shieldMesh);
+
+                this.playerGroup.position.set(0, 0, 14);
+                this.scene.add(this.playerGroup);
+            },
+
+            // 적 함선 3D 모델 생성 (갤러그 감성의 Bee, Butterfly, Boss Commander)
+            createEnemyMesh(type) {
+                const group = new THREE.Group();
+
+                if (type === 'BOSS') {
+                    // 거대 지휘관 함선 (갤러그 보스 컬러: 에메랄드 & 골드/퍼플)
+                    const coreMat = new THREE.MeshStandardMaterial({
+                        color: 0x10b981,
+                        emissive: 0x065f46,
+                        emissiveIntensity: 0.5,
+                        metalness: 0.6,
+                        roughness: 0.2
+                    });
+                    const goldMat = new THREE.MeshStandardMaterial({
+                        color: 0xfbbf24,
+                        emissive: 0xb45309,
+                        emissiveIntensity: 0.4,
+                        metalness: 0.8,
+                        roughness: 0.2
+                    });
+
+                    const body = new THREE.Mesh(new THREE.OctahedronGeometry(2.2, 1), coreMat);
+                    body.scale.set(1.4, 0.7, 1.3);
+                    group.add(body);
+
+                    const wing = new THREE.Mesh(new THREE.BoxGeometry(6.8, 0.4, 2.2), goldMat);
+                    group.add(wing);
+
+                    const eye = new THREE.Mesh(
+                        new THREE.SphereGeometry(0.7, 12, 12),
+                        new THREE.MeshBasicMaterial({ color: 0xf43f5e })
+                    );
+                    eye.position.set(0, 0.3, 1.6);
+                    group.add(eye);
+                } else if (type === 'BUTTERFLY') {
+                    // 나비형 돌격기 (레드 & 옐로우)
+                    const mat = new THREE.MeshStandardMaterial({
+                        color: 0xf43f5e,
+                        emissive: 0x9f1239,
+                        emissiveIntensity: 0.45,
+                        metalness: 0.5,
+                        roughness: 0.3
+                    });
+                    const wingMat = new THREE.MeshStandardMaterial({
+                        color: 0xfacc15,
+                        emissive: 0x854d0e,
+                        emissiveIntensity: 0.3
+                    });
+
+                    const body = new THREE.Mesh(new THREE.ConeGeometry(1.0, 3.0, 8), mat);
+                    body.rotation.x = Math.PI / 2;
+                    group.add(body);
+
+                    const wings = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.25, 1.8), wingMat);
+                    group.add(wings);
+                } else {
+                    // 기본 정찰기 BEE (블루 & 시안)
+                    const mat = new THREE.MeshStandardMaterial({
+                        color: 0x3b82f6,
+                        emissive: 0x1d4ed8,
+                        emissiveIntensity: 0.5,
+                        metalness: 0.5,
+                        roughness: 0.3
+                    });
+                    const body = new THREE.Mesh(new THREE.DodecahedronGeometry(1.2, 0), mat);
+                    body.scale.set(1.3, 0.6, 1.4);
+                    group.add(body);
+
+                    const sideWing = new THREE.Mesh(
+                        new THREE.BoxGeometry(3.4, 0.2, 1.1),
+                        new THREE.MeshBasicMaterial({ color: 0x38bdf8 })
+                    );
+                    group.add(sideWing);
+                }
+
+                return group;
+            },
+
+            // 웨이브 편대 생성
+            spawnWave(waveNum) {
+                this.clearEntities(false);
+                this.waveTransitioning = false;
+
+                const rows = Math.min(3 + Math.floor(waveNum / 2), 5);
+                const cols = Math.min(6 + Math.floor(waveNum / 2), 9);
+                const spacingX = 5.6;
+                const spacingZ = 5.4;
+
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        let type = 'BEE';
+                        let hp = 1;
+                        let points = 100;
+
+                        if (r === 0) {
+                            type = 'BOSS';
+                            hp = 3 + Math.floor(waveNum * 0.8);
+                            points = 500;
+                        } else if (r === 1) {
+                            type = 'BUTTERFLY';
+                            hp = 2;
+                            points = 250;
+                        }
+
+                        const mesh = this.createEnemyMesh(type);
+                        const homeX = (c - (cols - 1) / 2) * spacingX;
+                        // 적 편대 기본 진형 위치를 기존(-34)보다 훨씬 멀리(-62) 배치
+                        const homeZ = -62 + r * spacingZ;
+
+                        // 화면 저 멀리 우주 심연에서 날아들어오는 연출용 시작 좌표
+                        mesh.position.set(homeX * 2.0, 16 + r * 4, -145 - r * 15);
+                        this.scene.add(mesh);
+
+                        this.enemies.push({
+                            mesh,
+                            type,
+                            hp,
+                            maxHp: hp,
+                            points,
+                            homeX,
+                            homeZ,
+                            phase: Math.random() * Math.PI * 2,
+                            state: 'FORMATION', // 'FORMATION' or 'DIVING'
+                            diveProgress: 0,
+                            diveStartX: 0,
+                            diveStartZ: 0,
+                            diveTargetX: 0
+                        });
+                    }
+                }
+
+                this.showBanner(`WAVE ${waveNum} START!`);
+                this.updateHUD();
+            },
+
+            spawnDemoFleet() {
+                this.clearEntities(true);
+                for (let i = 0; i < 14; i++) {
+                    const type = i < 4 ? 'BOSS' : (i < 9 ? 'BUTTERFLY' : 'BEE');
+                    const mesh = this.createEnemyMesh(type);
+                    const homeX = ((i % 7) - 3) * 6;
+                    const homeZ = -52 + Math.floor(i / 7) * 6.5;
+                    mesh.position.set(homeX, 0, homeZ);
+                    this.scene.add(mesh);
+                    this.enemies.push({
+                        mesh,
+                        type,
+                        hp: 999,
+                        homeX,
+                        homeZ,
+                        phase: i * 0.6,
+                        state: 'FORMATION'
+                    });
+                }
+            },
+
+            // 자동 총알 발사 (무기 레벨에 따라 2연장/3연장/4연장 확산 플라즈마)
+            firePlayerBullets() {
+                const px = this.playerGroup.position.x;
+                const pz = this.playerGroup.position.z - 2.2;
+
+                const spawnBullet = (offsetX, angleY = 0, color = 0x22d3ee) => {
+                    const geo = new THREE.CylinderGeometry(0.16, 0.16, 2.8, 8);
+                    geo.rotateX(Math.PI / 2);
+                    const mat = new THREE.MeshBasicMaterial({ color });
+                    const mesh = new THREE.Mesh(geo, mat);
+                    mesh.position.set(px + offsetX, 0, pz);
+                    mesh.rotation.y = angleY;
+                    this.scene.add(mesh);
+
+                    // 멀리 있는 적군까지 시원하게 날아가도록 탄속 상향
+                    this.bullets.push({
+                        mesh,
+                        vx: -Math.sin(angleY) * 105,
+                        vz: -Math.cos(angleY) * 105
+                    });
+                };
+
+                if (this.weaponLevel === 1) {
+                    spawnBullet(-1.4, 0, 0x22d3ee);
+                    spawnBullet(1.4, 0, 0x22d3ee);
+                } else if (this.weaponLevel === 2) {
+                    spawnBullet(-1.8, 0, 0x38bdf8);
+                    spawnBullet(0, 0, 0xfacc15);
+                    spawnBullet(1.8, 0, 0x38bdf8);
+                } else {
+                    spawnBullet(-2.2, 0.08, 0xf43f5e);
+                    spawnBullet(-0.8, 0, 0x22d3ee);
+                    spawnBullet(0.8, 0, 0x22d3ee);
+                    spawnBullet(2.2, -0.08, 0xf43f5e);
+                }
+
+                SoundFX.playLaser(this.weaponLevel);
+            },
+
+            spawnEnemyBullet(x, z) {
+                const geo = new THREE.SphereGeometry(0.42, 10, 10);
+                const mat = new THREE.MeshBasicMaterial({ color: 0xfb7185 });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.set(x, 0, z + 1.5);
+                this.scene.add(mesh);
+
+                // 플레이어 방향을 향해 약간 유도되는 탄환 속도 계산
+                const dx = this.playerGroup.position.x - x;
+                const dz = this.playerGroup.position.z - z;
+                const len = Math.hypot(dx, dz) || 1;
+                const speed = 26 + this.wave * 1.8;
+
+                this.enemyBullets.push({
+                    mesh,
+                    vx: (dx / len) * speed * 0.55,
+                    vz: (dz / len) * speed
+                });
+            },
+
+            spawnPowerup(x, z) {
+                const isHeal = Math.random() < 0.35 && this.lives < 5;
+                const geo = new THREE.OctahedronGeometry(0.95, 0);
+                const mat = new THREE.MeshStandardMaterial({
+                    color: isHeal ? 0x34d399 : 0xfbbf24,
+                    emissive: isHeal ? 0x059669 : 0xd97706,
+                    emissiveIntensity: 0.8
+                });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.set(x, 0, z);
+                this.scene.add(mesh);
+
+                this.powerups.push({
+                    mesh,
+                    type: isHeal ? 'SHIELD' : 'WEAPON'
+                });
+            },
+
+            // 3D 폭발 파티클 효과
+            createExplosion(x, z, colorHex = 0xf97316, count = 22) {
+                const geo = new THREE.BoxGeometry(0.45, 0.45, 0.45);
+                for (let i = 0; i < count; i++) {
+                    const mat = new THREE.MeshBasicMaterial({
+                        color: i % 2 === 0 ? colorHex : 0xfef08a,
+                        transparent: true,
+                        opacity: 1
+                    });
+                    const mesh = new THREE.Mesh(geo, mat);
+                    mesh.position.set(x, (Math.random() - 0.5) * 1.5, z);
+                    this.scene.add(mesh);
+
+                    const angle = Math.random() * Math.PI * 2;
+                    const speed = 6 + Math.random() * 18;
+                    this.particles.push({
+                        mesh,
+                        vx: Math.cos(angle) * speed,
+                        vy: (Math.random() - 0.3) * 12,
+                        vz: Math.sin(angle) * speed,
+                        life: 0.55 + Math.random() * 0.35
+                    });
+                }
+            },
+
+            clearEntities(includePlayerReset = true) {
+                [...this.bullets, ...this.enemyBullets, ...this.enemies, ...this.particles, ...this.powerups].forEach(obj => {
+                    if (obj.mesh) this.scene.remove(obj.mesh);
+                });
+                this.bullets = [];
+                this.enemyBullets = [];
+                this.enemies = [];
+                this.particles = [];
+                this.powerups = [];
+
+                if (includePlayerReset && this.playerGroup) {
+                    this.playerX = 0;
+                    this.targetPlayerX = 0;
+                    this.playerGroup.position.set(0, 0, 14);
+                    this.playerGroup.rotation.set(0, 0, 0);
+                }
+            },
+
+            // 게임 시작
+            async startGame(mode) {
+                await SoundFX.init();
+                const statusBox = document.getElementById('menu-status-msg');
+                statusBox.classList.add('hidden');
+
+                if (mode === 'MOTION') {
+                    statusBox.textContent = "카메라를 연결하고 모션 센서를 초기화하는 중입니다...";
+                    statusBox.classList.remove('hidden');
+
+                    const camOk = await MotionController.start();
+                    if (!camOk) {
+                        statusBox.textContent = "웹캠을 사용할 수 없어 마우스/터치/키보드 조종 모드로 자동 전환합니다.";
+                        this.controlMode = 'CLASSIC';
+                        document.getElementById('motion-hud-wrapper').classList.add('hidden');
+                    } else {
+                        statusBox.classList.add('hidden');
+                        this.controlMode = 'MOTION';
+                        document.getElementById('motion-hud-wrapper').classList.remove('hidden');
+                    }
+                } else {
+                    MotionController.stop();
+                    this.controlMode = 'CLASSIC';
+                    document.getElementById('motion-hud-wrapper').classList.add('hidden');
+                }
+
+                // 게임 상태 초기화
+                this.score = 0;
+                this.wave = 1;
+                this.lives = 3;
+                this.weaponLevel = 1;
+                this.invulnerableTimer = 1.5;
+                this.state = 'PLAYING';
+
+                document.getElementById('main-menu').classList.add('hidden');
+                document.getElementById('gameover-modal').classList.add('hidden');
+                document.getElementById('hud-container').classList.remove('hidden');
+
+                this.clearEntities(true);
+                this.spawnWave(1);
+            },
+
+            // 게임 도중 또는 게임오버 후 메인화면으로 복귀
+            returnToMainMenu() {
+                MotionController.stop();
+                this.state = 'MENU';
+                this.clearEntities(true);
+                this.spawnDemoFleet();
+
+                document.getElementById('hud-container').classList.add('hidden');
+                document.getElementById('motion-hud-wrapper').classList.add('hidden');
+                document.getElementById('gameover-modal').classList.add('hidden');
+                document.getElementById('menu-status-msg').classList.add('hidden');
+                document.getElementById('main-menu').classList.remove('hidden');
+            },
+
+            triggerGameOver() {
+                this.state = 'GAMEOVER';
+                MotionController.stop();
+
+                if (this.score > this.highScore) {
+                    this.highScore = this.score;
+                    localStorage.setItem('galaga3d_highscore', String(this.highScore));
+                }
+
+                document.getElementById('final-score').textContent = this.score.toLocaleString();
+                document.getElementById('final-wave').textContent = `WAVE ${this.wave}`;
+                document.getElementById('final-highscore').textContent = this.highScore.toLocaleString();
+
+                document.getElementById('hud-container').classList.add('hidden');
+                document.getElementById('gameover-modal').classList.remove('hidden');
+            },
+
+            showBanner(text) {
+                const banner = document.getElementById('stage-banner');
+                const bannerText = document.getElementById('stage-banner-text');
+                // 모션 HUD가 숨겨져 있어도 배너가 보이도록 별도 처리
+                bannerText.textContent = text;
+                const wrapper = document.getElementById('motion-hud-wrapper');
+                const wasHidden = wrapper.classList.contains('hidden');
+                if (wasHidden) {
+                    wrapper.classList.remove('hidden');
+                    wrapper.firstElementChild.classList.add('invisible');
+                }
+                banner.classList.remove('hidden');
+
+                setTimeout(() => {
+                    banner.classList.add('hidden');
+                    if (wasHidden && this.controlMode !== 'MOTION') {
+                        wrapper.classList.add('hidden');
+                        wrapper.firstElementChild.classList.remove('invisible');
+                    }
+                }, 1800);
+            },
+
+            updateHUD() {
+                document.getElementById('hud-score').textContent = String(this.score).padStart(6, '0');
+                document.getElementById('hud-wave').textContent = `WAVE ${this.wave}`;
+                document.getElementById('hud-weapon').textContent = `AUTO LASER LV.${this.weaponLevel}`;
+
+                const livesContainer = document.getElementById('hud-lives');
+                livesContainer.innerHTML = '';
+                for (let i = 0; i < 5; i++) {
+                    const span = document.createElement('span');
+                    if (i < this.lives) {
+                        span.textContent = '🛡️';
+                        span.className = 'drop-shadow-[0_0_6px_rgba(56,189,248,0.9)]';
+                    } else {
+                        span.textContent = '▫️';
+                        span.className = 'opacity-30 text-sm';
+                    }
+                    livesContainer.appendChild(span);
+                }
+            },
+
+            handlePlayerDamage() {
+                if (this.invulnerableTimer > 0) return;
+
+                this.lives -= 1;
+                this.weaponLevel = Math.max(1, this.weaponLevel - 1);
+                this.invulnerableTimer = 2.0;
+                SoundFX.playHit();
+                this.createExplosion(this.playerGroup.position.x, this.playerGroup.position.z, 0x38bdf8, 28);
+                this.updateHUD();
+
+                if (this.lives <= 0) {
+                    this.createExplosion(this.playerGroup.position.x, this.playerGroup.position.z, 0xf43f5e, 50);
+                    this.triggerGameOver();
+                }
+            },
+
+            // 프레임 업데이트 루프
+            update(dt, elapsed) {
+                // 1) 우주 배경 애니메이션 (항상 작동)
+                if (this.starFieldNear) {
+                    const pos = this.starFieldNear.geometry.attributes.position.array;
+                    for (let i = 0; i < pos.length; i += 3) {
+                        pos[i + 2] += dt * (this.state === 'PLAYING' ? 58 : 22);
+                        if (pos[i + 2] > 35) {
+                            pos[i + 2] = -180;
+                            pos[i] = (Math.random() - 0.5) * 140;
+                        }
+                    }
+                    this.starFieldNear.geometry.attributes.position.needsUpdate = true;
+                }
+
+                if (this.starFieldFar) {
+                    this.starFieldFar.rotation.z = Math.sin(elapsed * 0.05) * 0.06;
+                }
+
+                if (this.planetGroup) {
+                    this.planetGroup.children[0].rotation.y += dt * 0.08;
+                }
+
+                // 2) 플레이어 기체 이동 및 롤링(기울기) 연출
+                if (this.state === 'PLAYING') {
+                    if (this.controlMode === 'MOTION' && MotionController.active) {
+                        const motionX = MotionController.update();
+                        // 몸을 좌우로 움직이면 maxBoundsX(-24 ~ +24) 전체 영역을 넓고 빠르게 이동
+                        this.targetPlayerX = motionX * this.maxBoundsX;
+                    } else {
+                        // 키보드 입력 처리
+                        const keySpeed = 38;
+                        if (this.keys.left) this.targetPlayerX -= keySpeed * dt;
+                        if (this.keys.right) this.targetPlayerX += keySpeed * dt;
+                        this.targetPlayerX = Math.max(-this.maxBoundsX, Math.min(this.maxBoundsX, this.targetPlayerX));
+                    }
+
+                    // 민첩한 가속 보간
+                    const prevX = this.playerX;
+                    this.playerX += (this.targetPlayerX - this.playerX) * Math.min(1, dt * 16);
+                    this.playerGroup.position.x = this.playerX;
+
+                    // 좌우 이동 속도에 비례한 역동적 비행기 롤(기울기) 회전
+                    const velocityX = (this.playerX - prevX) / Math.max(dt, 0.001);
+                    const targetRoll = Math.max(-0.68, Math.min(0.68, -velocityX * 0.018));
+                    this.playerGroup.rotation.z += (targetRoll - this.playerGroup.rotation.z) * Math.min(1, dt * 14);
+
+                    // 카메라가 비행기를 부드럽게 따라가며 3D 공간감 극대화
+                    this.camera.position.x += (this.playerX * 0.35 - this.camera.position.x) * Math.min(1, dt * 6);
+                    this.camera.lookAt(this.playerX * 0.2, 0, -28);
+
+                    // 추진기 불꽃 맥동
+                    const flicker = 0.85 + Math.sin(elapsed * 45) * 0.25;
+                    this.engineGlowLeft.scale.set(1, 1, flicker);
+                    this.engineGlowRight.scale.set(1, 1, flicker);
+
+                    // 무적 실드 시각 효과
+                    if (this.invulnerableTimer > 0) {
+                        this.invulnerableTimer -= dt;
+                        this.shieldMesh.material.opacity = 0.25 + Math.sin(elapsed * 20) * 0.15;
+                        this.shieldMesh.rotation.y += dt * 3;
+                    } else {
+                        this.shieldMesh.material.opacity = 0;
+                    }
+
+                    // 3) 총알 자동 발사 시스템
+                    this.fireCooldown -= dt;
+                    const fireInterval = Math.max(0.13, 0.22 - this.weaponLevel * 0.025);
+                    if (this.fireCooldown <= 0) {
+                        this.firePlayerBullets();
+                        this.fireCooldown = fireInterval;
+                    }
+                } else if (this.state === 'MENU') {
+                    // 메인 메뉴 대기 중 자동 선회 비행
+                    this.playerGroup.position.x = Math.sin(elapsed * 1.1) * 10;
+                    this.playerGroup.rotation.z = -Math.cos(elapsed * 1.1) * 0.35;
+                    this.camera.position.x = Math.sin(elapsed * 0.5) * 4;
+                    this.camera.lookAt(0, 0, -28);
+                }
+
+                // 4) 플레이어 총알 업데이트 (멀리 있는 적까지 도달하도록 사거리 확장)
+                for (let i = this.bullets.length - 1; i >= 0; i--) {
+                    const b = this.bullets[i];
+                    b.mesh.position.x += b.vx * dt;
+                    b.mesh.position.z += b.vz * dt;
+
+                    if (b.mesh.position.z < -135) {
+                        this.scene.remove(b.mesh);
+                        this.bullets.splice(i, 1);
+                    }
+                }
+
+                // 5) 적 함대 AI & 편대 이동 & 다이빙 공격
+                const swarmOffsetX = Math.sin(elapsed * (1.4 + this.wave * 0.1)) * 6.5;
+
+                for (let i = this.enemies.length - 1; i >= 0; i--) {
+                    const e = this.enemies[i];
+
+                    if (e.state === 'FORMATION') {
+                        const targetX = e.homeX + swarmOffsetX;
+                        const targetZ = e.homeZ + Math.cos(elapsed * 2 + e.phase) * 0.8;
+                        e.mesh.position.x += (targetX - e.mesh.position.x) * Math.min(1, dt * 4);
+                        e.mesh.position.y += (0 - e.mesh.position.y) * Math.min(1, dt * 4);
+                        e.mesh.position.z += (targetZ - e.mesh.position.z) * Math.min(1, dt * 4);
+                        e.mesh.rotation.z = Math.sin(elapsed * 3 + e.phase) * 0.15;
+
+                        // 플레이 중 일정 확률로 갤러그 특유의 곡선 돌진(Diving) 개시
+                        if (this.state === 'PLAYING' && Math.random() < dt * (0.14 + this.wave * 0.03)) {
+                            e.state = 'DIVING';
+                            e.diveProgress = 0;
+                            e.diveStartX = e.mesh.position.x;
+                            e.diveStartZ = e.mesh.position.z;
+                            e.diveTargetX = this.playerX;
+                        }
+                    } else if (e.state === 'DIVING') {
+                        e.diveProgress += dt * (0.42 + this.wave * 0.035);
+                        const t = e.diveProgress;
+
+                        // 먼 거리(-62 부근)에서 플레이어 위치(+14)까지 긴 S자 곡선으로 돌진
+                        const totalTravelZ = 28 - e.diveStartZ;
+                        e.mesh.position.z = e.diveStartZ + t * totalTravelZ;
+                        e.mesh.position.x = e.diveStartX + (e.diveTargetX - e.diveStartX) * Math.min(1, t * 1.1) + Math.sin(t * Math.PI * 2) * 5.5;
+                        e.mesh.rotation.z = Math.cos(t * Math.PI * 2) * 0.6;
+
+                        // 돌진 도중 사격
+                        if (Math.abs(t - 0.35) < dt * 0.5) {
+                            this.spawnEnemyBullet(e.mesh.position.x, e.mesh.position.z);
+                        }
+
+                        // 화면 아래로 지나가면 다시 저 멀리 상단 편대로 복귀
+                        if (e.mesh.position.z > 26) {
+                            e.state = 'FORMATION';
+                            e.mesh.position.set(e.homeX, 14, -120);
+                        }
+                    }
+
+                    // 플레이어와 적 본체 직접 충돌 판정
+                    if (this.state === 'PLAYING') {
+                        const distToPlayer = Math.hypot(
+                            e.mesh.position.x - this.playerGroup.position.x,
+                            e.mesh.position.z - this.playerGroup.position.z
+                        );
+                        if (distToPlayer < 2.8) {
+                            this.createExplosion(e.mesh.position.x, e.mesh.position.z, 0xf43f5e, 20);
+                            this.scene.remove(e.mesh);
+                            this.enemies.splice(i, 1);
+                            this.handlePlayerDamage();
+                            continue;
+                        }
+                    }
+
+                    // 플레이어 총알과 적 충돌 판정
+                    for (let j = this.bullets.length - 1; j >= 0; j--) {
+                        const b = this.bullets[j];
+                        const hitRadius = e.type === 'BOSS' ? 3.1 : 2.1;
+                        const dist = Math.hypot(
+                            e.mesh.position.x - b.mesh.position.x,
+                            e.mesh.position.z - b.mesh.position.z
+                        );
+
+                        if (dist < hitRadius) {
+                            this.scene.remove(b.mesh);
+                            this.bullets.splice(j, 1);
+
+                            e.hp -= 1;
+                            // 피격 플래시
+                            e.mesh.position.z -= 0.6;
+
+                            if (e.hp <= 0) {
+                                const exColor = e.type === 'BOSS' ? 0x10b981 : (e.type === 'BUTTERFLY' ? 0xfacc15 : 0x38bdf8);
+                                this.createExplosion(e.mesh.position.x, e.mesh.position.z, exColor, e.type === 'BOSS' ? 36 : 20);
+                                SoundFX.playExplosion();
+
+                                this.score += e.points * (e.state === 'DIVING' ? 2 : 1);
+                                this.updateHUD();
+
+                                // 보스나 돌격기 격추 시 일정 확률로 파워업 캡슐 드롭
+                                if ((e.type === 'BOSS' && Math.random() < 0.45) || Math.random() < 0.12) {
+                                    this.spawnPowerup(e.mesh.position.x, e.mesh.position.z);
+                                }
+
+                                this.scene.remove(e.mesh);
+                                this.enemies.splice(i, 1);
+                            }
+                            break;
+                        }
+                    }
+                }
+
+                // 6) 적 탄환 업데이트
+                for (let i = this.enemyBullets.length - 1; i >= 0; i--) {
+                    const eb = this.enemyBullets[i];
+                    eb.mesh.position.x += eb.vx * dt;
+                    eb.mesh.position.z += eb.vz * dt;
+
+                    if (this.state === 'PLAYING') {
+                        const dist = Math.hypot(
+                            eb.mesh.position.x - this.playerGroup.position.x,
+                            eb.mesh.position.z - this.playerGroup.position.z
+                        );
+                        if (dist < 2.0) {
+                            this.scene.remove(eb.mesh);
+                            this.enemyBullets.splice(i, 1);
+                            this.handlePlayerDamage();
+                            continue;
+                        }
+                    }
+
+                    if (eb.mesh.position.z > 28) {
+                        this.scene.remove(eb.mesh);
+                        this.enemyBullets.splice(i, 1);
+                    }
+                }
+
+                // 7) 파워업 캡슐 업데이트
+                for (let i = this.powerups.length - 1; i >= 0; i--) {
+                    const p = this.powerups[i];
+                    p.mesh.position.z += 16 * dt;
+                    p.mesh.rotation.y += 3 * dt;
+                    p.mesh.rotation.x += 2 * dt;
+
+                    if (this.state === 'PLAYING') {
+                        const dist = Math.hypot(
+                            p.mesh.position.x - this.playerGroup.position.x,
+                            p.mesh.position.z - this.playerGroup.position.z
+                        );
+                        if (dist < 2.8) {
+                            SoundFX.playPowerup();
+                            if (p.type === 'SHIELD') {
+                                this.lives = Math.min(5, this.lives + 1);
+                                this.showBanner("SHIELD RESTORED!");
+                            } else {
+                                this.weaponLevel = Math.min(3, this.weaponLevel + 1);
+                                this.score += 500;
+                                this.showBanner(`WEAPON LEVEL ${this.weaponLevel}!`);
+                            }
+                            this.updateHUD();
+                            this.scene.remove(p.mesh);
+                            this.powerups.splice(i, 1);
+                            continue;
+                        }
+                    }
+
+                    if (p.mesh.position.z > 28) {
+                        this.scene.remove(p.mesh);
+                        this.powerups.splice(i, 1);
+                    }
+                }
+
+                // 8) 폭발 파티클 업데이트
+                for (let i = this.particles.length - 1; i >= 0; i--) {
+                    const pt = this.particles[i];
+                    pt.life -= dt;
+                    pt.mesh.position.x += pt.vx * dt;
+                    pt.mesh.position.y += pt.vy * dt;
+                    pt.mesh.position.z += pt.vz * dt;
+                    pt.mesh.rotation.x += 6 * dt;
+                    pt.mesh.rotation.y += 6 * dt;
+                    pt.mesh.material.opacity = Math.max(0, pt.life * 1.4);
+
+                    if (pt.life <= 0) {
+                        this.scene.remove(pt.mesh);
+                        this.particles.splice(i, 1);
+                    }
+                }
+
+                // 9) 웨이브 클리어 체크
+                if (this.state === 'PLAYING' && this.enemies.length === 0 && !this.waveTransitioning) {
+                    this.waveTransitioning = true;
+                    this.wave += 1;
+                    this.score += 1000;
+                    this.updateHUD();
+                    setTimeout(() => {
+                        if (this.state === 'PLAYING') {
+                            this.spawnWave(this.wave);
+                        }
+                    }, 1400);
+                }
+            },
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                const dt = Math.min(this.clock.getDelta(), 0.05);
+                const elapsed = this.clock.getElapsedTime();
+
+                this.update(dt, elapsed);
+                this.renderer.render(this.scene, this.camera);
+            },
+
+            bindEvents() {
+                // 화면 리사이즈 대응
+                window.addEventListener('resize', () => {
+                    this.camera.aspect = window.innerWidth / window.innerHeight;
+                    this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(window.innerWidth, window.innerHeight);
+                });
+
+                // 키보드 방향키 / A, D
+                window.addEventListener('keydown', (e) => {
+                    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') this.keys.left = true;
+                    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') this.keys.right = true;
+                });
+                window.addEventListener('keyup', (e) => {
+                    if (e.key === 'ArrowLeft' || e.key === 'a' || e.key === 'A') this.keys.left = false;
+                    if (e.key === 'ArrowRight' || e.key === 'd' || e.key === 'D') this.keys.right = false;
+                });
+
+                // 마우스 / 터치 드래그 보조 조종 (CLASSIC 모드일 때 작동)
+                const updatePointerX = (clientX) => {
+                    if (this.state !== 'PLAYING' || this.controlMode !== 'CLASSIC') return;
+                    const norm = (clientX / window.innerWidth) * 2 - 1; // -1 ~ +1
+                    this.targetPlayerX = Math.max(-this.maxBoundsX, Math.min(this.maxBoundsX, norm * (this.maxBoundsX * 1.15)));
+                };
+
+                window.addEventListener('mousemove', (e) => updatePointerX(e.clientX));
+                window.addEventListener('touchmove', (e) => {
+                    if (e.touches.length > 0) {
+                        updatePointerX(e.touches[0].clientX);
+                    }
+                }, { passive: true });
+                window.addEventListener('touchstart', (e) => {
+                    if (e.touches.length > 0) {
+                        updatePointerX(e.touches[0].clientX);
+                    }
+                }, { passive: true });
+
+                // UI 버튼 이벤트 바인딩
+                document.getElementById('btn-start-motion').addEventListener('click', () => {
+                    this.startGame('MOTION');
+                });
+
+                document.getElementById('btn-start-classic').addEventListener('click', () => {
+                    this.startGame('CLASSIC');
+                });
+
+                // 게임 도중 메인화면으로 이동하는 버튼
+                document.getElementById('btn-home').addEventListener('click', () => {
+                    this.returnToMainMenu();
+                });
+
+                document.getElementById('btn-gameover-home').addEventListener('click', () => {
+                    this.returnToMainMenu();
+                });
+
+                document.getElementById('btn-retry').addEventListener('click', () => {
+                    this.startGame(this.controlMode);
+                });
+
+                document.getElementById('btn-recalibrate').addEventListener('click', () => {
+                    MotionController.recalibrate();
+                    this.showBanner("CENTER CALIBRATED");
+                });
+            }
+        };
+
+        // 페이지 로드 완료 후 엔진 초기화
+        window.onload = () => {
+            Game.init();
+        };
+    </script>
+</body>
+</html>
